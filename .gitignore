@@ -1,0 +1,12 @@
+site/
+.zensical/
+.venv/
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+docs/books/*/pdf-cache/
+docs/research-cache/
+.claude
