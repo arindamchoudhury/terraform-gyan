@@ -13,3 +13,9 @@ _(None yet — topic pages are written once ≥2 books cover the same ground.)_
 - **Declarative vs. imperative languages** — Hafner Ch 1 only.
 - **Terraform deployment flow** (init / plan / apply) — Hafner Ch 1 only.
 - **OpenTofu fork history** — Hafner Ch 1 only.
+- **HCL block syntax** (blocks, arguments, subblocks, attributes, ordering) — Hafner Ch 2 only.
+- **Providers** (registry, required_providers, configuration, aliases) — Hafner Ch 1 & Ch 2.
+- **Resources and data sources** — Hafner Ch 2 only.
+- **Meta arguments** (lifecycle, depends_on) — Hafner Ch 2 only.
+- **Modules** (intro) — Hafner Ch 2 only; deep dive in Ch 3.
+- **Refactoring blocks** (import, moved, removed) — Hafner Ch 2 only; deep dive in Ch 9.

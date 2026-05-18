@@ -5,7 +5,7 @@
 | Status | Chapter | Topic page(s) |
 | ------ | ------- | ------------- |
 | ✅ done | 1. A brief overview of Terraform | — |
-| ⬜ todo | 2. Terraform HCL components | — |
+| ✅ done | 2. Terraform HCL components | — |
 | ⬜ todo | 3. Terraform variables and modules | — |
 | ⬜ todo | 4. Expressions and iterations | — |
 | ⬜ todo | 5. The Terraform plan | — |
