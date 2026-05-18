@@ -83,6 +83,21 @@ Your HCL code  →  Terraform Core (CLI)  →  Provider  →  Vendor API  →  V
 
 > 💡 **gRPC and providers** — You don't need to know gRPC to use Terraform. It only becomes relevant if you're building a custom provider (Ch 12), and even then you mostly use HashiCorp's existing libraries.
 
+### Vendors
+
+- Terraform itself is **vendor-agnostic** — it doesn't care what kind of infrastructure it manages, as long as a provider exposes it.
+- Each vendor has its own API, resources, and methodology, all abstracted behind the provider so the developer doesn't need to deal with vendor specifics.
+- Vendor categories include:
+
+  - Cloud service providers (AWS, GCP, Azure)
+  - DNS providers
+  - Data analytics platforms
+  - Virtual machine hosts
+  - Git repository services
+  - Authentication systems (Okta, etc.)
+
+- Most vendors maintain fairly up-to-date providers because Terraform is so widely adopted — it's in their interest to keep the provider current.
+
 ### Backends
 
 - By default, state is stored on the local filesystem (`local` backend). Fine for solo development, doesn't scale to teams.
@@ -133,10 +148,24 @@ A circular dependency (A → B → C → A) causes a deadlock: nothing can be cr
 
 ## 4. Terraform Deployment Flow
 
-The standard cycle: **Code → Init → Plan → Review → Apply**.
+The standard cycle: change the code, initialise, plan, review, apply. The init, plan, and apply phases are all invoked via the Terraform CLI — usually by a CI/CD system rather than a person directly.
 
 ```
-Change Desired  →  Init  →  Plan  →  Review  →  Apply
+  ┌────────────────┐   ┌──────┐   ┌──────┐
+  │ Change Desired │──▶│ Init │──▶│ Plan │
+  └────────────────┘   └──────┘   └──────┘
+           ▲                          │
+           │                          ▼
+           │                      ┌────────┐
+           │                      │ Review │
+           │                      └────────┘
+           │                          │
+           │                          ▼
+           │                      ┌───────┐
+           └──────────────────────│ Apply │
+                                  └───────┘
+
+Figure 1.5  The Terraform deployment flow
 ```
 
 ### 4.1 Change desired
@@ -165,6 +194,14 @@ Terraform has been successfully initialized!
 
 > 💡 Commit `.terraform.lock.hcl` to version control so the team always resolves to the same provider versions.
 
+To upgrade providers to the latest versions allowed by your version constraints, pass `--upgrade`:
+
+```bash
+terraform init --upgrade
+```
+
+> ⚠️ **Pitfall** — `--upgrade` ignores the lock file and re-resolves providers. Review the diff to `.terraform.lock.hcl` before committing — an unintended provider bump can change plan behaviour.
+
 ### 4.3 Plan — `terraform plan`
 
 Calculates what changes need to be made. Three internal sub-phases:
@@ -183,6 +220,21 @@ Plan: 1 to add, 0 to change, 0 to destroy.
 - `-out tfplan` saves the plan to a file, so the exact calculated plan is what gets applied (no drift between plan and apply).
 - Plan output shows each resource change with `+` (create), `~` (update), `-` (destroy), `-/+` (replace).
 - "Known after apply" appears for attributes that can only be known once the resource exists (e.g., auto-generated IDs, ARNs).
+
+**Reading a saved plan file** — the `.tfplan` binary is not human-readable directly. Use `terraform show`:
+
+```bash
+terraform show tfplan          # human-readable (same format as plan output)
+terraform show -json tfplan    # machine-readable JSON
+```
+
+The JSON form is useful with `jq`:
+
+```bash
+terraform show -json tfplan | jq '.resource_changes[].change.actions'
+```
+
+The binary format is intentional — it includes a hash so Terraform can verify the plan wasn't tampered with between `plan` and `apply`.
 
 ### 4.4 Apply — `terraform apply`
 
