@@ -1,20 +1,7 @@
-# Terraform — Reading Notes
+# Terraform Learning Notes
 
-A growing personal study site for **Terraform and OpenTofu**, drawing on multiple books.
+Personal notes and a from-scratch book on learning **Terraform** (and its open-source fork **OpenTofu**) — Infrastructure as Code done properly.
 
-## Topics
+Start with the **[Learning Path](learning-path.md)**: a topic-by-topic route from zero to platform-engineering-grade Terraform, with a resource plan and milestone for each topic.
 
-Cross-book synthesis — each page distills how multiple books treat the same topic.
-
-- [Topic index](topics/index.md)
-
-_(Topic pages appear here once ≥2 books cover the same ground.)_
-
-## Books
-
-- [Robert Hafner — *Terraform in Depth* (Manning, 2025)](books/hafner/index.md)
-
-## Reference
-
-- [Glossary](reference/glossary.md)
-- [Resources](reference/resources.md)
+As each topic is finished, a synthesized chapter lands in the **[Book](book/index.md)**.

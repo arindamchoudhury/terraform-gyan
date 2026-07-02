@@ -1,38 +1,18 @@
 [project]
-site_name = "Terraform — Reading Notes"
-site_description = "Personal study notes on Terraform and OpenTofu, drawing on Terraform in Depth by Robert Hafner."
-site_author = "arindam"
-copyright = "Copyright © 2026 arindam. Notes are personal study summaries."
+site_name = "Terraform Learning Notes"
+site_description = "Personal notes and book from learning Terraform (and OpenTofu)."
+site_author = "arindam@live.com"
+extra_css = ["stylesheets/extra.css"]
+extra_javascript = ["javascripts/sidebar-toggle.js"]
 
 nav = [
     { "Home" = "index.md" },
-    { "Topics" = [
-        { "Topic index" = "topics/index.md" },
-        # Active topic pages get added here once ≥2 books cover the same topic:
-        # { "Infrastructure as Code" = "topics/infrastructure-as-code.md" },
-    ]},
-    { "Books" = [
-        { "Hafner — Terraform in Depth (2025)" = [
-            { "Reading log" = "books/hafner/index.md" },
-            { "1. A brief overview of Terraform" = "books/hafner/chapters/01-brief-overview.md" },
-            { "2. Terraform HCL components" = "books/hafner/chapters/02-hcl-components.md" },
-            { "3. Terraform variables and modules" = "books/hafner/chapters/03-variables-and-modules.md" },
-            { "4. Expressions and iterations" = "books/hafner/chapters/04-expressions-and-iterations.md" },
-            { "5. The Terraform plan" = "books/hafner/chapters/05-the-terraform-plan.md" },
-            { "6. State management" = "books/hafner/chapters/06-state-management.md" },
-            { "7. Code quality and continuous integration" = "books/hafner/chapters/07-code-quality-and-ci.md" },
-            { "8. Continuous delivery and deployment" = "books/hafner/chapters/08-continuous-delivery.md" },
-            { "9. Testing and refactoring" = "books/hafner/chapters/09-testing-and-refactoring.md" },
-            { "10. Advanced Terraform topics" = "books/hafner/chapters/10-advanced-topics.md" },
-            { "11. Alternative interfaces" = "books/hafner/chapters/11-alternative-interfaces.md" },
-            { "12. Terraform providers" = "books/hafner/chapters/12-terraform-providers.md" },
-        ]},
+    { "Learning Path" = "learning-path.md" },
+    { "Book" = [
+        { "Contents" = "book/index.md" },
     ]},
     { "Reference" = [
-        { "Glossary"  = "reference/glossary.md" },
+        { "Glossary" = "reference/glossary.md" },
         { "Resources" = "reference/resources.md" },
     ]},
 ]
-
-# NOTE: [project.theme] intentionally omitted — Zensical 0.0.x uses its default
-# built-in theme. Add once Zensical 0.1+ ships named themes.

@@ -1,23 +1,23 @@
 # Resources
 
-Links collected across all books — a single place to find them later.
+Resources cited across the [Learning Path](../learning-path.md). Books serve topics — they are not the organizing structure.
 
-## Official Terraform / OpenTofu docs
+| Abbrev | Name | Type | URL |
+|---|---|---|---|
+| **TID** | *Terraform in Depth: IaC with Terraform and OpenTofu* (Hafner, Manning) | Book | manning.com/books/terraform-in-depth |
+| **TUR** | *Terraform: Up & Running*, 3rd ed (Brikman, O'Reilly) | Book | oreilly.com |
+| **HCDocs** | HashiCorp Developer — Terraform docs | Official docs | https://developer.hashicorp.com/terraform |
+| **HCTut** | HashiCorp Developer — Terraform Tutorials (free hands-on labs) | Official interactive | https://developer.hashicorp.com/terraform/tutorials |
+| **OTDocs** | OpenTofu documentation | Official docs | https://opentofu.org/docs/ |
+| **Assoc** | Terraform Associate 004 study path | Official course | https://developer.hashicorp.com/terraform/tutorials/certification-004 |
+| **Pro** | Terraform Authoring & Operations Pro study path | Official course | https://developer.hashicorp.com/terraform/tutorials/pro-cert |
+| **KK** | KodeKloud — Terraform for Beginners / labs | Interactive labs | kodekloud.com |
+| **FCC** | freeCodeCamp — Terraform full course (YouTube) | Video course | youtube.com |
+| **Krausen** | Bryan Krausen — Terraform Associate course + practice exams (Udemy) | Video + practice | udemy.com |
+| **TPF** | Terraform Plugin Framework docs | Official docs | https://developer.hashicorp.com/terraform/plugin/framework |
+| **TG** | Terragrunt docs (Gruntwork) | Official docs | https://terragrunt.gruntwork.io/docs |
 
-- Terraform documentation — <https://developer.hashicorp.com/terraform/docs>
-- OpenTofu documentation — <https://opentofu.org/docs/>
-- Terraform Provider Registry — <https://registry.terraform.io/browse/providers>
+> 📌 **TUR** targets Terraform ~1.1. Concepts remain the best available; verify newer syntax
+> (`terraform test`, `import`/`removed` blocks, Stacks) against **HCDocs**.
 
-## OpenTofu project
-
-- OpenTofu GitHub — <https://github.com/opentofu/opentofu>
-- OpenTofu blog — <https://opentofu.org/blog/>
-
-## Book source code
-
-- Terraform in Depth companion code (Manning) — <https://github.com/terraform-in-depth/terraform-in-depth>
-
-## Amusing / illustrative providers
-
-- Pizza delivery provider — <https://mng.bz/BXDq>
-- McDonald's ice cream machine status provider — <https://mng.bz/dXPz>
+See [version & certification facts](../research-cache/version-facts.md) for current tooling versions and exam details.
