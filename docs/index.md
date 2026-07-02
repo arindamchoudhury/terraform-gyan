@@ -5,3 +5,5 @@ Personal notes and a from-scratch book on learning **Terraform** (and its open-s
 Start with the **[Learning Path](learning-path.md)**: a topic-by-topic route from zero to platform-engineering-grade Terraform, with a resource plan and milestone for each topic.
 
 As each topic is finished, a synthesized chapter lands in the **[Book](book/index.md)**.
+
+Notes captured verbatim from source pages live under **[Notes](sources/index.md)**; cross-source synthesis lands in **[Topics](topics/index.md)**.

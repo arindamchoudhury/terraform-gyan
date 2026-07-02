@@ -63,7 +63,7 @@
 
 1. **Video — [TF2026 "Core Terraform Concepts"](https://youtu.be/l5qtFBsxZdk)** (00:00, ~40 min) — watch the "what is IaC / why Terraform" opening; build the mental picture before touching syntax.
 2. **Book chapter — TID Ch 1** (~1 hr) — read the IaC framing and the Terraform-vs-OpenTofu positioning (this book covers both).
-3. **Reference — [HCDocs "Intro / Use Cases"](https://developer.hashicorp.com/terraform/intro)** (~20 min) — skim the official framing; note the declarative vs imperative distinction.
+3. **Reference — [HCDocs "Intro / Use Cases"](https://developer.hashicorp.com/terraform/intro)** (~20 min) — skim the official framing; note the declarative vs imperative distinction. (Captured notes: [[terraform-intro]].)
 
 **Milestone:** You can explain in two sentences why Terraform is declarative and how it differs from Ansible and from CloudFormation.
 

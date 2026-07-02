@@ -11,6 +11,16 @@ nav = [
     { "Book" = [
         { "Contents" = "book/index.md" },
     ]},
+    { "Topics" = [
+        { "All Topics" = "topics/index.md" },
+    ]},
+    { "Notes" = [
+        { "All Notes" = "sources/index.md" },
+        { "HashiCorp Terraform Docs" = [
+            { "Overview" = "sources/terraform-docs/index.md" },
+            { "1. What is Terraform? (Intro)" = "sources/terraform-docs/terraform-intro.md" },
+        ]},
+    ]},
     { "Reference" = [
         { "Glossary" = "reference/glossary.md" },
         { "Resources" = "reference/resources.md" },
