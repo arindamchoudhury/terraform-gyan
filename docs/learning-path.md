@@ -24,7 +24,7 @@
 | **Pro** | Terraform Authoring & Operations Pro study path | Official course | https://developer.hashicorp.com/terraform/tutorials/pro-cert |
 | **KK** | KodeKloud — Terraform for Beginners / labs | Interactive labs | kodekloud.com |
 | **TF2026** | Rahul Oli — *Terraform Complete Course in One Video: Beginner to Advanced* (YouTube, Apr 2026, 6h23m) | Video course | [youtu.be/l5qtFBsxZdk](https://youtu.be/l5qtFBsxZdk) |
-| **Krausen** | Bryan Krausen — Terraform Associate course + practice exams (Udemy) | Video + practice | udemy.com |
+| **Krausen** | Bryan Krausen — Terraform Associate course + practice exams | Video + practice | [krausen.io hands-on labs](https://krausen.io/course/hashicorp-certified-terraform-associate-hands-on-labs/) · [004 practice exams](https://www.udemy.com/course/terraform-associate-004-practice-exams/) |
 | **TPF** | Terraform Plugin Framework docs | Official docs | https://developer.hashicorp.com/terraform/plugin/framework |
 | **TG** | Terragrunt docs (Gruntwork) | Official docs | https://terragrunt.gruntwork.io/docs |
 
@@ -94,7 +94,7 @@
 **How to learn it:**
 
 1. **Interactive — HCTut ["Manage infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-manage) + ["Destroy infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-destroy)** (~45 min) — run a full modify-then-destroy cycle; read the plan output symbols (`+`, `-`, `~`, `-/+`).
-2. **Video — Krausen core-workflow section** (~40 min) — walks the plan/apply lifecycle with cert framing.
+2. **Video — [Krausen "Terraform Associate — Hands-On Labs" (core-workflow section)](https://krausen.io/course/hashicorp-certified-terraform-associate-hands-on-labs/)** (~40 min) — walks the plan/apply lifecycle with cert framing.
 3. **Reference — [HCDocs CLI commands](https://developer.hashicorp.com/terraform/cli/commands)** (~20 min) — bookmark [`plan`](https://developer.hashicorp.com/terraform/cli/commands/plan) / [`apply`](https://developer.hashicorp.com/terraform/cli/commands/apply) flags (`-out`, `-target`, `-auto-approve`).
 
 **Milestone:** You can read a `terraform plan` and correctly predict what each `+`/`~`/`-/+` line will do before running apply.
@@ -189,7 +189,7 @@
 
 **How to learn it:**
 
-1. **Video — Krausen state section** (~30 min) — why state exists and what breaks without it.
+1. **Video — [Krausen "Terraform Associate — Hands-On Labs" (state section)](https://krausen.io/course/hashicorp-certified-terraform-associate-hands-on-labs/)** (~30 min) — why state exists and what breaks without it.
 2. **Reference — [HCDocs "State" overview](https://developer.hashicorp.com/terraform/language/state) + ["Sensitive Data in State"](https://developer.hashicorp.com/terraform/language/state/sensitive-data)** (~30 min) — note that state can hold secrets in plaintext.
 3. **Book chapter — TID Ch 6** (state) (~1 hr) — anatomy of the state file; read but don't edit it.
 
@@ -534,7 +534,7 @@ You are ready to advance when you can:
 
 1. **Reference — [HCDocs "Stacks" overview](https://developer.hashicorp.com/terraform/language/stacks) + configuration** (~1 hr) — components, deployments, and how Stacks differ from modules/workspaces.
 2. **Interactive — HCTut [Stacks: "Deploy a Stack with HCP Terraform"](https://developer.hashicorp.com/terraform/tutorials/cloud/stacks-deploy)** (~2 hrs) — define a stack with multiple deployments and run it in HCP Terraform.
-3. **Video — a current Stacks walkthrough** (~40 min) — see the deployment fan-out in practice.
+3. **Explainer — [HashiCorp "Terraform Stacks, explained"](https://www.hashicorp.com/en/blog/terraform-stacks-explained)** (~20 min) — see the deployment fan-out in practice; pair with a current Stacks demo on the [HashiCorp YouTube channel](https://www.youtube.com/@HashiCorp/search?query=terraform%20stacks).
    > 📌 Stacks is newer than both books — rely on HCDocs and verify feature availability (HCP vs CLI) as it evolves.
 
 **Milestone:** You can define a stack with reusable components and deploy it to three environments from a single stack configuration.
@@ -567,7 +567,7 @@ You are ready to advance when you can:
 
 1. **Reference — [TG docs (Terragrunt)](https://terragrunt.gruntwork.io/docs/)** (~1.5 hrs) — DRY backends, `dependency` blocks, `run-all`, and where Terragrunt still beats native features.
 2. **Book chapter — TUR Ch 3 + Ch 5** (~2 hrs) — state isolation and repo-structure tradeoffs at scale.
-3. **Video — a large-org Terraform architecture talk** (~45 min) — see monorepo-vs-multirepo decisions in the wild.
+3. **Reference — [HashiCorp "Terraform mono-repo vs. multi-repo: the great debate"](https://www.hashicorp.com/en/blog/terraform-mono-repo-vs-multi-repo-the-great-debate)** (~30 min) — monorepo-vs-multirepo decisions in the wild, plus [native monorepo support](https://www.hashicorp.com/en/blog/terraform-adds-native-monorepo-support-stack-component-configurations-and-more).
 
 **Milestone:** You can design a multi-team layout with per-component state, cross-state dependencies, and DRY backend config that keeps each plan small.
 
@@ -598,7 +598,7 @@ You are ready to advance when you can:
 **How to learn it:**
 
 1. **Reference — [HCDocs "No-Code modules"](https://developer.hashicorp.com/terraform/cloud-docs/no-code-provisioning/module-design) + [Run Tasks](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/settings/run-tasks) + [private registry](https://developer.hashicorp.com/terraform/cloud-docs/registry)** (~1 hr) — the self-service building blocks.
-2. **Video — a platform-engineering / golden-modules talk** (~45 min) — how mature orgs expose Terraform to non-experts.
+2. **Video — [HashiCorp "Terraform for platform engineers" (Armon Dadgar)](https://www.hashicorp.com/en/resources/terraform-for-platform-engineers)** (~45 min) — how mature orgs expose Terraform to non-experts via golden modules.
 3. **Interactive — publish a no-code module** (~1.5 hrs) — put a golden module in the private registry and provision it with no HCL.
 
 **Milestone:** You can publish a governed golden module to a private registry and let another team provision it self-service with policy enforcement.
