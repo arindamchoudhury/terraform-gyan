@@ -23,7 +23,7 @@
 | **Assoc** | Terraform Associate 004 study path | Official course | https://developer.hashicorp.com/terraform/tutorials/certification-004 |
 | **Pro** | Terraform Authoring & Operations Pro study path | Official course | https://developer.hashicorp.com/terraform/tutorials/pro-cert |
 | **KK** | KodeKloud — Terraform for Beginners / labs | Interactive labs | kodekloud.com |
-| **FCC** | freeCodeCamp — Terraform full course (YouTube) | Video course | youtube.com |
+| **TF2026** | Rahul Oli — *Terraform Complete Course in One Video: Beginner to Advanced* (YouTube, Apr 2026, 6h23m) | Video course | [youtu.be/l5qtFBsxZdk](https://youtu.be/l5qtFBsxZdk) |
 | **Krausen** | Bryan Krausen — Terraform Associate course + practice exams (Udemy) | Video + practice | udemy.com |
 | **TPF** | Terraform Plugin Framework docs | Official docs | https://developer.hashicorp.com/terraform/plugin/framework |
 | **TG** | Terragrunt docs (Gruntwork) | Official docs | https://terragrunt.gruntwork.io/docs |
@@ -61,7 +61,7 @@
 
 **How to learn it:**
 
-1. **Video — FCC intro section** (~30 min) — watch the "what is IaC / why Terraform" opening; build the mental picture before touching syntax.
+1. **Video — [TF2026 "Core Terraform Concepts"](https://youtu.be/l5qtFBsxZdk)** (00:00, ~40 min) — watch the "what is IaC / why Terraform" opening; build the mental picture before touching syntax.
 2. **Book chapter — TID Ch 1** (~1 hr) — read the IaC framing and the Terraform-vs-OpenTofu positioning (this book covers both).
 3. **Reference — [HCDocs "Intro / Use Cases"](https://developer.hashicorp.com/terraform/intro)** (~20 min) — skim the official framing; note the declarative vs imperative distinction.
 
@@ -77,7 +77,7 @@
 
 **How to learn it:**
 
-1. **Interactive — HCTut "Install Terraform" + "Build infrastructure"** (~1 hr) — follow the AWS (or Docker) quick-start end to end in your own account.
+1. **Interactive — HCTut ["Install Terraform"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) + ["Create infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create)** (~1 hr) — follow the AWS (or Docker) quick-start end to end in your own account.
 2. **Reference — [HCDocs "Provider Requirements"](https://developer.hashicorp.com/terraform/language/providers/requirements)** (~20 min) — understand `required_providers`, source addresses, and version pinning. ([Install](https://developer.hashicorp.com/terraform/install))
 3. **Book chapter — TID Ch 2** (~1 hr) — first-project walkthrough; note the `.terraform/` and lock-file layout.
 
@@ -93,7 +93,7 @@
 
 **How to learn it:**
 
-1. **Interactive — HCTut "Change / Destroy infrastructure"** (~45 min) — run a full modify-then-destroy cycle; read the plan output symbols (`+`, `-`, `~`, `-/+`).
+1. **Interactive — HCTut ["Manage infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-manage) + ["Destroy infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-destroy)** (~45 min) — run a full modify-then-destroy cycle; read the plan output symbols (`+`, `-`, `~`, `-/+`).
 2. **Video — Krausen core-workflow section** (~40 min) — walks the plan/apply lifecycle with cert framing.
 3. **Reference — [HCDocs CLI commands](https://developer.hashicorp.com/terraform/cli/commands)** (~20 min) — bookmark [`plan`](https://developer.hashicorp.com/terraform/cli/commands/plan) / [`apply`](https://developer.hashicorp.com/terraform/cli/commands/apply) flags (`-out`, `-target`, `-auto-approve`).
 
@@ -125,7 +125,7 @@
 
 **How to learn it:**
 
-1. **Video — FCC providers/resources section** (~45 min) — see how a provider's resources map to real cloud APIs.
+1. **Video — [TF2026 "Lifecycle & Providers" → "Resources"](https://youtu.be/l5qtFBsxZdk?t=2595)** (43:15, ~45 min) — see how a provider's resources map to real cloud APIs.
 2. **Reference — [a real provider's docs (e.g. AWS provider)](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)** (~ongoing) — learn to navigate the registry docs for arguments/attributes. ([Resources](https://developer.hashicorp.com/terraform/language/resources), [dependencies](https://developer.hashicorp.com/terraform/language/resources/behavior))
 3. **Book chapter — TID Ch 3–4** (~1 hr) — implicit vs explicit dependencies and how the graph is derived.
 
@@ -141,7 +141,7 @@
 
 **How to learn it:**
 
-1. **Interactive — HCTut "Define Input Variables" + "Query Data with Outputs"** (~1 hr) — do both labs; try all variable-passing methods.
+1. **Interactive — HCTut ["Manage infrastructure" (input variables + outputs)](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-manage)** (~1 hr) — work the variables + outputs sections; try all variable-passing methods.
 2. **Reference — [HCDocs "Input Variables"](https://developer.hashicorp.com/terraform/language/values/variables) precedence table** (~20 min) — memorize the override order (CLI > env > `.tfvars` > default). ([outputs](https://developer.hashicorp.com/terraform/language/values/outputs), [locals](https://developer.hashicorp.com/terraform/language/values/locals))
 3. **Book chapter — TID Ch 3** (variables/outputs/locals) (~45 min) — when to use `locals` vs `variable`.
 
@@ -221,7 +221,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Video — FCC count/for_each section** (~40 min) — see why `for_each` is safer than `count` for keyed resources.
+1. **Video — [TF2026 "Loops & Dynamic Infrastructure"](https://youtu.be/l5qtFBsxZdk?t=11191)** (3:06:31, ~40 min) — see why `for_each` is safer than `count` for keyed resources.
 2. **Reference — [HCDocs "count"](https://developer.hashicorp.com/terraform/language/meta-arguments/count) + ["for_each"](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) + [depends_on](https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on)** (~30 min) — the addressing rules and when each is legal.
 3. **Book chapter — TID Ch 5** (~1 hr) — the re-creation pitfall and how `for_each` keys avoid it.
 
@@ -270,7 +270,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Interactive — HCTut "Use modules from the registry"** (~45 min) — pull a registry module (e.g. AWS VPC) and wire it up.
+1. **Interactive — HCTut ["Use registry modules in configuration"](https://developer.hashicorp.com/terraform/tutorials/modules/module-use)** (~45 min) — pull a registry module (e.g. AWS VPC) and wire it up.
 2. **Reference — [HCDocs "Module Sources"](https://developer.hashicorp.com/terraform/language/modules/sources) + [version constraint syntax](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)** (~30 min) — `~>`, git refs, local paths.
 3. **Book chapter — TUR Ch 4** (~1.5 hrs) — the classic module treatment; still the best explanation of inputs/outputs/composition.
 
@@ -302,7 +302,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Interactive — HCTut "Store Remote State"** (~1 hr) — migrate a local state to an S3 (or HCP) backend and observe locking.
+1. **Interactive — HCTut ["Migrate state from S3 to HCP Terraform"](https://developer.hashicorp.com/terraform/tutorials/cloud/migrate-remote-s3-backend-hcp-terraform)** (~1 hr) — migrate a local state to an S3 (or HCP) backend and observe locking.
 2. **Reference — [HCDocs "Backends"](https://developer.hashicorp.com/terraform/language/backend) + ["State Locking"](https://developer.hashicorp.com/terraform/language/state/locking) + [terraform_remote_state](https://developer.hashicorp.com/terraform/language/state/remote-state-data)** (~40 min) — backend config, partial config, and lock behavior.
 3. **Book chapter — TUR Ch 3** (~1.5 hrs) — the canonical remote-state + isolation discussion.
 
@@ -318,7 +318,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Interactive — HCTut "Import" + "Manage resource drift"** (~1.5 hrs) — import a manually-created resource and reconcile a deliberate drift.
+1. **Interactive — HCTut ["Import"](https://developer.hashicorp.com/terraform/tutorials/state/state-import) + ["Manage resource drift"](https://developer.hashicorp.com/terraform/tutorials/state/resource-drift)** (~1.5 hrs) — import a manually-created resource and reconcile a deliberate drift.
 2. **Reference — HCDocs [import block](https://developer.hashicorp.com/terraform/language/import), [moved](https://developer.hashicorp.com/terraform/language/moved), [removed](https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources), [`state` subcommands](https://developer.hashicorp.com/terraform/cli/commands/state)** (~45 min) — prefer config-driven `import`/`moved` over CLI surgery.
 3. **Book chapter — TID Ch 6** (state operations) (~1 hr) — safe patterns and recovery.
 
@@ -384,7 +384,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Interactive — HCTut "Write Terraform tests"** (~1.5 hrs) — write unit + integration `.tftest.hcl` for a module.
+1. **Interactive — HCTut ["Write Terraform tests"](https://developer.hashicorp.com/terraform/tutorials/configuration-language/test)** (~1.5 hrs) — write unit + integration `.tftest.hcl` for a module.
 2. **Reference — [HCDocs "Tests"](https://developer.hashicorp.com/terraform/language/tests), [Custom Conditions](https://developer.hashicorp.com/terraform/language/expressions/custom-conditions), [Checks](https://developer.hashicorp.com/terraform/language/checks)** (~45 min) — the difference between validation, pre/postconditions, and checks.
 3. **Book chapter — TUR Ch 9** (~2 hrs) — testing strategy (unit/integration/e2e) and Terratest for deeper Go-based testing.
    > 📌 `terraform test` post-dates TUR's main testing chapter — use HCDocs for the native framework, TUR for the strategy.
@@ -417,7 +417,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Interactive — HCTut "HCP Terraform get started" track** (~1.5 hrs) — connect a VCS repo, run a remote plan/apply, use remote state.
+1. **Interactive — HCTut ["HCP Terraform get started" track](https://developer.hashicorp.com/terraform/tutorials/cloud-get-started)** (~1.5 hrs) — connect a VCS repo, run a remote plan/apply, use remote state.
 2. **Reference — [HCDocs "HCP Terraform"](https://developer.hashicorp.com/terraform/cloud-docs) [workspaces](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) + [run workflow](https://developer.hashicorp.com/terraform/cloud-docs/run/remote-operations)** (~40 min) — workspace settings, variable sets, and the run lifecycle.
 3. **Book chapter — TID Ch on HCP / TUR Ch 10** (~1 hr) — where managed platform fits vs self-hosted CI.
    > 📌 HCP free tier caps at **500 managed resources** (legacy free plan ended 2026-03-31).
@@ -434,8 +434,8 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Video — FCC / HashiCorp Sentinel intro** (~40 min) — what policy-as-code enforces and where it runs in the flow.
-2. **Interactive — HCTut Sentinel / OPA policy lab** (~1.5 hrs) — write a policy that blocks a plan violating a tagging rule.
+1. **Video — [HashiCorp "Introduction to Sentinel, Policy as Code Framework"](https://youtu.be/Vy8s7AAvU6g)** (~40 min) — what policy-as-code enforces and where it runs in the flow.
+2. **Interactive — HCTut [Sentinel](https://developer.hashicorp.com/terraform/tutorials/policy/sentinel-policy) / [OPA](https://developer.hashicorp.com/terraform/tutorials/cloud/validation-enforcement) policy lab** (~1.5 hrs) — write a policy that blocks a plan violating a tagging rule.
 3. **Reference — [HCDocs policy enforcement / Sentinel](https://developer.hashicorp.com/terraform/cloud-docs/policy-enforcement) + [OPA Conftest docs](https://www.conftest.dev/)** (~40 min) — Sentinel for HCP, OPA/Conftest for provider-agnostic CI.
 
 **Milestone:** You can write a policy that fails any plan creating an untagged or oversized resource, and wire it into a run.
@@ -451,7 +451,7 @@ You are ready to advance when you can:
 **How to learn it:**
 
 1. **Reference — [HCDocs "Sensitive data in state"](https://developer.hashicorp.com/terraform/language/state/sensitive-data) + ["Dynamic Provider Credentials"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials)** (~40 min) — why `sensitive` isn't encryption and how OIDC removes static keys.
-2. **Interactive — HCTut dynamic credentials lab** (~1.5 hrs) — configure OIDC so a pipeline assumes a role with no stored secret.
+2. **Interactive — HCTut [dynamic credentials lab](https://developer.hashicorp.com/terraform/tutorials/cloud/dynamic-credentials)** (~1.5 hrs) — configure OIDC so a pipeline assumes a role with no stored secret.
 3. **Book chapter — TID secrets section / TUR secrets management** (~1 hr) — Vault integration and secret-injection patterns.
 
 **Milestone:** You can run a pipeline that authenticates to a cloud via short-lived OIDC credentials (no static keys) and mark derived values `sensitive`.
@@ -516,7 +516,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Interactive — HCTut "Implement a provider with the Plugin Framework"** (~4 hrs) — build a working provider against a sample API end to end.
+1. **Interactive — HCTut ["Implement a provider with the Plugin Framework"](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework/providers-plugin-framework-provider)** (~4 hrs) — build a working provider against a sample API end to end.
 2. **Reference — [TPF docs](https://developer.hashicorp.com/terraform/plugin/framework)** (~ongoing) — schema, resource lifecycle, plan modification, acceptance testing.
 3. **Book chapter — TUR "extending Terraform" / provider dev material** (~2 hrs) — the mental model of the plugin protocol.
 
@@ -533,7 +533,7 @@ You are ready to advance when you can:
 **How to learn it:**
 
 1. **Reference — [HCDocs "Stacks" overview](https://developer.hashicorp.com/terraform/language/stacks) + configuration** (~1 hr) — components, deployments, and how Stacks differ from modules/workspaces.
-2. **Interactive — HCTut Stacks getting-started** (~2 hrs) — define a stack with multiple deployments and run it in HCP Terraform.
+2. **Interactive — HCTut [Stacks: "Deploy a Stack with HCP Terraform"](https://developer.hashicorp.com/terraform/tutorials/cloud/stacks-deploy)** (~2 hrs) — define a stack with multiple deployments and run it in HCP Terraform.
 3. **Video — a current Stacks walkthrough** (~40 min) — see the deployment fan-out in practice.
    > 📌 Stacks is newer than both books — rely on HCDocs and verify feature availability (HCP vs CLI) as it evolves.
 
