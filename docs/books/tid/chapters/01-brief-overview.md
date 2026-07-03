@@ -6,7 +6,7 @@
 >
 > 📌 **Notes adapted where version-bound.** The book was written in 2025 against Terraform pre-1.6 BSL cutover context. Current stable is Terraform CLI **1.14.7** (2026-03-11, BSL 1.1) and OpenTofu **1.12.2** (2026-05, MPL 2.0) — see [[version-facts]] for the full divergence list (state encryption, provider `for_each`, early variable evaluation, `-exclude`, dynamic `prevent_destroy`). The chapter's conceptual content (IaC, declarative model, init/plan/apply) is unaffected by version drift.
 
-> 🔗 **See also:** [IaC fundamentals](../../topics/iac-fundamentals.md), [Core workflow](../../topics/core-workflow.md), and [Providers](../../topics/providers.md), each synthesizing this chapter with [[terraform-intro]].
+> 🔗 **See also:** [IaC fundamentals](../../../topics/iac-fundamentals.md), [Core workflow](../../../topics/core-workflow.md), and [Providers](../../../topics/providers.md), each synthesizing this chapter with [[terraform-intro]].
 
 ---
 

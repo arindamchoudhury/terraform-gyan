@@ -3,13 +3,17 @@ site_name = "Terraform Learning Notes"
 site_description = "Personal notes and book from learning Terraform (and OpenTofu)."
 site_author = "arindam@live.com"
 extra_css = ["stylesheets/extra.css"]
-extra_javascript = ["javascripts/sidebar-toggle.js"]
+extra_javascript = [
+    "javascripts/sidebar-toggle.js",
+    {path = "https://unpkg.com/mermaid@10/dist/mermaid.min.js", defer = true},
+]
 
 nav = [
     { "Home" = "index.md" },
     { "Learning Path" = "learning-path.md" },
     { "Book" = [
         { "Contents" = "book/index.md" },
+        { "1. Infrastructure as Code & where Terraform fits" = "book/ch01-iac-fundamentals.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },

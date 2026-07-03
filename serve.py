@@ -48,6 +48,19 @@ _zc.DEFAULT_MARKDOWN_EXTENSIONS["wikilinks"] = {
     "end_url": "/",
 }
 
+# Render ```mermaid fences as <pre class="mermaid"> blocks so mermaid.js
+# (loaded via extra_javascript) can pick them up and draw diagrams.
+import pymdownx.superfences as _superfences
+_zc.DEFAULT_MARKDOWN_EXTENSIONS["pymdownx.superfences"] = {
+    "custom_fences": [
+        {
+            "name": "mermaid",
+            "class": "mermaid",
+            "format": _superfences.fence_code_format,
+        }
+    ]
+}
+
 from zensical import build as _zensical_build
 
 _CONFIG_FILE = os.path.abspath("zensical.toml")

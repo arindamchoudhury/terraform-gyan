@@ -1,6 +1,6 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Last updated:** 2026-07-03 — added [[terraform-use-cases]] note and TID Ch1 reading notes ([[01-brief-overview]]) as B1 references, plus three cross-source topic pages (IaC fundamentals, Core workflow, Providers); initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, current Terraform 1.14 / OpenTofu 1.12, and the top books.
+> **Last updated:** 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, current Terraform 1.14 / OpenTofu 1.12, and the top books.
 > **Current stable versions:** Terraform CLI **1.14.7** (2026-03-11, BSL 1.1) · OpenTofu **1.12.2** (2026-05, MPL 2.0)
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
@@ -53,7 +53,7 @@
 
 ---
 
-### ⬜ B1 — Infrastructure as Code & where Terraform fits
+### ✅ B1 — Infrastructure as Code & where Terraform fits
 
 **What it is:** The idea of provisioning infrastructure from declarative, version-controlled files, and how Terraform (declarative, cloud-agnostic, provider-based) compares to OpenTofu, Pulumi, CloudFormation, and Ansible.
 
@@ -626,7 +626,7 @@ Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner — start with **B1 (Infrastructure as Code & where Terraform fits)**. No chapters written yet.
+**You are currently here:** Beginner — B1 done (Ch 1 written). Next up: **B2 (Install, providers & your first project)**.
 
 ---
 
