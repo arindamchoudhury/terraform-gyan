@@ -52,4 +52,4 @@ Define and manage infrastructure in a consistent, repeatable way with versionabl
 Questions in HashiCorp Discuss; contributions via the contributing guide; bugs/features via GitHub issues.
 
 ---
-Related: informs the **B1 — Infrastructure as Code** milestone in the [learning path](../../learning-path.md); the Write/Plan/Apply loop underpins the core-workflow topic; state, providers, and modules each get their own later topics.
+Related: informs the **B1 — Infrastructure as Code** milestone in the [learning path](../../learning-path.md). See topic pages [IaC fundamentals](../../topics/iac-fundamentals.md), [Core workflow](../../topics/core-workflow.md), and [Providers](../../topics/providers.md), each synthesizing this page with [[01-brief-overview]] (TID Ch1). State and modules each get their own later topics once a second source covers them in depth.

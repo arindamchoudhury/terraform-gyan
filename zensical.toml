@@ -22,6 +22,23 @@ nav = [
             { "2. Terraform Use Cases" = "sources/terraform-docs/terraform-use-cases.md" },
         ]},
     ]},
+    { "Books" = [
+        { "Terraform in Depth (Hafner, 2025)" = [
+            { "Reading log" = "books/tid/index.md" },
+            { "1. A brief overview of Terraform" = "books/tid/chapters/01-brief-overview.md" },
+            { "2. Terraform HCL components" = "books/tid/chapters/02-hcl-components.md" },
+            { "3. Terraform variables and modules" = "books/tid/chapters/03-variables-modules.md" },
+            { "4. Expressions and iterations" = "books/tid/chapters/04-expressions-iterations.md" },
+            { "5. The Terraform plan" = "books/tid/chapters/05-terraform-plan.md" },
+            { "6. State management" = "books/tid/chapters/06-state-management.md" },
+            { "7. Code quality and continuous integration" = "books/tid/chapters/07-code-quality-ci.md" },
+            { "8. Continuous delivery and deployment" = "books/tid/chapters/08-cd-deployment.md" },
+            { "9. Testing and refactoring" = "books/tid/chapters/09-testing-refactoring.md" },
+            { "10. Advanced Terraform topics" = "books/tid/chapters/10-advanced-topics.md" },
+            { "11. Alternative interfaces" = "books/tid/chapters/11-alternative-interfaces.md" },
+            { "12. Terraform providers" = "books/tid/chapters/12-terraform-providers.md" },
+        ]},
+    ]},
     { "Reference" = [
         { "Glossary" = "reference/glossary.md" },
         { "Resources" = "reference/resources.md" },

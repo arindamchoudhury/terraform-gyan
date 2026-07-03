@@ -6,4 +6,4 @@ Start with the **[Learning Path](learning-path.md)**: a topic-by-topic route fro
 
 As each topic is finished, a synthesized chapter lands in the **[Book](book/index.md)**.
 
-Notes captured verbatim from source pages live under **[Notes](sources/index.md)**; cross-source synthesis lands in **[Topics](topics/index.md)**.
+Notes captured verbatim from source pages live under **[Notes](sources/index.md)**; chapter-by-chapter reading notes on full books live under **[Books](books/tid/index.md)**; cross-source synthesis from both lands in **[Topics](topics/index.md)**.

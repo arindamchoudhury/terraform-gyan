@@ -6,6 +6,7 @@ __pycache__/
 
 # Working files for PDF note-taking (raw extracted book text — don't publish/commit)
 docs/sources/*/pdf-cache/
+docs/books/*/pdf-cache/
 
 # Cached web fetches (fetch_page.py output — research scratch, don't commit)
 cache/
