@@ -13,3 +13,6 @@ Terms are appended here as book chapters are written.
 | Resource graph | Dependency graph Terraform builds to create/modify non-dependent resources in parallel. | [[terraform-intro]] |
 | Module | Reusable, configurable collection of infrastructure; sourced from the Registry or authored locally. | [[terraform-intro]] |
 | Immutable infrastructure | Approach of replacing rather than mutating resources, reducing upgrade/modification complexity. | [[terraform-intro]] |
+| Sentinel | HashiCorp's policy-as-code framework; enforces compliance/governance policies before Terraform applies changes. Available in Terraform Enterprise and HCP Terraform. | [[terraform-use-cases]] |
+| HCP Terraform Operator | Kubernetes Operator that manages cloud and on-prem infrastructure through a Kubernetes CRD plus HCP Terraform. | [[terraform-use-cases]] |
+| Consul-Terraform-Sync (NIA) | Network Infrastructure Automation tool; auto-generates Terraform config to reconfigure an SDN when a service registers with Consul. | [[terraform-use-cases]] |

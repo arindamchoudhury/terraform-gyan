@@ -1,6 +1,6 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Last updated:** 2026-07-02 — initial path built from Terraform Associate 004 + Authoring/Operations Pro exam objectives, current Terraform 1.14 / OpenTofu 1.12, and the top books.
+> **Last updated:** 2026-07-03 — added [[terraform-use-cases]] note (Sentinel, HCP Terraform Operator, Consul-Terraform-Sync/NIA) as B1 reference; initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, current Terraform 1.14 / OpenTofu 1.12, and the top books.
 > **Current stable versions:** Terraform CLI **1.14.7** (2026-03-11, BSL 1.1) · OpenTofu **1.12.2** (2026-05, MPL 2.0)
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
@@ -63,7 +63,7 @@
 
 1. **Video — [TF2026 "Core Terraform Concepts"](https://youtu.be/l5qtFBsxZdk)** (00:00, ~40 min) — watch the "what is IaC / why Terraform" opening; build the mental picture before touching syntax.
 2. **Book chapter — TID Ch 1** (~1 hr) — read the IaC framing and the Terraform-vs-OpenTofu positioning (this book covers both).
-3. **Reference — [HCDocs "Intro / Use Cases"](https://developer.hashicorp.com/terraform/intro)** (~20 min) — skim the official framing; note the declarative vs imperative distinction. (Captured notes: [[terraform-intro]].)
+3. **Reference — [HCDocs "Intro / Use Cases"](https://developer.hashicorp.com/terraform/intro)** (~20 min) — skim the official framing; note the declarative vs imperative distinction. (Captured notes: [[terraform-intro]], [[terraform-use-cases]].)
 
 **Milestone:** You can explain in two sentences why Terraform is declarative and how it differs from Ansible and from CloudFormation.
 

@@ -10,3 +10,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Page | Added | File |
 |---|---|---|
 | What is Terraform? (Intro / Overview) | 2026-07-02 | [terraform-intro](terraform-intro.md) |
+| Terraform Use Cases | 2026-07-03 | [terraform-use-cases](terraform-use-cases.md) |
