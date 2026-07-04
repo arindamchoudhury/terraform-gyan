@@ -1,6 +1,6 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Last updated:** 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.
+> **Last updated:** 2026-07-04 — **Feature-coverage pass** for Terraform 1.15 / OpenTofu 1.12 (see [[tf115-ot112-features]]): folded in dynamic module sources + `const` (I4), variable/output deprecation (I5), output `type` (B6), `convert()` (B7), test-double functions (A2), OpenTofu `destroy = false` (I7), `-json-into` (A3), and expanded the E3 divergence list to 7 items with the "Terraform 1.15 closed some gaps" note. · 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.
 > **Current stable versions:** Terraform CLI **1.15.7** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.3** (1.12.0 released 2026-05-14, MPL 2.0)
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
@@ -145,6 +145,8 @@
 2. **Reference — [HCDocs "Input Variables"](https://developer.hashicorp.com/terraform/language/values/variables) precedence table** (~20 min) — memorize the override order (CLI > env > `.tfvars` > default). ([outputs](https://developer.hashicorp.com/terraform/language/values/outputs), [locals](https://developer.hashicorp.com/terraform/language/values/locals))
 3. **Book chapter — TID Ch 3** (variables/outputs/locals) (~45 min) — when to use `locals` vs `variable`.
 
+> 📌 Terraform **1.15** added a `type` attribute to `output` blocks — outputs can now carry the same type constraints (and documentation value) variables always have. Prefer typing your module outputs. (See [[tf115-ot112-features]].)
+
 **Milestone:** You can parameterize your project so the same config deploys to two environments by swapping only a `.tfvars` file.
 
 ---
@@ -160,6 +162,8 @@
 1. **Interactive — `terraform console`** (~1 hr) — open the REPL and experiment with `for`, `merge`, `try`, string templates against live values.
 2. **Reference — [HCDocs "Functions"](https://developer.hashicorp.com/terraform/language/functions) + ["Expressions"](https://developer.hashicorp.com/terraform/language/expressions)** (~40 min) — skim the function categories; bookmark for lookup.
 3. **Book chapter — TID Ch 5** (~1 hr) — expression patterns used in real configs.
+
+> 📌 Terraform **1.15** added the `convert(value, type)` function for precise inline type conversion — cleaner than the old `tolist`/`tomap`/`tset` juggling in tricky spots. (See [[tf115-ot112-features]].)
 
 **Milestone:** You can transform a list of maps into a keyed map with a `for` expression and use it to drive resource creation.
 
@@ -274,6 +278,8 @@ You are ready to advance when you can:
 2. **Reference — [HCDocs "Module Sources"](https://developer.hashicorp.com/terraform/language/modules/sources) + [version constraint syntax](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)** (~30 min) — `~>`, git refs, local paths.
 3. **Book chapter — TUR Ch 4** (~1.5 hrs) — the classic module treatment; still the best explanation of inputs/outputs/composition.
 
+> 📌 Terraform **1.15** added **dynamic module sources**: `source` and `version` can now be variables, not just string literals — so one module block can point different environments at different registries/pins instead of duplicating the block. Any variable feeding a module source must be marked `const = true` (module sources resolve at `terraform init`). OpenTofu offered this earlier; this is one of the 1.15 gap-closers. Note the exam (004, Terraform 1.12) still assumes literal sources. (See [[tf115-ot112-features]].)
+
 **Milestone:** You can consume a versioned registry module, pass it inputs, and reference its outputs in your own resources.
 
 ---
@@ -289,6 +295,8 @@ You are ready to advance when you can:
 1. **Book chapter — TUR Ch 4 + Ch 8** (~2.5 hrs) — module design and "production-grade" module conventions.
 2. **Reference — [HCDocs "Module Development"](https://developer.hashicorp.com/terraform/language/modules/develop) standards** (~40 min) — the standard module structure and publishing rules.
 3. **Interactive — refactor** (~1.5 hrs) — extract your Beginner project into a reusable module with a clean input/output surface.
+
+> 📌 Terraform **1.15** added a **deprecation mechanism** for a module's public API: put `deprecated = "message"` on a `variable` or `output` and callers get a warning at `terraform validate`. This is how you evolve a published module's interface without breaking consumers overnight — deprecate, warn, then remove a version later. Pairs with the refactoring workflow in A8. (See [[tf115-ot112-features]].)
 
 **Milestone:** You can package infrastructure into a module with validated inputs, documented outputs, and a README, and consume it from two callers.
 
@@ -321,6 +329,8 @@ You are ready to advance when you can:
 1. **Interactive — HCTut ["Import"](https://developer.hashicorp.com/terraform/tutorials/state/state-import) + ["Manage resource drift"](https://developer.hashicorp.com/terraform/tutorials/state/resource-drift)** (~1.5 hrs) — import a manually-created resource and reconcile a deliberate drift.
 2. **Reference — HCDocs [import block](https://developer.hashicorp.com/terraform/language/import), [moved](https://developer.hashicorp.com/terraform/language/moved), [removed](https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources), [`state` subcommands](https://developer.hashicorp.com/terraform/cli/commands/state)** (~45 min) — prefer config-driven `import`/`moved` over CLI surgery.
 3. **Book chapter — TID Ch 6** (state operations) (~1 hr) — safe patterns and recovery.
+
+> 📌 To drop a resource from state while leaving the real object alone, Terraform's config-driven way is the `removed` block (preferred over `terraform state rm`). **OpenTofu 1.12** adds a lifecycle alternative — `destroy = false` on the resource — that does the same "forget, don't destroy" in the resource block itself. OpenTofu-only; Terraform has no lifecycle equivalent. (See [[tf115-ot112-features]], [[ot-dynamic-prevent-destroy]] for the OpenTofu-divergence context.)
 
 **Milestone:** You can adopt an unmanaged cloud resource via an `import` block and rename a resource with a `moved` block — both with an empty plan afterward.
 
@@ -390,6 +400,7 @@ You are ready to advance when you can:
 4. **Book chapter — TUR Ch 9** (~2 hrs) — testing strategy (unit/integration/e2e) and Terratest for deeper Go-based testing.
    > 📌 `terraform test` post-dates TUR's main testing chapter — use HCDocs for the native framework, TUR for the strategy.
    > 📌 Balance the two: run **native `terraform test` on every commit** (fast, no Go, no real infra); reserve **Terratest for integration pipelines / pre-release** (slower, deploys real infra, needs Go 1.26+ and cloud creds). Terratest v2 is in development; v1 is in security-only maintenance.
+   > 📌 Terraform **1.15** lets you call functions inside `mock_data` and `override_resource` blocks, so test doubles can generate realistic values (GUIDs, resource IDs) instead of hard-coded constants. (See [[tf115-ot112-features]].)
 
 **Milestone:** You can write a `.tftest.hcl` suite that provisions a module, asserts on its outputs, and tears down — plus a `precondition` that fails a bad plan early. Stretch: a Terratest case that deploys the module and verifies real behavior via the resource's own API.
 
@@ -406,6 +417,8 @@ You are ready to advance when you can:
 1. **Reference — [HCDocs "Automate Terraform" tutorial](https://developer.hashicorp.com/terraform/tutorials/automation/automate-terraform)** (~40 min) — the non-interactive flag set and the plan-artifact pattern.
 2. **Interactive — build a pipeline** (~2 hrs) — a GitHub Actions (or GitLab CI) workflow that runs `fmt`/`validate`/`plan` on PR and `apply` on merge.
 3. **Book chapter — TUR Ch 10** (~1.5 hrs) — production CI/CD patterns and approval gates.
+
+> 📌 For machine-readable plan/apply output, `-json` replaces stdout entirely (you lose the human view). **OpenTofu 1.12**'s `-json-into=FILENAME` writes the JSON to a file while keeping the normal UI on stdout — so CI can parse the JSON *and* a human can read the log. OpenTofu-only. (See [[tf115-ot112-features]].)
 
 **Milestone:** You can build a pipeline that posts a plan on pull requests and applies a saved plan on merge, with remote state and locking.
 
@@ -545,7 +558,7 @@ You are ready to advance when you can:
 
 ### ⬜ E3 — OpenTofu deep dive
 
-**What it is:** OpenTofu's divergence from Terraform — **state encryption**, provider/backend `for_each`, early variable evaluation, the `-exclude` flag, dynamic `prevent_destroy` — plus migration between the two.
+**What it is:** OpenTofu's divergence from Terraform — **state encryption**, provider/backend `for_each`, early variable evaluation, the `-exclude` flag, dynamic `prevent_destroy`, `destroy = false`, and `-json-into` — plus which gaps Terraform 1.15 closed, and migration between the two.
 
 **Why you need it:** OpenTofu is a genuine fork with features Terraform's open-source CLI lacks; choosing between them and migrating is a real strategic/technical decision.
 
@@ -558,9 +571,13 @@ You are ready to advance when you can:
     - **Early variable evaluation** (OpenTofu 1.8) — [OTDocs "Backend Configuration" → Variables and Locals](https://opentofu.org/docs/language/settings/backends/configuration/); reference `var`/`local` in `backend`/`provider` blocks, resolved at `tofu init`. Kills backend partial-config boilerplate. (Notes: [[ot-early-eval-backend]].)
     - **`-exclude` flag** (OpenTofu 1.9) — [OTDocs "Command: plan" → Resource Targeting](https://opentofu.org/docs/cli/commands/plan/); inverse of `-target`, plus `-exclude-file`; mutually exclusive with `-target`. Terraform has no equivalent. (Notes: [[ot-exclude-flag]].)
     - **Dynamic `prevent_destroy`** (OpenTofu 1.12) — [OTDocs lifecycle](https://opentofu.org/docs/language/meta-arguments/lifecycle/) + [1.12 release](https://opentofu.org/blog/opentofu-1-12-0/); bind it to a variable (Terraform requires a literal). See the I5 callout. (Notes: [[ot-dynamic-prevent-destroy]].)
+    - **`destroy = false` lifecycle** (OpenTofu 1.12) — [1.12 release](https://opentofu.org/blog/opentofu-1-12-0/); remove an object from state without destroying the remote object, as a lifecycle arg rather than Terraform's separate `removed` block. See the I7 callout. (See [[tf115-ot112-features]].)
+    - **`-json-into=FILENAME`** (OpenTofu 1.12) — [1.12 release](https://opentofu.org/blog/opentofu-1-12-0/); write the JSON stream to a file while keeping the human UI on stdout (vs `-json`, which replaces stdout). Handy for CI that wants both. See the A3 callout. (See [[tf115-ot112-features]].)
 4. **Book — TID (covers both)** (~1 hr) — re-read the sections contrasting the two tools with fresh eyes.
 
-**Milestone:** You can migrate a project from Terraform to OpenTofu, enable state encryption, and explain the four other OpenTofu-only features — provider `for_each`, early variable evaluation in backend config, the `-exclude` flag, and dynamic `prevent_destroy` — including *why* a resource's `for_each` must be a subset of its provider's.
+> 📌 The gap runs both ways now. **Terraform 1.15** (2026-04-29) closed several long-standing OpenTofu-only gaps — dynamic module sources, variable/output deprecation, inline `convert`, output type constraints — so "OpenTofu has features Terraform lacks" is narrower than it was. What remains OpenTofu-only: state encryption, provider `for_each`, early variable evaluation, `-exclude`, dynamic `prevent_destroy`, `destroy = false`, and `-json-into`. (See [[tf115-ot112-features]], [[version-facts]].)
+
+**Milestone:** You can migrate a project from Terraform to OpenTofu, enable state encryption, and explain the OpenTofu-only features — provider `for_each`, early variable evaluation in backend config, the `-exclude` flag, dynamic `prevent_destroy`, `destroy = false`, and `-json-into` — including *why* a resource's `for_each` must be a subset of its provider's, and which gaps Terraform 1.15 has since closed.
 
 ---
 
