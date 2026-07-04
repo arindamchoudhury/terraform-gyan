@@ -51,7 +51,7 @@ Terraform's other core pieces, briefly — each gets its own chapter later in th
 
 This is the distinction the whole IaC landscape hangs on, so it's worth being precise.
 
-**Imperative** tools describe *how* to reach an outcome — a sequence of steps: "check if this exists; if not, create it; then configure it." Bash scripts, most general-purpose languages, and Ansible's execution model (even though its playbooks are written in YAML) all work this way — top to bottom, step by step.
+**Imperative** tools describe *how* to reach an outcome — a sequence of steps: "check if this exists; if not, create it; then configure it." Bash scripts and most general-purpose languages work this way — top to bottom, step by step. **Ansible** is the imperative tool most often compared to Terraform: its playbooks (written in YAML) are explicit step-by-step instructions, executed over SSH against machines that already exist. Ansible holds no persistent state — it re-runs its steps each time and relies on the playbook author to make each step idempotent, rather than diffing against a stored record the way Terraform does. (Being agentless isn't the distinguishing factor here — Terraform is agentless too, just over provider APIs instead of SSH.) Ansible and Terraform are commonly paired rather than treated as strict alternatives: Terraform provisions the infrastructure, Ansible configures what's now running on it.
 
 **Declarative** tools describe *what* the outcome should be — the desired end state — and leave the engine to figure out the steps. Terraform doesn't say "create a machine, then attach a disk, then assign an IP." It says "here is the machine I want, with this disk and this IP," and Terraform's planner computes the actions needed to get there, given whatever currently exists.
 
@@ -61,16 +61,16 @@ One useful way to hold this in your head: declarative languages lean on **nouns 
 |---|---|---|---|
 | **Terraform** | Declarative | Multi-vendor (via providers) | Custom DSL (HCL) |
 | **OpenTofu** | Declarative | Multi-vendor (via providers) | HCL (Terraform-compatible + extensions) |
-| **Ansible** | Imperative (procedural playbooks) | Multi-vendor, agentless | YAML playbooks |
+| **Ansible** | Imperative (step-by-step playbooks, no stored state) | Multi-vendor, agentless (SSH/API) | YAML playbooks |
 | **AWS CloudFormation** | Declarative | AWS-only | YAML/JSON templates |
-| **Pulumi** | Declarative (imperative-style code) | Multi-vendor (via providers) | General-purpose (Python, TS, Go, ...) |
+| **Pulumi** | Declarative outcome, imperative authoring style (loops, conditionals, classes) | Multi-vendor (via providers) | General-purpose (Python, TypeScript, Go, Java, C#) |
 
 Two consequences of being declarative fall out of the DAG Terraform builds from your config:
 
 - **Dependencies are inferred, not declared.** If your application's config reads a value from a database resource, Terraform sees that reference and knows the database has to exist first — no explicit ordering required. This is a directed acyclic graph (**DAG**): a dependency graph of actions with no cycles.
 - **Circular dependencies can't be resolved automatically.** If resource A needs resource B, B needs C, and C needs A, there's no valid order — that's the one hard limitation of the declarative model, and it needs a manual workaround (splitting resources, restructuring the reference) rather than a Terraform feature to fix it.
 
-Ansible is genuinely different in kind, not just in style: it's imperative and agentless, designed to configure things that already exist (packages, services, config files on a running machine) rather than to provision infrastructure and track its lifecycle over time via a state file. CloudFormation is declarative like Terraform, but locked to one vendor — you'd need a second, unrelated tool for a second cloud. That's the two-sentence answer the milestone for this chapter is asking for: *Terraform is declarative because you write the desired end state and let the engine compute the steps, unlike Ansible's step-by-step playbooks. Unlike CloudFormation, Terraform's declarative model isn't tied to one vendor — the same language and workflow apply across every provider in the registry.*
+CloudFormation is declarative like Terraform, but locked to one vendor — you'd need a second, unrelated tool for a second cloud. That's the two-sentence answer the milestone for this chapter is asking for: *Terraform is declarative because you write the desired end state, tracked in a state file, and let the engine compute the steps — unlike Ansible's step-by-step playbooks, which hold no state and re-run their instructions each time. Unlike CloudFormation, Terraform's declarative model isn't tied to one vendor — the same language and workflow apply across every provider in the registry.*
 
 ## The deployment flow, at a glance
 
@@ -120,9 +120,8 @@ Practically, for the rest of this learning path: everything through the Associat
 
 ## Common misconceptions
 
-- **"IaC just means scripting infrastructure."** Scripts are imperative — a sequence of commands. IaC (as Terraform implements it) is declarative: you describe the end state, and a persistent state file lets Terraform detect and reconcile drift on every run. A one-off script has no memory of what it already did; Terraform does.
-- **"More providers = safer defaults."** A large registry means high odds a provider *exists*, not that every provider is HashiCorp-maintained or equally mature. Vendor-maintained providers vary in release cadence and quality just like any third-party library — treat provider choice with the same scrutiny you'd give any dependency.
-- **"OpenTofu is a lesser Terraform."** By 2026 it's the reverse in several respects — OpenTofu is a strict superset of Terraform's open-source feature set, not a stripped-down copy. The gap that remains (mainly Stacks) is deliberately HCP-Terraform-exclusive, not a maturity gap in the open CLI.
+- **"IaC just means scripting infrastructure."** Scripts are imperative — a sequence of commands, with no memory of what they already did. IaC (as Terraform implements it) is declarative: you describe the end state, and a persistent state file lets Terraform detect and reconcile drift on every run, rather than blindly re-running steps like a script (or, for that matter, like Ansible — see the comparison table above).
+- **"OpenTofu is a lesser Terraform."** By 2026 it's the reverse in several respects — OpenTofu is a strict superset of Terraform's open-source feature set, not a stripped-down copy (see [[version-facts]]). The gap that remains (mainly Stacks) is deliberately HCP-Terraform-exclusive, not a maturity gap in the open CLI.
 
 ## Summary
 
@@ -149,3 +148,4 @@ Practically, for the rest of this learning path: everything through the Associat
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
 - Topic pages: [IaC fundamentals](../topics/iac-fundamentals.md) · [Core workflow](../topics/core-workflow.md) · [Providers](../topics/providers.md)
 - [Version & Certification Facts](../research-cache/version-facts.md) (IBM/HashiCorp acquisition, provider count, 2026 OpenTofu guidance)
+- [IaC/config-mgmt tool comparison](../research-cache/iac-tool-comparison.md) (Ansible, Pulumi — verified 2026-07-03)
