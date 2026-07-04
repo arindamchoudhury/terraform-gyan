@@ -378,7 +378,7 @@ You are ready to advance when you can:
 
 ### ⬜ A2 — Testing, validation & checks
 
-**What it is:** The `terraform test` framework (`.tftest.hcl`), variable `validation` rules, `precondition`/`postcondition` blocks, and top-level `check` blocks for continuous assertions.
+**What it is:** The native `terraform test` framework (`.tftest.hcl`), variable `validation` rules, `precondition`/`postcondition` blocks, top-level `check` blocks for continuous assertions, and **Terratest** for Go-based integration/e2e testing of real deployed infrastructure.
 
 **Why you need it:** Untested modules break silently; the Pro exam explicitly tests validation and checks, and testing is what makes modules trustworthy.
 
@@ -386,10 +386,12 @@ You are ready to advance when you can:
 
 1. **Interactive — HCTut ["Write Terraform tests"](https://developer.hashicorp.com/terraform/tutorials/configuration-language/test)** (~1.5 hrs) — write unit + integration `.tftest.hcl` for a module.
 2. **Reference — [HCDocs "Tests"](https://developer.hashicorp.com/terraform/language/tests), [Custom Conditions](https://developer.hashicorp.com/terraform/language/expressions/custom-conditions), [Checks](https://developer.hashicorp.com/terraform/language/checks)** (~45 min) — the difference between validation, pre/postconditions, and checks.
-3. **Book chapter — TUR Ch 9** (~2 hrs) — testing strategy (unit/integration/e2e) and Terratest for deeper Go-based testing.
+3. **Reference — [Terratest docs](https://terratest.gruntwork.io/docs/) + [quick start](https://terratest.gruntwork.io/docs/getting-started/quick-start/)** (~1 hr) — the Go library for deploying real infra and asserting on it. Native `terraform test` proves your *code* is right (outputs, plan, variable behavior); Terratest proves the *infrastructure works* by querying each live resource through its own API — catching the case where a provider bug makes a real resource that native tests, which only see provider-reported state, would still pass. Learn native first; reach for Terratest when you need real external-behavior checks. (See [[terraform-testing]].)
+4. **Book chapter — TUR Ch 9** (~2 hrs) — testing strategy (unit/integration/e2e) and Terratest for deeper Go-based testing.
    > 📌 `terraform test` post-dates TUR's main testing chapter — use HCDocs for the native framework, TUR for the strategy.
+   > 📌 Balance the two: run **native `terraform test` on every commit** (fast, no Go, no real infra); reserve **Terratest for integration pipelines / pre-release** (slower, deploys real infra, needs Go 1.26+ and cloud creds). Terratest v2 is in development; v1 is in security-only maintenance.
 
-**Milestone:** You can write a `.tftest.hcl` suite that provisions a module, asserts on its outputs, and tears down — plus a `precondition` that fails a bad plan early.
+**Milestone:** You can write a `.tftest.hcl` suite that provisions a module, asserts on its outputs, and tears down — plus a `precondition` that fails a bad plan early. Stretch: a Terratest case that deploys the module and verifies real behavior via the resource's own API.
 
 ---
 
