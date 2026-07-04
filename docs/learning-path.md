@@ -565,7 +565,8 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Reference — [TG docs (Terragrunt)](https://terragrunt.gruntwork.io/docs/)** (~1.5 hrs) — DRY backends, `dependency` blocks, `run-all`, and where Terragrunt still beats native features.
+1. **Reference — [TG docs (Terragrunt)](https://terragrunt.gruntwork.io/docs/)** (~1.5 hrs) — DRY backends, `dependency` blocks, `run --all`, and where Terragrunt still beats native features. Terragrunt is the open-source route to strong dev/staging/prod isolation (directory-per-env, own backend/state each) — the open counterpart to proprietary HCP Terraform workspaces (see [[workspaces]]).
+   > 📌 Terragrunt **1.0** shipped 2026-03-30 — first release with a backwards-compatibility commitment; `run-all` is now `run --all`. Works over both Terraform and OpenTofu.
 2. **Book chapter — TUR Ch 3 + Ch 5** (~2 hrs) — state isolation and repo-structure tradeoffs at scale.
 3. **Reference — [HashiCorp "Terraform mono-repo vs. multi-repo: the great debate"](https://www.hashicorp.com/en/blog/terraform-mono-repo-vs-multi-repo-the-great-debate)** (~30 min) — monorepo-vs-multirepo decisions in the wild, plus [native monorepo support](https://www.hashicorp.com/en/blog/terraform-adds-native-monorepo-support-stack-component-configurations-and-more).
 
