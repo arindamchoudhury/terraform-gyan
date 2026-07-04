@@ -21,11 +21,13 @@ Both sources describe the same three-ish stage loop: write configuration describ
 
 - Want the conceptual pitch? → HCDocs [[terraform-intro]].
 - Want to see the actual CLI output and understand the refresh/compare/plan subphases? → TID Ch1 §1.4.
+- Want to run the loop for real (init/validate/apply on an EC2 instance)? → [[tf-aws-create]].
 
 ## Sources
 
 - [What is Terraform? (Intro)](../sources/terraform-docs/terraform-intro.md)
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
+- [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on init/validate/apply
 
 ## Open questions
 

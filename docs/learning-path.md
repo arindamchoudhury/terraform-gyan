@@ -77,7 +77,7 @@
 
 **How to learn it:**
 
-1. **Interactive — HCTut ["Install Terraform"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) + ["Create infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create)** (~1 hr) — follow the AWS (or Docker) quick-start end to end in your own account. (Captured notes: [[tf-install-cli]].)
+1. **Interactive — HCTut ["Install Terraform"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) + ["Create infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create)** (~1 hr) — follow the AWS (or Docker) quick-start end to end in your own account. (Captured notes: [[tf-install-cli]], [[tf-aws-create]].)
 2. **Reference — [HCDocs "Provider Requirements"](https://developer.hashicorp.com/terraform/language/providers/requirements)** (~20 min) — understand `required_providers`, source addresses, and version pinning. ([Install](https://developer.hashicorp.com/terraform/install))
 3. **Book chapter — TID Ch 2** (~1 hr) — first-project walkthrough; note the `.terraform/` and lock-file layout.
 
@@ -93,7 +93,7 @@
 
 **How to learn it:**
 
-1. **Interactive — HCTut ["Manage infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-manage) + ["Destroy infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-destroy)** (~45 min) — run a full modify-then-destroy cycle; read the plan output symbols (`+`, `-`, `~`, `-/+`).
+1. **Interactive — HCTut ["Manage infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-manage) + ["Destroy infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-destroy)** (~45 min) — run a full modify-then-destroy cycle; read the plan output symbols (`+`, `-`, `~`, `-/+`). (The init/validate/apply half of this loop is captured in [[tf-aws-create]].)
 2. **Video — [Krausen "Terraform Associate — Hands-On Labs" (core-workflow section)](https://krausen.io/course/hashicorp-certified-terraform-associate-hands-on-labs/)** (~40 min) — walks the plan/apply lifecycle with cert framing.
 3. **Reference — [HCDocs CLI commands](https://developer.hashicorp.com/terraform/cli/commands)** (~20 min) — bookmark [`plan`](https://developer.hashicorp.com/terraform/cli/commands/plan) / [`apply`](https://developer.hashicorp.com/terraform/cli/commands/apply) flags (`-out`, `-target`, `-auto-approve`).
 
@@ -126,7 +126,7 @@
 **How to learn it:**
 
 1. **Video — [TF2026 "Lifecycle & Providers" → "Resources"](https://youtu.be/l5qtFBsxZdk?t=2595)** (43:15, ~45 min) — see how a provider's resources map to real cloud APIs.
-2. **Reference — [a real provider's docs (e.g. AWS provider)](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)** (~ongoing) — learn to navigate the registry docs for arguments/attributes. ([Resources](https://developer.hashicorp.com/terraform/language/resources), [dependencies](https://developer.hashicorp.com/terraform/language/resources/behavior))
+2. **Reference — [a real provider's docs (e.g. AWS provider)](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)** (~ongoing) — learn to navigate the registry docs for arguments/attributes. ([Resources](https://developer.hashicorp.com/terraform/language/resources), [dependencies](https://developer.hashicorp.com/terraform/language/resources/behavior)) See [[tf-aws-create]] for the resource-address / type-name / implicit-reference walkthrough on a real `aws_instance`.
 3. **Book chapter — TID Ch 3–4** (~1 hr) — implicit vs explicit dependencies and how the graph is derived.
 
 **Milestone:** You can chain three resources where each references the previous one's attributes, and explain the resulting apply order without `depends_on`.
@@ -179,7 +179,7 @@
 **How to learn it:**
 
 1. **Reference — [HCDocs "Data Sources"](https://developer.hashicorp.com/terraform/language/data-sources)** (~20 min) — the block syntax and when data is read (plan vs apply).
-2. **Interactive — extend your project** (~45 min) — replace a hard-coded AMI/AZ/image with a `data` lookup.
+2. **Interactive — extend your project** (~45 min) — replace a hard-coded AMI/AZ/image with a `data` lookup. The `data "aws_ami" "ubuntu"` filter pattern is captured in [[tf-aws-create]].
 3. **Book chapter — TID Ch 4** (data sources) (~30 min) — dependency implications of data reads.
 
 **Milestone:** You can look up a resource you didn't create (e.g. the latest AMI or default VPC) and wire it into a managed resource.

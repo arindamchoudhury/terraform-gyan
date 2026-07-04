@@ -21,11 +21,13 @@ A provider is the plugin layer that lets Terraform talk to a specific vendor's A
 
 - Quick framing of what a provider is and why it matters? → HCDocs [[terraform-intro]] or [[terraform-use-cases]] (multi-cloud section).
 - Want the plugin architecture (gRPC, Go, one-to-one vendor mapping)? → TID Ch1 §1.2.3–1.2.4. For hands-on registry navigation, see learning-path **B5 — Providers & resources**.
+- Want to declare and configure a provider for real (`required_providers`, `source`, version constraint, `provider` block)? → [[tf-aws-create]].
 
 ## Sources
 
 - [What is Terraform? (Intro)](../sources/terraform-docs/terraform-intro.md)
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
+- [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on `required_providers` + `provider` block
 
 ## Open questions
 

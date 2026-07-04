@@ -35,6 +35,7 @@ nav = [
         { "HashiCorp Terraform Tutorials" = [
             { "Overview" = "sources/terraform-tutorials/index.md" },
             { "1. Install Terraform" = "sources/terraform-tutorials/tf-install-cli.md" },
+            { "2. Create infrastructure" = "sources/terraform-tutorials/tf-aws-create.md" },
         ]},
     ]},
     { "Books" = [
