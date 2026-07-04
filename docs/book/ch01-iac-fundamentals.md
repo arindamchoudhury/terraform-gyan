@@ -15,7 +15,7 @@ Before Infrastructure as Code, provisioning meant working directly on machines �
 
 That manual process doesn't scale. It isn't versioned — there's no diff, no history, no way to know what changed between last Tuesday and today. It isn't repeatable — recreating the same environment for a second team means either redoing the clicking or trusting a wiki page to be accurate. And it isn't reviewable — nobody approves a sequence of console clicks the way they'd approve a pull request.
 
-**Infrastructure as Code (IaC)** solves this by treating infrastructure definitions as software: written in text files, versioned in Git, reviewed through pull requests, and applied through a consistent, repeatable workflow. Once infrastructure is code, every practice that makes software development safer — diffs, code review, CI/CD, automated testing — becomes available for infrastructure too. This got popular enough to earn its own industry shorthand: CI/CD platforms purpose-built for running Terraform — HCP Terraform, Terraform Enterprise, Spacelift, Scalr — are informally called **TACOS** (Terraform Automation and Collaboration Software). Full CI/CD treatment is A3; for now, just know the term exists. That's the whole pitch: not "typing instead of clicking," but inheriting decades of software-engineering discipline that manual provisioning never had access to.
+**Infrastructure as Code (IaC)** solves this by treating infrastructure definitions as software: written in text files, versioned in Git, reviewed through pull requests, and applied through a consistent, repeatable workflow. Once infrastructure is code, it can use the same safety practices as software. Diffs. Code review. CI/CD. Automated testing. All of it becomes available for infrastructure too. This got popular enough to earn its own industry shorthand: **TACOS** (Terraform Automation and Collaboration Software). These are CI/CD platforms purpose-built for running Terraform. Examples include HCP Terraform, Terraform Enterprise, Spacelift, and Scalr. A3 covers CI/CD in full: running Terraform non-interactively in a pipeline, saving plans as artifacts, and gating applies through pull requests. For now, just know the term exists. That's the whole pitch: not "typing instead of clicking," but inheriting decades of software-engineering discipline that manual provisioning never had access to.
 
 IaC isn't the first attempt at solving this. Configuration-management tools (Puppet, Chef) came first, configuring already-running machines. Image builders (Packer) came next, baking a known-good machine image for reuse. IaC frameworks are the next step up the stack: instead of configuring one machine or baking one image, they codify and repeatedly deploy *entire platforms* — networks, compute, databases, DNS, and the relationships between them — from a single source of truth.
 
@@ -23,9 +23,7 @@ IaC isn't the first attempt at solving this. Configuration-management tools (Pup
 
 Terraform is an IaC tool for building, changing, and versioning infrastructure safely and efficiently. It isn't the only one — Pulumi is another vendor-agnostic framework (using general-purpose languages instead of a custom DSL); AWS CloudFormation and GCP Deployment Manager are vendor-specific equivalents, tied to one cloud. Terraform's position: broad vendor coverage, a purpose-built declarative language, and (as of 2026) the largest and most mature provider ecosystem of the group.
 
-Its scope ranges from low-level infrastructure components — compute, storage, networking — up to high-level ones like DNS records and SaaS product features. And Terraform's approach to change is deliberately **immutable**: rather than patching a resource in place, its default instinct is to replace it, which is what keeps upgrades and modifications simpler to reason about than a system built around in-place mutation.
-
-Terraform manages this breadth through one architectural idea: **push everything vendor-specific behind a plugin.**
+Terraform manages this vendor breadth through one architectural idea: **push everything vendor-specific behind a plugin.**
 
 ```mermaid
 flowchart LR
@@ -42,13 +40,38 @@ Terraform Core never talks to AWS, GCP, or Cloudflare directly. It talks to **pr
 
 The scale here matters: the Terraform Registry passed 3,000 published providers with 250+ partners by early 2026, and third-party trackers put the live count above 4,000 as of this writing. Beyond the big three clouds, providers exist for Kubernetes, Helm, GitHub, Splunk, DataDog, and effectively any platform with an API. Practically, that means: if a platform has an API, there's a very good chance someone has already written a Terraform provider for it — down to genuinely obscure ones (there's a provider for ordering pizza, and one that reports which McDonald's ice-cream machines are broken).
 
+Terraform's scope ranges from low-level infrastructure components (compute, storage, networking) up to high-level ones like DNS records and SaaS product features. Its approach to change is deliberately **immutable**: rather than patching a resource in place, its default instinct is to destroy the old one and create a new one. For most resources that's simpler to reason about than in-place mutation — no partial-upgrade states to debug, no drift between "what the patch script did" and "what's actually running."
+
+But blind replacement isn't free, and it isn't always safe. Destroy-then-create means exactly that: the old resource is gone before the new one exists. For a stateless web server, that's a non-event. For a database, it can mean losing every row it held. This is exactly why Terraform's `lifecycle` block exists — `prevent_destroy` refuses to replace a resource by accident, and `create_before_destroy` builds the replacement before tearing down the original, so nothing goes down in between. Full treatment is I2; for now, the takeaway is narrower: immutable-by-default is the right instinct for disposable infrastructure, and the wrong one to apply blindly to anything holding data you can't regenerate.
+
 Terraform's other core pieces, briefly — each gets its own chapter later in this path:
 
 - **HCL** (HashiCorp Configuration Language) — the language you write. Declarative, designed for readability. HCL isn't Terraform-exclusive — Packer, Nomad, and Consul all use it too, each exposing its own resources and quirks. Covered in depth in B4.
-- **CLI & Core** — the CLI is the only way to invoke Terraform's core engine. There's no standalone compiled binary the way Go or C would give you from your config — it's closer to Python or Node needing an interpreter to actually run.
+- **CLI & Core** — you download one binary, `terraform`. **Core** is the engine inside it: the part that parses your HCL, builds the dependency graph, and computes and executes plans. The **CLI** is the command surface wrapped around that engine — `terraform init`, `validate`, `plan`, `apply`, and the rest. They aren't separate downloads; Core is only reachable *through* the CLI, which is why every workflow (even a CI/CD system like HCP Terraform or Spacelift) ultimately shells out to `terraform` rather than calling the engine directly. The pieces that *are* downloaded separately are the providers — Core fetches those plugin binaries during `init`.
 - **Modules** — reusable, configurable collections of infrastructure, sourced from the Registry or authored locally. This is Terraform's answer to "standardize configurations": write the pattern once as a module, and every consuming team gets its improvements for free instead of re-deriving them. Covered in I4 (using modules) and I5 (authoring them).
+
+!!! note "Module vs. provider"
+    These two get conflated constantly, but they live at different layers entirely.
+
+    **Provider** — a plugin binary (written in Go), downloaded during `init`. Teaches Terraform *how to talk to a platform's API* (AWS, GCP, Cloudflare). Defines which resource types even exist (`aws_instance`, `aws_s3_bucket`). It's the driver/translation layer between HCL and a vendor.
+
+    **Module** — a bundle of HCL *you* (or someone) wrote: a group of resource/variable/output blocks packaged for reuse. It teaches Terraform nothing new about any platform. It just composes resources the providers already define, into a reusable unit.
+
+    Analogy: the **provider** is the library that gives you the vocabulary (`aws_instance` and its arguments). A **module** is a function you write *using* that vocabulary — "a VPC with three subnets and a NAT gateway" — so callers don't re-assemble the pieces each time.
+
+    Concrete contrast:
+
+    | | Provider | Module |
+    |---|---|---|
+    | Written in | Go (compiled plugin) | HCL |
+    | Comes from | Registry, fetched by `init` | Registry, Git, or local path |
+    | Job | Define + manage resource types via a vendor API | Package a reusable grouping of those resources |
+    | Talks to | The vendor's API (over gRPC) | Nothing — it's just config Core expands |
+
+    A module almost always *uses* one or more providers; a provider never uses a module.
+
 - **Backends** — where a workspace's state is stored. Local by default; remote backends (S3, GCS, HCP Terraform) are what make team collaboration possible. Some backends — the remote and HCP Terraform ones — go further, exposing APIs Terraform can call to run operations remotely, not just store state. Covered in I6.
-- **Workspaces** — one deployment of a codebase against a specific backend and set of inputs, comparable to "one installation" of a program. A single codebase can drive many workspaces (dev, staging, prod) sharing a backend.
+- **Workspaces** — an overloaded term, and a common beginner trap. A *CLI workspace* is a named, separate state file living inside one backend and one config directory — good for short-lived throwaway copies of a stack, like a per-PR preview. An *HCP Terraform workspace* is a richer unit: its own config, variables, state, run history, and access controls. Worth planting early: CLI workspaces are *not* how you isolate long-lived dev/staging/prod. Those share one backend and one set of credentials, so a slip in one can reach another — HashiCorp's own docs say workspaces alone aren't a fit for separating environments. How to lay out real environments is A7's job.
 - **State** — Terraform's record of the real infrastructure it manages, used to compute what has to change. Covered in depth starting at B9.
 - **HCP Terraform** — HashiCorp's managed platform for the "Collaborate" side of Terraform: shared state, secret data, RBAC, and a private registry for modules and providers, on top of a consistent run environment. Covered in A4.
 
@@ -143,7 +166,7 @@ Practically, for the rest of this learning path: everything through the Associat
 
 ## Summary
 
-- IaC lets infrastructure inherit software-engineering practices — versioning, review, CI/CD (informally, **TACOS**) — that manual provisioning never had.
+- IaC lets infrastructure inherit software-engineering practices that manual provisioning never had: versioning, review, and CI/CD (informally, **TACOS**).
 - Terraform stays vendor-agnostic by pushing everything vendor-specific into **providers**, which speak gRPC to Terraform Core on one side and a vendor API on the other. Its approach to change is **immutable** — replace, don't patch in place.
 - Terraform is **declarative**: you describe desired end state; Terraform computes the plan (a DAG) to get there. This is the key distinction from imperative tools like Ansible, and the key advantage over vendor-locked declarative tools like CloudFormation.
 - **Modules** standardize configuration (write once, every team benefits); **HCP Terraform** is the managed platform for the collaborate side — shared state, secrets, RBAC, private registry.
