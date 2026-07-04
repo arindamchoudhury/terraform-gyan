@@ -25,6 +25,13 @@ nav = [
             { "1. What is Terraform? (Intro)" = "sources/terraform-docs/terraform-intro.md" },
             { "2. Terraform Use Cases" = "sources/terraform-docs/terraform-use-cases.md" },
         ]},
+        { "OpenTofu Docs" = [
+            { "Overview" = "sources/opentofu-docs/index.md" },
+            { "1. Provider for_each" = "sources/opentofu-docs/ot-provider-for-each.md" },
+            { "2. Early eval in backend config" = "sources/opentofu-docs/ot-early-eval-backend.md" },
+            { "3. -exclude flag" = "sources/opentofu-docs/ot-exclude-flag.md" },
+            { "4. Dynamic prevent_destroy" = "sources/opentofu-docs/ot-dynamic-prevent-destroy.md" },
+        ]},
     ]},
     { "Books" = [
         { "Terraform in Depth (Hafner, 2025)" = [

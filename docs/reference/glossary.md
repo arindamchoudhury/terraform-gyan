@@ -20,3 +20,7 @@ Terms are appended here as book chapters are written.
 | BSL (Business Source License) | The "shared source" license HashiCorp moved Terraform to (from MPL) starting with v1.6; code stays viewable/auditable but usage is restricted, notably against competitive hosted/embedded offerings. | TID Ch1 |
 | DAG (directed acyclic graph) | The data structure Terraform builds from resource dependencies to order plan actions; circular dependencies break this model and require manual workaround. | TID Ch1 |
 | Workspace (CLI) | One deployment of a Terraform codebase against a specific backend + input variables — like one "installation" of a program; a codebase can have unlimited workspaces sharing a backend. | TID Ch1 |
+| Provider `for_each` (OpenTofu) | OpenTofu 1.9 feature: instantiate an aliased provider config multiple times from a map/set (e.g. one per region). Resource `for_each` must be a subset of the provider's. | [[ot-provider-for-each]] |
+| Early variable evaluation (OpenTofu) | OpenTofu 1.8 feature: reference `var`/`local` inside `backend`/`provider` blocks, resolved at `tofu init` before state exists. | [[ot-early-eval-backend]] |
+| `-exclude` (OpenTofu) | OpenTofu 1.9 CLI flag: inverse of `-target` — plan/apply everything except the given addresses. No Terraform equivalent. | [[ot-exclude-flag]] |
+| Dynamic `prevent_destroy` (OpenTofu) | OpenTofu 1.12 feature: bind the `lifecycle.prevent_destroy` flag to a variable/expression; Terraform requires a literal. | [[ot-dynamic-prevent-destroy]] |

@@ -2,19 +2,22 @@
 
 Verified facts captured during research. Refreshed by Phase 4 review passes.
 
-_Last verified: 2026-07-03._
+_Last verified: 2026-07-04._
 
 ## Tooling versions
 
 | Tool | Current stable | License | Notes |
 |------|----------------|---------|-------|
-| Terraform CLI | **1.14.7** (2026-03-11) | BSL 1.1 (source-available) | CLI free to provision your own infra under BSL |
-| OpenTofu | **1.12.2** (1.12.0 released 2026-05-14) | MPL 2.0 (open source) | Forked from Terraform 1.5.x; Linux Foundation project |
+| Terraform CLI | **1.15.7** (1.15.0 released 2026-04-29) | BSL 1.1 (source-available) | CLI free to provision your own infra under BSL |
+| OpenTofu | **1.12.3** (1.12.0 released 2026-05-14) | MPL 2.0 (open source) | Forked from Terraform 1.5.x; Linux Foundation project |
 
-**Terraform ↔ OpenTofu divergence.** OpenTofu forked at Terraform 1.5.x and now ships features Terraform's
-open-source CLI does not: **state encryption**, **provider `for_each`**, **early variable/`.tfvars` evaluation**,
-the **`-exclude` flag**, and (1.12) **dynamic `prevent_destroy`**. HCL syntax, provider ecosystem, and state-file
-format remain compatible. Both accept the same providers from the registry.
+**Terraform ↔ OpenTofu divergence.** OpenTofu forked at Terraform 1.5.x and shipped features Terraform's
+open-source CLI lacked: **state encryption**, **provider `for_each`**, **early variable/`.tfvars` evaluation**,
+the **`-exclude` flag**, and (1.12) **dynamic `prevent_destroy`**. **Terraform 1.15 (2026-04-29) closed some of
+the gap** — it added dynamic module sources, a formal deprecation mechanism for variables/outputs, an inline
+type-conversion function, output-block type constraints, and Windows ARM64 support. State encryption and the
+other items above remain OpenTofu-only as of this check. HCL syntax, provider ecosystem, and state-file format
+remain compatible. Both accept the same providers from the registry.
 
 **Licensing timeline.** HashiCorp relicensed Terraform from MPL to BSL 1.1 in Aug 2023 → triggered the OpenTofu fork.
 **IBM acquired HashiCorp in Dec 2024** for $6.4B — HashiCorp (and Terraform) is now an IBM company.
@@ -44,7 +47,7 @@ HCP Terraform's legacy free managed plan ended 2026-03-31; the replacement free 
 - HashiCorp Developer — Certifications / Infrastructure Automation
 - HashiCorp Developer — Terraform Associate 004 study path
 - HashiCorp Developer — Terraform Authoring & Operations Pro exam content list
-- OpenTofu release notes (1.12, 2026-05-14) via InfoQ
-- Terraform CLI changelog / release notes (1.14.7, 2026-03)
+- OpenTofu release notes (1.12, 2026-05-14) via InfoQ; current patch 1.12.3
+- Terraform CLI changelog / release notes (1.15 released 2026-04-29; current patch 1.15.7) — see InfoQ "Terraform 1.15 Closes Gap to OpenTofu"
 - HashiCorp blog — "Terraform ecosystem passes 3,000 providers with over 250 partners"
 - Third-party OpenTofu-vs-Terraform comparisons (Encore, Scalr, devops-daily, rack2cloud), checked 2026-07-03

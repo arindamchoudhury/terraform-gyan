@@ -1,7 +1,7 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Last updated:** 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, current Terraform 1.14 / OpenTofu 1.12, and the top books.
-> **Current stable versions:** Terraform CLI **1.14.7** (2026-03-11, BSL 1.1) · OpenTofu **1.12.2** (2026-05, MPL 2.0)
+> **Last updated:** 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.
+> **Current stable versions:** Terraform CLI **1.15.7** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.3** (1.12.0 released 2026-05-14, MPL 2.0)
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
 > **How to read this page.** Topics are the primary unit. Each topic has a "How to learn it" section that
@@ -553,9 +553,14 @@ You are ready to advance when you can:
 
 1. **Reference — [OTDocs "Migrating from Terraform"](https://opentofu.org/docs/intro/migration/) + [state encryption](https://opentofu.org/docs/language/state/encryption/)** (~1 hr) — what's OpenTofu-only and how state stays compatible.
 2. **Interactive — enable state encryption** (~1 hr) — turn on OpenTofu client-side state encryption and confirm state is unreadable at rest.
-3. **Book — TID (covers both)** (~1 hr) — re-read the sections contrasting the two tools with fresh eyes.
+3. **Reference — the OpenTofu-only divergence features** (~1.5 hrs) — read one doc page per feature; each has a captured note:
+    - **Provider `for_each`** (OpenTofu 1.9) — [OTDocs "Provider Configuration"](https://opentofu.org/docs/language/providers/configuration/); one provider instance per region/account from a map/set. Aliased configs only; resource `for_each` must be a *subset* of the provider's. (Notes: [[ot-provider-for-each]].)
+    - **Early variable evaluation** (OpenTofu 1.8) — [OTDocs "Backend Configuration" → Variables and Locals](https://opentofu.org/docs/language/settings/backends/configuration/); reference `var`/`local` in `backend`/`provider` blocks, resolved at `tofu init`. Kills backend partial-config boilerplate. (Notes: [[ot-early-eval-backend]].)
+    - **`-exclude` flag** (OpenTofu 1.9) — [OTDocs "Command: plan" → Resource Targeting](https://opentofu.org/docs/cli/commands/plan/); inverse of `-target`, plus `-exclude-file`; mutually exclusive with `-target`. Terraform has no equivalent. (Notes: [[ot-exclude-flag]].)
+    - **Dynamic `prevent_destroy`** (OpenTofu 1.12) — [OTDocs lifecycle](https://opentofu.org/docs/language/meta-arguments/lifecycle/) + [1.12 release](https://opentofu.org/blog/opentofu-1-12-0/); bind it to a variable (Terraform requires a literal). See the I5 callout. (Notes: [[ot-dynamic-prevent-destroy]].)
+4. **Book — TID (covers both)** (~1 hr) — re-read the sections contrasting the two tools with fresh eyes.
 
-**Milestone:** You can migrate a project from Terraform to OpenTofu, enable state encryption, and list four features OpenTofu has that Terraform's open-source CLI does not.
+**Milestone:** You can migrate a project from Terraform to OpenTofu, enable state encryption, and explain the four other OpenTofu-only features — provider `for_each`, early variable evaluation in backend config, the `-exclude` flag, and dynamic `prevent_destroy` — including *why* a resource's `for_each` must be a subset of its provider's.
 
 ---
 
@@ -639,5 +644,5 @@ Expert (E1–E6)          → ~70 hrs
 - HashiCorp Developer — Terraform Associate 004 study path — https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004
 - HashiCorp Developer — Terraform Authoring & Operations Pro exam content — https://developer.hashicorp.com/terraform/tutorials/pro-cert/pro-review
 - OpenTofu 1.12 release coverage (2026-05) — InfoQ
-- Terraform CLI release notes (1.14.7, 2026-03)
+- Terraform CLI release notes (1.15, 2026-04-29; current patch 1.15.7)
 - *Terraform in Depth* (Manning) and *Terraform: Up & Running* 3rd ed (O'Reilly) — tables of contents
