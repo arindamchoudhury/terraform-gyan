@@ -1,6 +1,6 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Last updated:** 2026-07-04 — **Feature-coverage pass** for Terraform 1.15 / OpenTofu 1.12 (see [[tf115-ot112-features]]): folded in dynamic module sources + `const` (I4), variable/output deprecation (I5), output `type` (B6), `convert()` (B7), test-double functions (A2), OpenTofu `destroy = false` (I7), `-json-into` (A3), and expanded the E3 divergence list to 7 items with the "Terraform 1.15 closed some gaps" note. · 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.
+> **Last updated:** 2026-07-04 — **Full feature audit** (see [[feature-coverage-matrix]]): built a complete Terraform+OpenTofu feature→topic matrix and closed the gaps it found — ephemeral values/resources + write-only arguments (A6, major), provider-defined functions (B7 use / E1 author), OpenTofu `enabled` meta-arg (I1), native S3 state locking (I6), import `-generate-config-out` (I7), OpenTofu OCI registries (E4). · 2026-07-04 — **Feature-coverage pass** for Terraform 1.15 / OpenTofu 1.12 (see [[tf115-ot112-features]]): folded in dynamic module sources + `const` (I4), variable/output deprecation (I5), output `type` (B6), `convert()` (B7), test-double functions (A2), OpenTofu `destroy = false` (I7), `-json-into` (A3), and expanded the E3 divergence list to 7 items with the "Terraform 1.15 closed some gaps" note. · 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.
 > **Current stable versions:** Terraform CLI **1.15.7** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.3** (1.12.0 released 2026-05-14, MPL 2.0)
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
@@ -164,6 +164,7 @@
 3. **Book chapter — TID Ch 5** (~1 hr) — expression patterns used in real configs.
 
 > 📌 Terraform **1.15** added the `convert(value, type)` function for precise inline type conversion — cleaner than the old `tolist`/`tomap`/`tset` juggling in tricky spots. (See [[tf115-ot112-features]].)
+> 📌 Beyond the built-ins, **provider-defined functions** (TF 1.8) let a provider ship its own functions, called as `provider::<name>::<fn>(...)` — e.g. `provider::aws::arn_parse(...)`. Available in the AWS, Google, and Kubernetes providers among others. Authoring them is E1. (See [[feature-coverage-matrix]].)
 
 **Milestone:** You can transform a list of maps into a keyed map with a `for` expression and use it to drive resource creation.
 
@@ -228,6 +229,8 @@ You are ready to advance when you can:
 1. **Video — [TF2026 "Loops & Dynamic Infrastructure"](https://youtu.be/l5qtFBsxZdk?t=11191)** (3:06:31, ~40 min) — see why `for_each` is safer than `count` for keyed resources.
 2. **Reference — [HCDocs "count"](https://developer.hashicorp.com/terraform/language/meta-arguments/count) + ["for_each"](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) + [depends_on](https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on)** (~30 min) — the addressing rules and when each is legal.
 3. **Book chapter — TID Ch 5** (~1 hr) — the re-creation pitfall and how `for_each` keys avoid it.
+
+> 📌 **OpenTofu 1.11** adds an `enabled` meta-argument — a first-class on/off switch for a resource, cleaner than the `count = var.enabled ? 1 : 0` idiom (which forces `[0]` addressing and index churn). OpenTofu-only; in Terraform you still use the `count` trick. (See [[feature-coverage-matrix]].)
 
 **Milestone:** You can convert a `count`-based set of resources to `for_each` and explain why removing a middle element no longer destroys unrelated resources.
 
@@ -304,7 +307,7 @@ You are ready to advance when you can:
 
 ### ⬜ I6 — Remote state & backends
 
-**What it is:** Backends (S3+DynamoDB, HCP Terraform, GCS, azurerm), state locking, remote vs local state, and `terraform_remote_state` to share outputs.
+**What it is:** Backends (S3, HCP Terraform, GCS, azurerm), state locking, remote vs local state, and `terraform_remote_state` to share outputs.
 
 **Why you need it:** Teams cannot share local state; remote state with locking is the baseline for any collaboration and is exam-critical.
 
@@ -313,6 +316,8 @@ You are ready to advance when you can:
 1. **Interactive — HCTut ["Migrate state from S3 to HCP Terraform"](https://developer.hashicorp.com/terraform/tutorials/cloud/migrate-remote-s3-backend-hcp-terraform)** (~1 hr) — migrate a local state to an S3 (or HCP) backend and observe locking.
 2. **Reference — [HCDocs "Backends"](https://developer.hashicorp.com/terraform/language/backend) + ["State Locking"](https://developer.hashicorp.com/terraform/language/state/locking) + [terraform_remote_state](https://developer.hashicorp.com/terraform/language/state/remote-state-data)** (~40 min) — backend config, partial config, and lock behavior.
 3. **Book chapter — TUR Ch 3** (~1.5 hrs) — the canonical remote-state + isolation discussion.
+
+> 📌 The S3 backend now has **native state locking** via a lock file in the bucket (`use_lockfile = true`) — the separate **DynamoDB table is no longer required** (Terraform 1.11+; OpenTofu shipped native S3 locking in 1.10). Older tutorials still show the S3+DynamoDB pairing; prefer native locking on new setups. (See [[feature-coverage-matrix]].)
 
 **Milestone:** You can migrate a project from local to remote state with locking and read another config's outputs via `terraform_remote_state`.
 
@@ -326,7 +331,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Interactive — HCTut ["Import"](https://developer.hashicorp.com/terraform/tutorials/state/state-import) + ["Manage resource drift"](https://developer.hashicorp.com/terraform/tutorials/state/resource-drift)** (~1.5 hrs) — import a manually-created resource and reconcile a deliberate drift.
+1. **Interactive — HCTut ["Import"](https://developer.hashicorp.com/terraform/tutorials/state/state-import) + ["Manage resource drift"](https://developer.hashicorp.com/terraform/tutorials/state/resource-drift)** (~1.5 hrs) — import a manually-created resource and reconcile a deliberate drift. Try config generation: `terraform plan -generate-config-out=gen.tf` writes best-guess HCL for your `import` blocks (TF 1.5+), so you don't hand-write the config for adopted resources.
 2. **Reference — HCDocs [import block](https://developer.hashicorp.com/terraform/language/import), [moved](https://developer.hashicorp.com/terraform/language/moved), [removed](https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources), [`state` subcommands](https://developer.hashicorp.com/terraform/cli/commands/state)** (~45 min) — prefer config-driven `import`/`moved` over CLI surgery.
 3. **Book chapter — TID Ch 6** (state operations) (~1 hr) — safe patterns and recovery.
 
@@ -459,17 +464,18 @@ You are ready to advance when you can:
 
 ### ⬜ A6 — Secrets & sensitive data
 
-**What it is:** Handling secrets — the `sensitive` flag, sensitive values in state, the Vault provider, and dynamic/short-lived provider credentials (OIDC into AWS/Azure/GCP).
+**What it is:** Handling secrets — the `sensitive` flag, sensitive values in state, **ephemeral values / ephemeral resources and write-only arguments** (the modern keep-secrets-out-of-state mechanism), the Vault provider, and dynamic/short-lived provider credentials (OIDC into AWS/Azure/GCP).
 
 **Why you need it:** State holds secrets in plaintext by default; long-lived cloud keys in pipelines are a top risk. The Pro exam tests sensitive-data best practices.
 
 **How to learn it:**
 
 1. **Reference — [HCDocs "Sensitive data in state"](https://developer.hashicorp.com/terraform/language/state/sensitive-data) + ["Dynamic Provider Credentials"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials)** (~40 min) — why `sensitive` isn't encryption and how OIDC removes static keys.
-2. **Interactive — HCTut [dynamic credentials lab](https://developer.hashicorp.com/terraform/tutorials/cloud/dynamic-credentials)** (~1.5 hrs) — configure OIDC so a pipeline assumes a role with no stored secret.
-3. **Book chapter — TID secrets section / TUR secrets management** (~1 hr) — Vault integration and secret-injection patterns.
+2. **Reference — [HCDocs "Ephemeral values"](https://developer.hashicorp.com/terraform/language/manage-sensitive-data/ephemeral)** (~40 min) — the current best-practice for secrets. `sensitive` only hides a value in output; it's still written to state in plaintext. **Ephemeral values** (TF 1.10) exist only during a single command run and are *never* written to state or plan. **Ephemeral resources** (a block type that opens/closes a short-lived external object, e.g. fetch a token) and **write-only arguments** (TF 1.11 — resource arguments like a DB password that Terraform can write but never read back, versioned via a companion `*_wo_version` attribute) together let you pass a secret straight into a resource with nothing persisted. OpenTofu reached parity in 1.11.
+3. **Interactive — HCTut [dynamic credentials lab](https://developer.hashicorp.com/terraform/tutorials/cloud/dynamic-credentials)** (~1.5 hrs) — configure OIDC so a pipeline assumes a role with no stored secret.
+4. **Book chapter — TID secrets section / TUR secrets management** (~1 hr) — Vault integration and secret-injection patterns.
 
-**Milestone:** You can run a pipeline that authenticates to a cloud via short-lived OIDC credentials (no static keys) and mark derived values `sensitive`.
+**Milestone:** You can run a pipeline that authenticates to a cloud via short-lived OIDC credentials (no static keys), set a resource secret via a write-only argument so it never lands in state, and explain why `sensitive` alone doesn't protect the state file. (See [[feature-coverage-matrix]].)
 
 ---
 
@@ -533,9 +539,10 @@ You are ready to advance when you can:
 
 1. **Interactive — HCTut ["Implement a provider with the Plugin Framework"](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework/providers-plugin-framework-provider)** (~4 hrs) — build a working provider against a sample API end to end.
 2. **Reference — [TPF docs](https://developer.hashicorp.com/terraform/plugin/framework)** (~ongoing) — schema, resource lifecycle, plan modification, acceptance testing.
-3. **Book chapter — TUR "extending Terraform" / provider dev material** (~2 hrs) — the mental model of the plugin protocol.
+3. **Reference — [Provider-defined functions](https://developer.hashicorp.com/terraform/plugin/framework/functions)** (~30 min) — the author side of the B7 note: expose your own `provider::<name>::<fn>()` functions from the provider (TF 1.8+), not just resources and data sources.
+4. **Book chapter — TUR "extending Terraform" / provider dev material** (~2 hrs) — the mental model of the plugin protocol.
 
-**Milestone:** You can build and locally install a custom provider exposing one resource with full CRUD and passing acceptance tests.
+**Milestone:** You can build and locally install a custom provider exposing one resource with full CRUD and passing acceptance tests. Stretch: expose a provider-defined function callable as `provider::<name>::<fn>()`.
 
 ---
 
@@ -593,6 +600,7 @@ You are ready to advance when you can:
    > 📌 Terragrunt **1.0** shipped 2026-03-30 — first release with a backwards-compatibility commitment; `run-all` is now `run --all`. Works over both Terraform and OpenTofu.
 2. **Book chapter — TUR Ch 3 + Ch 5** (~2 hrs) — state isolation and repo-structure tradeoffs at scale.
 3. **Reference — [HashiCorp "Terraform mono-repo vs. multi-repo: the great debate"](https://www.hashicorp.com/en/blog/terraform-mono-repo-vs-multi-repo-the-great-debate)** (~30 min) — monorepo-vs-multirepo decisions in the wild, plus [native monorepo support](https://www.hashicorp.com/en/blog/terraform-adds-native-monorepo-support-stack-component-configurations-and-more).
+4. **Reference — [OpenTofu OCI registries](https://opentofu.org/docs/cli/oci_registries/)** (~40 min) — distributing **providers and modules via OCI registries** (`oci://` module sources; `oci_mirror` for provider plugins), reusing existing container registries (ECR, GAR, ACR, Docker Hub) instead of a dedicated Terraform registry. OpenTofu 1.10+, OpenTofu-first. (See [[feature-coverage-matrix]].)
 
 **Milestone:** You can design a multi-team layout with per-component state, cross-state dependencies, and DRY backend config that keeps each plan small.
 
