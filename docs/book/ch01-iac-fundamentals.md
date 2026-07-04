@@ -6,7 +6,7 @@ By the end of this chapter you can:
 
 - Explain what Infrastructure as Code is and why it exists.
 - Explain in two sentences why Terraform is declarative, and how that differs from Ansible and from CloudFormation.
-- Name Terraform's core components (language, CLI/core, providers, vendors, backends, workspaces) and how they fit together.
+- Name Terraform's core components (language, CLI/core, providers, vendors, modules, backends, workspaces, HCP Terraform) and how they fit together.
 - Explain the Terraform → OpenTofu fork and give a defensible 2026 answer to "which one should I use?"
 
 ## The problem before IaC
@@ -15,13 +15,15 @@ Before Infrastructure as Code, provisioning meant working directly on machines �
 
 That manual process doesn't scale. It isn't versioned — there's no diff, no history, no way to know what changed between last Tuesday and today. It isn't repeatable — recreating the same environment for a second team means either redoing the clicking or trusting a wiki page to be accurate. And it isn't reviewable — nobody approves a sequence of console clicks the way they'd approve a pull request.
 
-**Infrastructure as Code (IaC)** solves this by treating infrastructure definitions as software: written in text files, versioned in Git, reviewed through pull requests, and applied through a consistent, repeatable workflow. Once infrastructure is code, every practice that makes software development safer — diffs, code review, CI/CD, automated testing — becomes available for infrastructure too. That's the whole pitch: not "typing instead of clicking," but inheriting decades of software-engineering discipline that manual provisioning never had access to.
+**Infrastructure as Code (IaC)** solves this by treating infrastructure definitions as software: written in text files, versioned in Git, reviewed through pull requests, and applied through a consistent, repeatable workflow. Once infrastructure is code, every practice that makes software development safer — diffs, code review, CI/CD, automated testing — becomes available for infrastructure too. This got popular enough to earn its own industry shorthand: CI/CD platforms purpose-built for running Terraform — HCP Terraform, Terraform Enterprise, Spacelift, Scalr — are informally called **TACOS** (Terraform Automation and Collaboration Software). Full CI/CD treatment is A3; for now, just know the term exists. That's the whole pitch: not "typing instead of clicking," but inheriting decades of software-engineering discipline that manual provisioning never had access to.
 
 IaC isn't the first attempt at solving this. Configuration-management tools (Puppet, Chef) came first, configuring already-running machines. Image builders (Packer) came next, baking a known-good machine image for reuse. IaC frameworks are the next step up the stack: instead of configuring one machine or baking one image, they codify and repeatedly deploy *entire platforms* — networks, compute, databases, DNS, and the relationships between them — from a single source of truth.
 
 ## What Terraform is
 
 Terraform is an IaC tool for building, changing, and versioning infrastructure safely and efficiently. It isn't the only one — Pulumi is another vendor-agnostic framework (using general-purpose languages instead of a custom DSL); AWS CloudFormation and GCP Deployment Manager are vendor-specific equivalents, tied to one cloud. Terraform's position: broad vendor coverage, a purpose-built declarative language, and (as of 2026) the largest and most mature provider ecosystem of the group.
+
+Its scope ranges from low-level infrastructure components — compute, storage, networking — up to high-level ones like DNS records and SaaS product features. And Terraform's approach to change is deliberately **immutable**: rather than patching a resource in place, its default instinct is to replace it, which is what keeps upgrades and modifications simpler to reason about than a system built around in-place mutation.
 
 Terraform manages this breadth through one architectural idea: **push everything vendor-specific behind a plugin.**
 
@@ -38,14 +40,17 @@ flowchart LR
 
 Terraform Core never talks to AWS, GCP, or Cloudflare directly. It talks to **providers** — plugins, written in Go, that speak gRPC to Core on one side and a vendor's API on the other. Providers are typically one-to-one with a vendor (the AWS provider, the GCP provider), though some vendors ship more than one to cover different product lines (Azure has several). This is why Terraform doesn't need to know anything about Cloudflare's DNS API or AWS's EC2 API — the provider owns that knowledge, and Core only needs to know how to call the provider.
 
-The scale here matters: the Terraform Registry passed 3,000 published providers with 250+ partners by early 2026, and third-party trackers put the live count above 4,000 as of this writing. Practically, that means: if a platform has an API, there's a very good chance someone has already written a Terraform provider for it — down to genuinely obscure ones (there's a provider for ordering pizza, and one that reports which McDonald's ice-cream machines are broken).
+The scale here matters: the Terraform Registry passed 3,000 published providers with 250+ partners by early 2026, and third-party trackers put the live count above 4,000 as of this writing. Beyond the big three clouds, providers exist for Kubernetes, Helm, GitHub, Splunk, DataDog, and effectively any platform with an API. Practically, that means: if a platform has an API, there's a very good chance someone has already written a Terraform provider for it — down to genuinely obscure ones (there's a provider for ordering pizza, and one that reports which McDonald's ice-cream machines are broken).
 
 Terraform's other core pieces, briefly — each gets its own chapter later in this path:
 
-- **HCL** (HashiCorp Configuration Language) — the language you write. Declarative, designed for readability. Covered in depth in B4.
-- **Backends** — where a workspace's state is stored. Local by default; remote backends (S3, GCS, HCP Terraform) are what make team collaboration possible. Covered in I6.
+- **HCL** (HashiCorp Configuration Language) — the language you write. Declarative, designed for readability. HCL isn't Terraform-exclusive — Packer, Nomad, and Consul all use it too, each exposing its own resources and quirks. Covered in depth in B4.
+- **CLI & Core** — the CLI is the only way to invoke Terraform's core engine. There's no standalone compiled binary the way Go or C would give you from your config — it's closer to Python or Node needing an interpreter to actually run.
+- **Modules** — reusable, configurable collections of infrastructure, sourced from the Registry or authored locally. This is Terraform's answer to "standardize configurations": write the pattern once as a module, and every consuming team gets its improvements for free instead of re-deriving them. Covered in I4 (using modules) and I5 (authoring them).
+- **Backends** — where a workspace's state is stored. Local by default; remote backends (S3, GCS, HCP Terraform) are what make team collaboration possible. Some backends — the remote and HCP Terraform ones — go further, exposing APIs Terraform can call to run operations remotely, not just store state. Covered in I6.
 - **Workspaces** — one deployment of a codebase against a specific backend and set of inputs, comparable to "one installation" of a program. A single codebase can drive many workspaces (dev, staging, prod) sharing a backend.
 - **State** — Terraform's record of the real infrastructure it manages, used to compute what has to change. Covered in depth starting at B9.
+- **HCP Terraform** — HashiCorp's managed platform for the "Collaborate" side of Terraform: shared state, secret data, RBAC, and a private registry for modules and providers, on top of a consistent run environment. Covered in A4.
 
 ## Declarative vs. imperative — and where Terraform sits
 
@@ -98,17 +103,30 @@ The declarative, multi-vendor model isn't just architecturally clean — it maps
 - **Multi-tier application infrastructure** — Terraform tracks dependencies between tiers (a web tier depending on a database tier) and orders creation/teardown correctly without you specifying it.
 - **Self-service platform teams** — modules encode an organization's standards once; product teams consume them without re-deriving the standards each time.
 - **Policy-governed environments** — policy-as-code (Sentinel, OPA) can block a plan before it's ever applied, rather than after infrastructure already exists non-compliant.
+- **PaaS application setup** — codifying a Heroku app's add-ons (a database, a DNSimple CNAME, a Cloudflare CDN in front of it) without touching a single web console.
+- **Software-defined networking** — Consul-Terraform-Sync (Network Infrastructure Automation) auto-generates Terraform config to reconfigure an SDN whenever a service registers with Consul, replacing a ticket-based network-change process.
+- **Kubernetes** — Terraform can both stand up the cluster itself *and* manage what runs inside it (pods, deployments, services) — two different jobs, same tool.
 - **Disposable environments** — spinning up a full stack for a PR, a demo, or a load test, then tearing it down, is cheap when the whole thing is one `apply`/`destroy` pair.
+- **Software demos** — bootstrapping a full demo environment on whichever cloud a prospect already uses, with parameters (like cluster size) adjustable per audience.
 
 You don't need to memorize this list. The pattern to notice: everywhere Terraform gets used, the value comes from the same two properties — *one workflow across many vendors*, and *a reviewable diff before every change*.
 
+### In practice, from the field
+
+The list above is the official catalog from [[terraform-intro]] and [[terraform-use-cases]]. Hafner's *Terraform in Depth* (TID Ch1 §1.5) adds four more from direct field experience — narrower and more anecdotal, but worth knowing because they show up constantly in practice:
+
+- **Machine learning training** — renting GPU/compute clusters per job instead of owning idle hardware; Terraform lets the cluster design evolve iteratively (add autoscaling later) and lets teams spin whole clusters up and down in moments.
+- **API and web services** — the classic stack (load balancers, app instances, TLS certs, DNS, cache, database, subnets) wrapped in a module so application developers never have to touch the networking layer directly.
+- **Single sign-on structures** — managing SSO systems (e.g. Okta: users, groups, policies, applications) as Terraform resources, mainly for the audit trail and multi-approver review this buys on permission changes.
+- **Rapid prototyping** — hackathons and startups skip the "spend a day standing up infra basics" tax by consuming modules an expert already built, instead of reinventing them under time pressure.
+
 ## Terraform and OpenTofu
 
-In August 2023, HashiCorp relicensed Terraform (and several other products) from the open-source MPL to the Business Source License (BSL), starting with Terraform 1.6. BSL is a "shared source" license: the code stays publicly viewable and auditable, but usage is restricted — specifically, it blocks offering the licensed software to third parties on a hosted or embedded basis that competes with HashiCorp's own products. Ordinary internal use, by individuals or companies, remains permitted.
+The tension had been building for a while before it became public: HashiCorp updated its contributor documentation in 2021 to state it would no longer review external pull requests to Terraform — an early signal, in hindsight, of the shift to come. In August 2023, HashiCorp relicensed Terraform (and several other products) from the open-source MPL to the Business Source License (BSL), starting with Terraform 1.6. BSL is a "shared source" license: the code stays publicly viewable and auditable, but usage is restricted — specifically, it blocks offering the licensed software to third parties on a hosted or embedded basis that competes with HashiCorp's own products. Ordinary internal use, by individuals or companies, remains permitted.
 
-The community's response was fast and organized: a manifesto published that same month, eventually signed by 150+ companies, 11 software projects, and 750+ individual developers, asked HashiCorp to reconsider — and warned that a fork would follow if it didn't. HashiCorp didn't reconsider. **OpenTofu** launched as that fork, backed by Scalr, env0, Spacelift, and Harness committing roughly 18 developers for five-plus years, and placed under the Linux Foundation specifically so no single company can control its direction again.
+The community's response was fast and organized: a manifesto published that same month, eventually signed by 150+ companies, 11 software projects, and 750+ individual developers, asked HashiCorp to reconsider — and warned that a fork would follow if it didn't. Much of the concern centered on how dependent Terraform was on third-party-built tooling — Gruntworks' Terratest and Terragrunt among them — that the community felt the relicense put at risk. HashiCorp didn't reconsider. **OpenTofu** launched as that fork, backed by Scalr, env0, Spacelift, and Harness committing roughly 18 developers for five-plus years, and placed under the Linux Foundation specifically so no single company can control its direction again.
 
-Since the fork, OpenTofu has stayed compatible with Terraform-written configuration while adding features the community had wanted for years and Terraform's open-source CLI still doesn't ship: **state encryption**, **provider `for_each`**, **early variable/`.tfvars` evaluation** (including in backend configuration), the **`-exclude` flag**, and **dynamic `prevent_destroy`**. HCL syntax, the provider protocol, and the state-file format remain compatible across both tools — the same providers work with either.
+Since the fork, OpenTofu has stayed compatible with Terraform-written configuration while adding features the community had wanted for years and Terraform's open-source CLI still doesn't ship: **state encryption**, **provider `for_each`**, **early variable/`.tfvars` evaluation** (including in backend configuration), the **`-exclude` flag**, and **dynamic `prevent_destroy`**. HCL syntax, the provider protocol, and the state-file format remain compatible across both tools — the same providers work with either. One concrete side-effect of the relicense: several open-source package managers, Homebrew included, stopped shipping Terraform versions beyond **v1.5.7** — the last MPL release — while continuing to carry OpenTofu.
 
 Two events since the initial fork are worth knowing as of 2026:
 
@@ -125,10 +143,12 @@ Practically, for the rest of this learning path: everything through the Associat
 
 ## Summary
 
-- IaC lets infrastructure inherit software-engineering practices — versioning, review, CI/CD — that manual provisioning never had.
-- Terraform stays vendor-agnostic by pushing everything vendor-specific into **providers**, which speak gRPC to Terraform Core on one side and a vendor API on the other.
+- IaC lets infrastructure inherit software-engineering practices — versioning, review, CI/CD (informally, **TACOS**) — that manual provisioning never had.
+- Terraform stays vendor-agnostic by pushing everything vendor-specific into **providers**, which speak gRPC to Terraform Core on one side and a vendor API on the other. Its approach to change is **immutable** — replace, don't patch in place.
 - Terraform is **declarative**: you describe desired end state; Terraform computes the plan (a DAG) to get there. This is the key distinction from imperative tools like Ansible, and the key advantage over vendor-locked declarative tools like CloudFormation.
+- **Modules** standardize configuration (write once, every team benefits); **HCP Terraform** is the managed platform for the collaborate side — shared state, secrets, RBAC, private registry.
 - The full loop is **write → init → plan → review → apply** — this chapter previews it; B3 covers it command-by-command.
+- Terraform shows up everywhere from multi-cloud and Kubernetes to PaaS setup, SDN automation, and ML-training clusters — the constant is *one workflow across vendors* plus *a reviewable diff before every change*.
 - HashiCorp's 2023 BSL relicense produced the **OpenTofu** fork (Linux Foundation, MPL 2.0); as of 2026, OpenTofu is a strict superset of Terraform's open-source CLI feature set, and is the commonly recommended default for new projects unless you need HCP-Terraform-exclusive features like Stacks.
 
 ## Exercises
