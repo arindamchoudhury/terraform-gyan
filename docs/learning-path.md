@@ -77,7 +77,7 @@
 
 **How to learn it:**
 
-1. **Interactive — HCTut ["Install Terraform"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) + ["Create infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create)** (~1 hr) — follow the AWS (or Docker) quick-start end to end in your own account.
+1. **Interactive — HCTut ["Install Terraform"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) + ["Create infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create)** (~1 hr) — follow the AWS (or Docker) quick-start end to end in your own account. (Captured notes: [[tf-install-cli]].)
 2. **Reference — [HCDocs "Provider Requirements"](https://developer.hashicorp.com/terraform/language/providers/requirements)** (~20 min) — understand `required_providers`, source addresses, and version pinning. ([Install](https://developer.hashicorp.com/terraform/install))
 3. **Book chapter — TID Ch 2** (~1 hr) — first-project walkthrough; note the `.terraform/` and lock-file layout.
 

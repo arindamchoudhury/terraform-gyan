@@ -17,3 +17,9 @@ Log of all captured sources, organised by course.
 | [Early variable eval in backend config](opentofu-docs/ot-early-eval-backend.md) | documentation | 2026-07-03 | opentofu, backend, early-evaluation | [url](https://opentofu.org/docs/language/settings/backends/configuration/) |
 | [`-exclude` flag](opentofu-docs/ot-exclude-flag.md) | documentation | 2026-07-03 | opentofu, cli, targeting | [url](https://opentofu.org/docs/cli/commands/plan/) |
 | [Dynamic `prevent_destroy`](opentofu-docs/ot-dynamic-prevent-destroy.md) | documentation | 2026-07-03 | opentofu, lifecycle, prevent_destroy | [url](https://opentofu.org/blog/opentofu-1-12-0/) |
+
+## 3. HashiCorp Terraform Tutorials
+
+| Title | Type | Added | Tags | URL |
+|---|---|---|---|---|
+| [Install Terraform](terraform-tutorials/tf-install-cli.md) | documentation | 2026-07-04 | install, cli, setup, getting-started | [url](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) |

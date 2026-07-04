@@ -32,6 +32,10 @@ nav = [
             { "3. -exclude flag" = "sources/opentofu-docs/ot-exclude-flag.md" },
             { "4. Dynamic prevent_destroy" = "sources/opentofu-docs/ot-dynamic-prevent-destroy.md" },
         ]},
+        { "HashiCorp Terraform Tutorials" = [
+            { "Overview" = "sources/terraform-tutorials/index.md" },
+            { "1. Install Terraform" = "sources/terraform-tutorials/tf-install-cli.md" },
+        ]},
     ]},
     { "Books" = [
         { "Terraform in Depth (Hafner, 2025)" = [
