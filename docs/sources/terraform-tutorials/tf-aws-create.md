@@ -8,7 +8,7 @@
 
 Second lesson of the AWS Get Started track. The complete first project: write config, set credentials, `init`, `validate`, `apply` an EC2 instance, then inspect state. This is the hands-on version of the Write→Plan→Apply loop from [[terraform-intro]] and [[01-brief-overview]].
 
-> 📌 **Version note:** The page shows `terraform v1.12.0` and pins the AWS provider `~> 5.92` (installs 5.98.0); config requires Terraform `>= 1.2`. Current stable is Terraform **1.15.7** (see [[version-facts]]) — nothing here has changed, the loop is identical.
+> 📌 **Version note (updated 2026-07-04):** The live tutorial still shows `terraform v1.12.0` and pins the AWS provider `~> 5.92`. Both are behind current. As of 2026-07-04: Terraform CLI is **1.15.7** (see [[version-facts]]) and the **AWS provider is on major 6** — 6.0 went GA in 2026, latest is **6.53.0** (2026-07-01). The config blocks below are bumped to `~> 6.0` accordingly. The workflow (write → fmt → init → validate → apply → inspect state) is unchanged; only the pins move. If you copy the tutorial verbatim you'll get provider 5.x, which still works — but a fresh project should pin `~> 6.0`.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.92"
+      version = "~> 6.0" # tutorial pins ~> 5.92; 6.0 is GA, bump for new projects
     }
   }
 
@@ -40,8 +40,20 @@ terraform {
 
 - Providers are binary plugins, versioned/distributed separately from Terraform (see [[providers]]). `required_providers` sets version constraints.
 - `source = "hashicorp/aws"` is shorthand for `registry.terraform.io/hashicorp/aws` — hostname (optional) / namespace / name.
-- `version = "~> 5.92"` means major 5, minor ≥ 92. Without a constraint, Terraform grabs the newest provider — pin it so an untested version doesn't slip in.
-- `required_version = ">= 1.2"` constrains the Terraform CLI version. Check yours with `terraform -version`.
+- `version = "~> 6.0"` means major 6, any minor ≥ 0 (i.e. `>= 6.0, < 7.0`). Without a constraint, Terraform grabs the newest provider — pin it so an untested version doesn't slip in. (The tutorial's `~> 5.92` = major 5, minor ≥ 92; use `~> 6.0` now that provider 6 is GA.)
+- `required_version = ">= 1.2"` constrains the Terraform CLI version — a floor, not a pin. Check yours with `terraform -version` (current stable 1.15.7).
+
+!!! note "Why `>= 1.2` and not `>= 1.15`?"
+    `required_version` is a **floor** — the *minimum* CLI version your config needs — not "whatever's newest." This config uses only basic blocks (`terraform`, `provider`, `data`, `resource`), all present since Terraform 1.0, so `>= 1.2` is honest and maximally compatible. Writing `>= 1.15` would be wrong here: it locks out everyone on 1.2–1.14 for no reason, since nothing in the config needs a 1.15 feature. Only raise the floor when you actually use something newer (dynamic module sources, output `type`, `convert()`, …).
+
+    This is the opposite discipline from the **provider** pin:
+
+    | Constraint | Style | Why |
+    |---|---|---|
+    | `required_version` (CLI) | floor: `>= X` at the lowest feature you use | don't gratuitously exclude older-but-fine CLIs |
+    | provider `version` | recent major, bounded: `~> 6.0` | provider majors have breaking changes; block an untested newer major |
+
+    Over-pinning the floor bites hardest with **modules**: a module declaring `>= 1.15` can't be consumed by a team still on 1.14, even if it needs nothing from 1.15.
 
 ### `main.tf` — provider, data source, resource
 
@@ -100,9 +112,9 @@ Success! The configuration is valid.
 $ terraform init
 Initializing the backend...
 Initializing provider plugins...
-- Finding hashicorp/aws versions matching "~> 5.92"...
-- Installing hashicorp/aws v5.98.0...
-- Installed hashicorp/aws v5.98.0 (signed by HashiCorp)
+- Finding hashicorp/aws versions matching "~> 6.0"...
+- Installing hashicorp/aws v6.53.0...
+- Installed hashicorp/aws v6.53.0 (signed by HashiCorp)
 
 Terraform has created a lock file .terraform.lock.hcl to record the provider
 selections it made above. ...

@@ -25,6 +25,8 @@ HCP Terraform's legacy free managed plan ended 2026-03-31; the replacement free 
 
 **Provider registry scale.** 3,000+ providers milestone (HashiCorp blog); **4,000+ providers** as of 2026 per third-party trackers (registry.terraform.io/browse/providers is the live count — treat any specific number as a snapshot, not a fixed fact).
 
+**AWS provider (hashicorp/aws).** Now on **major 6** — 6.0 went GA in 2026; latest **6.53.0** (2026-07-01). New projects pin `~> 6.0`. HashiCorp's own AWS Get Started tutorial still shows `~> 5.92` (major 5); it works but is behind. Provider versions move independently of the Terraform CLI.
+
 **2026 OpenTofu-vs-Terraform guidance (multiple third-party comparisons, checked 2026-07-03):** OpenTofu is increasingly framed as the lower-risk default for *new* projects — OSI-approved MPL 2.0, Linux Foundation governance, full provider compatibility, plus CLI features (state encryption, provider `for_each`, early variable evaluation, `-exclude`) that Terraform's open-source CLI still lacks. Staying on Terraform still makes sense for teams already invested in HCP Terraform, Terraform **Stacks** (Terraform-exclusive, lives in HCP Terraform), or with procurement requirements naming HashiCorp specifically. Existing Terraform investment ≠ reason to migrate reactively — evaluate OpenTofu at the next new-project or compliance decision point.
 
 ## Certifications (current)
