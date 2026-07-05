@@ -130,7 +130,9 @@
 | `state` subcommands: `list`/`show`/`pull`/`push`/`replace-provider` | I7 | ➕ |
 | Debug env: `TF_LOG_PATH`/`TF_LOG_CORE`/`TF_LOG_PROVIDER`, `crash.log` | E5 | ➕ |
 | Built-in named values: `path.*`, `terraform.workspace`, `count.index`, `each.*`, `self`, `terraform.applying` | B7 | ➕ |
-| HCP cost estimation · run triggers · notifications | A4 | ➕ |
+| HCP cost estimation · run triggers · notifications · `.terraformignore` | A4 | ➕ |
+| `-chdir=DIR` global option | B3 | ➕ |
+| Override files (`override.tf` / `*_override.tf`) | B4 | ➕ |
 
 ## Testing, CI/CD, policy, collaboration
 
