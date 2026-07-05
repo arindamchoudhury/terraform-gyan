@@ -121,6 +121,7 @@ full per-version OpenTofu catalogue, see
 | `environment` key in `terraform_remote_state` | **`workspace`** key | (renamed with workspaces) |
 | `null_resource` (`hashicorp/null`) for the common cases | **`terraform_data`** built-in | 1.4 |
 | Experimental `terraform test` (0.15) | **GA test framework** (`.tftest.hcl`) | 1.6 |
+| `terraform taint` / `untaint` commands | **`terraform apply -replace=ADDR`** (recreation shown in plan first) | ~0.15.2 |
 | Imperative `terraform import` command (as the only path) | **`import` block** (config-driven) | 1.5 |
 | "Comment out + `terraform state rm`" workaround | **`removed` block** | 1.7 (TF) / `destroy = false` in OpenTofu 1.12 |
 | DynamoDB table for S3 state locking (`dynamodb_table`) | **S3-native lock file** (`use_lockfile`) | 1.11 (GA); DynamoDB marked for removal |

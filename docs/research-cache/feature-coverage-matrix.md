@@ -115,6 +115,11 @@
 | Provisioners (`local-exec`, `remote-exec`, `file`, `connection`) | A1 | ✅ |
 | `terraform_data` / `null_resource` | A1 | ✅ |
 | Writing custom providers (Plugin Framework) | E1 | ✅ |
+| Provisioner `when = destroy` / `on_failure` / `self` / `connection` | A1 | ➕ |
+| `dev_overrides` (local provider dev, CLI config; v0.14+) | E1 | ➕ |
+| CLI utility commands: `fmt`, `validate`, `show`, `output`, `get`, `providers`, `version` | B3 | ➕ |
+| `apply -replace=ADDR` (supersedes deprecated `taint`/`untaint`) | B3 | ➕ |
+| `force-unlock` (manual state-lock release) | I6 | ➕ |
 
 ## Testing, CI/CD, policy, collaboration
 
