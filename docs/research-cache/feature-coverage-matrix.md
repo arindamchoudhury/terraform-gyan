@@ -120,6 +120,13 @@
 | CLI utility commands: `fmt`, `validate`, `show`, `output`, `get`, `providers`, `version` | B3 | ➕ |
 | `apply -replace=ADDR` (supersedes deprecated `taint`/`untaint`) | B3 | ➕ |
 | `force-unlock` (manual state-lock release) | I6 | ➕ |
+| Full backend catalog (`http`/`consul`/`kubernetes`/`pg`/`oss`/`cos`) + `-lock`/`-lock-timeout` | I6 | ➕ |
+| `init` flags: `-backend-config`, `-migrate-state`, `-reconfigure`, `-upgrade` | I6 | ➕ |
+| JSON config syntax (`*.tf.json` / `*.tfvars.json`) | B4 | ➕ |
+| `configuration_aliases` in `required_providers` | I8 | ➕ |
+| Automation env vars (`TF_IN_AUTOMATION`/`TF_INPUT`/`TF_CLI_ARGS`/`TF_DATA_DIR`) | A3 | ➕ |
+| `terraform login` / `logout` (CLI auth to HCP/registry) | A4 | ➕ |
+| Provider mirroring: `filesystem_mirror` / `network_mirror` (air-gapped) | E5 | ➕ |
 
 ## Testing, CI/CD, policy, collaboration
 
