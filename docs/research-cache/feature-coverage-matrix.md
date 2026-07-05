@@ -133,6 +133,10 @@
 | HCP cost estimation · run triggers · notifications · `.terraformignore` | A4 | ➕ |
 | `-chdir=DIR` global option | B3 | ➕ |
 | Override files (`override.tf` / `*_override.tf`) | B4 | ➕ |
+| Provider SDKs: Plugin Framework (modern) vs legacy SDKv2 | E1 | ➕ |
+| `TF_WORKSPACE` env var | A7 | ➕ |
+| HCP self-hosted agents (private-network runs) | A4 | ➕ |
+| Stacks deferred changes | E2 | ➕ |
 
 ## Testing, CI/CD, policy, collaboration
 
