@@ -139,6 +139,8 @@
 | Stacks deferred changes | E2 | ➕ |
 | Provider publishing + GPG signing to registry | E1 | ➕ |
 | `expect_failures` in `.tftest.hcl` run blocks | A2 | ➕ |
+| `terraform modules` command (list declared modules; TF 1.10) | I4 | ➕ |
+| `terraform metadata functions -json` (tooling; TF 1.4) | B7 | ➕ |
 
 ## Testing, CI/CD, policy, collaboration
 
@@ -190,6 +192,10 @@ Only two categories remain excluded (see the standard note at the top):
 - **Pure perf/quality/bugfix (not usable capabilities):** high-cardinality `count`/`for_each` speedup (TF 1.13), `mm:ss` elapsed-time UI, Linux kernel 3.2 requirement, Windows ARM64 / s390x build targets, richer test diagnostic objects.
 
 **Nothing usable remains deferred.** The four previously-thin items are now covered by callouts: `provider_meta` (E1), global provider plugin-cache lock (E5), `experiments` (E5), `-target-file`/`-exclude-file` (E3). Correction logged this pass: `-exclude-file` and `-target-file` are OpenTofu **1.10**, not 1.9 (only bare `-exclude` was 1.9).
+
+## CLI command index — fully mapped (2026-07-05)
+
+Diffed the path against the complete HCDocs CLI command index. All documented commands map to a topic/callout: `init` `validate` `plan` `apply` `destroy` `console` `fmt` `force-unlock` `get` `graph` `import` `login` `logout` `metadata` `modules` `output` `providers` `refresh` `show` `state` `taint`/`untaint` (→`-replace`) `version` `workspace`. Nested subcommands (`state *`, `workspace *`, `providers mirror/lock/schema`) covered in their parent topics.
 
 ## Sources
 
