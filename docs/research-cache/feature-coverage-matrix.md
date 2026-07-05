@@ -41,7 +41,8 @@
 
 | Feature | Topic | Status |
 |---|---|---|
-| Variable type constraints, `default`, `validation`, `sensitive`, `nullable` | B6 | ✅ |
+| Variable type constraints, `default`, `validation`, `sensitive` | B6 | ✅ |
+| Variable `nullable` argument (TF 1.1) | B6 | ➕ |
 | Variable `deprecated` (TF 1.15) | I5 | ✅ |
 | Variable `const` (TF 1.15) | I4 | ✅ |
 | Output `sensitive`, `precondition`, `type` (TF 1.15) | B6 | ✅ |
@@ -63,6 +64,8 @@
 | Backends (S3, GCS, azurerm, HCP) | I6 | ✅ |
 | OCI Object Storage backend (TF 1.12) | I6 | ➕ |
 | `import` block `identity` attribute (TF 1.12) | I7 | ➕ |
+| `import` block `for_each` (TF/OT 1.7) | I7 | ➕ |
+| `-refresh-only` plan/apply mode (0.15.4) | I7 | ➕ |
 | State locking | I6 | ✅ |
 | **Native S3 state locking** (lockfile; TF 1.11 / OT 1.10, deprecates DynamoDB) | I6 | ➕ |
 | `terraform_remote_state` | I6 | ✅ |
@@ -114,6 +117,7 @@
 | CI/CD automation, saved plans | A3 | ✅ |
 | `-json-into` (OT 1.12, OpenTofu-only) | A3 | ✅ |
 | HCP Terraform (workspaces, runs, run tasks) | A4 | ✅ |
+| `cloud` block for HCP integration (TF 1.1) | A4 | ➕ |
 | Policy as code (Sentinel, OPA) | A5 | ✅ |
 | Multi-env / multi-account, Terragrunt | A7 / E4 | ✅ |
 | Refactoring at scale | A8 | ✅ |
@@ -127,6 +131,7 @@
 | Large-scale state & repo architecture | E4 | ✅ |
 | Debugging (`TF_LOG`), performance, `-parallelism` | E5 | ✅ |
 | Concurrent provider install (OT 1.12) | E5 | ✅ |
+| OpenTelemetry tracing (OT 1.10, experimental, OpenTofu-only) | E5 | ➕ |
 | Platform engineering / self-service | E6 | ✅ |
 
 ## OpenTofu-only, as of 2026-07-04
