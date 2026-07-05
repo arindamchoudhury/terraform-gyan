@@ -126,7 +126,9 @@
 | `configuration_aliases` in `required_providers` | I8 | ➕ |
 | Automation env vars (`TF_IN_AUTOMATION`/`TF_INPUT`/`TF_CLI_ARGS`/`TF_DATA_DIR`) | A3 | ➕ |
 | `terraform login` / `logout` (CLI auth to HCP/registry) | A4 | ➕ |
-| Provider mirroring: `filesystem_mirror` / `network_mirror` (air-gapped) | E5 | ➕ |
+| Provider mirroring: `filesystem_mirror` / `network_mirror` + `providers mirror` cmd | E5 | ➕ |
+| `state` subcommands: `list`/`show`/`pull`/`push`/`replace-provider` | I7 | ➕ |
+| Debug env: `TF_LOG_PATH`/`TF_LOG_CORE`/`TF_LOG_PROVIDER`, `crash.log` | E5 | ➕ |
 
 ## Testing, CI/CD, policy, collaboration
 
