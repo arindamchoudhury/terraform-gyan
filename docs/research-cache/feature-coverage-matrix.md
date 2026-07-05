@@ -129,6 +129,8 @@
 | Provider mirroring: `filesystem_mirror` / `network_mirror` + `providers mirror` cmd | E5 | ➕ |
 | `state` subcommands: `list`/`show`/`pull`/`push`/`replace-provider` | I7 | ➕ |
 | Debug env: `TF_LOG_PATH`/`TF_LOG_CORE`/`TF_LOG_PROVIDER`, `crash.log` | E5 | ➕ |
+| Built-in named values: `path.*`, `terraform.workspace`, `count.index`, `each.*`, `self`, `terraform.applying` | B7 | ➕ |
+| HCP cost estimation · run triggers · notifications | A4 | ➕ |
 
 ## Testing, CI/CD, policy, collaboration
 
