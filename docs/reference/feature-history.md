@@ -17,6 +17,22 @@ version), that is called out explicitly.
 
 ## Chronological timeline
 
+### Foundational core (0.1–0.11, "always been there")
+
+These primitives predate the tracked feature timeline below — they existed in
+early Terraform (2014–2018) and are the bedrock every later feature builds on.
+Listed here so the catalogue is complete, not because they map to a single
+headline release.
+
+| Feature | Since | Notes |
+|---|---|---|
+| `resource`, `provider`, `variable`, `output`, `data`, `module` blocks | early 0.x | The core block kinds. `locals` came a bit later (0.10). |
+| `count` meta-argument | early 0.x | `for_each` on resources arrived with HCL2 in 0.12. |
+| `lifecycle`: `create_before_destroy`, `prevent_destroy`, `ignore_changes` | early 0.x | `replace_triggered_by` added 1.2. |
+| Provisioners: `local-exec`, `remote-exec`, `file`, `connection` + `null_resource` | early 0.x | "Last resort" escape hatch; `terraform_data` (1.4) replaces `null_resource`. |
+| Backends & remote state; `terraform_remote_state` | 0.9 (backends) / 0.11.13 (`remote` backend) | State locking, partial config layered on later. |
+| Workspaces (originally "environments") | 0.9 as `terraform env` | **Renamed to `terraform workspace` in 0.10.** |
+
 ### Pre-1.0 (the breaking-change era)
 
 | Version | Released | Headline features | Notes |
@@ -25,7 +41,7 @@ version), that is called out explicitly.
 | **0.12** | May 2019 | **HCL2**: first-class expressions, rich types (`list`, `map`, `object`, `tuple`), `for` expressions, **`dynamic` blocks**, conditional/ternary, `templatefile()` function. | The big language rewrite. `template_file` data source (external provider) effectively superseded by the built-in `templatefile()`. |
 | **0.13** | Aug 2020 | **`required_providers` with source addresses** (third-party/community providers auto-installed from the registry); `count`/`for_each`/`depends_on` on **module** blocks; custom provider namespaces. | Made the community provider ecosystem possible. |
 | **0.14** | Dec 2020 | **Dependency lock file** (`.terraform.lock.hcl`); `sensitive = true` on variables and outputs; concise plan diffs. | Lock file is now a committed-to-VCS staple. |
-| **0.15** | Apr 2021 | Final pre-1.0 breaking changes: removed quoted type constraints (`"string"` → `string`), `list()`/`map()` → `tolist()`/`tomap()`; **experimental** `terraform test` first appears. | These were intended as the last breaking changes before 1.0. |
+| **0.15** | Apr 2021 | Final pre-1.0 breaking changes: removed quoted type constraints (`"string"` → `string`), `list()`/`map()` → `tolist()`/`tomap()`; **experimental** `terraform test` first appears; **`-refresh-only` plan/apply mode** (0.15.4). | These were intended as the last breaking changes before 1.0. |
 
 ### 1.x (the compatibility-promise era)
 
@@ -35,7 +51,7 @@ line. Each minor release is additive.
 | Version | Released | Introduced | Deprecates / replaces |
 |---|---|---|---|
 | **1.0** | Jun 2021 | Stability & compatibility promise for the 1.x series (not a feature release — Terraform was already production-grade). | — |
-| **1.1** | Dec 2021 | **`moved` block** — refactor resource/module addresses declaratively instead of `terraform state mv`. | Reduces need for manual `state mv`. |
+| **1.1** | Dec 2021 | **`moved` block** — refactor resource/module addresses declaratively instead of `terraform state mv`; **`cloud` block** for native Terraform Cloud/HCP integration; **`nullable`** variable argument. | Reduces need for manual `state mv`. `cloud` block is the modern alternative to a `remote` backend for HCP. |
 | **1.2** | May 2022 | **`precondition` / `postcondition`** custom-condition blocks; **`replace_triggered_by`** lifecycle argument; cloud-run OPA output in CLI. | — |
 | **1.3** | Sep 2022 | **Optional object-type attributes with defaults** (`optional(type, default)`) graduate from experimental; `moved` extended to third-party modules. | — |
 | **1.4** | Mar 2023 | **`terraform_data`** built-in managed resource. | **Replaces `null_resource`** (no more `hashicorp/null` provider needed for the common cases). |
@@ -89,7 +105,7 @@ open-source CLI lacked. Version numbers below are **OpenTofu** versions.
 | `template_file` data source (`hashicorp/template` provider) | Built-in **`templatefile()`** function | 0.12 |
 | Quoted type constraints (`"string"`, `"list"`) | Bare types (`string`, `list(...)`) | 0.15 (removed) |
 | `list()` / `map()` functions | `tolist()` / `tomap()` | 0.15 |
-| `terraform env` subcommand | **`terraform workspace`** | 0.9 (renamed; old form warns) |
+| `terraform env` subcommand | **`terraform workspace`** | 0.10 (renamed; old form warns) |
 | `environment` key in `terraform_remote_state` | **`workspace`** key | (renamed with workspaces) |
 | `null_resource` (`hashicorp/null`) for the common cases | **`terraform_data`** built-in | 1.4 |
 | Experimental `terraform test` (0.15) | **GA test framework** (`.tftest.hcl`) | 1.6 |
