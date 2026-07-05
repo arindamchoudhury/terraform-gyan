@@ -56,6 +56,7 @@ nav = [
         ]},
     ]},
     { "Reference" = [
+        { "Feature history" = "reference/feature-history.md" },
         { "Glossary" = "reference/glossary.md" },
         { "Resources" = "reference/resources.md" },
     ]},
