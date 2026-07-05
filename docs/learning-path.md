@@ -1,6 +1,6 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Last updated:** 2026-07-04 — **Full feature audit** (see [[feature-coverage-matrix]]): built a complete Terraform+OpenTofu feature→topic matrix and closed the gaps it found — ephemeral values/resources + write-only arguments (A6, major), provider-defined functions (B7 use / E1 author), OpenTofu `enabled` meta-arg (I1), native S3 state locking (I6), import `-generate-config-out` (I7), OpenTofu OCI registries (E4). · 2026-07-04 — **Feature-coverage pass** for Terraform 1.15 / OpenTofu 1.12 (see [[tf115-ot112-features]]): folded in dynamic module sources + `const` (I4), variable/output deprecation (I5), output `type` (B6), `convert()` (B7), test-double functions (A2), OpenTofu `destroy = false` (I7), `-json-into` (A3), and expanded the E3 divergence list to 7 items with the "Terraform 1.15 closed some gaps" note. · 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.
+> **Last updated:** 2026-07-05 — **Feature-history reconciliation** (see [[feature-history]]): wrote a full version-by-version feature catalogue (0.11–1.15), which surfaced 1.12–1.14 features the 2026-07-04 matrix predated; closed the gaps — `actions` block (A1), list resources + `terraform query` (B8), cross-object variable validation + `test -parallelism` (A2), `templatestring()` + short-circuit operators (B7), OCI backend (I6), import `identity` (I7). · 2026-07-04 — **Full feature audit** (see [[feature-coverage-matrix]]): built a complete Terraform+OpenTofu feature→topic matrix and closed the gaps it found — ephemeral values/resources + write-only arguments (A6, major), provider-defined functions (B7 use / E1 author), OpenTofu `enabled` meta-arg (I1), native S3 state locking (I6), import `-generate-config-out` (I7), OpenTofu OCI registries (E4). · 2026-07-04 — **Feature-coverage pass** for Terraform 1.15 / OpenTofu 1.12 (see [[tf115-ot112-features]]): folded in dynamic module sources + `const` (I4), variable/output deprecation (I5), output `type` (B6), `convert()` (B7), test-double functions (A2), OpenTofu `destroy = false` (I7), `-json-into` (A3), and expanded the E3 divergence list to 7 items with the "Terraform 1.15 closed some gaps" note. · 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.
 > **Current stable versions:** Terraform CLI **1.15.7** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.3** (1.12.0 released 2026-05-14, MPL 2.0)
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
@@ -165,6 +165,8 @@
 
 > 📌 Terraform **1.15** added the `convert(value, type)` function for precise inline type conversion — cleaner than the old `tolist`/`tomap`/`tset` juggling in tricky spots. (See [[tf115-ot112-features]].)
 > 📌 Beyond the built-ins, **provider-defined functions** (TF 1.8) let a provider ship its own functions, called as `provider::<name>::<fn>(...)` — e.g. `provider::aws::arn_parse(...)`. Available in the AWS, Google, and Kubernetes providers among others. Authoring them is E1. (See [[feature-coverage-matrix]].)
+> 📌 Terraform **1.9** added **`templatestring(ref, vars)`** — like `templatefile()`, but renders a template string obtained at runtime (e.g. from a data source) instead of a file on disk. (See [[feature-history]].)
+> 📌 Terraform **1.12** made logical operators **short-circuit** (`&&`/`||` stop evaluating once the result is decided), so guards like `var.x != null && var.x.enabled` no longer error on the null case. (See [[feature-history]].)
 
 **Milestone:** You can transform a list of maps into a keyed map with a `for` expression and use it to drive resource creation.
 
@@ -181,6 +183,8 @@
 1. **Reference — [HCDocs "Data Sources"](https://developer.hashicorp.com/terraform/language/data-sources)** (~20 min) — the block syntax and when data is read (plan vs apply).
 2. **Interactive — extend your project** (~45 min) — replace a hard-coded AMI/AZ/image with a `data` lookup. The `data "aws_ami" "ubuntu"` filter pattern is captured in [[tf-aws-create]].
 3. **Book chapter — TID Ch 4** (data sources) (~30 min) — dependency implications of data reads.
+
+> 📌 Beyond point lookups, Terraform **1.14** added **list resources** (defined in `*.tfquery.hcl` files) and the **`terraform query`** command — you can enumerate and filter *existing* infrastructure a provider knows about, not just read one known object like a data source does. Useful for discovery/inventory ahead of an `import`. Newer than both books and the 004 exam; verify against the CHANGELOG. (See [[feature-history]].)
 
 **Milestone:** You can look up a resource you didn't create (e.g. the latest AMI or default VPC) and wire it into a managed resource.
 
@@ -318,6 +322,7 @@ You are ready to advance when you can:
 3. **Book chapter — TUR Ch 3** (~1.5 hrs) — the canonical remote-state + isolation discussion.
 
 > 📌 The S3 backend now has **native state locking** via a lock file in the bucket (`use_lockfile = true`) — the separate **DynamoDB table is no longer required** (Terraform 1.11+; OpenTofu shipped native S3 locking in 1.10). Older tutorials still show the S3+DynamoDB pairing; prefer native locking on new setups. (See [[feature-coverage-matrix]].)
+> 📌 Terraform **1.12** added a native **OCI Object Storage backend** (Oracle Cloud), joining S3/GCS/azurerm/HCP as a first-class remote-state store. (See [[feature-history]].)
 
 **Milestone:** You can migrate a project from local to remote state with locking and read another config's outputs via `terraform_remote_state`.
 
@@ -336,6 +341,8 @@ You are ready to advance when you can:
 3. **Book chapter — TID Ch 6** (state operations) (~1 hr) — safe patterns and recovery.
 
 > 📌 To drop a resource from state while leaving the real object alone, Terraform's config-driven way is the `removed` block (preferred over `terraform state rm`). **OpenTofu 1.12** adds a lifecycle alternative — `destroy = false` on the resource — that does the same "forget, don't destroy" in the resource block itself. OpenTofu-only; Terraform has no lifecycle equivalent. (See [[tf115-ot112-features]], [[ot-dynamic-prevent-destroy]] for the OpenTofu-divergence context.)
+
+> 📌 Terraform **1.12** added an **`identity` attribute** to `import` blocks as an alternative to `id` (the two are mutually exclusive) — for providers that identify a resource by a structured identity object rather than a single opaque ID string. (See [[feature-history]].)
 
 **Milestone:** You can adopt an unmanaged cloud resource via an `import` block and rename a resource with a `moved` block — both with an empty plan afterward.
 
@@ -387,6 +394,8 @@ You are ready to advance when you can:
 2. **Interactive — replace a provisioner** (~45 min) — take a `local-exec` hack and re-express it with `terraform_data` triggers or a data source.
 3. **Book chapter — TID Ch 7 / TUR provisioners section** (~45 min) — legitimate vs illegitimate uses.
 
+> 📌 Terraform **1.14** added the top-level **`actions` block** — provider-defined operations *outside* the normal CRUD lifecycle (e.g. invoke a Lambda, trigger a CloudFront invalidation). This is the modern, provider-native successor to abusing a provisioner or `terraform_data` for one-off side effects: the action is declared by the provider and invoked during apply, with a count reported in the summary. Newer than both books; verify against the CHANGELOG. (See [[feature-history]].)
+
 **Milestone:** You can use `terraform_data` with `triggers_replace` to force a controlled rebuild, and justify avoiding a provisioner in a given scenario.
 
 ---
@@ -406,6 +415,8 @@ You are ready to advance when you can:
    > 📌 `terraform test` post-dates TUR's main testing chapter — use HCDocs for the native framework, TUR for the strategy.
    > 📌 Balance the two: run **native `terraform test` on every commit** (fast, no Go, no real infra); reserve **Terratest for integration pipelines / pre-release** (slower, deploys real infra, needs Go 1.26+ and cloud creds). Terratest v2 is in development; v1 is in security-only maintenance.
    > 📌 Terraform **1.15** lets you call functions inside `mock_data` and `override_resource` blocks, so test doubles can generate realistic values (GUIDs, resource IDs) instead of hard-coded constants. (See [[tf115-ot112-features]].)
+   > 📌 Terraform **1.9** widened variable `validation`: a condition can now reference *other* variables, data sources, and locals (previously only the variable itself), so you can enforce cross-field rules ("if `mode = ha` then `replicas >= 2`"). The referenced values must be known at plan time. (See [[feature-history]].)
+   > 📌 Terraform **1.12** added **`terraform test -parallelism=N`** plus per-run annotations to run independent test files/runs concurrently — meaningful when a suite provisions real infra per run. (See [[feature-history]].)
 
 **Milestone:** You can write a `.tftest.hcl` suite that provisions a module, asserts on its outputs, and tears down — plus a `precondition` that fails a bad plan early. Stretch: a Terratest case that deploys the module and verifies real behavior via the resource's own API.
 

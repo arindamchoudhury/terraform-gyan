@@ -1,6 +1,6 @@
 # Terraform + OpenTofu feature → learning-path coverage matrix
 
-**Built:** 2026-07-04 · Terraform 1.15.7 / OpenTofu 1.12.3. Audit of the full feature surface against `learning-path.md`. ✅ = covered · ➕ = added in this audit · ⬜ = intentionally out of scope.
+**Built:** 2026-07-04 · **updated 2026-07-05** (folded in 1.9 / 1.12 / 1.14 features surfaced while writing [[feature-history]]). Terraform 1.15.7 / OpenTofu 1.12.3. Audit of the full feature surface against `learning-path.md`. ✅ = covered · ➕ = added in this audit · ⬜ = intentionally out of scope.
 
 ## Language: top-level blocks
 
@@ -20,6 +20,8 @@
 | `removed` block | I7 | ✅ |
 | `check` block (+ custom conditions) | A2 | ✅ |
 | `ephemeral` resource block (TF 1.10 / OT 1.11) | A6 | ➕ |
+| `actions` block — provider-defined side-effect ops (TF 1.14) | A1 | ➕ |
+| list resources `*.tfquery.hcl` + `terraform query` (TF 1.14) | B8 | ➕ |
 
 ## Meta-arguments & lifecycle
 
@@ -45,6 +47,9 @@
 | Output `sensitive`, `precondition`, `type` (TF 1.15) | B6 | ✅ |
 | Output `deprecated` (TF 1.15) | I5 | ✅ |
 | Expressions: conditionals, `for`, splat, string templates | B7 | ✅ |
+| Cross-object variable `validation` (reference other vars/data/locals; TF 1.9) | A2 | ➕ |
+| `templatestring()` (TF 1.9) | B7 | ➕ |
+| Short-circuiting `&&` / `||` operators (TF 1.12) | B7 | ➕ |
 | `dynamic` blocks + complex/optional types | I3 | ✅ |
 | Built-in function library | B7 | ✅ |
 | `convert()` (TF 1.15) | B7 | ✅ |
@@ -56,6 +61,8 @@
 |---|---|---|
 | State fundamentals, `terraform.tfstate` | B9 | ✅ |
 | Backends (S3, GCS, azurerm, HCP) | I6 | ✅ |
+| OCI Object Storage backend (TF 1.12) | I6 | ➕ |
+| `import` block `identity` attribute (TF 1.12) | I7 | ➕ |
 | State locking | I6 | ✅ |
 | **Native S3 state locking** (lockfile; TF 1.11 / OT 1.10, deprecates DynamoDB) | I6 | ➕ |
 | `terraform_remote_state` | I6 | ✅ |
@@ -102,6 +109,7 @@
 |---|---|---|
 | Native `terraform test` (`.tftest.hcl`, mocks/overrides) | A2 | ✅ |
 | Functions in `mock_data`/`override_resource` (TF 1.15) | A2 | ✅ |
+| `terraform test -parallelism` + parallel run annotations (TF 1.12) | A2 | ➕ |
 | Terratest (Go, e2e) | A2 | ✅ |
 | CI/CD automation, saved plans | A3 | ✅ |
 | `-json-into` (OT 1.12, OpenTofu-only) | A3 | ✅ |
@@ -131,4 +139,4 @@ Windows ARM64 builds · S3 `aws login` creds · `-target-file`/`-exclude-file` f
 
 ## Sources
 
-`version-facts.md`, `tf115-ot112-features.md`, plus HashiCorp/OpenTofu release blogs 1.5–1.15 / 1.7–1.12 and the HCDocs + OTDocs language references (all checked 2026-07-04).
+`version-facts.md`, `tf115-ot112-features.md`, `../reference/feature-history.md`, plus HashiCorp/OpenTofu release blogs 1.5–1.15 / 1.7–1.12 and the HCDocs + OTDocs language references (checked 2026-07-04; 1.9/1.12/1.14 rows added 2026-07-05).
