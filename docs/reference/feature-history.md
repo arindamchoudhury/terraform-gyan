@@ -58,12 +58,12 @@ line. Each minor release is additive.
 | **1.5** | Jun 2023 | **`import` block** (config-driven import) + **`-generate-config-out`** codegen; **`check` block** (standalone assertions); new functions **`strcontains()`** and **`plantimestamp()`**. **License change: MPL → BSL 1.1** — this triggered the OpenTofu fork. | `import` block reduces reliance on the imperative `terraform import` command. |
 | **1.6** | Oct 2023 | **`terraform test` framework GA** (`.tftest.hcl`, `run` blocks, assertions). | **Replaces the experimental test feature** from 0.15. |
 | **1.7** | Jan 2024 | **Test mocking** (`mock_provider`, `override_resource`/`override_data`); **`removed` block** (config-driven remove — drop from state without destroying); **`for_each` on `import` blocks** (loop imports over a map). | `removed` block replaces the "comment out + `state rm`" workaround. |
-| **1.8** | Apr 2024 | **Provider-defined functions** (`provider::name::fn()`) — providers can ship their own functions. | — |
+| **1.8** | Apr 2024 | **Provider-defined functions** (`provider::name::fn()`) — providers can ship their own functions; built-in provider functions **`encode_tfvars`**, **`decode_tfvars`**, **`encode_expr`** (`provider::terraform::…`). | — |
 | **1.9** | Jun 2024 | **Cross-object variable validation** (a `validation` condition can now reference other variables, data sources, locals); **`templatestring()`** function. | Removes the old "validation can only reference the variable itself" limitation. |
 | **1.10** | Nov 2024 | **Ephemeral resources** + ephemeral values, including **ephemeral input variables and outputs** — data that is never written to plan or state. | New primitive for short-lived secrets/tokens. |
 | **1.11** | Feb 2025 | **Write-only arguments** (`*_wo` + `*_wo_version`) — send secrets to a provider without persisting them in state; **S3-native state locking GA** (lock file in the bucket). | **Deprecates DynamoDB-based S3 locking** (`dynamodb_table`); marked for removal in a future minor. |
 | **1.12** | 2025 | **OCI Object Storage backend**; `terraform test -parallelism` + per-run parallel annotations; **import block `identity`** attribute (mutually exclusive with `id`); short-circuiting logical operators. | — |
-| **1.13** | 2025 | **Terraform Stacks in the CLI** (previously HCP-only surface). | — |
+| **1.13** | Aug 2025 | **Terraform Stacks in the CLI** (`terraform stacks` command, previously HCP-only); **`terraform rpcapi`** command GA (for tooling/integrators); test enhancements — **external variables inside `.tftest.hcl`** and cross-run output references, parallel teardown; much faster evaluation of high-cardinality `count`/`for_each`. | — |
 | **1.14** | 2025 | **List resources** (`*.tfquery.hcl`) + **`terraform query`** command; **`actions` block** — provider-defined operations outside the CRUD lifecycle (e.g. invoke a Lambda, trigger a CDN invalidation); test-framework output improvements. | — |
 | **1.15** | Apr 2026 | **Dynamic module sources** (variables in `source`/`version`) + **`const` variable attribute**; **`deprecated` attribute** on `variable`/`output`; **`convert()`** function; **`type` constraint on `output`**; functions usable inside `mock_data`/`override_resource`; S3 backend `aws login` credentials; Windows ARM64 builds. | `deprecated` gives module authors a first-class way to sunset variables/outputs. Closes several long-standing gaps to OpenTofu. |
 
@@ -92,13 +92,13 @@ full per-version OpenTofu catalogue, see
 | **1.9** | **Provider `for_each`** (multiple provider instances from a collection) | None as of 1.15 |
 | **1.8** | **Early variable / `.tfvars` evaluation** (variables usable in `backend`, module sources) | Partially addressed by TF 1.15 `const` + dynamic module sources |
 | **1.9** | **`-exclude`** flag (and `-exclude-file`) — inverse of `-target` | None as of 1.15 |
-| **1.10** | **OCI registries** for modules *and* providers | Terraform 1.12 added an OCI **backend**, not OCI registries |
+| **1.10** | **OCI registries** for modules *and* providers; experimental **OpenTelemetry tracing** | Terraform 1.12 added an OCI **backend**, not OCI registries; no OTel in Terraform |
 | **1.11** | **Ephemeral resources / write-only arguments** (parity with TF 1.10/1.11) | Yes — TF 1.10 / 1.11 |
 | **1.11** | **`enabled` meta-argument** (OpenTofu-only convenience) | None; use `count = var.x ? 1 : 0` |
 | **1.12** | **Dynamic `prevent_destroy`** (expression, not just literal) | Terraform requires a literal |
 | **1.12** | **`destroy = false`** lifecycle arg (drop from state without destroying) | Use the `removed` block instead |
 | **1.12** | **`-json-into=FILE`** (JSON stream to file, human UI stays on stdout) | None (`-json` replaces stdout) |
-| **1.12** | Concurrent provider installation; OpenTelemetry tracing | — |
+| **1.12** | Concurrent provider installation; full cross-platform provider checksums at `init` | — |
 
 !!! note "Which to pick for new work"
     2026 third-party guidance increasingly frames **OpenTofu as the lower-risk
