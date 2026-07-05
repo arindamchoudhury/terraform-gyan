@@ -148,6 +148,10 @@
 | `provider::terraform::encode_tfvars`/`decode_tfvars`/`encode_expr` (TF 1.8) | A1 | ➕ |
 | `.tftest.hcl` external variables + cross-run outputs (TF 1.13) | A2 | ➕ |
 | OpenTofu MCP server (OT 1.10, OpenTofu-only) | E6 | ➕ |
+| `provider_meta` block (module metadata for provider vendors) | E1 | ➕ |
+| Global provider plugin-cache locking (OT 1.10, concurrent-safe) | E5 | ➕ |
+| `terraform {}` `experiments` opt-in (alpha language features) | E5 | ➕ |
+| `-target-file` / `-exclude-file` (OT 1.10, file-driven targeting) | E3 | ➕ |
 | Platform engineering / self-service | E6 | ✅ |
 
 ## OpenTofu-only, as of 2026-07-04
@@ -161,7 +165,7 @@ Only two categories remain excluded (see the standard note at the top):
 - **Unreleased:** Terraform 1.16 (`store` block in `terraform_data`, import blocks in modules, action `on_failure` modes, `workspace list -json`, s390x, …) and OpenTofu 1.13 (GCP KMS AAD, OCI repo-scoped creds, …) — add when they GA.
 - **Pure perf/quality/bugfix (not usable capabilities):** high-cardinality `count`/`for_each` speedup (TF 1.13), `mm:ss` elapsed-time UI, Linux kernel 3.2 requirement, Windows ARM64 / s390x build targets, richer test diagnostic objects.
 
-**Still deferred (usable but very niche — no callout yet, flagged for a follow-up pass):** `provider_meta` block, `-target-file` / `-exclude-file` (the latter is noted in E3), global provider plugin-cache lock, and the `experiments` framework. These are real, usable capabilities, so under the widened standard they *should* eventually get a one-line mention (E1/E5 mostly); left thin for now and recorded here so they aren't silently lost.
+**Nothing usable remains deferred.** The four previously-thin items are now covered by callouts: `provider_meta` (E1), global provider plugin-cache lock (E5), `experiments` (E5), `-target-file`/`-exclude-file` (E3). Correction logged this pass: `-exclude-file` and `-target-file` are OpenTofu **1.10**, not 1.9 (only bare `-exclude` was 1.9).
 
 ## Sources
 
