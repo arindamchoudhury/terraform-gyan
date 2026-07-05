@@ -82,12 +82,14 @@ line. Each minor release is additive.
 ## OpenTofu divergence
 
 OpenTofu forked at Terraform 1.5.x and shipped features Terraform's
-open-source CLI lacked. Version numbers below are **OpenTofu** versions.
+open-source CLI lacked. Version numbers below are **OpenTofu** versions. For the
+full per-version OpenTofu catalogue, see
+[OpenTofu Feature History](opentofu-feature-history.md).
 
 | OpenTofu version | Feature | Terraform equivalent? |
 |---|---|---|
 | **1.7** | **State encryption** (client-side, with external key providers) | None in Terraform CLI as of 1.15 |
-| **1.6 / 1.7** | **Provider `for_each`** (multiple provider instances from a collection) | None as of 1.15 |
+| **1.9** | **Provider `for_each`** (multiple provider instances from a collection) | None as of 1.15 |
 | **1.8** | **Early variable / `.tfvars` evaluation** (variables usable in `backend`, module sources) | Partially addressed by TF 1.15 `const` + dynamic module sources |
 | **1.9** | **`-exclude`** flag (and `-exclude-file`) — inverse of `-target` | None as of 1.15 |
 | **1.10** | **OCI registries** for modules *and* providers | Terraform 1.12 added an OCI **backend**, not OCI registries |

@@ -57,6 +57,7 @@ nav = [
     ]},
     { "Reference" = [
         { "Feature history" = "reference/feature-history.md" },
+        { "OpenTofu feature history" = "reference/opentofu-feature-history.md" },
         { "Glossary" = "reference/glossary.md" },
         { "Resources" = "reference/resources.md" },
     ]},
