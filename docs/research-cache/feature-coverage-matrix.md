@@ -137,6 +137,8 @@
 | `TF_WORKSPACE` env var | A7 | ➕ |
 | HCP self-hosted agents (private-network runs) | A4 | ➕ |
 | Stacks deferred changes | E2 | ➕ |
+| Provider publishing + GPG signing to registry | E1 | ➕ |
+| `expect_failures` in `.tftest.hcl` run blocks | A2 | ➕ |
 
 ## Testing, CI/CD, policy, collaboration
 
