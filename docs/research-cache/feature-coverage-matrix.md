@@ -1,6 +1,16 @@
 # Terraform + OpenTofu feature → learning-path coverage matrix
 
-**Built:** 2026-07-04 · **updated 2026-07-05** (folded in 1.9 / 1.12 / 1.14 features surfaced while writing [[feature-history]]). Terraform 1.15.7 / OpenTofu 1.12.3. Audit of the full feature surface against `learning-path.md`. ✅ = covered · ➕ = added in this audit · ⬜ = intentionally out of scope.
+**Built:** 2026-07-04 · **updated 2026-07-05** (folded in 1.9 / 1.12 / 1.14 features surfaced while writing [[feature-history]]; then a **completeness re-audit** under a widened standard — see below). Terraform 1.15.7 / OpenTofu 1.12.3. Audit of the full feature surface against `learning-path.md`. ✅ = covered · ➕ = added in this audit · ⬜ = intentionally out of scope.
+
+!!! note "Coverage standard (widened 2026-07-05)"
+    Goal is **learn Terraform completely**, not just cert-pass. So every
+    *usable capability* — block, meta-argument, argument, function set, CLI
+    command/flag/mode, backend, language construct — must be represented in the
+    path (as a topic or callout). Exhaustive enumerations (all ~150 built-in
+    functions) are delegated to the reference the path links, not listed as path
+    items. Only two things stay out: **unreleased** features (TF 1.16, OT 1.13)
+    and **pure perf/quality/bugfix** changes that aren't things you *use*
+    (elapsed-time UI format, kernel requirements, high-cardinality speedups).
 
 ## Language: top-level blocks
 
@@ -132,15 +142,26 @@
 | Debugging (`TF_LOG`), performance, `-parallelism` | E5 | ✅ |
 | Concurrent provider install (OT 1.12) | E5 | ✅ |
 | OpenTelemetry tracing (OT 1.10, experimental, OpenTofu-only) | E5 | ➕ |
+| Full cross-platform provider checksums at init (OT 1.12) | B3 | ➕ |
+| `.tofu` / `.tofurc` file extensions (OT 1.8) | E3 | ➕ |
+| `terraform rpcapi` command GA (integrators; TF 1.13) | E5 | ➕ |
+| `provider::terraform::encode_tfvars`/`decode_tfvars`/`encode_expr` (TF 1.8) | A1 | ➕ |
+| `.tftest.hcl` external variables + cross-run outputs (TF 1.13) | A2 | ➕ |
+| OpenTofu MCP server (OT 1.10, OpenTofu-only) | E6 | ➕ |
 | Platform engineering / self-service | E6 | ✅ |
 
 ## OpenTofu-only, as of 2026-07-04
 
 state encryption · provider `for_each` · early variable evaluation · `-exclude` (+ `-exclude-file`) · dynamic `prevent_destroy` · `destroy = false` · `-json-into` · `enabled` meta-argument · OCI registries (providers+modules) · external key providers · OpenTelemetry tracing. Ephemeral resources/write-only reached OpenTofu in 1.11 (parity with TF 1.10/1.11).
 
-## Intentionally out of scope (⬜ — noted, no topic change)
+## Out of scope under the widened standard (⬜)
 
-Windows ARM64 builds · S3 `aws login` creds · `-target-file`/`-exclude-file` file variants (mentioned in E3) · global provider cache lock · `.tofu`/`.tofurc` file extensions · provider `provider_meta` · experiments framework.
+Only two categories remain excluded (see the standard note at the top):
+
+- **Unreleased:** Terraform 1.16 (`store` block in `terraform_data`, import blocks in modules, action `on_failure` modes, `workspace list -json`, s390x, …) and OpenTofu 1.13 (GCP KMS AAD, OCI repo-scoped creds, …) — add when they GA.
+- **Pure perf/quality/bugfix (not usable capabilities):** high-cardinality `count`/`for_each` speedup (TF 1.13), `mm:ss` elapsed-time UI, Linux kernel 3.2 requirement, Windows ARM64 / s390x build targets, richer test diagnostic objects.
+
+**Still deferred (usable but very niche — no callout yet, flagged for a follow-up pass):** `provider_meta` block, `-target-file` / `-exclude-file` (the latter is noted in E3), global provider plugin-cache lock, and the `experiments` framework. These are real, usable capabilities, so under the widened standard they *should* eventually get a one-line mention (E1/E5 mostly); left thin for now and recorded here so they aren't silently lost.
 
 ## Sources
 
