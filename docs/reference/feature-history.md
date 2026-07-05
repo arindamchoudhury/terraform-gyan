@@ -67,6 +67,16 @@ line. Each minor release is additive.
 | **1.14** | 2025 | **List resources** (`*.tfquery.hcl`) + **`terraform query`** command; **`actions` block** — provider-defined operations outside the CRUD lifecycle (e.g. invoke a Lambda, trigger a CDN invalidation); test-framework output improvements. | — |
 | **1.15** | Apr 2026 | **Dynamic module sources** (variables in `source`/`version`) + **`const` variable attribute**; **`deprecated` attribute** on `variable`/`output`; **`convert()`** function; **`type` constraint on `output`**; functions usable inside `mock_data`/`override_resource`; S3 backend `aws login` credentials; Windows ARM64 builds. | `deprecated` gives module authors a first-class way to sunset variables/outputs. Closes several long-standing gaps to OpenTofu. |
 
+!!! note "1.16 (unreleased, in development)"
+    On `main` as of this check — **not yet a stable release**, subject to change.
+    Notable entries in the 1.16 changelog: **`import` blocks inside modules**;
+    a **`store` block in `terraform_data`** for ephemeral/sensitive values;
+    providers can use **nested blocks as computed values**; action-trigger
+    **`on_failure` modes** (`halt`/`taint`/`continue`) plus a `caller` symbol and
+    before/after-destroy action events; **`workspace list -json`**; JSON output
+    for `terraform state show`; `contains()` can now test for `null`; Linux
+    s390x builds. Confirm against the release notes once 1.16.0 GAs.
+
 ---
 
 ## OpenTofu divergence
@@ -133,7 +143,10 @@ OpenTofu release notes (1.7–1.12), and the project's own
 Verified 2026-07-05 (re-audited against per-release notes — added import
 `for_each` (1.7), ephemeral variables/outputs (1.10), and the `strcontains`/
 `plantimestamp` functions (1.5)). Pre-1.0 feature attributions cross-checked
-against the HashiCorp release history and *Terraform in Depth* Ch1–2.
+against the HashiCorp release history and *Terraform in Depth* Ch1–2. The 1.16
+(unreleased) entry is drawn from the `main` branch
+[CHANGELOG](https://github.com/hashicorp/terraform/blob/main/CHANGELOG.md) and
+will change before GA.
 
 **Scope:** this lists the *headline* language/CLI/workflow feature per release.
 Each minor also adds a handful of built-in functions and small CLI flags that
