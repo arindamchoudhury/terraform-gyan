@@ -24,26 +24,40 @@ There is a second, quieter lesson here: **project layout**. The mistakes you mak
 
 ## Install the CLI
 
-Terraform ships as a **single self-contained binary** — no runtime, no dependencies. You can install it via a package manager or by hand. OpenTofu installs the same way; substitute `tofu` for `terraform` throughout.
+Both tools ship as a **single self-contained binary** — no runtime, no dependencies — installable via a package manager or by hand. They differ only in names:
+
+- **Terraform** — package and binary are both `terraform`.
+- **OpenTofu** — binary is **`tofu`**, but the package is **`opentofu`** (that mismatch is what makes `choco install tofu` / `brew install hashicorp/tap/tofu` fail).
+
+Configuration is byte-identical between them, so install whichever you'll use; the commands below cover both.
+
+!!! warning "Don't install OpenTofu from HashiCorp's channels"
+    `hashicorp/tap` (Homebrew) and `apt.releases.hashicorp.com` ship **HashiCorp products only** — OpenTofu isn't one. Use OpenTofu's *own* packages, always named **`opentofu`** (or the `tofu` binary via the standalone script/Snap).
 
 ### Package manager
 
-**macOS (Homebrew)** — add HashiCorp's own tap, then install:
+**macOS (Homebrew)**
 
 ```shell
+# Terraform — HashiCorp's own tap (see the BSL note below)
 brew tap hashicorp/tap
 brew install hashicorp/tap/terraform
+
+# OpenTofu — in homebrew-core, no tap needed
+brew install opentofu
 ```
 
-**Windows (Chocolatey):**
+**Windows (Chocolatey)**
 
 ```shell
-choco install terraform
+choco install terraform     # Terraform
+choco install opentofu      # OpenTofu  (package 'opentofu', installs the 'tofu' binary)
 ```
 
-**Linux (Ubuntu/Debian)** — HashiCorp maintains signed apt packages. Add the GPG key and repo, then install:
+**Linux (Debian/Ubuntu)**
 
 ```shell
+# Terraform — HashiCorp signed apt repo
 wget -O- https://apt.releases.hashicorp.com/gpg | \
   gpg --dearmor | \
   sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
@@ -51,40 +65,45 @@ echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
   https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
   sudo tee /etc/apt/sources.list.d/hashicorp.list
 sudo apt update && sudo apt-get install terraform
+
+# OpenTofu — official convenience script (handles deb/rpm/snap/standalone)
+curl -fsSL https://get.opentofu.org/install-opentofu.sh -o install-opentofu.sh
+chmod +x install-opentofu.sh
+./install-opentofu.sh --install-method deb    # use --install-method rpm on RHEL/Fedora
 ```
 
-RHEL/CentOS/Amazon Linux use `yum-config-manager` + `yum install terraform`; Fedora uses `dnf config-manager` + `dnf install terraform`.
+RHEL/CentOS/Amazon Linux/Fedora: Terraform via HashiCorp's `yum`/`dnf` repo (`yum install terraform`); OpenTofu via the same script with `--install-method rpm`, its rpm repo, or a **Snap** (`snap install opentofu`). See [OpenTofu install docs](https://opentofu.org/docs/intro/install/) for every method.
 
-!!! warning "The BSL wrinkle: some package managers are frozen at v1.5.7"
-    HashiCorp's 2023 relicense to the BSL (see Chapter 1) had a practical side-effect: several community package managers stopped shipping Terraform past **v1.5.7**, the last MPL release. Plain Homebrew's `terraform` formula is one of them. That is exactly why the macOS command above uses **`hashicorp/tap`** — HashiCorp's *own* tap, which stays current (1.15.7 as of this writing). If your `terraform version` reports 1.5.7 after a `brew install terraform`, this is why. OpenTofu (MPL 2.0) has no such restriction and its `tofu` package tracks the latest release everywhere.
+!!! warning "The BSL wrinkle: some package managers freeze Terraform at v1.5.7"
+    HashiCorp's 2023 relicense to the BSL (Chapter 1) had a side-effect: several community package managers stopped shipping Terraform past **v1.5.7**, the last MPL release — plain Homebrew's `terraform` formula among them. That is why the macOS command uses **`hashicorp/tap`** (HashiCorp's own, current at 1.15.7). If `terraform version` reports 1.5.7 after a plain `brew install terraform`, this is why. **OpenTofu (MPL 2.0) has no such restriction** — every channel tracks the latest release (1.12.3).
 
 ### Manual install
 
-Download the zip for your OS from the releases page, unzip it, and put the single `terraform` executable somewhere on your `PATH`:
+Download the zip for your OS — Terraform from `releases.hashicorp.com`, OpenTofu from `github.com/opentofu/opentofu/releases` — unzip, and put the single executable on your `PATH`:
 
 ```shell
-echo $PATH                         # list PATH dirs (macOS/Linux)
-mv ~/Downloads/terraform /usr/local/bin/
+echo $PATH                                    # list PATH dirs (macOS/Linux)
+mv ~/Downloads/terraform /usr/local/bin/      # or:  mv ~/Downloads/tofu /usr/local/bin/
 ```
 
-On Windows, run `path` to see the `PATH` dirs and move `terraform.exe` into one of them.
+On Windows, run `path` and move `terraform.exe` / `tofu.exe` into one of the listed dirs.
 
 ### Verify and enable completion
 
 ```shell
-terraform -help                    # lists the subcommands
-terraform version                  # confirms the installed version, e.g. 1.15.7
+terraform version      # e.g. 1.15.7
+tofu version           # e.g. 1.12.3     (whichever you installed)
 ```
 
-Append `-help` to any subcommand for its flags (`terraform plan -help`). Turn on tab completion once, then restart your shell:
+`-help` lists the subcommands; append it to any subcommand for its flags (`terraform plan -help` / `tofu plan -help`). Enable tab completion once, then restart your shell:
 
 ```shell
-touch ~/.bashrc                    # or the Zsh equivalent
-terraform -install-autocomplete
+touch ~/.bashrc                        # or the Zsh equivalent
+terraform -install-autocomplete        # tofu -install-autocomplete for OpenTofu
 ```
 
 !!! note "The compatibility promise"
-    HashiCorp maintains backward compatibility across **minor** versions: a config written for one 1.x version keeps working on any later 1.x. That is what lets `required_version = ">= 1.2"` be an honest floor rather than a gamble — more on that below.
+    Both tools keep backward compatibility across **minor** versions: a config for one 1.x keeps working on any later 1.x. That is what lets `required_version = ">= 1.2"` be an honest floor rather than a gamble — more on that below. OpenTofu also keeps the `terraform {}` block name (there is no `tofu {}` block), so a config is portable between the two without edits.
 
 ## Wire up credentials
 
@@ -117,6 +136,9 @@ A Terraform project is just a directory of `.tf` files. Terraform loads **every 
 
 For a first project, `terraform.tf` and `main.tf` are enough; the other two arrive when you parameterize in B6.
 
+!!! info "OpenTofu — extra file extensions"
+    OpenTofu reads the same `.tf` files, and (1.8+) also `.tofu` files — loaded *instead of* a same-named `.tf` when present, so you can ship OpenTofu-only overrides without forking the project. Its CLI config file is `.tofurc` (Terraform's is `.terraformrc`), and it honors `TOFU_*` environment variables alongside `TF_*`. Keep everything in `.tf` for portable, tool-neutral projects; reach for `.tofu` only when a file must diverge.
+
 Alongside the files you write, Terraform **generates three of its own** on first use. Knowing what each is — and whether to commit it — is half of avoiding beginner pain:
 
 ```mermaid
@@ -140,6 +162,12 @@ flowchart TB
 - **`.terraform/`** — a hidden cache holding the downloaded provider (and module) binaries. Recreatable by re-running `init`. **Do not commit it** — it's large and platform-specific.
 - **`.terraform.lock.hcl`** — the **dependency lock file**. Records the *exact* provider versions and checksums `init` chose. **Commit it.** It's what makes your teammate and your CI pipeline install the identical provider you tested against.
 - **`terraform.tfstate`** — Terraform's record of the real infrastructure (Chapter 9 covers it in depth). **Do not commit it.** It can hold secrets in plaintext, and committing it invites merge conflicts and corruption. Teams move it to a remote backend (I6); for now it stays local and out of Git.
+
+!!! info "OpenTofu — same files, two genuine improvements"
+    OpenTofu keeps the **same filenames** (`.terraform/`, `.terraform.lock.hcl`, `terraform.tfstate` — not renamed, for drop-in compatibility), so the `.gitignore` below is identical. Two things it does *better*:
+
+    - **Lock file** — `tofu init` records **full cross-platform checksums automatically** (OT 1.12). Terraform records only *your* platform's hashes, so a macOS-generated lock file breaks a teammate's Linux CI unless you pre-seed with `terraform providers lock -platform=…`. OpenTofu removes that footgun outright.
+    - **State encryption** — OpenTofu can **encrypt the state file (and plan files) at rest** natively (OT 1.7), which directly mitigates the "holds secrets in plaintext" risk above. Terraform has **no built-in equivalent** — its state is always plaintext, so the *only* protection is keeping it out of Git and on a secured backend. (Full treatment in E3 / Chapter 9.)
 
 So a first `.gitignore` looks like this:
 
@@ -193,8 +221,19 @@ terraform {
 
 So `hashicorp/aws` expands to `registry.terraform.io/hashicorp/aws`. The key on the left (`aws`) is the **local name** — the identifier you use everywhere else in the module. Nearly every provider has a *preferred* local name that doubles as its resource-type prefix, which is why `aws_instance` implies the `aws` local name. Keep local name = type unless two providers collide (two different `http` providers, say), in which case you give them distinct compound names.
 
+!!! info "OpenTofu — default provider registry"
+    The same shorthand `hashicorp/aws` resolves from a **different host** under OpenTofu: `registry.opentofu.org`, not `registry.terraform.io`. The short address is identical, so configs port unchanged; write the full `registry.terraform.io/hashicorp/aws` only if you must pin HashiCorp's registry specifically. Version constraints and the lock file behave the same in both tools.
+
 !!! note "Provider inference — convenient, discouraged"
     If you omit `required_providers` entirely, Terraform will *guess*: it assumes the resource prefix is the local name and the namespace is `hashicorp`, so `aws_instance` → `hashicorp/aws`, `random_id` → `hashicorp/random`. It works, but you lose the ability to pin a version — and an untested provider upgrade can silently break you. Always declare providers explicitly.
+
+!!! note "Vendor vs. provider — why the source address has a namespace"
+    Terraform has **no formal `vendor` object** — only **provider** is a language construct. But it's worth separating the two in your head, because they don't map one-to-one and that's exactly why a source address needs a `<namespace>/<type>`:
+
+    - **Vendor** = the external system that owns the real infrastructure (AWS, Cloudflare, Okta). **Provider** = the Go plugin that wraps its API. The SDK analogy: AWS is the vendor, the `aws` provider is Terraform's Boto3.
+    - **Core is vendor-agnostic.** The engine only knows the provider plugin interface; it delegates every vendor-specific call to the provider. The provider *is* the abstraction boundary — that's the whole "one engine, pluggable platforms" design from Chapter 1.
+    - **Not 1:1.** One vendor can ship several providers (Azure: `azurerm`/`azuread`/`azapi`; AWS: `aws` + `awscc`), and some providers wrap **no vendor at all** — the utility providers `random`, `null`, `time`, `tls`, `terraform_data`. That's why the address carries an explicit namespace: `hashicorp/aws` and a community `someorg/aws` could both exist.
+    - **Independent versioning.** A provider is its own artifact with its own release cadence and registry namespace. **Provider version ≠ vendor API version** — the AWS provider is on major 6 while AWS-the-service has no "v6." Which is precisely what the next section pins.
 
 ### The version constraint
 
@@ -219,6 +258,18 @@ So `hashicorp/aws` expands to `registry.terraform.io/hashicorp/aws`. The key on 
     | provider `version` | a **bounded recent major**: `~> 6.0` | provider majors carry breaking changes; block an untested newer major |
 
     `required_version = ">= 1.2"` is honest here because this config uses only basic blocks (`terraform`, `provider`, `data`, `resource`), all present since Terraform 1.0. Writing `>= 1.15` would be *wrong* — it locks out everyone on 1.2–1.14 for no benefit, since nothing needs a 1.15 feature. Only raise the floor when you actually use something newer (dynamic module sources, output `type`, `convert()`). Over-pinning bites hardest with **modules**: a module declaring `>= 1.15` can't be consumed by a team on 1.14 even if it needs nothing from 1.15.
+
+!!! note "Coming from Python? Why not just pin `= 6.53.0`"
+    Because you already *are* pinning exactly — in a different file. Terraform splits the two jobs Python bundles differently:
+
+    | Terraform | Python |
+    |---|---|
+    | `version = "~> 6.0"` in `required_providers` | `pyproject.toml` / `install_requires` — the **abstract** acceptable range |
+    | `.terraform.lock.hcl` (committed) | `poetry.lock` / `Pipfile.lock` / `pip freeze` — the **exact** pin + hashes |
+
+    The constraint is the *dependency spec*; the exact pin lives in the committed lock file (`6.53.0` + checksums). **`plan`/`apply` use the locked version, not the newest the constraint allows** — so `~> 6.0` doesn't cause drift, exactly like a `poetry.lock` freezing a `^6.0` range. And `~>` *is* Python's `~=`: `~> 6.0` ≡ `~= 6.0` (`>=6.0,<7.0`); `~> 6.53.0` ≡ `~= 6.53.0` (`>=6.53.0,<6.54.0`).
+
+    Hard-pinning `= 6.53.0` in the constraint is **redundant** (the lock file already does it), removes the safe-upgrade band (`init -upgrade` can't pick up a patch without a hand edit), and — the real cost — **breaks reuse**: a module pinned `= 6.53.0` can't be consumed by a project needing `6.54.0`, the same diamond-conflict you get from pinning exact versions in a library's `install_requires`. Exact pins belong in the application lock file; ranges belong in the dependency spec. `=` is fine occasionally (reproducing an incident, dodging a known-bad patch), but it's a poor default.
 
 ### Configuring it
 
@@ -308,6 +359,16 @@ resource "aws_instance" "app_server" {
 ```
 
 The `ami` argument references `data.aws_ami.ubuntu.id`. That reference is doing real work: it's an **implicit dependency**, telling Terraform to read the AMI *before* creating the instance. You never write "look up the AMI first" — the reference is the ordering. (B5 goes deep on resources and the dependency graph; B8 on data sources.)
+
+!!! tip "How do I know which arguments a resource takes?"
+    Two ways to discover a resource's inputs and outputs. The **human** way is the provider's Registry docs — every resource page has an *Argument Reference* (what you set) and an *Attribute Reference* (what it exports). The **machine/offline** way is a CLI command, handy once providers are installed:
+
+    ```bash
+    terraform providers schema -json \
+      | jq '.provider_schemas["registry.terraform.io/hashicorp/aws"].resource_schemas.aws_instance.block'
+    ```
+
+    In the JSON, each field is flagged: `required`/`optional` are **arguments** you set; `computed`-only fields are read-only **attributes** (the `(known after apply)` values); `block_types` are nested sub-blocks. `-json` is the only output format, and it covers data sources (`data_source_schemas`) too.
 
 Before applying, two fast, free checks that touch no infrastructure:
 

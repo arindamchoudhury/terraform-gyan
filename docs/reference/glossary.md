@@ -8,6 +8,7 @@ Terms are appended here as book chapters are written.
 |---|---|---|
 | Infrastructure as Code (IaC) | Provisioning and managing infrastructure from declarative, version-controlled configuration files instead of manual steps. | [[terraform-intro]] |
 | Provider | A plugin that lets Terraform manage a platform/service through its API; thousands are published on the Terraform Registry. | [[terraform-intro]] |
+| Vendor | Informal term for the external system/API a provider wraps (AWS, Cloudflare, Okta). Not a formal Terraform construct — the mapping to providers isn't 1:1 (one vendor → many providers; utility providers wrap no vendor), and provider version ≠ vendor API version. | Book Ch2 / TID Ch1 §1.2.4 |
 | Write → Plan → Apply | The core Terraform workflow: define resources, generate an execution plan, then apply approved changes in dependency order. | [[terraform-intro]] |
 | State file | Terraform's record of real infrastructure; the source of truth it diffs against configuration to decide changes. | [[terraform-intro]] |
 | Resource graph | Dependency graph Terraform builds to create/modify non-dependent resources in parallel. | [[terraform-intro]] |

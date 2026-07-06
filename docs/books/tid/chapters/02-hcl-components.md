@@ -44,6 +44,14 @@ $ touch {main,lookups,providers}.tf   # on Windows PowerShell use New-Item inste
 
 > 💡 The book recommends WSL on Windows — many Terraform tools work best in a Linux environment.
 
+!!! info "OpenTofu — file extensions"
+    Project layout is identical, but OpenTofu adds file extensions Terraform doesn't have (OT 1.8+):
+
+    - **`.tofu`** — read *instead of* a same-named `.tf` when present, so you can ship OpenTofu-only config (e.g. a `providers.tofu` that overrides `providers.tf`) without forking the whole project. Plain `.tf` still works and stays the portable default.
+    - **`.tofurc`** — OpenTofu's CLI config file (Terraform's is `.terraformrc`); OpenTofu also honors `TOFU_*` env vars alongside the `TF_*` ones.
+
+    `git init` and the project structure are otherwise unchanged. See [[version-facts]].
+
 ### Setup providers
 
 HCL groups config under **blocks**; different block types configure different things. The `terraform` block configures Terraform itself (analogous to `package.json` / `pyproject.toml`). Its `required_providers` subblock declares dependencies; the separate `provider` block configures the provider.
@@ -64,6 +72,15 @@ provider "aws" {
 ```
 
 Key distinction, returned to in §2.4: **`required_providers` tells Terraform what to *install*; the `provider` block *configures* it.** You *can* skip `required_providers` for HashiCorp-namespace providers (Terraform infers them), but it's bad practice — without it you can't pin versions, so an upgrade can silently break your code.
+
+!!! info "OpenTofu — same code, different registry & binary"
+    This step is **byte-identical HCL** in OpenTofu — same `terraform` block (not renamed to `tofu`; there is no `tofu {}` block), same `required_providers`, same `provider` block. What changes:
+
+    - **Default registry** — the shorthand `hashicorp/aws` resolves from **`registry.opentofu.org`** (OpenTofu's default host), not `registry.terraform.io`. Same short address; write the full `registry.terraform.io/hashicorp/aws` to force HashiCorp's registry.
+    - **Commands** — `tofu init` / `tofu plan` / `tofu apply`.
+    - **File extension** (optional) — `.tf` works in both; OpenTofu 1.8+ also reads `.tofu` files (loaded *instead of* a same-named `.tf`) for OpenTofu-only config.
+
+    See [[version-facts]]. (Source: OpenTofu — Provider Requirements.)
 
 ### Getting our configuration values (data sources)
 
@@ -125,6 +142,9 @@ $ terraform apply "plan.tfplan"
 ```
 
 Plan-output semantics reinforced from Ch1: `+ create`, values shown as `(known after apply)` when they can't be resolved until the resource exists, and a final `Plan: 1 to add, 0 to change, 0 to destroy.` The payoff framing: the same single-instance script runs unchanged across regions/accounts, and the leap from one instance to a full stack (LBs, queues, CDN, DB) is *only* the time spent defining it — once written, it launches repeatedly the same way.
+
+!!! info "OpenTofu — commands & the lock file"
+    Substitute `tofu init` / `tofu plan` / `tofu apply` — same flags, same plan output. One real difference at `init`: OpenTofu **1.12** writes **full cross-platform provider checksums** into `.terraform.lock.hcl` automatically, so a lock generated on macOS won't break a teammate's Linux CI. Terraform records only your own platform's hashes unless you pre-seed them with `terraform providers lock -platform=…`. Both tools write the same `.terraform.lock.hcl` filename and share the state-file format. See [[version-facts]].
 
 ## 2.2 Block syntax
 
@@ -201,6 +221,23 @@ If blocks are nouns, **arguments and subblocks are adjectives** — they modify 
     filter { name = "x"  values = [...] }   # subblock — no '=', repeatable
     ```
 
+Repeatable subblocks serve **two distinct purposes** in practice:
+
+- **Multiple configs of the same type** — a `google_compute_firewall` stacks several `allow` subblocks, one per rule:
+
+    ```hcl
+    resource "google_compute_firewall" "example" {
+      name    = "example-firewall"
+      network = google_compute_network.example.name
+      allow { protocol = "icmp" }
+      allow { protocol = "tcp"  ports = ["80", "443"] }
+      allow { protocol = "udp"  ports = ["53"] }
+      source_ranges = ["0.0.0.0/0"]
+    }
+    ```
+
+- **Namespacing / future-proofing** — the `lifecycle` subblock (§2.7.2) groups related settings so Terraform can add new arguments later without colliding with vendor-provided arguments.
+
 Resource/data arguments come from the *provider*; module arguments are defined by the *module author*; built-in blocks have a more consistent, fixed set.
 
 ### 2.2.4 Attributes
@@ -210,8 +247,50 @@ Blocks **export attributes** — this is what lets one block feed another (a dat
 - Most blocks (incl. `data`/`resource`) **auto-expose all their arguments** as attributes.
 - Plus **read-only computed attributes** that only exist after a plan/apply reads results back from the provider (e.g. `aws_instance` exposes `arn` and `instance_state` only after creation).
 
+The `aws_instance` attribute set is the union of both sources — the arguments you set *plus* the values the vendor computes (recreation of the book's Fig 2.1):
+
+```mermaid
+flowchart TB
+    subgraph args["Arguments — user-defined"]
+        A1["ami"]
+        A2["instance_type"]
+    end
+    subgraph comp["Computed — set by vendor"]
+        C1["arn"]
+        C2["instance_state"]
+    end
+    args -->|passed through| attr
+    comp -->|known after apply| attr
+    subgraph attr["Attributes — all referenceable"]
+        T1["ami"]
+        T2["instance_type"]
+        T3["arn"]
+        T4["instance_state"]
+    end
+```
+
 !!! note "Subblocks are not attributes"
     Arguments pass through as attributes, but **anything inside a subblock is not accessible as an attribute.**
+
+!!! tip "Inspecting a block's arguments & attributes — `terraform providers schema -json`"
+    To see every argument and attribute a resource/data source exposes (offline, no registry visit), dump the provider schema after `init`:
+
+    ```bash
+    terraform init
+    terraform providers schema -json \
+      | jq '.provider_schemas["registry.terraform.io/hashicorp/aws"].resource_schemas.aws_instance.block'
+    ```
+
+    The flags map onto this section's argument/attribute split:
+
+    | Schema flag | This chapter's term |
+    |---|---|
+    | `required` / `optional` | **argument** (input you set) |
+    | `computed` only | read-only **attribute** (`(known after apply)`) |
+    | `optional` + `computed` | settable, else provider-filled |
+    | `block_types` | **subblocks** (§2.2.3) |
+
+    `-json` is the only output format. The human equivalent is the resource's Registry docs (*Argument Reference* / *Attribute Reference*). (`ephemeral_resource_schemas` in the output needs Terraform ≥1.10 / OpenTofu ≥1.11 — see [[version-facts]].)
 
 ### 2.2.5 Ordering
 
@@ -227,6 +306,8 @@ Terraform has an opinionated style; it's **advisory** (ignoring it won't break p
 4. **Meta-argument subblocks** (e.g. `lifecycle`) at the **end**.
 
 Also: align the `=` signs within an argument group. `terraform fmt` auto-applies the formatting rules — **but it does *not* reorder arguments.** The official [Style Guide](https://developer.hashicorp.com/terraform/language/style) is the reference.
+
+> 💡 Inside an object value, both `key : "value"` and `key = "value"` are valid separators — the book notes `=` is considered best practice.
 
 ## 2.3 Terraform settings
 
@@ -247,6 +328,13 @@ Both configure where **state** is stored so a team can share one workspace. If n
 
 !!! note "Backends are hardcoded into Terraform"
     Unlike providers, you **can't write a custom backend** directly. The escape hatch is the generic **`http` backend** — implement a simple REST API and Terraform will use it. Rarely needed. Only *one* of `backend` or `cloud` may be set.
+
+!!! info "OpenTofu differences — state & backends"
+    Three divergences here (see [[version-facts]]):
+
+    - **`cloud` block is Terraform-only** — it targets HCP Terraform, which OpenTofu has no equivalent of. OpenTofu projects use `backend`.
+    - **State encryption is OpenTofu-only** (OT 1.7) — encrypt state *and* plan files at rest natively. Terraform has no built-in equivalent. This is the biggest backend-chapter gap between the tools.
+    - **Early variable evaluation** (OT 1.8) — OpenTofu can reference `var`/`local` **inside** `backend` blocks (resolved at `tofu init`). Terraform requires backend config to be literals. See [[ot-early-eval-backend]].
 
 ### 2.3.2 Experiments
 
@@ -326,9 +414,12 @@ data "aws_vpc" "backup" {
 
 This is a preview of the `provider` **meta argument** (§2.7.1) — the mechanism that tells a block which alias to use.
 
+!!! info "OpenTofu difference — provider `for_each`"
+    Ch2's aliases are **static** — one hand-written `provider` block per connection. OpenTofu (1.9) adds **provider `for_each`**: instantiate an aliased provider config from a map/set, e.g. one AWS provider per region without copy-pasting blocks. Terraform's open-source CLI has no equivalent. See [[ot-provider-for-each]].
+
 ## 2.5 Resources
 
-The **whole reason Terraform exists** — everything else just makes resources easier. Each `resource` block represents one real piece of infrastructure to launch and manage. Its **type** maps, through a provider, to a specific infrastructure kind (a DNS provider might have domain + record resources; a Git host might have org/repo/PR resources; big clouds expose *thousands*).
+Resources are the **whole reason Terraform exists**; everything else just makes managing them easier. Each `resource` block represents one real piece of infrastructure to launch and manage. Its **type** maps, through a provider, to a specific infrastructure kind (a DNS provider might have domain + record resources; a Git host might have org/repo/PR resources; big clouds expose *thousands*).
 
 ### 2.5.1 Resource usage
 
@@ -380,6 +471,15 @@ lifecycle {
 - **Deleting the `resource` block removes the setting too** — one of the most common destroy paths, and the guard vanishes with the block.
 
 Better to guard against accidental destruction with `ignore_changes`. (`prevent_destroy` earns its keep in narrow compliance cases, e.g. logs that mustn't be deleted.)
+
+!!! info "OpenTofu differences — lifecycle"
+    OpenTofu directly fixes the `prevent_destroy` limitation the book calls out:
+
+    - **Dynamic `prevent_destroy`** (OT 1.12) — bind it to a **variable/expression**, so you *can* enable it for prod and disable it for dev. Terraform still requires a literal. See [[ot-dynamic-prevent-destroy]].
+    - **`destroy = false`** (OT 1.12) — makes OpenTofu **stop managing** a resource without deleting the real thing. Normally, when Terraform decides a resource should go away, it destroys the actual cloud object. With `destroy = false`, OpenTofu just forgets the resource (drops it from state) and leaves the running object alone. Same outcome as Terraform's `removed` block (§2.9), but written as one line inside the resource's `lifecycle` instead of a separate top-level block.
+    - **`enabled` meta-argument** (OT 1.11) — toggle a resource on/off, cleaner than the `count = 0` idiom.
+
+    `create_before_destroy`, `ignore_changes`, and `replace_triggered_by` behave identically in both tools.
 
 **`ignore_changes`** — probably the **most-used** lifecycle option. Takes a list of argument names; Terraform stops updating the resource when *only* those change (ignores them entirely after creation). Classic cases: the looked-up AMI updating (don't recreate a running instance on every new image), or orchestration systems (EKS/ECS) adding/removing tags out of band.
 
@@ -479,6 +579,9 @@ moved {
   to   = module.better_name
 }
 ```
+
+!!! info "OpenTofu — all three identical, plus one shortcut"
+    `import`, `moved`, and `removed` all work the **same** in OpenTofu (same syntax; `import` supports `id`/`identity`, `count`/`for_each`). OpenTofu adds one alternative to the `removed` block: put **`destroy = false`** directly in a *resource's* `lifecycle` (OT 1.12) to forget it from state without destroying the real object — see §2.7.2. Verified against OpenTofu docs; see [[version-facts]].
 
 ---
 

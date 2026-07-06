@@ -14,6 +14,15 @@ A provider is the plugin layer that lets Terraform talk to a specific vendor's A
 - **Declare vs. configure** (TID Ch2 §2.4) — the split HCDocs's intro glosses: `required_providers` (inside `terraform`) declares *what to install* + version constraint; the separate `provider` block *configures* it (auth + scoping). Provider blocks are **root-module only**. If you omit `required_providers`, Terraform *infers* the provider from the resource name prefix under the `hashicorp` namespace (`aws_instance` → `hashicorp/aws`) — convenient but discouraged, since you lose version pinning.
 - **Aliases = multiple connections** (TID Ch2 §2.4.4) — like multiple SDK clients: one default `provider` block plus named `alias` blocks (`alias = "west"`), and data/resource blocks pick one via the `provider` meta argument. This is the Terraform-CLI equivalent of what OpenTofu generalizes further with [[ot-provider-for-each]].
 
+!!! note "Why the vendor / provider distinction exists"
+    Terraform has **no formal `vendor` object** — "vendor" is TID's teaching word for the real-world service; only **provider** is a language construct. The two are kept conceptually separate because they aren't the same thing and don't map one-to-one:
+
+    - **Vendor** = the external system/API (AWS, Cloudflare, Okta) that owns the real infrastructure. **Provider** = the Go plugin that wraps it, speaking gRPC to core (SDK analogy: AWS is the vendor, `aws` provider is Terraform's Boto3).
+    - **Core is vendor-agnostic** — it only knows the provider plugin interface, never the vendor. Core builds the DAG and delegates every vendor-specific call to the provider. The provider *is* the abstraction boundary; that's the whole "one engine, pluggable everything" design.
+    - **Not 1:1** — one vendor can ship many providers (Azure: `azurerm`/`azuread`/`azapi`/`azurestack`; AWS: `aws` + `awscc`); some providers wrap **no vendor at all** (utility providers `random`, `null`, `time`, `tls`, `terraform_data`); a vendor may have official *and* community providers.
+    - **Independent lifecycle** — a provider is its own artifact with its own version, cadence, and registry namespace (`hashicorp/aws`). **Provider version ≠ vendor API version** — the AWS provider is on major 6 while AWS-the-service has no "v6." And the provider may be authored by the vendor, HashiCorp, *or* the community.
+    - **The config split mirrors it** — `required_providers` picks the *provider* (what to install, which version); the `provider` block configures the connection to the *vendor* (credentials, region).
+
 ## Where the sources differ
 
 - HCDocs treats providers as one bullet inside the broader "How does Terraform work?" section — brief, illustrative.
