@@ -1,6 +1,6 @@
 # Providers
 
-> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch1 §1.2.3–1.2.4
+> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch1 §1.2.3–1.2.4, Ch2 §2.4
 
 ## In one paragraph
 
@@ -11,6 +11,8 @@ A provider is the plugin layer that lets Terraform talk to a specific vendor's A
 - **Vendor abstraction** — HCDocs: providers let Terraform "talk to virtually any platform or service with an accessible API." TID: same claim, illustrated with a concrete abstraction diagram (Terraform Core → gRPC → Provider → vendor API) and the observation that Terraform itself "doesn't care what kind of infrastructure it manages, as long as it has a provider that exposes it."
 - **Scale of the ecosystem** — HCDocs says "thousands of providers." TID gives a specific (book-vintage, 2025) figure: **3,280+ providers** in the registry — a number that will drift and shouldn't be treated as current without re-verifying.
 - **Provider ↔ vendor relationship** — TID-only detail: generally one-to-one (AWS → AWS provider), though some vendors ship multiple providers (Azure). Providers are written in Go and communicate over gRPC; authoring one requires no gRPC knowledge unless you're building a *custom* provider (deferred to TID Ch12).
+- **Declare vs. configure** (TID Ch2 §2.4) — the split HCDocs's intro glosses: `required_providers` (inside `terraform`) declares *what to install* + version constraint; the separate `provider` block *configures* it (auth + scoping). Provider blocks are **root-module only**. If you omit `required_providers`, Terraform *infers* the provider from the resource name prefix under the `hashicorp` namespace (`aws_instance` → `hashicorp/aws`) — convenient but discouraged, since you lose version pinning.
+- **Aliases = multiple connections** (TID Ch2 §2.4.4) — like multiple SDK clients: one default `provider` block plus named `alias` blocks (`alias = "west"`), and data/resource blocks pick one via the `provider` meta argument. This is the Terraform-CLI equivalent of what OpenTofu generalizes further with [[ot-provider-for-each]].
 
 ## Where the sources differ
 
@@ -27,6 +29,7 @@ A provider is the plugin layer that lets Terraform talk to a specific vendor's A
 
 - [What is Terraform? (Intro)](../sources/terraform-docs/terraform-intro.md)
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
+- [TID Ch 2 — Terraform HCL components](../books/tid/chapters/02-hcl-components.md) §2.4 — declare/configure/alias mechanics
 - [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on `required_providers` + `provider` block
 
 ## Open questions

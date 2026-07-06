@@ -69,7 +69,7 @@
 
 ---
 
-### ⬜ B2 — Install, providers & your first project
+### ✅ B2 — Install, providers & your first project
 
 **What it is:** Installing the Terraform (or OpenTofu) CLI, wiring cloud credentials, declaring a `required_providers` + `provider` block, and laying out a first working directory.
 
@@ -78,7 +78,7 @@
 **How to learn it:**
 
 1. **Interactive — HCTut ["Install Terraform"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) + ["Create infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create)** (~1 hr) — follow the AWS (or Docker) quick-start end to end in your own account. (Captured notes: [[tf-install-cli]], [[tf-aws-create]].)
-2. **Reference — [HCDocs "Provider Requirements"](https://developer.hashicorp.com/terraform/language/providers/requirements)** (~20 min) — understand `required_providers`, source addresses, and version pinning. ([Install](https://developer.hashicorp.com/terraform/install))
+2. **Reference — [HCDocs "Provider Requirements"](https://developer.hashicorp.com/terraform/language/providers/requirements)** (~20 min) — understand `required_providers`, source addresses, and version pinning. ([Install](https://developer.hashicorp.com/terraform/install)) (Captured notes: [[provider-requirements]].)
 3. **Book chapter — TID Ch 2** (~1 hr) — first-project walkthrough; note the `.terraform/` and lock-file layout.
 
 **Milestone:** You can stand up a fresh directory, `terraform init` it, and provision one real resource (an S3 bucket or a Docker container) from scratch.
@@ -705,7 +705,7 @@ Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner — B1 done (Ch 1 written). Next up: **B2 (Install, providers & your first project)**.
+**You are currently here:** Beginner — B1–B2 done (Ch 1–2 written). Next up: **B3 (The core workflow: init / plan / apply / destroy)**.
 
 ---
 

@@ -14,6 +14,7 @@ nav = [
     { "Book" = [
         { "Contents" = "book/index.md" },
         { "1. Infrastructure as Code & where Terraform fits" = "book/ch01-iac-fundamentals.md" },
+        { "2. Install, providers & your first project" = "book/ch02-install-providers-first-project.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },
@@ -24,6 +25,7 @@ nav = [
             { "Overview" = "sources/terraform-docs/index.md" },
             { "1. What is Terraform? (Intro)" = "sources/terraform-docs/terraform-intro.md" },
             { "2. Terraform Use Cases" = "sources/terraform-docs/terraform-use-cases.md" },
+            { "3. Provider Requirements" = "sources/terraform-docs/provider-requirements.md" },
         ]},
         { "OpenTofu Docs" = [
             { "Overview" = "sources/opentofu-docs/index.md" },
