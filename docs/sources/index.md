@@ -9,6 +9,7 @@ Log of all captured sources, organised by course.
 | [What is Terraform? (Intro)](terraform-docs/terraform-intro.md) | documentation | 2026-07-02 | iac, providers, workflow, state, modules | [url](https://developer.hashicorp.com/terraform/intro) |
 | [Terraform Use Cases](terraform-docs/terraform-use-cases.md) | documentation | 2026-07-03 | iac, use-cases, sentinel, kubernetes, hcp-terraform | [url](https://developer.hashicorp.com/terraform/intro/use-cases) |
 | [Provider Requirements](terraform-docs/provider-requirements.md) | documentation | 2026-07-05 | providers, required_providers, source-address, version-constraints, lock-file | [url](https://developer.hashicorp.com/terraform/language/providers/requirements) |
+| [Terraform CLI Overview (command index)](terraform-docs/tf-cli-commands.md) | documentation | 2026-07-07 | cli, commands, reference, chdir, autocomplete, checkpoint | [url](https://developer.hashicorp.com/terraform/cli/commands) |
 
 ## 2. OpenTofu Docs
 

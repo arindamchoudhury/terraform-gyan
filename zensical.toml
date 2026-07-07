@@ -26,6 +26,7 @@ nav = [
             { "1. What is Terraform? (Intro)" = "sources/terraform-docs/terraform-intro.md" },
             { "2. Terraform Use Cases" = "sources/terraform-docs/terraform-use-cases.md" },
             { "3. Provider Requirements" = "sources/terraform-docs/provider-requirements.md" },
+            { "4. Terraform CLI Overview (command index)" = "sources/terraform-docs/tf-cli-commands.md" },
         ]},
         { "OpenTofu Docs" = [
             { "Overview" = "sources/opentofu-docs/index.md" },

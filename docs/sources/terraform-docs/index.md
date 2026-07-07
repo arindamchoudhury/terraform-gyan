@@ -12,3 +12,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | What is Terraform? (Intro / Overview) | 2026-07-02 | [terraform-intro](terraform-intro.md) |
 | Terraform Use Cases | 2026-07-03 | [terraform-use-cases](terraform-use-cases.md) |
 | Provider Requirements | 2026-07-05 | [provider-requirements](provider-requirements.md) |
+| Terraform CLI Overview (command index) | 2026-07-07 | [tf-cli-commands](tf-cli-commands.md) |
