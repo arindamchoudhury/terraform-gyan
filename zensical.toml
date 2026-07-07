@@ -39,6 +39,7 @@ nav = [
             { "1. Install Terraform" = "sources/terraform-tutorials/tf-install-cli.md" },
             { "2. Create infrastructure" = "sources/terraform-tutorials/tf-aws-create.md" },
             { "3. Manage infrastructure" = "sources/terraform-tutorials/tf-aws-manage.md" },
+            { "4. Destroy infrastructure" = "sources/terraform-tutorials/tf-aws-destroy.md" },
         ]},
     ]},
     { "Books" = [
