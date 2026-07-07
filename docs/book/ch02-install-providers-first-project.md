@@ -123,6 +123,63 @@ Running `aws configure` writes the same values to `~/.aws/credentials`, which th
 !!! tip "Static keys are the beginner default, not the destination"
     Exported access keys are fine while you're learning. In a real pipeline they are a top security risk — long-lived keys sitting in CI variables. The production answer is short-lived credentials minted on demand via OIDC (a pipeline assumes a role with no stored secret). That is A6's subject. For now, an exported key in your own shell is acceptable; just never commit one.
 
+### Coming from Python: is there a `.env` for Terraform?
+
+If you've used `python-dotenv`, the reflex is to drop secrets in a `.env` file and have the tool load it. **Terraform has no `.env` autoload.** It never reads a file called `.env`. But two categories of value need feeding in, and each has its own mechanism, so it helps to keep them separate:
+
+1. **Provider credentials** — the cloud API keys from the section above. These ride the provider's own credential chain (`AWS_ACCESS_KEY_ID`, `~/.aws/credentials`), not a Terraform mechanism.
+2. **Your own input variables** — a DB password, an environment name, a CIDR block. These are Terraform *variables* (Chapter 6 covers declaring them), and Terraform has three ways to supply their values.
+
+**`TF_VAR_*` environment variables.** Terraform maps any shell variable named `TF_VAR_<name>` onto the input variable `<name>`. This is the direct env-to-config bridge:
+
+```shell
+export TF_VAR_db_password="s3cr3t"     # feeds variable "db_password"
+```
+
+**`*.auto.tfvars` / `terraform.tfvars` files.** This is the closest thing to a `.env`: a file of `key = value` lines that Terraform **auto-loads** from the working directory with no flag. `terraform.tfvars`, `terraform.tfvars.json`, and any `*.auto.tfvars` are picked up automatically; keep a secret one out of Git.
+
+```hcl
+# secrets.auto.tfvars   ← git-ignore this file
+db_password = "s3cr3t"
+```
+
+```gitignore
+# .gitignore
+*.tfvars
+!example.tfvars      # keep a committed template with dummy values
+```
+
+**A real `.env`, via `direnv`.** If you specifically want a literal `.env`-style file auto-sourced into your shell, that is a shell tool's job, not Terraform's. [`direnv`](https://direnv.net/) reads an `.envrc` on `cd` and exports the vars; Terraform then sees them like any other environment variable:
+
+```shell
+# .envrc   ← git-ignore this file
+export AWS_ACCESS_KEY_ID="AKIA..."
+export TF_VAR_db_password="s3cr3t"
+```
+
+When the same variable is set more than one way, Terraform resolves it by a fixed precedence. Highest wins:
+
+| Source | Precedence |
+|---|---|
+| `-var` / `-var-file` on the command line | highest |
+| `*.auto.tfvars` (lexical order) |  |
+| `terraform.tfvars.json` |  |
+| `terraform.tfvars` |  |
+| `TF_VAR_*` environment variable |  |
+| variable `default` | lowest |
+
+Note the ordering catch: a `terraform.tfvars` file **overrides** a `TF_VAR_*` env var, not the other way round. Files beat the environment.
+
+!!! danger "A variable value still lands in state"
+    None of these keeps a secret *safe* — it only keeps it out of your `.tf` files and out of Git. Whatever you feed as a variable, Terraform writes its value into state. Marking the variable `sensitive = true` only masks it in CLI output; the plaintext still sits in the state file. Terraform 1.10+ adds `ephemeral` variables that are omitted from state and plan, and the real production answer is a secret manager or Vault. Chapter 23 (A6) is the full treatment; for now, treat state as sensitive and never commit it.
+
+    OpenTofu users have one extra option here (see the box below), but the same discipline applies: encrypting the file is a safety net, not a licence to relax about what state contains.
+
+!!! info "OpenTofu — extra env prefix and encrypted state"
+    OpenTofu honors `TOFU_VAR_*` alongside `TF_VAR_*` (a `TOFU_VAR_` value wins where both are set), letting you diverge from Terraform without renaming everything.
+
+    It also ships **native state (and plan) encryption**, which Terraform's open-source CLI lacks — a built-in answer to the plaintext-in-state problem above. Two caveats keep the warning true even so. It is **opt-in and per-target**: you add an `encryption` block with separate `state` and `plan` sections, so state stays plaintext until you configure it, and a plan file stays plaintext unless you encrypt that target too. And it only protects data **at rest**; OpenTofu's own docs note it "cannot protect the sensitive values in the state file from the person running the `tofu` command," since the value is decrypted for the run. Treat it as defence in depth on top of "state is sensitive," not a replacement. E3 covers the setup.
+
 ## Anatomy of a project directory
 
 A Terraform project is just a directory of `.tf` files. Terraform loads **every `.tf` file** in the working directory and resolves dependencies by reference, so **filenames are for humans, not for Terraform** — block order and file split are entirely your choice. Convention, not a rule, gives you a clean starting layout:
@@ -342,7 +399,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-amd64-server-*"]
   }
 
   owners = ["099720109477"] # Canonical
@@ -359,6 +416,37 @@ resource "aws_instance" "app_server" {
 ```
 
 The `ami` argument references `data.aws_ami.ubuntu.id`. That reference is doing real work: it's an **implicit dependency**, telling Terraform to read the AMI *before* creating the instance. You never write "look up the AMI first" — the reference is the ordering. (B5 goes deep on resources and the dependency graph; B8 on data sources.)
+
+The `aws_ami` lookup above is the canonical teaching example — it shows `filter`, `owners`, and `most_recent` in one place. But it carries two sharp edges worth naming, because both bite in production.
+
+First, **`most_recent = true` trusts whatever matches.** It returns the newest image among *all* AMIs the filter matches. Scoping to `owners = ["099720109477"]` (Canonical) is what makes that safe here — drop or fat-finger the owner and a name-glob like `ubuntu-*-server-*` can match a stranger's public AMI, so `most_recent` would happily boot someone else's image. The owner filter is not optional polish; it's the guardrail.
+
+Second, **the name glob chases codenames.** `ubuntu-resolute-26.04-...` hard-codes this LTS's codename. Every new LTS you must edit the string *and* know the codename (`noble`, `resolute`, …). That's avoidable churn.
+
+Canonical also publishes each release's latest AMI id as a **public SSM parameter** under the AWS-managed `/aws/service/canonical/` namespace. Reading that instead removes both edges at once:
+
+```hcl
+# main.tf — production-hardened AMI lookup
+
+# Canonical publishes the latest AMI id at a well-known SSM path.
+# Trusted namespace: no most_recent to trust, no owner filter to get wrong.
+data "aws_ssm_parameter" "ubuntu_ami" {
+  name = "/aws/service/canonical/ubuntu/server/26.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
+}
+
+resource "aws_instance" "app_server" {
+  ami           = data.aws_ssm_parameter.ubuntu_ami.value
+  instance_type = "t2.micro" # free-tier eligible
+
+  tags = {
+    Name = "learn-terraform"
+  }
+}
+```
+
+The value comes straight from an AWS-maintained parameter path, so there's no `most_recent` to second-guess and no owner filter to forget. The path is self-describing — `.../server/{release}/stable/current/{arch}/hvm/{vol}/ami-id`, where `current` means the latest serial, `ebs-gp3` applies to releases ≥23.10, and `amd64` becomes `arm64` for Graviton. Moving to the next LTS is a one-number edit (`26.04` → the new release); no codename to look up. One small tradeoff: `aws_ssm_parameter` marks its `value` as `sensitive`, so the AMI id shows up masked in plan output — cosmetic, since an AMI id isn't a secret.
+
+Which to use? The `aws_ami` filter is the better *teaching* tool and the right choice when you genuinely need to match on image attributes (architecture, virtualization type, a specific name pattern). The SSM parameter is the better *production* default when you just want "the current official Ubuntu release," because it removes both the trust and the churn.
 
 !!! tip "How do I know which arguments a resource takes?"
     Two ways to discover a resource's inputs and outputs. The **human** way is the provider's Registry docs — every resource page has an *Argument Reference* (what you set) and an *Attribute Reference* (what it exports). The **machine/offline** way is a CLI command, handy once providers are installed:
