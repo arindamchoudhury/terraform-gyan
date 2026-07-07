@@ -156,9 +156,9 @@ This defines a VPC `example-vpc` with two private and one public subnet. Because
 !!! note "Why the module pins `version = "5.19.0"` exactly, not `~> 5.19.0`"
     Exact pin (`= "5.19.0"`) locks one version; `~> 5.19.0` would allow any patch (`>= 5.19.0, < 5.20.0`). Modules pin exact on purpose because of an asymmetry with providers:
 
-    **`.terraform.lock.hcl` records provider versions only — never module versions.** So a provider constraint like `~> 6.0` is still reproducible: the lock file pins the exact resolved version, and every `init` reuses it. Modules get no such backstop — the `version` string is the *only* thing pinning them.
+    **`.terraform.lock.hcl` records provider versions only — never module versions.** So a provider constraint like `~> 6.0` is still reproducible: the lock file pins the exact resolved version, and every `init` reuses it. Modules get no such backstop — the `version` string is the *only* thing pinning them. Official docs, verbatim: *"the dependency lock file tracks only provider dependencies. Terraform does not remember version selections for remote modules, and so Terraform will always select the newest available module version that meets the specified version constraints."*
 
-    Consequence: with a loose module constraint, two `terraform init` runs (different machines, or the same one weeks apart) can silently pull **different** module versions, changing what the module's resources look like with no diff in your `.tf` files. An exact pin guarantees identical module code everywhere.
+    Consequence: with a loose module constraint, `terraform init` **always grabs the newest version that still matches** — so the day after 5.19.5 is published, a fresh `init` (CI, a teammate, or you weeks later) silently jumps 5.19.0 → 5.19.5 with no diff in your `.tf` files, changing what the module's resources look like. An exact pin guarantees identical module code everywhere; bump it deliberately.
 
     | Dependency | Idiomatic style | Reproducibility comes from |
     |---|---|---|
