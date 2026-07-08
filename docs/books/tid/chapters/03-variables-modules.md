@@ -22,7 +22,8 @@ Terraform promotes reusability through **modules**. Modules differ from provider
 
 The standard way to share Terraform code between projects. Metaphor: a module is like a **package** (Python/JS) — a bundle of related, reusable code. Better metaphor: a **function** — inputs (parameters), internal logic, and outputs (return values).
 
-> **Definition** — a module is a collection of data sources, resources, and assets (config files, templates) bundled into a reusable, distributable component.
+!!! note "Definition"
+    A module is a collection of data sources, resources, and assets (config files, templates) bundled into a reusable, distributable component.
 
 Three flavors:
 
@@ -65,7 +66,8 @@ A module's **arguments come from its `variable` blocks**; its **attributes come 
 | `templates/` | templates, if used |
 | `examples/` | usage examples |
 
-> 💭 (mine): the book's Table 3.1 labels it `output.tf` (singular) but every listing uses **`outputs.tf`** (plural) — the plural is the [Style Guide](https://developer.hashicorp.com/terraform/language/style) convention (see [[tf-style-guide]]). Use `outputs.tf`.
+!!! note "(mine)"
+    The book's Table 3.1 labels it `output.tf` (singular) but every listing uses **`outputs.tf`** (plural). The plural is the [Style Guide](https://developer.hashicorp.com/terraform/language/style) convention (see [[tf-style-guide]]). Use `outputs.tf`.
 
 ### 3.1.3 Root module
 
@@ -92,7 +94,40 @@ Terraform has **three** things it calls "variables" — the difference is all ab
 | **Output** (`output` block) | data pulled *out of* a module | return value |
 | **Local** (`locals` block) | internal-only value/logic | local variable inside the function |
 
-Scope rule (Figure 3.1): from *outside* a module you can only set its **inputs** and read its **outputs**; **locals are invisible** outside the module. Like resources, locals **cannot have circular dependencies** (revisited Ch5).
+The three wire together like a function: **parameters** flow in through the variable block, optionally pass through **local variables** for internal transforms, and leave through the output block as **attributes** (recreation of the book's Fig 3.1):
+
+```mermaid
+flowchart LR
+    P["parameters"] --> VB
+    subgraph M["Module"]
+        direction LR
+        VB["Variable Block"] -.-> LV["Local Variables"]
+        VB -.-> OB["Output Block"]
+        LV -.-> OB
+    end
+    OB --> A["attributes"]
+```
+
+*Figure 3.1 — Module scope for inputs, outputs, and locals. Only `parameters` (inputs) and `attributes` (outputs) cross the module boundary; locals stay inside.*
+
+Scope rule (Figure 3.1, above): from *outside* a module you can only set its **inputs** and read its **outputs**; **locals are invisible** outside the module. Like resources, locals **cannot have circular dependencies** (revisited Ch5).
+
+!!! note "\"parameter\" vs \"argument\" — the figure conflates two sides"
+    The figure's **parameters** box and the earlier "inputs (parameters)" metaphor use *parameter* loosely for a module's input variables. Strictly, the two words name opposite ends of the same wiring:
+
+    - **Parameter** = the *declared* input slot — the `variable` block inside the module (name + type the module expects).
+    - **Argument** = the *actual value* the caller supplies for that slot — the `name = value` line inside the `module` block.
+
+    So Figure 3.1's **parameters** = the module's declared input variables; **attributes** = its `output` values, read back as `module.<name>.<output>`. In HCL docs, every `key = value` line inside *any* block is called an "argument" — the declared side is an "input variable."
+
+    ```hcl
+    variable "services" {}                 # parameter (declared slot)
+
+    module "vpn" {
+      source   = "tedivm/cloudinit/general"
+      services = ["consul", "nomad"]       # argument (value supplied)
+    }
+    ```
 
 !!! warning "All Terraform variables are constants"
     A variable's value is **set once per run and never changes** during that run. Terraform is **declarative**, not imperative — it executes by dependency order, not source order, so it couldn't know *when* to apply a mid-run reassignment. To do "logic/transforms," compute new **locals** rather than mutating an existing value (functions/expressions — Ch4).
@@ -179,7 +214,8 @@ output "load_balanced_aws_instance" {
 }
 ```
 
-> ❓ Preconditions on outputs are mentioned as an advanced feature deferred to Ch10.
+!!! note "Deferred to Ch10"
+    Preconditions on outputs are mentioned as an advanced feature deferred to Ch10.
 
 ## 3.5 Locals
 
@@ -259,9 +295,11 @@ variable "optional_keys" {
 }
 ```
 
-> 📌 `optional(type, default)` graduated from the `module_variable_optional_attrs` experiment in **Terraform 1.3** — stable everywhere now (the experiment Ch2 §2.3.2 flagged as "no longer active"). See [[feature-history]].
+!!! info "Optional attrs — stable since Terraform 1.3"
+    `optional(type, default)` graduated from the `module_variable_optional_attrs` experiment in **Terraform 1.3**; stable everywhere now (the experiment Ch2 §2.3.2 flagged as "no longer active"). See [[feature-history]].
 
-> 💡 Keep variables simple — deep nesting / complex objects hurt readability. If an input gets very complex, split it into several simpler inputs.
+!!! tip "Keep variables simple"
+    Deep nesting / complex objects hurt readability. If an input gets very complex, split it into several simpler inputs.
 
 ### Special types
 
