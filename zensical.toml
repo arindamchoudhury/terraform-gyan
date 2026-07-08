@@ -19,6 +19,10 @@ nav = [
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },
+        { "IaC fundamentals" = "topics/iac-fundamentals.md" },
+        { "Core workflow" = "topics/core-workflow.md" },
+        { "Providers" = "topics/providers.md" },
+        { "Modules" = "topics/modules.md" },
     ]},
     { "Notes" = [
         { "All Notes" = "sources/index.md" },
