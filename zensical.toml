@@ -15,6 +15,7 @@ nav = [
         { "Contents" = "book/index.md" },
         { "1. Infrastructure as Code & where Terraform fits" = "book/ch01-iac-fundamentals.md" },
         { "2. Install, providers & your first project" = "book/ch02-install-providers-first-project.md" },
+        { "3. The core workflow: init / plan / apply / destroy" = "book/ch03-core-workflow.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },
@@ -27,6 +28,7 @@ nav = [
             { "2. Terraform Use Cases" = "sources/terraform-docs/terraform-use-cases.md" },
             { "3. Provider Requirements" = "sources/terraform-docs/provider-requirements.md" },
             { "4. Terraform CLI Overview (command index)" = "sources/terraform-docs/tf-cli-commands.md" },
+            { "5. Configuration Syntax" = "sources/terraform-docs/tf-config-syntax.md" },
         ]},
         { "OpenTofu Docs" = [
             { "Overview" = "sources/opentofu-docs/index.md" },

@@ -1,6 +1,5 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Last updated:** 2026-07-07 — **Source note [[tf-cli-commands]]** (Terraform CLI Overview / command index captured as a reference): full subcommand table + global options + `-chdir` + tab-completion + Checkpoint telemetry. Diff vs the path's existing CLI-index callout closed two real gaps — **`terraform graph`** (Graphviz dependency graph) added to the B3 command surface, and **Checkpoint opt-out** (`CHECKPOINT_DISABLE` / `disable_checkpoint*`) added to E5 for airgapped/privacy setups; also wired `-install-autocomplete` into B3. `console` already covered (B7). No topic status flipped. · 2026-07-07 — **Source note [[tf-aws-destroy]]** (AWS Get Started "Destroy infrastructure" captured): two teardown paths — remove-from-config + `apply` (surgical, output → `null`) vs `terraform destroy` / `apply -destroy` (whole workspace, reverse-dependency order, "no undo"). Wired as a B3 reference (the `-` symbol + destroy half of the plan loop). Completes the AWS Get Started create→manage→destroy arc in `docs/sources/`; next track lesson is HCP Terraform (→ A4). No topic status flipped. · 2026-07-07 — **HCTut library diff** (fetched the curated [tutorials collections index](https://developer.hashicorp.com/terraform/tutorials) + the flat `library?product=terraform` catalog, 269 cross-product results): the flat library is mostly Vault/Consul/Nomad tutorials that merely *tag* Terraform — not worth bulk-adding; the path already cites the curated core collections (Get Started, modules, state, cloud, policy, config-language, automation, plugin-framework). Two genuine gaps closed from the "New Tutorials" set: **HCP health assessments** (managed drift detection + continuous validation) → A4 callout with the drift-detection + drift-and-policy tutorials; and the concrete **no-code modules** tutorial URL → wired into E6 step 3 (was a generic step). `check` blocks / continuous validation already covered in A2; Azure/GCP/Docker/OCI Get Started tracks are cloud-swapped duplicates of the AWS track already used — not added. · 2026-07-07 — **Source note [[tf-aws-manage]]** (AWS Get Started "Manage infrastructure" tutorial captured): wired as a reference under B3 (in-place `~` vs `-/+` replace, `-out` warning, dependency-graph ordering), B6 (input variables + outputs, `-var`, `terraform output`), and I4 (registry VPC module block, `module.*` references + state addressing, re-`init`). Version-checked: tutorial pins AWS provider `~> 5.92` + VPC module `5.19.0`; current is provider **6.x** / VPC module **6.6.1** (6.x needs provider `>= 6.0`) — flagged in the note + saved to the `terraform-aws-vpc-module-version` search cache. No topic status flipped (no chapter written). · 2026-07-06 — **Free-alternative resources** (web-verified 2026-07-06): added free substitutes for the paid Krausen core-workflow labs — **KL** (Krausen's *own* open-source [terraform-associate-labs](https://github.com/btkrausen/terraform-associate-labs), cloned locally, free Codespaces; the best free match), **KK** (KodeKloud free labs / Coursera audit), **FCC** (freeCodeCamp YouTube), **CLX** (Collabnix labs) — to the resources table + a "free alternatives" callout under B3 step 2 (HCTut Get Started remains the official free 1:1). KL's 8 labs now wired per-topic as 🧪 callouts: Lab 01→B2, 02→B2/B5, 03→B5/B6, 04→B5/I1, 05→B8/B9 (+B3 callout), 06→I3/I4, 07→B6, 08→I1. · 2026-07-06 — **roadmap.sh/terraform diff**: compared the path against the community roadmap's full topic tree (fetched from the developer-roadmap repo, since the page renders client-side). Path is a superset; only real gaps were the roadmap's named **static-analysis scanners** (Checkov/Trivy-tfsec/KICS) and **Infracost** cost gating → folded both into A5 as a third governance layer (SAST + cost) beside plan-time policy. `taint`/`untaint` appear on the roadmap but are already handled as deprecated→`-replace` in B3. · 2026-07-05 — **Authoritative language-index diff** (loop): diffed the path against the full HCDocs language nav — every construct (actions/query/stack blocks, built-in resources, sensitive, backends, state, import, tests) maps. Only non-covered item was the official **Style Guide** (guidance, not a feature) → added a pointer in B4. No new capability found: **feature surface converged.** · 2026-07-05 — **Authoritative CLI-index diff** (loop): diffed the path against the full HCDocs CLI command index (not memory-picked terms) — every documented command now maps to a callout. Added the two missing: `terraform modules` (I4) and `terraform metadata functions` (B7). · 2026-07-05 — **CLI/cross-cutting completeness pass #7** (loop): provider publishing + GPG signing (E1), `expect_failures` test attribute (A2). · 2026-07-05 — **CLI/cross-cutting completeness pass #6** (loop): provider SDKv2 vs Plugin Framework (E1), `TF_WORKSPACE` (A7), HCP self-hosted agents (A4), Stacks deferred changes (E2). · 2026-07-05 — **CLI/cross-cutting completeness pass #5** (loop): `-chdir` global option (B3), override files `override.tf`/`*_override.tf` (B4), `.terraformignore` (A4). · 2026-07-05 — **CLI/cross-cutting completeness pass #4** (loop): built-in named values `path.*`/`terraform.workspace`/`count.index`/`each.*`/`self`/`terraform.applying` (B7), HCP cost estimation + run triggers + notifications (A4). · 2026-07-05 — **CLI/cross-cutting completeness pass #3** (loop): full `state` subcommand set incl. `pull`/`push`/`replace-provider` (I7), `providers mirror` command (E5), debug env vars `TF_LOG_PATH`/`TF_LOG_CORE`/`TF_LOG_PROVIDER` + `crash.log` (E5). · 2026-07-05 — **CLI/cross-cutting completeness pass #2** (loop): backend catalog + `init` flags + locking flags (I6), JSON config syntax `.tf.json`/`.tfvars.json` (B4), `configuration_aliases` (I8), automation env vars (A3), `terraform login`/`logout` (A4), provider `filesystem_mirror`/`network_mirror` (E5). · 2026-07-05 — **CLI/cross-cutting completeness pass** (loop): grepped the path for capabilities a release-timeline doc wouldn't surface. Added: full CLI command surface + `fmt`/`validate`/`show`/`output` (B3), `apply -replace` superseding deprecated `taint`/`untaint` (B3), `force-unlock` (I6), provisioner `when=destroy`/`on_failure`/`self`/`connection` (A1), `dev_overrides` for local provider dev (E1). Added `taint`→`-replace` to the feature-history deprecations table. · 2026-07-05 — **Closed the last deferred niche items**: `provider_meta` (E1), global provider plugin-cache locking (E5), `terraform{} experiments` (E5), `-target-file`/`-exclude-file` (E3). Correction: `-exclude-file`/`-target-file` are OpenTofu 1.10, not 1.9. Nothing usable now deferred. · 2026-07-05 — **Completeness re-audit under widened standard** (goal is learn-Terraform-completely, not cert-only; see [[feature-coverage-matrix]] standard note): folded in every remaining *usable* capability — builtin provider funcs `encode_tfvars`/`decode_tfvars`/`encode_expr` (A1), cross-platform provider checksums (B3), `.tftest.hcl` external vars (A2), `.tofu`/`.tofurc` extensions (E3), OpenTofu MCP server (E6), `rpcapi` + high-cardinality note (E5), ephemeral vars/outputs explicit (A6), and a note that B7 delegates the full ~150-function list to HCDocs. Only unreleased + pure-perf items now excluded. · 2026-07-05 — **Feature-history recheck #2** (after building [[opentofu-feature-history]] + a loop audit of both docs): closed 5 more path gaps — `import` `for_each` + `-refresh-only` (I7), `nullable` (B6), `cloud` block (A4), OpenTofu OpenTelemetry tracing (E5). · 2026-07-05 — **Feature-history reconciliation** (see [[feature-history]]): wrote a full version-by-version feature catalogue (0.11–1.15), which surfaced 1.12–1.14 features the 2026-07-04 matrix predated; closed the gaps — `actions` block (A1), list resources + `terraform query` (B8), cross-object variable validation + `test -parallelism` (A2), `templatestring()` + short-circuit operators (B7), OCI backend (I6), import `identity` (I7). · 2026-07-04 — **Full feature audit** (see [[feature-coverage-matrix]]): built a complete Terraform+OpenTofu feature→topic matrix and closed the gaps it found — ephemeral values/resources + write-only arguments (A6, major), provider-defined functions (B7 use / E1 author), OpenTofu `enabled` meta-arg (I1), native S3 state locking (I6), import `-generate-config-out` (I7), OpenTofu OCI registries (E4). · 2026-07-04 — **Feature-coverage pass** for Terraform 1.15 / OpenTofu 1.12 (see [[tf115-ot112-features]]): folded in dynamic module sources + `const` (I4), variable/output deprecation (I5), output `type` (B6), `convert()` (B7), test-double functions (A2), OpenTofu `destroy = false` (I7), `-json-into` (A3), and expanded the E3 divergence list to 7 items with the "Terraform 1.15 closed some gaps" note. · 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.
 > **Current stable versions:** Terraform CLI **1.15.7** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.3** (1.12.0 released 2026-05-14, MPL 2.0)
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
@@ -31,9 +30,8 @@
 | **TPF** | Terraform Plugin Framework docs | Official docs | https://developer.hashicorp.com/terraform/plugin/framework |
 | **TG** | Terragrunt docs (Gruntwork) | Official docs | https://terragrunt.gruntwork.io/docs |
 
-> 📌 **TUR** targets Terraform ~1.1. Core concepts (modules, state, testing philosophy) are still the best
-> treatment available, but verify newer syntax (`terraform test`, `import`/`removed` blocks, Stacks) against
-> current **HCDocs**.
+!!! warning "📌 TUR targets Terraform ~1.1"
+    **TUR** targets Terraform ~1.1. Core concepts (modules, state, testing philosophy) are still the best treatment available, but verify newer syntax (`terraform test`, `import`/`removed` blocks, Stacks) against current **HCDocs**.
 
 ---
 
@@ -44,8 +42,8 @@
 | **Terraform Associate (004)** | HashiCorp | Intermediate exit | IaC concepts · fundamentals (providers/state) · core workflow · HCL config language · modules (use + author) · state management · infrastructure maintenance · HCP Terraform | $70.50 | 1 hr, ~57 multiple-choice, valid 2 yrs; tests Terraform 1.12 | After Intermediate |
 | **Terraform Authoring & Operations Professional** | HashiCorp | Advanced exit | resource lifecycle · dynamic config & troubleshooting · collaborative workflows · modules · providers · HCP Terraform (MC only) | (see HashiCorp) | Lab-based (hands-on), AWS provider; Azure variant late 2026 | After Advanced |
 
-> **004 replaces 003** (retired 2026-01-08). If you see 003 study material, the content is ~90% the same but
-> use 004 resources where possible. The Pro exam assumes deep HCL + CLI fluency and real cloud experience.
+!!! note "004 replaces 003"
+    **004 replaces 003** (retired 2026-01-08). If you see 003 study material, the content is ~90% the same but use 004 resources where possible. The Pro exam assumes deep HCL + CLI fluency and real cloud experience.
 
 ---
 
@@ -68,6 +66,9 @@
 2. **Book chapter — TID Ch 1** (~1 hr) — read the IaC framing and the Terraform-vs-OpenTofu positioning (this book covers both). (Captured notes: [[01-brief-overview]].)
 3. **Reference — [HCDocs "Intro / Use Cases"](https://developer.hashicorp.com/terraform/intro)** (~20 min) — skim the official framing; note the declarative vs imperative distinction. (Captured notes: [[terraform-intro]], [[terraform-use-cases]].)
 
+!!! example "🧪 Labs (KK)"
+    None — KodeKloud's IaC intro (*Challenges with Traditional IT* / *Types of IaC Tools* / *Why Terraform?*) is lecture-only. First KodeKloud lab is *HCL Basics* (→ B2/B4).
+
 **Milestone:** You can explain in two sentences why Terraform is declarative and how it differs from Ansible and from CloudFormation.
 
 ---
@@ -84,13 +85,15 @@
 2. **Reference — [HCDocs "Provider Requirements"](https://developer.hashicorp.com/terraform/language/providers/requirements)** (~20 min) — understand `required_providers`, source addresses, and version pinning. ([Install](https://developer.hashicorp.com/terraform/install)) (Captured notes: [[provider-requirements]].)
 3. **Book chapter — TID Ch 2** (~1 hr) — first-project walkthrough; note the `.terraform/` and lock-file layout.
 
-> 🧪 **Labs (KL):** [Lab 01 — getting started](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_01_getting_started_with_terraform) · [Lab 02 — create your first resource](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_02_create_your_first_resource). Free, runs in Codespaces.
+!!! example "🧪 Labs"
+    - **KL:** [Lab 01 — getting started](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_01_getting_started_with_terraform) · [Lab 02 — create your first resource](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_02_create_your_first_resource). Free, runs in Codespaces.
+    - **KK:** [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) — *HCL Basics* (first `init`→`plan`→`apply` run) · *Version Constraints* (provider pinning + the `.terraform.lock.hcl` file).
 
 **Milestone:** You can stand up a fresh directory, `terraform init` it, and provision one real resource (an S3 bucket or a Docker container) from scratch.
 
 ---
 
-### ⬜ B3 — The core workflow: init / plan / apply / destroy
+### ✅ B3 — The core workflow: init / plan / apply / destroy
 
 **What it is:** The four-command loop — `init` (download providers, set up backend), `plan` (compute a diff), `apply` (execute), `destroy` (tear down) — plus the dependency lock file.
 
@@ -99,18 +102,23 @@
 **How to learn it:**
 
 1. **Interactive — HCTut ["Manage infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-manage) + ["Destroy infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-destroy)** (~45 min) — run a full modify-then-destroy cycle; read the plan output symbols (`+`, `-`, `~`, `-/+`). (The init/validate/apply half of this loop is captured in [[tf-aws-create]]; the modify half — in-place `~` update vs `-/+` replacement, the `-out` warning, and dependency-graph ordering — is captured in [[tf-aws-manage]]; the teardown half — remove-from-config vs `terraform destroy`, the `-` symbol, and reverse-dependency destroy order — is captured in [[tf-aws-destroy]].)
-2. **Video — [Krausen "Terraform Associate — Hands-On Labs" (core-workflow section)](https://krausen.io/course/hashicorp-certified-terraform-associate-hands-on-labs/)** (~40 min) — walks the plan/apply lifecycle with cert framing.
-   > 💰 **Free alternatives to the Krausen paid course** (any one substitutes for step 2):
-   > - **KL** — [Krausen's *own* free labs repo](https://github.com/btkrausen/terraform-associate-labs) (cloned locally at `C:\opt\learn\terraform\repos\terraform-associate-labs`). Lab 01 (getting started) + Lab 05 (state/data/CLI) cover this loop; runs in free Codespaces, no local setup. **Best free match** — it's the paid course's hands-on content, open-sourced.
-   > - **HCTut Get Started** (step 1 above) is the official free 1:1 — it *is* the init→plan→apply→destroy walkthrough.
-   > - **KK** — [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) / [Coursera "Terraform for the Absolute Beginner"](https://www.coursera.org/learn/terraform-for-the-absolute-beginner) run the loop **in-browser with no cloud account**.
-   > - **FCC** — freeCodeCamp's full Terraform Associate course on YouTube (free lecture+lab video).
-   > - **CLX** — [Collabnix Terraform Hands-on Labs](https://collabnix.github.io/terraform/) (free, open, init-plan-apply).
+2. **Video — [Krausen "Terraform Associate — Hands-On Labs" (core-workflow section)](https://krausen.io/course/hashicorp-certified-terraform-associate-hands-on-labs/)** (~40 min) — walks the plan/apply lifecycle with cert framing. Free substitutes in the callout below.
 3. **Reference — [HCDocs CLI commands](https://developer.hashicorp.com/terraform/cli/commands)** (~20 min) — bookmark [`plan`](https://developer.hashicorp.com/terraform/cli/commands/plan) / [`apply`](https://developer.hashicorp.com/terraform/cli/commands/apply) flags (`-out`, `-target`, `-auto-approve`). This index is the **complete command surface** — the path teaches the four-command loop, but a complete operator also knows the everyday utilities: **`terraform fmt`** (canonical formatting), **`terraform validate`** (config-only checks), **`terraform show`** (render state/plan, `-json` for tooling), **`terraform output`** (read outputs, `-json` for scripts), **`terraform graph`** (emit the dependency graph as Graphviz), **`terraform get`**, **`terraform providers`**, **`terraform version`**. The global **`terraform -chdir=DIR <cmd>`** option runs any command as if launched in `DIR` — cleaner than `cd`-ing around in scripts. The whole surface is captured as a one-row-per-command reference in [[tf-cli-commands]]; enable shell completion once with `terraform -install-autocomplete`.
 
-> 📌 To force one resource to be destroyed and recreated, use **`terraform apply -replace=ADDRESS`** (Terraform ~0.15.2+). This **supersedes the deprecated `terraform taint` / `untaint`** commands, which mutated state out-of-band; `-replace` shows the recreation in the plan first, so you review it before it happens. (See [[feature-history]].)
+!!! tip "💰 Free alternatives to the Krausen paid course (step 2)"
+    Any one substitutes for step 2's paid Krausen course.
 
-> 📌 The lock file records provider **checksums**. Use `terraform providers lock` to record hashes for *all* platforms (not just yours) so CI on Linux and a dev laptop on macOS agree. OpenTofu **1.12** does this automatically at `tofu init` (full cross-platform `zh:`+`h1:` set). Cross-platform mismatches are a classic "works on my machine" `init` failure. (See [[feature-history]], [[opentofu-feature-history]].)
+    - **KL** — [Krausen's *own* free labs repo](https://github.com/btkrausen/terraform-associate-labs) (cloned locally at `C:\opt\learn\terraform\repos\terraform-associate-labs`). Lab 01 (getting started) + Lab 05 (state/data/CLI) cover this loop; runs in free Codespaces, no local setup. **Best free match** — it's the paid course's hands-on content, open-sourced.
+    - **HCTut Get Started** (step 1 above) is the official free 1:1 — it *is* the init→plan→apply→destroy walkthrough.
+    - **KK** — [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) / [Coursera "Terraform for the Absolute Beginner"](https://www.coursera.org/learn/terraform-for-the-absolute-beginner) run the loop **in-browser with no cloud account**. B3-relevant labs: *HCL Basics* (first `init`→`plan`→`apply`→`destroy`) + *Terraform Commands* (`fmt`/`validate`/`show`/`output` surface); the *Update and Destroy Infrastructure* lesson pairs with *HCL Basics*.
+    - **FCC** — freeCodeCamp's full Terraform Associate course on YouTube (free lecture+lab video).
+    - **CLX** — [Collabnix Terraform Hands-on Labs](https://collabnix.github.io/terraform/) (free, open, init-plan-apply).
+
+!!! note "📌 Force a rebuild with `-replace`"
+    To force one resource to be destroyed and recreated, use **`terraform apply -replace=ADDRESS`** (Terraform ~0.15.2+). This **supersedes the deprecated `terraform taint` / `untaint`** commands, which mutated state out-of-band; `-replace` shows the recreation in the plan first, so you review it before it happens. (See [[feature-history]].)
+
+!!! note "📌 Lock-file checksums across platforms"
+    The lock file records provider **checksums**. Use `terraform providers lock` to record hashes for *all* platforms (not just yours) so CI on Linux and a dev laptop on macOS agree. OpenTofu **1.12** does this automatically at `tofu init` (full cross-platform `zh:`+`h1:` set). Cross-platform mismatches are a classic "works on my machine" `init` failure. (See [[feature-history]], [[opentofu-feature-history]].)
 
 **Milestone:** You can read a `terraform plan` and correctly predict what each `+`/`~`/`-/+` line will do before running apply.
 
@@ -124,11 +132,18 @@
 
 **How to learn it:**
 
-1. **Reference — [HCDocs "Configuration Syntax"](https://developer.hashicorp.com/terraform/language/syntax/configuration)** (~40 min) — read blocks/arguments/expressions; this is short and canonical. Pair it with the official [**Style Guide**](https://developer.hashicorp.com/terraform/language/style) for idiomatic naming, file layout, and formatting conventions (guidance, not a feature — but it's what "writing it right" means).
+1. **Reference — [HCDocs "Configuration Syntax"](https://developer.hashicorp.com/terraform/language/syntax/configuration)** (~40 min) — read blocks/arguments/expressions; this is short and canonical. Captured as [[tf-config-syntax]] (arguments vs blocks, labels, identifiers, comments, UTF-8/line-endings). Pair it with the official [**Style Guide**](https://developer.hashicorp.com/terraform/language/style) for idiomatic naming, file layout, and formatting conventions (guidance, not a feature — but it's what "writing it right" means).
 2. **Book chapter — TID Ch 3** (~1.5 hrs) — the language deep-dive; work the examples in an editor.
-   > 📌 HCL has a **JSON-equivalent syntax** — [`*.tf.json`](https://developer.hashicorp.com/terraform/language/syntax/json) and `*.tfvars.json` are parsed the same as `.tf`/`.tfvars`. You rarely hand-write it, but it's the format machine-generated configs (codegen, other tools) emit, so recognize it. (See [[feature-history]].)
-   > 📌 **Override files** ([HCDocs](https://developer.hashicorp.com/terraform/language/files/override)) — a file named `override.tf` or ending `_override.tf` is loaded *last* and merges its blocks into matching ones, replacing set arguments. Handy for local/temporary tweaks; use sparingly since it hides config from the primary files.
 3. **Interactive — rewrite your B2 project** (~1 hr) — split it into `main.tf` / `variables.tf` / `outputs.tf` by convention.
+
+!!! note "📌 JSON-equivalent syntax"
+    HCL has a **JSON-equivalent syntax** — [`*.tf.json`](https://developer.hashicorp.com/terraform/language/syntax/json) and `*.tfvars.json` are parsed the same as `.tf`/`.tfvars`. You rarely hand-write it, but it's the format machine-generated configs (codegen, other tools) emit, so recognize it. (See [[feature-history]].)
+
+!!! note "📌 Override files"
+    A file named `override.tf` or ending `_override.tf` ([HCDocs](https://developer.hashicorp.com/terraform/language/files/override)) is loaded *last* and merges its blocks into matching ones, replacing set arguments. Handy for local/temporary tweaks; use sparingly since it hides config from the primary files.
+
+!!! example "🧪 Labs (KK)"
+    [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) — *HCL Basics* (blocks/arguments, the `.tf` file layout; same lab as B2/B3).
 
 **Milestone:** You can author a multi-file HCL configuration by hand, using the correct block type for each purpose, without copy-paste.
 
@@ -146,7 +161,9 @@
 2. **Reference — [a real provider's docs (e.g. AWS provider)](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)** (~ongoing) — learn to navigate the registry docs for arguments/attributes. ([Resources](https://developer.hashicorp.com/terraform/language/resources), [dependencies](https://developer.hashicorp.com/terraform/language/resources/behavior)) See [[tf-aws-create]] for the resource-address / type-name / implicit-reference walkthrough on a real `aws_instance`.
 3. **Book chapter — TID Ch 3–4** (~1 hr) — implicit vs explicit dependencies and how the graph is derived.
 
-> 🧪 **Labs (KL):** [Lab 03 — variables & dependencies](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_03_working_with_variables_and_dependencies) · [Lab 04 — managing multiple resources](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_04_managing_mulitple_resources).
+!!! example "🧪 Labs"
+    - **KL:** [Lab 03 — variables & dependencies](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_03_working_with_variables_and_dependencies) · [Lab 04 — managing multiple resources](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_04_managing_mulitple_resources).
+    - **KK:** [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) — *Terraform Providers* · *Multiple Providers* · *Resource Attributes* · *Resource Dependencies*.
 
 **Milestone:** You can chain three resources where each references the previous one's attributes, and explain the resulting apply order without `depends_on`.
 
@@ -164,10 +181,15 @@
 2. **Reference — [HCDocs "Input Variables"](https://developer.hashicorp.com/terraform/language/values/variables) precedence table** (~20 min) — memorize the override order (CLI > env > `.tfvars` > default). ([outputs](https://developer.hashicorp.com/terraform/language/values/outputs), [locals](https://developer.hashicorp.com/terraform/language/values/locals))
 3. **Book chapter — TID Ch 3** (variables/outputs/locals) (~45 min) — when to use `locals` vs `variable`.
 
-> 📌 Terraform **1.15** added a `type` attribute to `output` blocks — outputs can now carry the same type constraints (and documentation value) variables always have. Prefer typing your module outputs. (See [[tf115-ot112-features]].)
-> 📌 The **`nullable`** variable argument (TF 1.1) controls whether a caller may pass `null`. Set `nullable = false` to forbid it (and fall back to the `default` when `null` is supplied) — useful for required-but-defaulted inputs. (See [[feature-history]].)
+!!! note "📌 Output `type` (Terraform 1.15)"
+    Terraform **1.15** added a `type` attribute to `output` blocks — outputs can now carry the same type constraints (and documentation value) variables always have. Prefer typing your module outputs. (See [[tf115-ot112-features]].)
 
-> 🧪 **Labs (KL):** [Lab 03 — variables & dependencies](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_03_working_with_variables_and_dependencies) · [Lab 07 — local values](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_07_simplify_code_with_local_values).
+!!! note "📌 `nullable` variable argument (TF 1.1)"
+    The **`nullable`** variable argument (TF 1.1) controls whether a caller may pass `null`. Set `nullable = false` to forbid it (and fall back to the `default` when `null` is supplied) — useful for required-but-defaulted inputs. (See [[feature-history]].)
+
+!!! example "🧪 Labs"
+    - **KL:** [Lab 03 — variables & dependencies](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_03_working_with_variables_and_dependencies) · [Lab 07 — local values](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_07_simplify_code_with_local_values).
+    - **KK:** [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) — *Variables* · *Using Variables in Terraform* · *Output Variables*.
 
 **Milestone:** You can parameterize your project so the same config deploys to two environments by swapping only a `.tfvars` file.
 
@@ -185,11 +207,23 @@
 2. **Reference — [HCDocs "Functions"](https://developer.hashicorp.com/terraform/language/functions) + ["Expressions"](https://developer.hashicorp.com/terraform/language/expressions)** (~40 min) — skim the function categories; bookmark for lookup. This page is the **exhaustive function list** — the path teaches the *skill* of using functions, not each of the ~150 individually; treat HCDocs + [[feature-history]] as the complete catalogue (e.g. `strcontains`/`plantimestamp` landed in 1.5, `templatestring` in 1.9). `terraform metadata functions -json` (TF 1.4+) dumps every function's signature machine-readably — mostly for editor/language-server tooling.
 3. **Book chapter — TID Ch 5** (~1 hr) — expression patterns used in real configs.
 
-> 📌 Terraform **1.15** added the `convert(value, type)` function for precise inline type conversion — cleaner than the old `tolist`/`tomap`/`tset` juggling in tricky spots. (See [[tf115-ot112-features]].)
-> 📌 Beyond the built-ins, **provider-defined functions** (TF 1.8) let a provider ship its own functions, called as `provider::<name>::<fn>(...)` — e.g. `provider::aws::arn_parse(...)`. Available in the AWS, Google, and Kubernetes providers among others. Authoring them is E1. (See [[feature-coverage-matrix]].)
-> 📌 Terraform **1.9** added **`templatestring(ref, vars)`** — like `templatefile()`, but renders a template string obtained at runtime (e.g. from a data source) instead of a file on disk. (See [[feature-history]].)
-> 📌 Terraform **1.12** made logical operators **short-circuit** (`&&`/`||` stop evaluating once the result is decided), so guards like `var.x != null && var.x.enabled` no longer error on the null case. (See [[feature-history]].)
-> 📌 Learn the **built-in named values** you can reference anywhere: **`path.module`** / **`path.root`** / **`path.cwd`** (filesystem paths, e.g. for `templatefile`), **`terraform.workspace`** (current CLI workspace name), **`count.index`**, **`each.key`** / **`each.value`** (inside `count`/`for_each`), **`self`** (inside provisioners), and **`terraform.applying`** (ephemeral bool, true during apply; TF 1.10). ([HCDocs references](https://developer.hashicorp.com/terraform/language/expressions/references))
+!!! note "📌 `convert()` (Terraform 1.15)"
+    Terraform **1.15** added the `convert(value, type)` function for precise inline type conversion — cleaner than the old `tolist`/`tomap`/`tset` juggling in tricky spots. (See [[tf115-ot112-features]].)
+
+!!! note "📌 Provider-defined functions (TF 1.8)"
+    Beyond the built-ins, **provider-defined functions** (TF 1.8) let a provider ship its own functions, called as `provider::<name>::<fn>(...)` — e.g. `provider::aws::arn_parse(...)`. Available in the AWS, Google, and Kubernetes providers among others. Authoring them is E1. (See [[feature-coverage-matrix]].)
+
+!!! note "📌 `templatestring()` (Terraform 1.9)"
+    Terraform **1.9** added **`templatestring(ref, vars)`** — like `templatefile()`, but renders a template string obtained at runtime (e.g. from a data source) instead of a file on disk. (See [[feature-history]].)
+
+!!! note "📌 Short-circuit `&&` / `||` (Terraform 1.12)"
+    Terraform **1.12** made logical operators **short-circuit** (`&&`/`||` stop evaluating once the result is decided), so guards like `var.x != null && var.x.enabled` no longer error on the null case. (See [[feature-history]].)
+
+!!! note "📌 Built-in named values"
+    Learn the **built-in named values** you can reference anywhere: **`path.module`** / **`path.root`** / **`path.cwd`** (filesystem paths, e.g. for `templatefile`), **`terraform.workspace`** (current CLI workspace name), **`count.index`**, **`each.key`** / **`each.value`** (inside `count`/`for_each`), **`self`** (inside provisioners), and **`terraform.applying`** (ephemeral bool, true during apply; TF 1.10). ([HCDocs references](https://developer.hashicorp.com/terraform/language/expressions/references))
+
+!!! example "🧪 Labs (KK)"
+    None in the Basics course — KodeKloud covers functions/conditional expressions in a later section with no standalone lab; practice in `terraform console` (step 1) instead.
 
 **Milestone:** You can transform a list of maps into a keyed map with a `for` expression and use it to drive resource creation.
 
@@ -207,9 +241,12 @@
 2. **Interactive — extend your project** (~45 min) — replace a hard-coded AMI/AZ/image with a `data` lookup. The `data "aws_ami" "ubuntu"` filter pattern is captured in [[tf-aws-create]].
 3. **Book chapter — TID Ch 4** (data sources) (~30 min) — dependency implications of data reads.
 
-> 📌 Beyond point lookups, Terraform **1.14** added **list resources** (defined in `*.tfquery.hcl` files) and the **`terraform query`** command — you can enumerate and filter *existing* infrastructure a provider knows about, not just read one known object like a data source does. Useful for discovery/inventory ahead of an `import`. Newer than both books and the 004 exam; verify against the CHANGELOG. (See [[feature-history]].)
+!!! note "📌 List resources + `terraform query` (TF 1.14)"
+    Beyond point lookups, Terraform **1.14** added **list resources** (defined in `*.tfquery.hcl` files) and the **`terraform query`** command — you can enumerate and filter *existing* infrastructure a provider knows about, not just read one known object like a data source does. Useful for discovery/inventory ahead of an `import`. Newer than both books and the 004 exam; verify against the CHANGELOG. (See [[feature-history]].)
 
-> 🧪 **Lab (KL):** [Lab 05 — state, data sources & CLI](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_05_working_with_state_data_sources_and_cli) (data-source section).
+!!! example "🧪 Labs"
+    - **KL:** [Lab 05 — state, data sources & CLI](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_05_working_with_state_data_sources_and_cli) (data-source section).
+    - **KK:** [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) — *Datasources*.
 
 **Milestone:** You can look up a resource you didn't create (e.g. the latest AMI or default VPC) and wire it into a managed resource.
 
@@ -227,7 +264,9 @@
 2. **Reference — [HCDocs "State" overview](https://developer.hashicorp.com/terraform/language/state) + ["Sensitive Data in State"](https://developer.hashicorp.com/terraform/language/state/sensitive-data)** (~30 min) — note that state can hold secrets in plaintext.
 3. **Book chapter — TID Ch 6** (state) (~1 hr) — anatomy of the state file; read but don't edit it.
 
-> 🧪 **Lab (KL):** [Lab 05 — state, data sources & CLI](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_05_working_with_state_data_sources_and_cli) (state + CLI sections).
+!!! example "🧪 Labs"
+    - **KL:** [Lab 05 — state, data sources & CLI](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_05_working_with_state_data_sources_and_cli) (state + CLI sections).
+    - **KK:** [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) — *Terraform State* (purpose of state, state considerations).
 
 **Milestone:** You can open a state file, explain how a resource address maps to a real cloud object, and articulate three reasons never to edit it by hand.
 
@@ -261,9 +300,11 @@ You are ready to advance when you can:
 2. **Reference — [HCDocs "count"](https://developer.hashicorp.com/terraform/language/meta-arguments/count) + ["for_each"](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) + [depends_on](https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on)** (~30 min) — the addressing rules and when each is legal.
 3. **Book chapter — TID Ch 5** (~1 hr) — the re-creation pitfall and how `for_each` keys avoid it.
 
-> 📌 **OpenTofu 1.11** adds an `enabled` meta-argument — a first-class on/off switch for a resource, cleaner than the `count = var.enabled ? 1 : 0` idiom (which forces `[0]` addressing and index churn). OpenTofu-only; in Terraform you still use the `count` trick. (See [[feature-coverage-matrix]].)
+!!! info "📌 OpenTofu — `enabled` meta-argument (1.11)"
+    **OpenTofu 1.11** adds an `enabled` meta-argument — a first-class on/off switch for a resource, cleaner than the `count = var.enabled ? 1 : 0` idiom (which forces `[0]` addressing and index churn). OpenTofu-only; in Terraform you still use the `count` trick. (See [[feature-coverage-matrix]].)
 
-> 🧪 **Labs (KL):** [Lab 04 — managing multiple resources](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_04_managing_mulitple_resources) · [Lab 08 — deploying multiple resources with for_each](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_08_deploying_mulitple_resources_with_for_each).
+!!! example "🧪 Labs (KL)"
+    [Lab 04 — managing multiple resources](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_04_managing_mulitple_resources) · [Lab 08 — deploying multiple resources with for_each](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_08_deploying_mulitple_resources_with_for_each).
 
 **Milestone:** You can convert a `count`-based set of resources to `for_each` and explain why removing a middle element no longer destroys unrelated resources.
 
@@ -280,7 +321,9 @@ You are ready to advance when you can:
 1. **Reference — [HCDocs "lifecycle" meta-argument](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle)** (~30 min) — each option and its plan effect.
 2. **Interactive — experiment** (~45 min) — add `create_before_destroy` to a resource and watch the plan reorder to `+` before `-`.
 3. **Book chapter — TID Ch 5** (lifecycle) (~30 min) — real use cases and gotchas.
-   > 📌 OpenTofu 1.12 adds **dynamic `prevent_destroy`** (bind it to a variable); Terraform still requires a literal. See E3.
+
+!!! info "📌 OpenTofu — dynamic `prevent_destroy` (1.12)"
+    OpenTofu 1.12 adds **dynamic `prevent_destroy`** (bind it to a variable); Terraform still requires a literal. See E3.
 
 **Milestone:** You can configure a resource for zero-downtime replacement and protect a database from accidental destroy.
 
@@ -298,7 +341,8 @@ You are ready to advance when you can:
 2. **Interactive — build a security-group module** (~1 hr) — drive `ingress` rules from a list-of-objects variable via `dynamic`.
 3. **Book chapter — TID Ch 5** (~30 min) — complex type constraints and `optional()`.
 
-> 🧪 **Lab (KL):** [Lab 06 — making code dynamic & reusable](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_06_making_code_dynamic_and_reusable) (dynamic-blocks section).
+!!! example "🧪 Lab (KL)"
+    [Lab 06 — making code dynamic & reusable](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_06_making_code_dynamic_and_reusable) (dynamic-blocks section).
 
 **Milestone:** You can write a module that accepts a list of rule objects and emits one nested block per rule with a `dynamic` block.
 
@@ -316,11 +360,14 @@ You are ready to advance when you can:
 2. **Reference — [HCDocs "Module Sources"](https://developer.hashicorp.com/terraform/language/modules/sources) + [version constraint syntax](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)** (~30 min) — `~>`, git refs, local paths.
 3. **Book chapter — TUR Ch 4** (~1.5 hrs) — the classic module treatment; still the best explanation of inputs/outputs/composition.
 
-> 📌 Terraform **1.15** added **dynamic module sources**: `source` and `version` can now be variables, not just string literals — so one module block can point different environments at different registries/pins instead of duplicating the block. Any variable feeding a module source must be marked `const = true` (module sources resolve at `terraform init`). OpenTofu offered this earlier; this is one of the 1.15 gap-closers. Note the exam (004, Terraform 1.12) still assumes literal sources. (See [[tf115-ot112-features]].)
+!!! note "📌 Dynamic module sources (Terraform 1.15)"
+    Terraform **1.15** added **dynamic module sources**: `source` and `version` can now be variables, not just string literals — so one module block can point different environments at different registries/pins instead of duplicating the block. Any variable feeding a module source must be marked `const = true` (module sources resolve at `terraform init`). OpenTofu offered this earlier; this is one of the 1.15 gap-closers. Note the exam (004, Terraform 1.12) still assumes literal sources. (See [[tf115-ot112-features]].)
 
-> 📌 **`terraform modules`** (TF 1.10+) prints every module declared in the config — key, source, and version — for the whole tree. Use it to audit what you depend on and to drive policy on module consumption. (See [[feature-history]].)
+!!! note "📌 `terraform modules` (TF 1.10)"
+    **`terraform modules`** (TF 1.10+) prints every module declared in the config — key, source, and version — for the whole tree. Use it to audit what you depend on and to drive policy on module consumption. (See [[feature-history]].)
 
-> 🧪 **Lab (KL):** [Lab 06 — making code dynamic & reusable](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_06_making_code_dynamic_and_reusable) (reusable-module section).
+!!! example "🧪 Lab (KL)"
+    [Lab 06 — making code dynamic & reusable](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_06_making_code_dynamic_and_reusable) (reusable-module section).
 
 **Milestone:** You can consume a versioned registry module, pass it inputs, and reference its outputs in your own resources.
 
@@ -338,7 +385,8 @@ You are ready to advance when you can:
 2. **Reference — [HCDocs "Module Development"](https://developer.hashicorp.com/terraform/language/modules/develop) standards** (~40 min) — the standard module structure and publishing rules.
 3. **Interactive — refactor** (~1.5 hrs) — extract your Beginner project into a reusable module with a clean input/output surface.
 
-> 📌 Terraform **1.15** added a **deprecation mechanism** for a module's public API: put `deprecated = "message"` on a `variable` or `output` and callers get a warning at `terraform validate`. This is how you evolve a published module's interface without breaking consumers overnight — deprecate, warn, then remove a version later. Pairs with the refactoring workflow in A8. (See [[tf115-ot112-features]].)
+!!! note "📌 Module API deprecation (Terraform 1.15)"
+    Terraform **1.15** added a **deprecation mechanism** for a module's public API: put `deprecated = "message"` on a `variable` or `output` and callers get a warning at `terraform validate`. This is how you evolve a published module's interface without breaking consumers overnight — deprecate, warn, then remove a version later. Pairs with the refactoring workflow in A8. (See [[tf115-ot112-features]].)
 
 **Milestone:** You can package infrastructure into a module with validated inputs, documented outputs, and a README, and consume it from two callers.
 
@@ -355,12 +403,18 @@ You are ready to advance when you can:
 1. **Interactive — HCTut ["Migrate state from S3 to HCP Terraform"](https://developer.hashicorp.com/terraform/tutorials/cloud/migrate-remote-s3-backend-hcp-terraform)** (~1 hr) — migrate a local state to an S3 (or HCP) backend and observe locking.
 2. **Reference — [HCDocs "Backends"](https://developer.hashicorp.com/terraform/language/backend) + ["State Locking"](https://developer.hashicorp.com/terraform/language/state/locking) + [terraform_remote_state](https://developer.hashicorp.com/terraform/language/state/remote-state-data)** (~40 min) — backend config, partial config, and lock behavior. Beyond S3/GCS/azurerm/HCP, know the **full backend catalog** exists — `http`, `consul`, `kubernetes`, `pg` (Postgres), `oss` (Alibaba), `cos` (Tencent), plus OCI (TF 1.12) — pick per platform. Locking flags `-lock=false` / `-lock-timeout` apply to every command.
 
-> 📌 `terraform init` isn't just first-run setup — its flags manage the backend/providers over a project's life: **`-backend-config=…`** (partial/dynamic backend config), **`-migrate-state`** (move state to a new backend), **`-reconfigure`** (ignore existing state when switching), and **`-upgrade`** (re-resolve providers and refresh the lock file within constraints). (See [[feature-history]].)
+!!! note "📌 `init` backend/provider flags"
+    `terraform init` isn't just first-run setup — its flags manage the backend/providers over a project's life: **`-backend-config=…`** (partial/dynamic backend config), **`-migrate-state`** (move state to a new backend), **`-reconfigure`** (ignore existing state when switching), and **`-upgrade`** (re-resolve providers and refresh the lock file within constraints). (See [[feature-history]].)
 3. **Book chapter — TUR Ch 3** (~1.5 hrs) — the canonical remote-state + isolation discussion.
 
-> 📌 When a run crashes mid-apply the state lock can be left held; **`terraform force-unlock LOCK_ID`** releases it manually (the lock ID is printed in the error). Use only after confirming no run is actually in progress — force-unlocking a live run corrupts state. (See [[feature-history]].)
-> 📌 The S3 backend now has **native state locking** via a lock file in the bucket (`use_lockfile = true`) — the separate **DynamoDB table is no longer required** (Terraform 1.11+; OpenTofu shipped native S3 locking in 1.10). Older tutorials still show the S3+DynamoDB pairing; prefer native locking on new setups. (See [[feature-coverage-matrix]].)
-> 📌 Terraform **1.12** added a native **OCI Object Storage backend** (Oracle Cloud), joining S3/GCS/azurerm/HCP as a first-class remote-state store. (See [[feature-history]].)
+!!! warning "📌 `force-unlock` — use with care"
+    When a run crashes mid-apply the state lock can be left held; **`terraform force-unlock LOCK_ID`** releases it manually (the lock ID is printed in the error). Use only after confirming no run is actually in progress — force-unlocking a live run corrupts state. (See [[feature-history]].)
+
+!!! note "📌 S3 native state locking"
+    The S3 backend now has **native state locking** via a lock file in the bucket (`use_lockfile = true`) — the separate **DynamoDB table is no longer required** (Terraform 1.11+; OpenTofu shipped native S3 locking in 1.10). Older tutorials still show the S3+DynamoDB pairing; prefer native locking on new setups. (See [[feature-coverage-matrix]].)
+
+!!! note "📌 OCI Object Storage backend (Terraform 1.12)"
+    Terraform **1.12** added a native **OCI Object Storage backend** (Oracle Cloud), joining S3/GCS/azurerm/HCP as a first-class remote-state store. (See [[feature-history]].)
 
 **Milestone:** You can migrate a project from local to remote state with locking and read another config's outputs via `terraform_remote_state`.
 
@@ -378,11 +432,17 @@ You are ready to advance when you can:
 2. **Reference — HCDocs [import block](https://developer.hashicorp.com/terraform/language/import), [moved](https://developer.hashicorp.com/terraform/language/moved), [removed](https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources), [`state` subcommands](https://developer.hashicorp.com/terraform/cli/commands/state)** (~45 min) — prefer config-driven `import`/`moved` over CLI surgery. Know the full `state` toolkit: **`list`** / **`show`** (inspect), **`mv`** / **`rm`** (surgery), **`pull`** / **`push`** (read/write raw state — dangerous, backup first), and **`replace-provider`** (rewrite a provider source address in state, e.g. after a registry namespace change or a Terraform→OpenTofu move).
 3. **Book chapter — TID Ch 6** (state operations) (~1 hr) — safe patterns and recovery.
 
-> 📌 To drop a resource from state while leaving the real object alone, Terraform's config-driven way is the `removed` block (preferred over `terraform state rm`). **OpenTofu 1.12** adds a lifecycle alternative — `destroy = false` on the resource — that does the same "forget, don't destroy" in the resource block itself. OpenTofu-only; Terraform has no lifecycle equivalent. (See [[tf115-ot112-features]], [[ot-dynamic-prevent-destroy]] for the OpenTofu-divergence context.)
+!!! note "📌 Forget a resource without destroying it"
+    To drop a resource from state while leaving the real object alone, Terraform's config-driven way is the `removed` block (preferred over `terraform state rm`). **OpenTofu 1.12** adds a lifecycle alternative — `destroy = false` on the resource — that does the same "forget, don't destroy" in the resource block itself. OpenTofu-only; Terraform has no lifecycle equivalent. (See [[tf115-ot112-features]], [[ot-dynamic-prevent-destroy]] for the OpenTofu-divergence context.)
 
-> 📌 Terraform **1.12** added an **`identity` attribute** to `import` blocks as an alternative to `id` (the two are mutually exclusive) — for providers that identify a resource by a structured identity object rather than a single opaque ID string. (See [[feature-history]].)
-> 📌 `import` blocks take **`for_each`** (TF/OpenTofu 1.7) — loop one import block over a map to adopt many similar resources at once instead of writing a block each. (See [[feature-history]].)
-> 📌 To reconcile drift without changing config, use **`-refresh-only`** mode (`terraform plan/apply -refresh-only`, since 0.15.4) — it updates state to match reality and shows what drifted, without proposing config-driven changes. Safer than a bare `terraform refresh` (deprecated-in-spirit). (See [[feature-history]].)
+!!! note "📌 `import` `identity` attribute (Terraform 1.12)"
+    Terraform **1.12** added an **`identity` attribute** to `import` blocks as an alternative to `id` (the two are mutually exclusive) — for providers that identify a resource by a structured identity object rather than a single opaque ID string. (See [[feature-history]].)
+
+!!! note "📌 `import` `for_each` (TF/OpenTofu 1.7)"
+    `import` blocks take **`for_each`** (TF/OpenTofu 1.7) — loop one import block over a map to adopt many similar resources at once instead of writing a block each. (See [[feature-history]].)
+
+!!! note "📌 `-refresh-only` drift reconcile"
+    To reconcile drift without changing config, use **`-refresh-only`** mode (`terraform plan/apply -refresh-only`, since 0.15.4) — it updates state to match reality and shows what drifted, without proposing config-driven changes. Safer than a bare `terraform refresh` (deprecated-in-spirit). (See [[feature-history]].)
 
 **Milestone:** You can adopt an unmanaged cloud resource via an `import` block and rename a resource with a `moved` block — both with an empty plan afterward.
 
@@ -434,8 +494,11 @@ You are ready to advance when you can:
 2. **Interactive — replace a provisioner** (~45 min) — take a `local-exec` hack and re-express it with `terraform_data` triggers or a data source.
 3. **Book chapter — TID Ch 7 / TUR provisioners section** (~45 min) — legitimate vs illegitimate uses.
 
-> 📌 Terraform **1.14** added the top-level **`actions` block** — provider-defined operations *outside* the normal CRUD lifecycle (e.g. invoke a Lambda, trigger a CloudFront invalidation). This is the modern, provider-native successor to abusing a provisioner or `terraform_data` for one-off side effects: the action is declared by the provider and invoked during apply (or via `-invoke`), with a count reported in the summary. Newer than both books; verify against the CHANGELOG. (See [[feature-history]].)
-> 📌 Last-resort data-shuttling: the built-in `terraform` provider ships **`provider::terraform::encode_tfvars` / `decode_tfvars` / `encode_expr`** (TF 1.8) to (de)serialize `.tfvars`/HCL expressions as strings. Handy when a provisioner must hand a generated `.tfvars` to another tool — but prefer data sources / remote state; HashiCorp flags these as last-resort. (See [[feature-history]].)
+!!! note "📌 `actions` block (Terraform 1.14)"
+    Terraform **1.14** added the top-level **`actions` block** — provider-defined operations *outside* the normal CRUD lifecycle (e.g. invoke a Lambda, trigger a CloudFront invalidation). This is the modern, provider-native successor to abusing a provisioner or `terraform_data` for one-off side effects: the action is declared by the provider and invoked during apply (or via `-invoke`), with a count reported in the summary. Newer than both books; verify against the CHANGELOG. (See [[feature-history]].)
+
+!!! note "📌 `encode_tfvars` / `decode_tfvars` (TF 1.8)"
+    Last-resort data-shuttling: the built-in `terraform` provider ships **`provider::terraform::encode_tfvars` / `decode_tfvars` / `encode_expr`** (TF 1.8) to (de)serialize `.tfvars`/HCL expressions as strings. Handy when a provisioner must hand a generated `.tfvars` to another tool — but prefer data sources / remote state; HashiCorp flags these as last-resort. (See [[feature-history]].)
 
 **Milestone:** You can use `terraform_data` with `triggers_replace` to force a controlled rebuild, and justify avoiding a provisioner in a given scenario.
 
@@ -453,13 +516,27 @@ You are ready to advance when you can:
 2. **Reference — [HCDocs "Tests"](https://developer.hashicorp.com/terraform/language/tests), [Custom Conditions](https://developer.hashicorp.com/terraform/language/expressions/custom-conditions), [Checks](https://developer.hashicorp.com/terraform/language/checks)** (~45 min) — the difference between validation, pre/postconditions, and checks.
 3. **Reference — [Terratest docs](https://terratest.gruntwork.io/docs/) + [quick start](https://terratest.gruntwork.io/docs/getting-started/quick-start/)** (~1 hr) — the Go library for deploying real infra and asserting on it. Native `terraform test` proves your *code* is right (outputs, plan, variable behavior); Terratest proves the *infrastructure works* by querying each live resource through its own API — catching the case where a provider bug makes a real resource that native tests, which only see provider-reported state, would still pass. Learn native first; reach for Terratest when you need real external-behavior checks. (See [[terraform-testing]].)
 4. **Book chapter — TUR Ch 9** (~2 hrs) — testing strategy (unit/integration/e2e) and Terratest for deeper Go-based testing.
-   > 📌 `terraform test` post-dates TUR's main testing chapter — use HCDocs for the native framework, TUR for the strategy.
-   > 📌 Balance the two: run **native `terraform test` on every commit** (fast, no Go, no real infra); reserve **Terratest for integration pipelines / pre-release** (slower, deploys real infra, needs Go 1.26+ and cloud creds). Terratest v2 is in development; v1 is in security-only maintenance.
-   > 📌 Terraform **1.15** lets you call functions inside `mock_data` and `override_resource` blocks, so test doubles can generate realistic values (GUIDs, resource IDs) instead of hard-coded constants. (See [[tf115-ot112-features]].)
-   > 📌 Terraform **1.9** widened variable `validation`: a condition can now reference *other* variables, data sources, and locals (previously only the variable itself), so you can enforce cross-field rules ("if `mode = ha` then `replicas >= 2`"). The referenced values must be known at plan time. (See [[feature-history]].)
-   > 📌 Terraform **1.12** added **`terraform test -parallelism=N`** plus per-run annotations to run independent test files/runs concurrently — meaningful when a suite provisions real infra per run. (See [[feature-history]].)
-   > 📌 Terraform **1.13** sharpened the test framework: define **external variables directly in `.tftest.hcl`**, reference **run outputs from file-level variables** (shorter setup), and parallel teardown. (See [[feature-history]].)
-   > 📌 A `run` block can assert a config *should* fail: **`expect_failures = [...]`** lists the checkable objects (a variable `validation`, `precondition`, etc.) you expect to error — the test passes when they do. Essential for testing your validation logic, not just the happy path.
+
+!!! note "📌 `terraform test` vs TUR"
+    `terraform test` post-dates TUR's main testing chapter — use HCDocs for the native framework, TUR for the strategy.
+
+!!! note "📌 Native `test` vs Terratest — when to use which"
+    Balance the two: run **native `terraform test` on every commit** (fast, no Go, no real infra); reserve **Terratest for integration pipelines / pre-release** (slower, deploys real infra, needs Go 1.26+ and cloud creds). Terratest v2 is in development; v1 is in security-only maintenance.
+
+!!! note "📌 Functions in test doubles (Terraform 1.15)"
+    Terraform **1.15** lets you call functions inside `mock_data` and `override_resource` blocks, so test doubles can generate realistic values (GUIDs, resource IDs) instead of hard-coded constants. (See [[tf115-ot112-features]].)
+
+!!! note "📌 Cross-object variable validation (Terraform 1.9)"
+    Terraform **1.9** widened variable `validation`: a condition can now reference *other* variables, data sources, and locals (previously only the variable itself), so you can enforce cross-field rules ("if `mode = ha` then `replicas >= 2`"). The referenced values must be known at plan time. (See [[feature-history]].)
+
+!!! note "📌 `terraform test -parallelism` (Terraform 1.12)"
+    Terraform **1.12** added **`terraform test -parallelism=N`** plus per-run annotations to run independent test files/runs concurrently — meaningful when a suite provisions real infra per run. (See [[feature-history]].)
+
+!!! note "📌 Test framework improvements (Terraform 1.13)"
+    Terraform **1.13** sharpened the test framework: define **external variables directly in `.tftest.hcl`**, reference **run outputs from file-level variables** (shorter setup), and parallel teardown. (See [[feature-history]].)
+
+!!! note "📌 `expect_failures` in `run` blocks"
+    A `run` block can assert a config *should* fail: **`expect_failures = [...]`** lists the checkable objects (a variable `validation`, `precondition`, etc.) you expect to error — the test passes when they do. Essential for testing your validation logic, not just the happy path.
 
 **Milestone:** You can write a `.tftest.hcl` suite that provisions a module, asserts on its outputs, and tears down — plus a `precondition` that fails a bad plan early. Stretch: a Terratest case that deploys the module and verifies real behavior via the resource's own API.
 
@@ -477,7 +554,8 @@ You are ready to advance when you can:
 2. **Interactive — build a pipeline** (~2 hrs) — a GitHub Actions (or GitLab CI) workflow that runs `fmt`/`validate`/`plan` on PR and `apply` on merge.
 3. **Book chapter — TUR Ch 10** (~1.5 hrs) — production CI/CD patterns and approval gates.
 
-> 📌 For machine-readable plan/apply output, `-json` replaces stdout entirely (you lose the human view). **OpenTofu 1.12**'s `-json-into=FILENAME` writes the JSON to a file while keeping the normal UI on stdout — so CI can parse the JSON *and* a human can read the log. OpenTofu-only. (See [[tf115-ot112-features]].)
+!!! note "📌 Machine-readable plan/apply output"
+    For machine-readable plan/apply output, `-json` replaces stdout entirely (you lose the human view). **OpenTofu 1.12**'s `-json-into=FILENAME` writes the JSON to a file while keeping the normal UI on stdout — so CI can parse the JSON *and* a human can read the log. OpenTofu-only. (See [[tf115-ot112-features]].)
 
 **Milestone:** You can build a pipeline that posts a plan on pull requests and applies a saved plan on merge, with remote state and locking.
 
@@ -494,10 +572,18 @@ You are ready to advance when you can:
 1. **Interactive — HCTut ["HCP Terraform get started" track](https://developer.hashicorp.com/terraform/tutorials/cloud-get-started)** (~1.5 hrs) — connect a VCS repo, run a remote plan/apply, use remote state.
 2. **Reference — [HCDocs "HCP Terraform"](https://developer.hashicorp.com/terraform/cloud-docs) [workspaces](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) + [run workflow](https://developer.hashicorp.com/terraform/cloud-docs/run/remote-operations)** (~40 min) — workspace settings, variable sets, and the run lifecycle. Also know the platform extras: **cost estimation** (shows $ delta on a plan for supported providers), **run triggers** (one workspace's apply queues another's run), and run notifications. A **`.terraformignore`** file controls which files are excluded from the config upload on remote runs. To reach infra on a private network, HCP runs through self-hosted **agents** (the agent pool executes runs inside your network).
 3. **Book chapter — TID Ch on HCP / TUR Ch 10** (~1 hr) — where managed platform fits vs self-hosted CI.
-   > 📌 HCP free tier caps at **500 managed resources** (legacy free plan ended 2026-03-31).
-   > 📌 Wire a config to HCP with the **`cloud` block** (TF 1.1) inside `terraform {}` — it sets the org/workspace(s) for remote runs and state, and is the modern replacement for the older `remote` backend. (See [[feature-history]].)
-   > 📌 Authenticate the CLI to HCP Terraform (or any private registry host) with **`terraform login`** — it runs an OAuth flow and stores a token in `~/.terraform.d/credentials.tfrc.json`; **`terraform logout`** revokes it. This is how CLI-driven runs and private-module pulls get credentials. ([HCDocs](https://developer.hashicorp.com/terraform/cli/commands/login))
-   > 📌 **Health assessments** are HCP Terraform's managed **drift detection** + **continuous validation**: HCP periodically runs an out-of-band plan on a workspace and reports whether real infrastructure has drifted from state, and whether the config's `check` assertions still hold — without you triggering a run. Enable per-workspace (or org default); trigger an on-demand assessment from the workspace **Health** section. This is the managed counterpart to the CLI-side `-refresh-only` drift check in I7. Interactive: HCTut ["Use health assessments to detect infrastructure drift"](https://developer.hashicorp.com/terraform/tutorials/cloud/drift-detection); the combined drift-plus-policy flow is ["Detect infrastructure drift and enforce policies"](https://developer.hashicorp.com/terraform/tutorials/cloud/drift-and-policy). ([HCDocs](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/health))
+
+!!! note "📌 HCP free tier cap"
+    HCP free tier caps at **500 managed resources** (legacy free plan ended 2026-03-31).
+
+!!! note "📌 The `cloud` block (TF 1.1)"
+    Wire a config to HCP with the **`cloud` block** (TF 1.1) inside `terraform {}` — it sets the org/workspace(s) for remote runs and state, and is the modern replacement for the older `remote` backend. (See [[feature-history]].)
+
+!!! note "📌 `terraform login` / `logout`"
+    Authenticate the CLI to HCP Terraform (or any private registry host) with **`terraform login`** — it runs an OAuth flow and stores a token in `~/.terraform.d/credentials.tfrc.json`; **`terraform logout`** revokes it. This is how CLI-driven runs and private-module pulls get credentials. ([HCDocs](https://developer.hashicorp.com/terraform/cli/commands/login))
+
+!!! note "📌 Health assessments (managed drift detection)"
+    **Health assessments** are HCP Terraform's managed **drift detection** + **continuous validation**: HCP periodically runs an out-of-band plan on a workspace and reports whether real infrastructure has drifted from state, and whether the config's `check` assertions still hold — without you triggering a run. Enable per-workspace (or org default); trigger an on-demand assessment from the workspace **Health** section. This is the managed counterpart to the CLI-side `-refresh-only` drift check in I7. Interactive: HCTut ["Use health assessments to detect infrastructure drift"](https://developer.hashicorp.com/terraform/tutorials/cloud/drift-detection); the combined drift-plus-policy flow is ["Detect infrastructure drift and enforce policies"](https://developer.hashicorp.com/terraform/tutorials/cloud/drift-and-policy). ([HCDocs](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/health))
 
 **Milestone:** You can run a VCS-driven workspace in HCP Terraform that plans on PR, applies on merge, and stores state remotely.
 
@@ -516,9 +602,11 @@ You are ready to advance when you can:
 3. **Reference — [HCDocs policy enforcement / Sentinel](https://developer.hashicorp.com/terraform/cloud-docs/policy-enforcement) + [OPA Conftest docs](https://www.conftest.dev/)** (~40 min) — Sentinel for HCP, OPA/Conftest for provider-agnostic CI.
 4. **Interactive — run a static scanner in CI** (~45 min) — add one of the SAST scanners below to your A3 pipeline and fail the build on a deliberately misconfigured resource.
 
-> 📌 Sentinel/OPA evaluate the **plan** (what Terraform *will do*). A second, complementary layer is **static analysis (SAST)** that scans the *HCL source* for insecure defaults *before* a plan — public S3 buckets, `0.0.0.0/0` ingress, unencrypted volumes — against a built-in rule library. The common tools: **[Checkov](https://www.checkov.io/)** (Prisma/Bridgecrew, largest policy set, also does terraform_plan JSON), **[Trivy](https://trivy.dev/)** (Aqua — absorbed the now-archived **tfsec**; use Trivy for new work), and **[KICS](https://kics.io/)** (Checkmarx, multi-IaC). Run one on every PR next to `fmt`/`validate`; they need no cloud creds and no state, so they're the cheapest guardrail you can add.
+!!! note "📌 Static analysis (SAST) layer"
+    Sentinel/OPA evaluate the **plan** (what Terraform *will do*). A second, complementary layer is **static analysis (SAST)** that scans the *HCL source* for insecure defaults *before* a plan — public S3 buckets, `0.0.0.0/0` ingress, unencrypted volumes — against a built-in rule library. The common tools: **[Checkov](https://www.checkov.io/)** (Prisma/Bridgecrew, largest policy set, also does terraform_plan JSON), **[Trivy](https://trivy.dev/)** (Aqua — absorbed the now-archived **tfsec**; use Trivy for new work), and **[KICS](https://kics.io/)** (Checkmarx, multi-IaC). Run one on every PR next to `fmt`/`validate`; they need no cloud creds and no state, so they're the cheapest guardrail you can add.
 
-> 📌 **Cost governance** — [Infracost](https://www.infracost.io/) estimates the **$ delta** of a plan (it reads `terraform plan -json` against cloud price APIs) and posts it as a PR comment, so reviewers see cost impact before merge. It's the open, CI-native counterpart to HCP Terraform's built-in cost estimation (A4). Pair it with a policy (`infracost` has its own policy/threshold gating) to block a PR that blows a budget.
+!!! note "📌 Cost governance (Infracost)"
+    **Cost governance** — [Infracost](https://www.infracost.io/) estimates the **$ delta** of a plan (it reads `terraform plan -json` against cloud price APIs) and posts it as a PR comment, so reviewers see cost impact before merge. It's the open, CI-native counterpart to HCP Terraform's built-in cost estimation (A4). Pair it with a policy (`infracost` has its own policy/threshold gating) to block a PR that blows a budget.
 
 **Milestone:** You can write a policy that fails any plan creating an untagged or oversized resource, wire it into a run, and add a SAST scanner (Checkov/Trivy/KICS) plus an Infracost cost check to the PR pipeline.
 
@@ -601,13 +689,20 @@ You are ready to advance when you can:
 
 1. **Interactive — HCTut ["Implement a provider with the Plugin Framework"](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework/providers-plugin-framework-provider)** (~4 hrs) — build a working provider against a sample API end to end.
 2. **Reference — [TPF docs](https://developer.hashicorp.com/terraform/plugin/framework)** (~ongoing) — schema, resource lifecycle, plan modification, acceptance testing.
-   > 📌 To test a locally-built provider without publishing it, add a **`dev_overrides`** block (inside `provider_installation` in the [CLI config file](https://developer.hashicorp.com/terraform/cli/config/config-file), v0.14+) pointing at your compiled binary. It bypasses the registry, version, and lock-file checks — `terraform init` is skipped entirely. Point `TF_CLI_CONFIG_FILE` at a dev-only config so you don't disturb your normal setup. Temporary dev use only. (See [[feature-history]].)
-   > 📌 Two provider SDKs exist: the modern **Plugin Framework** (use for new providers) and the **legacy SDKv2** (`terraform-plugin-sdk/v2`) that most existing providers still ship on. Know SDKv2 exists — you'll read its code and may maintain it — but author new work on the Framework. ([HCDocs which-SDK](https://developer.hashicorp.com/terraform/plugin/framework-benefits))
 3. **Reference — [Provider-defined functions](https://developer.hashicorp.com/terraform/plugin/framework/functions)** (~30 min) — the author side of the B7 note: expose your own `provider::<name>::<fn>()` functions from the provider (TF 1.8+), not just resources and data sources.
-   > 📌 A provider can also declare a **`provider_meta`** schema ([HCDocs internals](https://developer.hashicorp.com/terraform/internals/provider-meta)) — module-specific metadata a module passes to the provider independently of provider config, mainly so a vendor shipping both a provider and official modules can collect per-module usage stats. Niche; you'll rarely author it. (See [[feature-history]].)
 4. **Book chapter — TUR "extending Terraform" / provider dev material** (~2 hrs) — the mental model of the plugin protocol.
 
-> 📌 Beyond writing it, **publishing** a provider is its own step: tag semver releases, GPG-**sign** them, and register the signing key so the registry (public or a private HCP registry) will serve it. ([HCDocs publishing](https://developer.hashicorp.com/terraform/registry/providers/publishing))
+!!! note "📌 `dev_overrides` for local provider testing"
+    To test a locally-built provider without publishing it, add a **`dev_overrides`** block (inside `provider_installation` in the [CLI config file](https://developer.hashicorp.com/terraform/cli/config/config-file), v0.14+) pointing at your compiled binary. It bypasses the registry, version, and lock-file checks — `terraform init` is skipped entirely. Point `TF_CLI_CONFIG_FILE` at a dev-only config so you don't disturb your normal setup. Temporary dev use only. (See [[feature-history]].)
+
+!!! note "📌 Provider SDKs: Plugin Framework vs SDKv2"
+    Two provider SDKs exist: the modern **Plugin Framework** (use for new providers) and the **legacy SDKv2** (`terraform-plugin-sdk/v2`) that most existing providers still ship on. Know SDKv2 exists — you'll read its code and may maintain it — but author new work on the Framework. ([HCDocs which-SDK](https://developer.hashicorp.com/terraform/plugin/framework-benefits))
+
+!!! note "📌 `provider_meta` schema"
+    A provider can also declare a **`provider_meta`** schema ([HCDocs internals](https://developer.hashicorp.com/terraform/internals/provider-meta)) — module-specific metadata a module passes to the provider independently of provider config, mainly so a vendor shipping both a provider and official modules can collect per-module usage stats. Niche; you'll rarely author it. (See [[feature-history]].)
+
+!!! note "📌 Publishing a provider"
+    Beyond writing it, **publishing** a provider is its own step: tag semver releases, GPG-**sign** them, and register the signing key so the registry (public or a private HCP registry) will serve it. ([HCDocs publishing](https://developer.hashicorp.com/terraform/registry/providers/publishing))
 
 **Milestone:** You can build and locally install a custom provider exposing one resource with full CRUD and passing acceptance tests. Stretch: expose a provider-defined function callable as `provider::<name>::<fn>()`.
 
@@ -624,7 +719,9 @@ You are ready to advance when you can:
 1. **Reference — [HCDocs "Stacks" overview](https://developer.hashicorp.com/terraform/language/stacks) + configuration** (~1 hr) — components, deployments, and how Stacks differ from modules/workspaces. Note **deferred changes** — Stacks can plan partially when some values aren't known yet (e.g. a downstream component depends on an upstream one's not-yet-created output), then complete on a later run.
 2. **Interactive — HCTut [Stacks: "Deploy a Stack with HCP Terraform"](https://developer.hashicorp.com/terraform/tutorials/cloud/stacks-deploy)** (~2 hrs) — define a stack with multiple deployments and run it in HCP Terraform.
 3. **Explainer — [HashiCorp "Terraform Stacks, explained"](https://www.hashicorp.com/en/blog/terraform-stacks-explained)** (~20 min) — see the deployment fan-out in practice; pair with a current Stacks demo on the [HashiCorp YouTube channel](https://www.youtube.com/@HashiCorp/search?query=terraform%20stacks).
-   > 📌 Stacks is newer than both books — rely on HCDocs and verify feature availability (HCP vs CLI) as it evolves.
+
+!!! note "📌 Stacks is newer than both books"
+    Stacks is newer than both books — rely on HCDocs and verify feature availability (HCP vs CLI) as it evolves.
 
 **Milestone:** You can define a stack with reusable components and deploy it to three environments from a single stack configuration.
 
@@ -651,7 +748,8 @@ You are ready to advance when you can:
     - **OpenTelemetry tracing** (OpenTofu 1.10, experimental) + **full cross-platform provider checksums** at `tofu init` (1.12) — see the E5 and B3 callouts. (See [[opentofu-feature-history]].)
 4. **Book — TID (covers both)** (~1 hr) — re-read the sections contrasting the two tools with fresh eyes.
 
-> 📌 The gap runs both ways now. **Terraform 1.15** (2026-04-29) closed several long-standing OpenTofu-only gaps — dynamic module sources, variable/output deprecation, inline `convert`, output type constraints — so "OpenTofu has features Terraform lacks" is narrower than it was. What remains OpenTofu-only: state encryption, provider `for_each`, early variable evaluation, `-exclude`, dynamic `prevent_destroy`, `destroy = false`, and `-json-into`. (See [[tf115-ot112-features]], [[version-facts]].)
+!!! info "📌 OpenTofu ↔ Terraform — the gap runs both ways now"
+    **Terraform 1.15** (2026-04-29) closed several long-standing OpenTofu-only gaps — dynamic module sources, variable/output deprecation, inline `convert`, output type constraints — so "OpenTofu has features Terraform lacks" is narrower than it was. What remains OpenTofu-only: state encryption, provider `for_each`, early variable evaluation, `-exclude`, dynamic `prevent_destroy`, `destroy = false`, and `-json-into`. (See [[tf115-ot112-features]], [[version-facts]].)
 
 **Milestone:** You can migrate a project from Terraform to OpenTofu, enable state encryption, and explain the OpenTofu-only features — provider `for_each`, early variable evaluation in backend config, the `-exclude` flag, dynamic `prevent_destroy`, `destroy = false`, and `-json-into` — including *why* a resource's `for_each` must be a subset of its provider's, and which gaps Terraform 1.15 has since closed.
 
@@ -666,10 +764,12 @@ You are ready to advance when you can:
 **How to learn it:**
 
 1. **Reference — [TG docs (Terragrunt)](https://terragrunt.gruntwork.io/docs/)** (~1.5 hrs) — DRY backends, `dependency` blocks, `run --all`, and where Terragrunt still beats native features. Terragrunt is the open-source route to strong dev/staging/prod isolation (directory-per-env, own backend/state each) — the open counterpart to proprietary HCP Terraform workspaces (see [[workspaces]]).
-   > 📌 Terragrunt **1.0** shipped 2026-03-30 — first release with a backwards-compatibility commitment; `run-all` is now `run --all`. Works over both Terraform and OpenTofu.
 2. **Book chapter — TUR Ch 3 + Ch 5** (~2 hrs) — state isolation and repo-structure tradeoffs at scale.
 3. **Reference — [HashiCorp "Terraform mono-repo vs. multi-repo: the great debate"](https://www.hashicorp.com/en/blog/terraform-mono-repo-vs-multi-repo-the-great-debate)** (~30 min) — monorepo-vs-multirepo decisions in the wild, plus [native monorepo support](https://www.hashicorp.com/en/blog/terraform-adds-native-monorepo-support-stack-component-configurations-and-more).
 4. **Reference — [OpenTofu OCI registries](https://opentofu.org/docs/cli/oci_registries/)** (~40 min) — distributing **providers and modules via OCI registries** (`oci://` module sources; `oci_mirror` for provider plugins), reusing existing container registries (ECR, GAR, ACR, Docker Hub) instead of a dedicated Terraform registry. OpenTofu 1.10+, OpenTofu-first. (See [[feature-coverage-matrix]].)
+
+!!! note "📌 Terragrunt 1.0 (2026-03-30)"
+    Terragrunt **1.0** shipped 2026-03-30 — first release with a backwards-compatibility commitment; `run-all` is now `run --all`. Works over both Terraform and OpenTofu.
 
 **Milestone:** You can design a multi-team layout with per-component state, cross-state dependencies, and DRY backend config that keeps each plan small.
 
@@ -685,14 +785,25 @@ You are ready to advance when you can:
 
 1. **Reference — [HCDocs "Debugging" (`TF_LOG`)](https://developer.hashicorp.com/terraform/internals/debugging) + [graph command](https://developer.hashicorp.com/terraform/cli/commands/graph)** (~40 min) — log levels (`TRACE`…`ERROR`), sending logs to a file with **`TF_LOG_PATH`**, splitting core vs provider logs (`TF_LOG_CORE`/`TF_LOG_PROVIDER`), and where a panic writes **`crash.log`**; reading the dependency graph.
 2. **Interactive — profile a slow plan** (~1.5 hrs) — enable the plugin cache, tune `-parallelism`, and measure the difference on a large config.
-   > 📌 A shared **global provider plugin cache** (`TF_PLUGIN_CACHE_DIR` / `plugin_cache_dir`) avoids re-downloading providers per project. It historically wasn't safe for concurrent `init`s; **OpenTofu 1.10** added filesystem **cache locking** (flock/LockFileEx) so parallel CI jobs can share one cache without corruption. (See [[opentofu-feature-history]].)
-   > 📌 For air-gapped or locked-down environments, the CLI config's **`provider_installation`** block configures **`filesystem_mirror`** (serve providers from a local directory) and **`network_mirror`** (serve from an internal HTTPS mirror) instead of the public registry. Populate a mirror with **`terraform providers mirror DIR`**. ([HCDocs CLI config](https://developer.hashicorp.com/terraform/cli/config/config-file#provider-installation))
-   > 📌 The CLI phones home to HashiCorp's **Checkpoint** service for version + security-bulletin checks (this drives the "newer version available" line in `terraform version`). Only anonymous data is sent. Disable it in airgapped/privacy-sensitive setups: **`CHECKPOINT_DISABLE=1`** (env, all HashiCorp tools) or CLI-config **`disable_checkpoint = true`** (all calls) / **`disable_checkpoint_signature = true`** (keep bulletin checks, drop the anonymous signature). (See [[tf-cli-commands]].)
-   > 📌 The `terraform {}` block's **`experiments = [...]`** argument opts a module into pre-release language features for feedback (e.g. optional object attrs before 1.3 GA'd them). Advanced and **not for production** — it warns on every plan/apply and can break in minor/patch releases. ([HCDocs terraform block](https://developer.hashicorp.com/terraform/language/block/terraform))
 3. **Book chapter — TID troubleshooting / TUR gotchas** (~1 hr) — common failure modes and their fixes.
 
-> 📌 On OpenTofu, **experimental OpenTelemetry tracing** (OpenTofu 1.10, off by default via `OTEL_*` env vars) emits spans for a run — useful for pinpointing which providers/resources dominate a slow plan/apply. Terraform has no built-in OTel equivalent. (See [[opentofu-feature-history]].)
-> 📌 Terraform **1.13** made evaluation of **high-cardinality `count`/`for_each`** (hundreds+ of instances) much faster — relevant when a big config's graph is the bottleneck. For building tooling *around* Terraform, `terraform rpcapi` (1.13, GA) exposes core operations over a plugin RPC interface. (See [[feature-history]].)
+!!! note "📌 Global provider plugin cache"
+    A shared **global provider plugin cache** (`TF_PLUGIN_CACHE_DIR` / `plugin_cache_dir`) avoids re-downloading providers per project. It historically wasn't safe for concurrent `init`s; **OpenTofu 1.10** added filesystem **cache locking** (flock/LockFileEx) so parallel CI jobs can share one cache without corruption. (See [[opentofu-feature-history]].)
+
+!!! note "📌 Provider mirrors for air-gapped setups"
+    For air-gapped or locked-down environments, the CLI config's **`provider_installation`** block configures **`filesystem_mirror`** (serve providers from a local directory) and **`network_mirror`** (serve from an internal HTTPS mirror) instead of the public registry. Populate a mirror with **`terraform providers mirror DIR`**. ([HCDocs CLI config](https://developer.hashicorp.com/terraform/cli/config/config-file#provider-installation))
+
+!!! note "📌 Checkpoint telemetry opt-out"
+    The CLI phones home to HashiCorp's **Checkpoint** service for version + security-bulletin checks (this drives the "newer version available" line in `terraform version`). Only anonymous data is sent. Disable it in airgapped/privacy-sensitive setups: **`CHECKPOINT_DISABLE=1`** (env, all HashiCorp tools) or CLI-config **`disable_checkpoint = true`** (all calls) / **`disable_checkpoint_signature = true`** (keep bulletin checks, drop the anonymous signature). (See [[tf-cli-commands]].)
+
+!!! warning "📌 `experiments` — not for production"
+    The `terraform {}` block's **`experiments = [...]`** argument opts a module into pre-release language features for feedback (e.g. optional object attrs before 1.3 GA'd them). Advanced and **not for production** — it warns on every plan/apply and can break in minor/patch releases. ([HCDocs terraform block](https://developer.hashicorp.com/terraform/language/block/terraform))
+
+!!! info "📌 OpenTofu — OpenTelemetry tracing (1.10)"
+    On OpenTofu, **experimental OpenTelemetry tracing** (OpenTofu 1.10, off by default via `OTEL_*` env vars) emits spans for a run — useful for pinpointing which providers/resources dominate a slow plan/apply. Terraform has no built-in OTel equivalent. (See [[opentofu-feature-history]].)
+
+!!! note "📌 High-cardinality perf + `rpcapi` (Terraform 1.13)"
+    Terraform **1.13** made evaluation of **high-cardinality `count`/`for_each`** (hundreds+ of instances) much faster — relevant when a big config's graph is the bottleneck. For building tooling *around* Terraform, `terraform rpcapi` (1.13, GA) exposes core operations over a plugin RPC interface. (See [[feature-history]].)
 
 **Milestone:** You can diagnose a failing/slow apply from `TF_LOG` output and cut plan time on a large config via caching and parallelism tuning.
 
@@ -710,7 +821,8 @@ You are ready to advance when you can:
 2. **Video — [HashiCorp "Terraform for platform engineers" (Armon Dadgar)](https://www.hashicorp.com/en/resources/terraform-for-platform-engineers)** (~45 min) — how mature orgs expose Terraform to non-experts via golden modules.
 3. **Interactive — HCTut ["Create and use no-code modules"](https://developer.hashicorp.com/terraform/tutorials/cloud/no-code-provisioning)** (~1.5 hrs) — put a golden module in the private registry and let users provision it with no HCL, straight from the HCP UI.
 
-> 📌 OpenTofu **1.10** ships an **MCP server** — exposes OpenTofu operations to AI agents / LLM tooling via the Model Context Protocol, an emerging building block for AI-assisted self-service IaC. OpenTofu-only. (See [[opentofu-feature-history]].)
+!!! info "📌 OpenTofu — MCP server (1.10)"
+    OpenTofu **1.10** ships an **MCP server** — exposes OpenTofu operations to AI agents / LLM tooling via the Model Context Protocol, an emerging building block for AI-assisted self-service IaC. OpenTofu-only. (See [[opentofu-feature-history]].)
 
 **Milestone:** You can publish a governed golden module to a private registry and let another team provision it self-service with policy enforcement.
 
@@ -737,7 +849,7 @@ Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner — B1–B2 done (Ch 1–2 written). Next up: **B3 (The core workflow: init / plan / apply / destroy)**.
+**You are currently here:** Beginner — B1–B3 done (Ch 1–3 written). Next up: **B4 (HCL language basics)**.
 
 ---
 
@@ -749,3 +861,7 @@ Expert (E1–E6)          → ~70 hrs
 - OpenTofu 1.12 release coverage (2026-05) — InfoQ
 - Terraform CLI release notes (1.15, 2026-04-29; current patch 1.15.7)
 - *Terraform in Depth* (Manning) and *Terraform: Up & Running* 3rd ed (O'Reilly) — tables of contents
+
+---
+
+> **Last updated:** 2026-07-08 — **Source note [[tf-config-syntax]]** (HCDocs "Configuration Syntax" — the native HCL low-level syntax — captured): arguments (`name = value`) vs blocks (typed, labeled containers), the argument-vs-attribute terminology split, identifier rules (Unicode + ASCII hyphen, no leading digit), three comment styles (`#` idiomatic, `//`, `/* */`), UTF-8 + LF/CRLF encoding. Already B4's reference #1 — this closes the missing note behind an existing citation and wires `[[tf-config-syntax]]` into B4 step 1. Glossary already had Block / Argument-vs-subblock. No topic status flipped (no chapter written). · 2026-07-07 — **Source note [[tf-cli-commands]]** (Terraform CLI Overview / command index captured as a reference): full subcommand table + global options + `-chdir` + tab-completion + Checkpoint telemetry. Diff vs the path's existing CLI-index callout closed two real gaps — **`terraform graph`** (Graphviz dependency graph) added to the B3 command surface, and **Checkpoint opt-out** (`CHECKPOINT_DISABLE` / `disable_checkpoint*`) added to E5 for airgapped/privacy setups; also wired `-install-autocomplete` into B3. `console` already covered (B7). No topic status flipped. · 2026-07-07 — **Source note [[tf-aws-destroy]]** (AWS Get Started "Destroy infrastructure" captured): two teardown paths — remove-from-config + `apply` (surgical, output → `null`) vs `terraform destroy` / `apply -destroy` (whole workspace, reverse-dependency order, "no undo"). Wired as a B3 reference (the `-` symbol + destroy half of the plan loop). Completes the AWS Get Started create→manage→destroy arc in `docs/sources/`; next track lesson is HCP Terraform (→ A4). No topic status flipped. · 2026-07-07 — **HCTut library diff** (fetched the curated [tutorials collections index](https://developer.hashicorp.com/terraform/tutorials) + the flat `library?product=terraform` catalog, 269 cross-product results): the flat library is mostly Vault/Consul/Nomad tutorials that merely *tag* Terraform — not worth bulk-adding; the path already cites the curated core collections (Get Started, modules, state, cloud, policy, config-language, automation, plugin-framework). Two genuine gaps closed from the "New Tutorials" set: **HCP health assessments** (managed drift detection + continuous validation) → A4 callout with the drift-detection + drift-and-policy tutorials; and the concrete **no-code modules** tutorial URL → wired into E6 step 3 (was a generic step). `check` blocks / continuous validation already covered in A2; Azure/GCP/Docker/OCI Get Started tracks are cloud-swapped duplicates of the AWS track already used — not added. · 2026-07-07 — **Source note [[tf-aws-manage]]** (AWS Get Started "Manage infrastructure" tutorial captured): wired as a reference under B3 (in-place `~` vs `-/+` replace, `-out` warning, dependency-graph ordering), B6 (input variables + outputs, `-var`, `terraform output`), and I4 (registry VPC module block, `module.*` references + state addressing, re-`init`). Version-checked: tutorial pins AWS provider `~> 5.92` + VPC module `5.19.0`; current is provider **6.x** / VPC module **6.6.1** (6.x needs provider `>= 6.0`) — flagged in the note + saved to the `terraform-aws-vpc-module-version` search cache. No topic status flipped (no chapter written). · 2026-07-06 — **Free-alternative resources** (web-verified 2026-07-06): added free substitutes for the paid Krausen core-workflow labs — **KL** (Krausen's *own* open-source [terraform-associate-labs](https://github.com/btkrausen/terraform-associate-labs), cloned locally, free Codespaces; the best free match), **KK** (KodeKloud free labs / Coursera audit), **FCC** (freeCodeCamp YouTube), **CLX** (Collabnix labs) — to the resources table + a "free alternatives" callout under B3 step 2 (HCTut Get Started remains the official free 1:1). KL's 8 labs now wired per-topic as 🧪 callouts: Lab 01→B2, 02→B2/B5, 03→B5/B6, 04→B5/I1, 05→B8/B9 (+B3 callout), 06→I3/I4, 07→B6, 08→I1. · 2026-07-06 — **roadmap.sh/terraform diff**: compared the path against the community roadmap's full topic tree (fetched from the developer-roadmap repo, since the page renders client-side). Path is a superset; only real gaps were the roadmap's named **static-analysis scanners** (Checkov/Trivy-tfsec/KICS) and **Infracost** cost gating → folded both into A5 as a third governance layer (SAST + cost) beside plan-time policy. `taint`/`untaint` appear on the roadmap but are already handled as deprecated→`-replace` in B3. · 2026-07-05 — **Authoritative language-index diff** (loop): diffed the path against the full HCDocs language nav — every construct (actions/query/stack blocks, built-in resources, sensitive, backends, state, import, tests) maps. Only non-covered item was the official **Style Guide** (guidance, not a feature) → added a pointer in B4. No new capability found: **feature surface converged.** · 2026-07-05 — **Authoritative CLI-index diff** (loop): diffed the path against the full HCDocs CLI command index (not memory-picked terms) — every documented command now maps to a callout. Added the two missing: `terraform modules` (I4) and `terraform metadata functions` (B7). · 2026-07-05 — **CLI/cross-cutting completeness pass #7** (loop): provider publishing + GPG signing (E1), `expect_failures` test attribute (A2). · 2026-07-05 — **CLI/cross-cutting completeness pass #6** (loop): provider SDKv2 vs Plugin Framework (E1), `TF_WORKSPACE` (A7), HCP self-hosted agents (A4), Stacks deferred changes (E2). · 2026-07-05 — **CLI/cross-cutting completeness pass #5** (loop): `-chdir` global option (B3), override files `override.tf`/`*_override.tf` (B4), `.terraformignore` (A4). · 2026-07-05 — **CLI/cross-cutting completeness pass #4** (loop): built-in named values `path.*`/`terraform.workspace`/`count.index`/`each.*`/`self`/`terraform.applying` (B7), HCP cost estimation + run triggers + notifications (A4). · 2026-07-05 — **CLI/cross-cutting completeness pass #3** (loop): full `state` subcommand set incl. `pull`/`push`/`replace-provider` (I7), `providers mirror` command (E5), debug env vars `TF_LOG_PATH`/`TF_LOG_CORE`/`TF_LOG_PROVIDER` + `crash.log` (E5). · 2026-07-05 — **CLI/cross-cutting completeness pass #2** (loop): backend catalog + `init` flags + locking flags (I6), JSON config syntax `.tf.json`/`.tfvars.json` (B4), `configuration_aliases` (I8), automation env vars (A3), `terraform login`/`logout` (A4), provider `filesystem_mirror`/`network_mirror` (E5). · 2026-07-05 — **CLI/cross-cutting completeness pass** (loop): grepped the path for capabilities a release-timeline doc wouldn't surface. Added: full CLI command surface + `fmt`/`validate`/`show`/`output` (B3), `apply -replace` superseding deprecated `taint`/`untaint` (B3), `force-unlock` (I6), provisioner `when=destroy`/`on_failure`/`self`/`connection` (A1), `dev_overrides` for local provider dev (E1). Added `taint`→`-replace` to the feature-history deprecations table. · 2026-07-05 — **Closed the last deferred niche items**: `provider_meta` (E1), global provider plugin-cache locking (E5), `terraform{} experiments` (E5), `-target-file`/`-exclude-file` (E3). Correction: `-exclude-file`/`-target-file` are OpenTofu 1.10, not 1.9. Nothing usable now deferred. · 2026-07-05 — **Completeness re-audit under widened standard** (goal is learn-Terraform-completely, not cert-only; see [[feature-coverage-matrix]] standard note): folded in every remaining *usable* capability — builtin provider funcs `encode_tfvars`/`decode_tfvars`/`encode_expr` (A1), cross-platform provider checksums (B3), `.tftest.hcl` external vars (A2), `.tofu`/`.tofurc` extensions (E3), OpenTofu MCP server (E6), `rpcapi` + high-cardinality note (E5), ephemeral vars/outputs explicit (A6), and a note that B7 delegates the full ~150-function list to HCDocs. Only unreleased + pure-perf items now excluded. · 2026-07-05 — **Feature-history recheck #2** (after building [[opentofu-feature-history]] + a loop audit of both docs): closed 5 more path gaps — `import` `for_each` + `-refresh-only` (I7), `nullable` (B6), `cloud` block (A4), OpenTofu OpenTelemetry tracing (E5). · 2026-07-05 — **Feature-history reconciliation** (see [[feature-history]]): wrote a full version-by-version feature catalogue (0.11–1.15), which surfaced 1.12–1.14 features the 2026-07-04 matrix predated; closed the gaps — `actions` block (A1), list resources + `terraform query` (B8), cross-object variable validation + `test -parallelism` (A2), `templatestring()` + short-circuit operators (B7), OCI backend (I6), import `identity` (I7). · 2026-07-04 — **Full feature audit** (see [[feature-coverage-matrix]]): built a complete Terraform+OpenTofu feature→topic matrix and closed the gaps it found — ephemeral values/resources + write-only arguments (A6, major), provider-defined functions (B7 use / E1 author), OpenTofu `enabled` meta-arg (I1), native S3 state locking (I6), import `-generate-config-out` (I7), OpenTofu OCI registries (E4). · 2026-07-04 — **Feature-coverage pass** for Terraform 1.15 / OpenTofu 1.12 (see [[tf115-ot112-features]]): folded in dynamic module sources + `const` (I4), variable/output deprecation (I5), output `type` (B6), `convert()` (B7), test-double functions (A2), OpenTofu `destroy = false` (I7), `-json-into` (A3), and expanded the E3 divergence list to 7 items with the "Terraform 1.15 closed some gaps" note. · 2026-07-04 — **Version bump**: current stable is now Terraform CLI **1.15.7** / OpenTofu **1.12.3**; Terraform **1.15** (2026-04-29) closed some OpenTofu gaps (dynamic module sources, deprecation mechanism, inline type conversion, output type constraints, Windows ARM64) — state encryption etc. remain OpenTofu-only (see [[version-facts]]). · 2026-07-04 — **E3 gap closed**: added per-feature references + notes for the four OpenTofu-only divergences beyond state encryption (provider `for_each` 1.9, early variable eval in backend config 1.8, `-exclude` flag 1.9, dynamic `prevent_destroy` 1.12); confirmed `-exclude` is OpenTofu-only (Terraform has no equivalent). · 2026-07-03 — **B1 complete**: Book Ch 1 written (blends [[terraform-intro]], [[terraform-use-cases]], TID Ch1, plus 2026 web research on the IBM/HashiCorp acquisition and current OpenTofu-vs-Terraform guidance); three cross-source topic pages (IaC fundamentals, Core workflow, Providers). Initial path built 2026-07-02 from Terraform Associate 004 + Authoring/Operations Pro exam objectives, then-current Terraform 1.14 / OpenTofu 1.12, and the top books.

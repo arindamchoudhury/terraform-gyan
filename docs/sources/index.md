@@ -10,6 +10,7 @@ Log of all captured sources, organised by course.
 | [Terraform Use Cases](terraform-docs/terraform-use-cases.md) | documentation | 2026-07-03 | iac, use-cases, sentinel, kubernetes, hcp-terraform | [url](https://developer.hashicorp.com/terraform/intro/use-cases) |
 | [Provider Requirements](terraform-docs/provider-requirements.md) | documentation | 2026-07-05 | providers, required_providers, source-address, version-constraints, lock-file | [url](https://developer.hashicorp.com/terraform/language/providers/requirements) |
 | [Terraform CLI Overview (command index)](terraform-docs/tf-cli-commands.md) | documentation | 2026-07-07 | cli, commands, reference, chdir, autocomplete, checkpoint | [url](https://developer.hashicorp.com/terraform/cli/commands) |
+| [Configuration Syntax](terraform-docs/tf-config-syntax.md) | documentation | 2026-07-08 | hcl, syntax, arguments, blocks, identifiers, comments | [url](https://developer.hashicorp.com/terraform/language/syntax/configuration) |
 
 ## 2. OpenTofu Docs
 

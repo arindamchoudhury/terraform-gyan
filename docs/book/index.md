@@ -6,7 +6,7 @@ Synthesized chapters, one per learning-path topic. Each chapter blends every sou
 |----|-------|--------|
 | [01](ch01-iac-fundamentals.md) | B1 — Infrastructure as Code & where Terraform fits | ✅ 2026-07-03 |
 | [02](ch02-install-providers-first-project.md) | B2 — Install, providers & your first project | ✅ 2026-07-06 |
-| 03 | B3 — The core workflow: init / plan / apply / destroy | ⬜ |
+| [03](ch03-core-workflow.md) | B3 — The core workflow: init / plan / apply / destroy | ✅ 2026-07-08 |
 | 04 | B4 — HCL language basics | ⬜ |
 | 05 | B5 — Providers & resources | ⬜ |
 | 06 | B6 — Input variables, outputs & locals | ⬜ |
