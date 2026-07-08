@@ -370,6 +370,24 @@ terraform {
 # provider "aws" { region = var.aws_region }   ← DELETE: only valid in the root module
 ```
 
+!!! warning "Where does the provider come from after you delete the block?"
+    The module keeps `required_providers` (what it *needs*) but drops the `provider` block (how it's *configured*). The configuration is supplied by the **calling root module** in one of two ways:
+
+    - **Default (unaliased) provider — inherited automatically.** The child module silently uses the root's `provider "aws"`. Nothing to wire; this is the common case.
+    - **Aliased providers — passed explicitly** with the `providers` meta-argument, because aliases are *never* inherited:
+
+    ```hcl
+    provider "aws" { region = "us-east-1" }
+    provider "aws" { alias = "eu"  region = "eu-west-1" }
+
+    module "eu_instance" {
+      source    = "./modules/ec2_instance"
+      providers = { aws = aws.eu }   # hand the module the EU config
+    }
+    ```
+
+    The deeper reason a reusable module **must not** contain a `provider` block: a module that configures its own provider is **incompatible with `count`, `for_each`, and `depends_on`** on the `module` call. Provider config must be resolvable before the module is expanded, so Terraform forbids the combination. Keeping providers in the root is what makes the module callable N times.
+
 ### 3.8.2 Input variables to customize behavior
 
 Add `instance_type` and `subnet_id` inputs so users configure the module without editing it. Constrain both to `string`, and add a `validation` on `subnet_id` (regex for the AWS `subnet-…` format — functions covered Ch4):
@@ -424,11 +442,25 @@ Push the module to somewhere consumable — registry, filesystem, or Git host (G
 
 ```hcl
 module "my_instance" {
-  source        = "github.com/YOUR_USERNAME/terraform-aws-in-depth//modules/ec2_instance"
+  source        = "github.com/YOUR_USERNAME/terraform-aws-in-depth//modules/ec2_instance?ref=v1.4.0"
   subnet_id     = var.subnet_id
   instance_type = "t3.large"
 }
 ```
+
+!!! danger "Always pin the module version — an unpinned source is a moving target"
+    The `?ref=v1.4.0` above is not optional. Omit it and every `terraform init` re-clones the module's **default branch** — a `main` push silently changes your infrastructure with no code change on your side. Pinning is how a module becomes reproducible across teammates and CI. The mechanism depends on the **source type**:
+
+    | Source | How you pin | Example |
+    |---|---|---|
+    | **Registry** (public/private) | the `version` **argument** (only works for registry sources) | `source = "org/vpc/aws"` + `version = "6.0.1"` |
+    | **Git / GitHub / GitLab** | `?ref=` query param (tag, branch, or commit SHA) | `source = "github.com/org/repo//mod?ref=v1.4.0"` |
+    | **Local path** | *cannot be versioned* — it's the same working copy | `source = "../modules/ec2_instance"` |
+
+    Registries cut a release on each Git **tag** (see §3.1), so publishing a versioned module is just `git tag v1.4.0 && git push --tags`. Prefer an **exact** pin (`version = "6.0.1"`, `?ref=v1.4.0`) in production; a range like `~> 6.0` can upgrade unexpectedly. Bump versions deliberately with `terraform init -upgrade`.
+
+!!! info "OpenTofu — separate module registry"
+    Source syntax, `//` submodules, and `?ref=` pinning are **identical** in OpenTofu. The one divergence: the *default public registry* is **`registry.opentofu.org`**, not `registry.terraform.io`. Shorthand registry sources (`org/name/provider`) resolve there under `tofu`; explicit Git/HTTP sources are unaffected. See [[version-facts]].
 
 ---
 
@@ -439,7 +471,8 @@ module "my_instance" {
 - Mark inputs/outputs **`sensitive`** to hide them from logs — but they're **still plaintext in state**.
 - Every value has a **type**: `string`, `number`, `bool`, `list`, `set`, `tuple`, `object`, `map`, plus `null` and `any`. Objects fix their keys and mix types; maps allow arbitrary keys of one type.
 - **`validation`** subblocks (repeatable) catch bad inputs early; since **1.9** a condition can reference other variables.
-- The capstone refactor: drop the `provider` block, add inputs + validation + outputs, test via an `example/` root module, and publish as `terraform-<PROVIDER>-<NAME>` (submodules via `//`).
+- The capstone refactor: drop the `provider` block (the root supplies it — default providers are **inherited**, aliased ones passed via `providers = {}`; a provider block inside a module breaks `count`/`for_each`/`depends_on`), add inputs + validation + outputs, test via an `example/` root module, and publish as `terraform-<PROVIDER>-<NAME>` (submodules via `//`).
+- **Always pin the consumed module version** — `version = "x.y.z"` for registry sources, `?ref=vX.Y.Z` for Git; local paths can't be versioned. An unpinned source silently tracks the default branch.
 
 ---
 
