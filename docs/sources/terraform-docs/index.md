@@ -14,3 +14,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Provider Requirements | 2026-07-05 | [provider-requirements](provider-requirements.md) |
 | Terraform CLI Overview (command index) | 2026-07-07 | [tf-cli-commands](tf-cli-commands.md) |
 | Configuration Syntax (HCL native syntax) | 2026-07-08 | [tf-config-syntax](tf-config-syntax.md) |
+| Style Guide | 2026-07-08 | [tf-style-guide](tf-style-guide.md) |
