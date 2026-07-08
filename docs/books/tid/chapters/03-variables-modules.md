@@ -403,7 +403,36 @@ variable "subnet_id" {
 }
 ```
 
-Then wire the inputs into the resource with `var.*`.
+`instance_type` gets a **default**, which is what makes the input *optional* — a caller can adopt the module with only `subnet_id` and still get a sensible machine. Giving every non-essential input a default is the single biggest thing that makes a module easy to consume:
+
+```hcl
+variable "instance_type" {
+  type        = string
+  description = "EC2 instance type for the workload."
+  default     = "t3.micro"   # cheap dev default; caller overrides for bigger workloads
+}
+```
+
+Then wire both inputs into the resource. The AMI is still looked up (not an input) via the `data "aws_ami"` block carried over from Ch2, so the module stays portable across regions:
+
+```hcl
+# main.tf — the assembled module
+resource "aws_instance" "hello_world" {
+  ami           = data.aws_ami.ubuntu.id   # data source, not hardcoded
+  instance_type = var.instance_type        # optional input (has a default)
+  subnet_id     = var.subnet_id            # required, validated input
+}
+```
+
+!!! note "The finished module — three files, no `provider` block"
+    | File | Holds |
+    |---|---|
+    | `variables.tf` | `subnet_id` (required, validated) + `instance_type` (optional, default) |
+    | `main.tf` | the `data "aws_ami"` lookup + the wired `aws_instance` + `terraform { required_providers { … } }` |
+    | `outputs.tf` | `aws_instance_arn`, `aws_instance_ip`, `aws_instance` |
+    | `README.md` | usage + inputs/outputs — the registry renders it as the module's docs page (auto-generate with [terraform-docs](https://terraform-docs.io/)) |
+
+    Required input = no `default`; optional input = has a `default`. That split *is* the module's public contract.
 
 ### 3.8.3 Output variables to encourage reuse
 
