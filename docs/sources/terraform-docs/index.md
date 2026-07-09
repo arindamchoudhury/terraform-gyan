@@ -16,3 +16,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Configuration Syntax (HCL native syntax) | 2026-07-08 | [tf-config-syntax](tf-config-syntax.md) |
 | Style Guide | 2026-07-08 | [tf-style-guide](tf-style-guide.md) |
 | Create and manage resources (overview) | 2026-07-09 | [tf-resources](tf-resources.md) |
+| Providers (language overview) | 2026-07-09 | [tf-providers](tf-providers.md) |

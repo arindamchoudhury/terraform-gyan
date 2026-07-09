@@ -1,6 +1,6 @@
 # Providers
 
-> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch1 §1.2.3–1.2.4, Ch2 §2.4 · Registry provider pages [[aws-provider]], [[google-provider]]
+> **Sources:** HCDocs "What is Terraform?" · HCDocs "Providers" ([[tf-providers]]) · Hafner, *Terraform in Depth* Ch1 §1.2.3–1.2.4, Ch2 §2.4 · Registry provider pages [[aws-provider]], [[google-provider]]
 
 ## In one paragraph
 
@@ -37,6 +37,10 @@ The two Registry provider pages make the "declare vs. configure" split concrete,
 
 The lesson: the `required_providers` + `source` + version-pin mechanics are identical across providers, but the `provider` block's arguments and auth model are vendor-shaped — reading the specific provider's Registry page is non-optional.
 
+### Trust tiers and where providers come from ([[tf-providers]])
+
+The Registry badge tells you who maintains a provider — a trust/cadence signal encoded in the source-address namespace: **Official** (`hashicorp`, `IBM`, `ansible`), **Partner Premier**, **Partner**, **Community** (`DeviaVir/gsuite`), and **Archived** (formerly maintained, now abandoned — pin off it). Both [[aws-provider]] and [[google-provider]] are Official; the full ladder only appears on the [[tf-providers]] hub. Installation-wise: HCP/Enterprise install providers every run, CLI installs on `init` (registry, mirror, or `plugin_cache_dir` cache). A **private** (non-HashiCorp) registry may need follow-up-request credentials via a `.netrc` file (`NETRC` env var overrides its location).
+
 ## Where the sources differ
 
 - HCDocs treats providers as one bullet inside the broader "How does Terraform work?" section — brief, illustrative.
@@ -51,6 +55,7 @@ The lesson: the `required_providers` + `source` + version-pin mechanics are iden
 ## Sources
 
 - [What is Terraform? (Intro)](../sources/terraform-docs/terraform-intro.md)
+- [Providers (language overview)](../sources/terraform-docs/tf-providers.md) — provider tiers, installation/plugin cache, private-registry `.netrc`
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
 - [TID Ch 2 — Terraform HCL components](../books/tid/chapters/02-hcl-components.md) §2.4 — declare/configure/alias mechanics
 - [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on `required_providers` + `provider` block
