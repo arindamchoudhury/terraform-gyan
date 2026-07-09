@@ -155,11 +155,126 @@ Since the fork, OpenTofu has stayed compatible with Terraform-written configurat
 
 Two events since the initial fork are worth knowing as of 2026:
 
-> 📌 **IBM acquired HashiCorp in December 2024** for $6.4B. Terraform is now developed under IBM.
+!!! info "IBM now owns HashiCorp"
+    **IBM acquired HashiCorp in December 2024** for $6.4B. Terraform is now developed under IBM.
 
-> 📌 **Current 2026 guidance, per multiple independent comparisons:** OpenTofu is increasingly the lower-risk default for a *new* project — OSI-approved license, multi-vendor governance, full provider compatibility, plus the CLI features listed above. Staying on Terraform still makes sense if you're already invested in HCP Terraform, use Terraform **Stacks** (a Terraform-exclusive capability that lives in HCP Terraform, not the open CLI — covered in E2), or work somewhere procurement specifically requires HashiCorp as vendor. Existing Terraform investment on its own isn't a reason to migrate — evaluate OpenTofu at your next new-project or compliance decision point instead.
+!!! info "Current 2026 guidance, per multiple independent comparisons"
+    OpenTofu is increasingly the lower-risk default for a *new* project — OSI-approved license, multi-vendor governance, full provider compatibility, plus the CLI features listed above. Staying on Terraform still makes sense if you're already invested in HCP Terraform, use Terraform **Stacks** (a Terraform-exclusive capability that lives in HCP Terraform, not the open CLI — covered in E2), or work somewhere procurement specifically requires HashiCorp as vendor. Existing Terraform investment on its own isn't a reason to migrate — evaluate OpenTofu at your next new-project or compliance decision point instead.
 
 Practically, for the rest of this learning path: everything through the Associate-level material (B1–I8) is written to work identically with either tool. `terraform` and `tofu` are interchangeable for shared functionality; OpenTofu-specific features are called out explicitly (and get their own deep dive at E3) rather than assumed.
+
+## Lab setup: a free local AWS (Docker)
+
+Everything so far has been the *why*. Before the next chapters put you on a keyboard, stand up a lab you can practise in without an AWS account, without cloud credentials, and without a bill. The lab is a **local AWS emulator** — a Docker container that answers AWS API calls on your own machine. Point the AWS provider at it and `terraform apply` creates *emulated* S3 buckets, DynamoDB tables, and queues locally. `destroy` costs nothing and risks nothing. Every chapter from here on carries a **🧪 Lab** section that runs against this one environment.
+
+Several emulators fit, and all listen on the same gateway port **4566**, so the labs run identically on any of them — you swap only the `docker run` line. Three worth knowing, in the order this book recommends:
+
+- **Floci** (`floci/floci`) — **MIT, free, no account, no token.** A Quarkus-native emulator with ~68 services, a tiny image, and near-instant startup; it serves the LocalStack API on `:4566`, so the `tflocal` wrapper drives it directly. Ships extras (a local console UI, a CLI, Azure/GCP siblings). **The book's default.**
+- **MiniStack** (`ministackorg/ministack`) — **MIT, free forever, no account, no token.** ~270 MB, ~60 services. Another solid zero-signup choice.
+- **LocalStack** (`localstack/localstack`) — the established, most-documented emulator. As of March 2026 its image needs a **free account + `LOCALSTACK_AUTH_TOKEN`** (Hobby plan). Most mature; slightly more setup.
+
+All three are MIT/AWS-compatible on `:4566` and work with `tflocal`; Floci and MiniStack skip the signup, LocalStack has the deepest docs. Pick one — the labs don't care which.
+
+!!! warning "Emulation is not AWS — know what the lab does and doesn't prove"
+    An emulator *mocks* AWS APIs; it is not AWS. A config can `apply` cleanly against it and still behave differently — or not exist at all — on real AWS. That's fine for what these labs are for: practising the **workflow** (`init`/`plan`/`apply`/`destroy`), **HCL authoring**, state, `for_each`, and modules, where fidelity to AWS's every quirk doesn't matter. It is the wrong tool for learning a service's real-world edge behaviour. The reliable free surface is **S3, DynamoDB, SQS, SNS, IAM, STS** — the labs stay inside it.
+
+### Step 1 — install Docker
+
+The emulator runs as a container, so you need a container runtime. Install **Docker Desktop** (macOS/Windows) or **Docker Engine** (Linux) and confirm it's up:
+
+```shell
+docker version      # client + server (daemon) both reported = Docker is running
+```
+
+If `docker version` errors on the server line, start Docker Desktop (or `sudo systemctl start docker` on Linux) before continuing.
+
+### Step 2 — start the emulator
+
+**Floci (recommended — nothing to sign up for):**
+
+```shell
+docker run -d --name floci \
+  -p 4566:4566 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -u root \
+  floci/floci:latest
+```
+
+The Docker socket mount lets Floci spin up *real* containers for services like RDS and Lambda; `-u root` is what the project's README uses so it can reach the socket. A `docker-compose.yml`, if you'd rather keep it in the repo:
+
+```yaml
+services:
+  floci:
+    image: floci/floci:latest
+    ports:
+      - "127.0.0.1:4566:4566"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: root
+```
+
+```shell
+docker compose up -d
+```
+
+??? note "Alternative — MiniStack (also MIT, no signup)"
+    Another zero-account option, `ministackorg/ministack` (~60 services). Same port, same `tflocal` flow:
+
+    ```shell
+    docker run -p 4566:4566 ministackorg/ministack
+    # mount -v /var/run/docker.sock:/var/run/docker.sock for real RDS/ECS/Lambda
+    ```
+
+    Health at `http://localhost:4566/_ministack/health` (also serves the LocalStack-compatible path).
+
+??? note "Alternative — LocalStack (needs a free account + token as of 2026)"
+    Until early 2026 LocalStack shipped a no-signup open-source **Community** image. In **March 2026** that image stopped receiving updates, and development consolidated into a single `localstack/localstack` image that **prompts for an auth token**. It's still free for personal use through the **Hobby plan** (create a free account, export the token as `LOCALSTACK_AUTH_TOKEN`); the current stable is `2026.06.2`, and the friendliest start is the `localstack` CLI:
+
+    ```shell
+    pip install localstack
+    export LOCALSTACK_AUTH_TOKEN=<your-token>    # from your free Hobby-plan account
+    localstack start -d
+    ```
+
+    Raw Docker equivalent:
+
+    ```shell
+    docker run --rm -it \
+      -p 127.0.0.1:4566:4566 \
+      -p 127.0.0.1:4510-4559:4510-4559 \
+      -e LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?} \
+      localstack/localstack:stable          # pin :2026.06 for a fixed version
+    ```
+
+    A pre-March-2026 Community tag (`localstack/localstack:4.12`) runs tokenless but is frozen with no security patches — a last resort, not the default. The GitHub Student Developer Pack unlocks a free **Student Plan**.
+
+Everything multiplexes through one gateway port, **4566**. Confirm the container is healthy — the health endpoint returns a JSON map of each service's state. Floci and LocalStack both answer the `/_localstack/health` path (MiniStack answers that *and* its own `/_ministack/health`):
+
+```shell
+curl -s http://localhost:4566/_localstack/health
+```
+
+```json
+{ "services": { "s3": "available", "dynamodb": "available", "iam": "available", ... } }
+```
+
+### Step 3 — how Terraform will talk to it
+
+The Terraform **CLI itself** you install in the next chapter (B2) — this section only stands up the *sandbox*. When B2's lab arrives, there are three ways to aim Terraform at the emulator instead of real AWS, all pointing at `localhost:4566`. The labs use `tflocal`, which works against **any** of the three:
+
+- **`tflocal`** — a thin wrapper (`pip install terraform-local`) that runs Terraform and, behind the scenes, drops a temporary override file pointing every AWS endpoint at `localhost:4566` with dummy credentials. Run `tflocal init` / `tflocal plan` / `tflocal apply` exactly like the real commands; your `.tf` files stay untouched, so the *same* config still applies to real AWS with plain `terraform`. It's LocalStack's wrapper, but since it just targets `:4566` (and Floci/MiniStack serve the LocalStack API there), it drives all three.
+- **`AWS_ENDPOINT_URL`** — the AWS provider (`~> 6.0`) honours this env var. `export AWS_ENDPOINT_URL=http://localhost:4566` plus dummy keys, then plain `terraform apply`. No wrapper, no config edit.
+- **A manual `provider "aws"` block** with an `endpoints` block and dummy keys. Explicit, but it hard-wires the config to the emulator, so keep it in a local override file. B2's lab shows this alongside `tflocal`.
+
+A one-line install for the wrapper and its companion CLIs, ready for the next chapter:
+
+```shell
+pip install terraform-local awscli-local   # provides `tflocal` and `awslocal`
+```
+
+`awslocal` is the AWS CLI pre-pointed at `:4566` — `awslocal s3 ls` lists the buckets your Terraform labs create, a handy way to confirm an `apply` really did something.
+
+With Docker running, an emulator healthy on 4566, and `tflocal` installed, your lab is ready. Every chapter's **🧪 Lab** from B2 onward assumes exactly this — Floci by default, MiniStack or LocalStack if you prefer.
 
 ## Common misconceptions
 
@@ -194,3 +309,7 @@ Practically, for the rest of this learning path: everything through the Associat
 - Topic pages: [IaC fundamentals](../topics/iac-fundamentals.md) · [Core workflow](../topics/core-workflow.md) · [Providers](../topics/providers.md)
 - [Version & Certification Facts](../research-cache/version-facts.md) (IBM/HashiCorp acquisition, provider count, 2026 OpenTofu guidance)
 - [IaC/config-mgmt tool comparison](../research-cache/iac-tool-comparison.md) (Ansible, Pulumi — verified 2026-07-03)
+- [Floci Facts](../research-cache/floci-facts.md) (MIT, Quarkus-native emulator — book's default lab; Docker, Terraform wiring, comparison table — verified 2026-07-09)
+- [MiniStack Facts](../research-cache/ministack-facts.md) (MIT, free-forever emulator; Docker, Terraform wiring — verified 2026-07-09)
+- [LocalStack Facts](../research-cache/localstack-facts.md) (Docker setup, 2026 packaging/auth-token change, `tflocal` — verified 2026-07-09)
+- Web (verified 2026-07-09): [Floci](https://github.com/floci-io/floci) · [floci-io org](https://github.com/floci-io) · [MiniStack](https://github.com/ministackorg/ministack) · [LocalStack install](https://docs.localstack.cloud/aws/getting-started/installation/) · [Terraform with LocalStack](https://docs.localstack.cloud/aws/integrations/infrastructure-as-code/terraform/) · [The Road Ahead for LocalStack](https://blog.localstack.cloud/the-road-ahead-for-localstack/)

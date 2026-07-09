@@ -377,6 +377,97 @@ Run `terraform fmt` before every commit (a Git pre-commit hook is ideal) and `te
 !!! info "Override files"
     A file named `override.tf` or ending in `_override.tf` is loaded **last**, and its blocks *merge into* matching blocks elsewhere, replacing whatever arguments they set. It's handy for a local or temporary tweak without editing the primary files — but it hides configuration from those files, so use it sparingly.
 
+## 🧪 Lab: author the multi-file config by hand on LocalStack
+
+The milestone for this chapter is authoring a multi-file configuration from the block down. This lab proves you can — and then actually applies it, for free, against the local **AWS emulator** (Ch1's [lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker) — Floci, MiniStack, or LocalStack). The AMI-lookup-plus-EC2 example above won't apply on the free emulator (EC2 is only mocked), so write the same *shape* with an S3 bucket — every block type still doing its one job, wired by references.
+
+In an empty directory, create the conventional files by hand — no snippet to copy:
+
+```hcl
+# terraform.tf — settings
+terraform {
+  required_version = ">= 1.15"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+```
+
+```hcl
+# providers.tf — connection (plain AWS block; tflocal points it at LocalStack)
+provider "aws" {
+  region = var.region
+}
+```
+
+```hcl
+# variables.tf — the knobs
+variable "region" {
+  type        = string
+  description = "AWS region."
+  default     = "us-east-1"
+}
+
+variable "bucket_name" {
+  type        = string
+  description = "Name of the lab bucket."
+  default     = "hcl-lab-bucket"
+}
+```
+
+```hcl
+# main.tf — the substance: a local feeding a resource
+locals {
+  tags = {
+    ManagedBy = "Terraform"
+    Project   = "learn-hcl"
+  }
+}
+
+resource "aws_s3_bucket" "site" {
+  bucket = var.bucket_name    # ← reference: value from the variable
+  tags   = local.tags         # ← reference: reuse the shared tags
+}
+```
+
+```hcl
+# outputs.tf — what to hand back
+output "bucket_id" {
+  description = "ID of the created bucket."
+  value       = aws_s3_bucket.site.id
+}
+
+output "bucket_arn" {
+  description = "ARN, known only after apply."
+  value       = aws_s3_bucket.site.arn
+}
+```
+
+Six blocks across five files, each in the file the convention predicts — `terraform` for settings, `provider` for the connection, two `variable` knobs, a `locals` scratchpad, one `resource`, two `output`s. The references (`var.bucket_name`, `local.tags`, `aws_s3_bucket.site.id`) are the wiring. Apply and confirm:
+
+```shell
+tflocal init
+tflocal apply          # review the single '+ create', type yes
+tflocal output         # bucket_id / bucket_arn
+awslocal s3 ls         # LocalStack's own view of the bucket
+tflocal destroy
+```
+
+Now prove the chapter's central claim — **file order and split are for humans, not Terraform.** Merge all five files into one `main.tf`, in any block order (put `output` first, `terraform` last if you like), and re-plan:
+
+```shell
+tflocal plan           # Plan: 0 to add, 0 to change, 0 to destroy.
+```
+
+An empty plan. Terraform merged every `.tf`, rebuilt the same graph from the same references, and reached the same desired state — the layout changed nothing. That empty plan *is* the proof.
+
+!!! note "Why S3, not the EC2 example from the chapter"
+    The multi-file walkthrough earlier used `aws_ami` + `aws_instance` because it's the canonical teaching shape. The free emulator surface only *mocks* EC2, so this lab uses an S3 bucket to keep the `apply` reliable. The point being exercised — choosing the right block per job, wiring with references, splitting by convention — is identical regardless of the resource type.
+
 ## Common pitfalls
 
 - **`=` in a block header.** `resource "aws_instance" "web" = {` is wrong — block headers have no `=`. Arguments take `=`; block headers don't. This is the most frequent first-day error.
@@ -419,3 +510,4 @@ Run `terraform fmt` before every commit (a Git pre-commit hook is ideal) and `te
 - [Feature history](../reference/feature-history.md) — JSON syntax, override files
 - [Version & Certification Facts](../research-cache/version-facts.md)
 - Web (verified 2026-07-09): [Syntax — Configuration Language](https://developer.hashicorp.com/terraform/language/syntax/configuration) · [Terraform language overview](https://developer.hashicorp.com/terraform/language)
+- 🧪 Lab: [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md) (Docker setup, `tflocal` — verified 2026-07-09)

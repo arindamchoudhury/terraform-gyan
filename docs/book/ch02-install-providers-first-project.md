@@ -510,6 +510,96 @@ aws_instance.app_server
 
 That's the milestone met: a fresh directory, `init`-ed, with one real resource provisioned from scratch.
 
+## 🧪 Lab: your first resource on LocalStack
+
+The `aws_instance` above assumes a real AWS account. You don't need one to practise. Ch1's [lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker) stood up a local **AWS emulator** in Docker on port 4566 — Floci by default (free, no account), or MiniStack / LocalStack. This lab runs a real `init`→`apply`→`destroy` against it, for free, with no cloud credentials. Make sure the emulator is healthy first:
+
+```shell
+curl -s http://localhost:4566/_localstack/health   # services should read "available"
+```
+
+We swap the EC2 instance for an **S3 bucket**. Two reasons: S3 is fully emulated on the free surface (EC2 is only mocked), and a bucket needs no AMI lookup, so the config stays about the *workflow*, not AWS trivia. Create a fresh directory with one file:
+
+```hcl
+# main.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+  required_version = ">= 1.2"
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_s3_bucket" "lab" {
+  bucket = "my-first-localstack-bucket"
+}
+```
+
+Notice the `provider` block has **no endpoints and no keys** — it's an ordinary AWS config. The trick is *how you run it*. `tflocal` (installed in Ch1) injects the `:4566` endpoints and dummy credentials for you, then hands off to Terraform — it targets the gateway port, so it drives Floci, MiniStack, or LocalStack alike:
+
+```shell
+tflocal init
+tflocal apply      # review the single '+ create', type yes
+```
+
+```
+  # aws_s3_bucket.lab will be created
+  + resource "aws_s3_bucket" "lab" {
+      + bucket = "my-first-localstack-bucket"
+      + id     = (known after apply)
+      ...
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+aws_s3_bucket.lab: Creation complete after 0s [id=my-first-localstack-bucket]
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+```
+
+Confirm the bucket really exists in the emulator, two ways:
+
+```shell
+terraform state list        # Terraform's view
+awslocal s3 ls              # the emulator's view (awslocal = AWS CLI aimed at :4566)
+```
+
+Then tear it down — free, instant, no lingering resource:
+
+```shell
+tflocal destroy
+```
+
+!!! note "The manual alternative — an `endpoints` block"
+    `tflocal` is the clean path because it leaves your `.tf` files portable to real AWS. If you'd rather be explicit (or can't install the wrapper), configure the provider by hand instead — keep it in a separate `emulator.tf` so it's easy to drop later:
+
+    ```hcl
+    # emulator.tf — local emulator only; do NOT apply this to real AWS
+    provider "aws" {
+      region                      = "us-east-1"
+      access_key                  = "test"      # dummy — the emulator accepts anything
+      secret_key                  = "test"
+      s3_use_path_style           = true        # S3 needs path-style here
+      skip_credentials_validation = true
+      skip_metadata_api_check     = true
+      skip_requesting_account_id  = true
+
+      endpoints {
+        s3 = "http://localhost:4566"            # LocalStack also accepts http://s3.localhost.localstack.cloud:4566
+      }
+    }
+    ```
+
+    Then run plain `terraform init` / `apply`. The cost of this form is exactly what `tflocal` avoids: the block hard-wires the config to the emulator, so it won't apply to real AWS unchanged. Add one endpoint line per service the config touches. (A third path: skip the block entirely and `export AWS_ENDPOINT_URL=http://localhost:4566` — the `~> 6.0` provider honours it.)
+
+!!! warning "The emulator is a lab, not a substitute for the real thing"
+    A green `apply` here proves your **HCL and workflow** are sound — not that the config behaves identically on AWS. Emulation gaps are real, especially for IAM enforcement and advanced services. Use the emulator to iterate fast and for free; validate anything load-bearing against a real (free-tier) AWS account before you trust it. Every later chapter's 🧪 Lab runs on this same environment.
+
 ## Common pitfalls
 
 - **CLI stuck at 1.5.7.** A plain `brew install terraform` (or another community package) may be frozen at the last MPL release. Use `hashicorp/tap`, or switch to OpenTofu.
@@ -549,3 +639,4 @@ That's the milestone met: a fresh directory, `init`-ed, with one real resource p
 - Topic page: [Providers](../topics/providers.md)
 - [Version & Certification Facts](../research-cache/version-facts.md) (current CLI/provider versions, BSL/package-manager freeze)
 - Web (verified 2026-07-06): [Dependency Lock File](https://developer.hashicorp.com/terraform/language/files/dependency-lock) · [Lock & upgrade provider versions](https://developer.hashicorp.com/terraform/tutorials/configuration-language/provider-versioning) · project-layout & `.gitignore` conventions
+- 🧪 Lab: [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md) · [Terraform with LocalStack](https://docs.localstack.cloud/aws/integrations/infrastructure-as-code/terraform/) (verified 2026-07-09)

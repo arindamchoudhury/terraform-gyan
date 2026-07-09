@@ -388,6 +388,103 @@ terraform apply -target="aws_instance.app_server"   # exceptional use only
 !!! info "OpenTofu — negative targeting with `-exclude`"
     OpenTofu (1.9+) adds `-exclude=ADDRESS`, the inverse of `-target`: plan/apply everything **except** the given address and its dependents. When one resource is broken and you want to apply *everything else*, `-exclude=aws_instance.broken` is far safer than enumerating every other resource with `-target`. Terraform's open-source CLI has no equivalent. `-target` and `-exclude` are mutually exclusive in one command, and the same "exceptional circumstances only" caveat applies to both.
 
+## 🧪 Lab: read every plan symbol on LocalStack
+
+The four verbs and four symbols are worth *seeing*, not just reading. This lab drives the whole loop against the local **AWS emulator** (Ch1's [lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker) — Floci, MiniStack, or LocalStack) and deliberately produces a `+`, a `~`, a `-/+`, and a `-` — for free, no AWS account. Confirm the emulator is up (`curl -s http://localhost:4566/_localstack/health`), then start from this `main.tf`:
+
+```hcl
+# main.tf
+terraform {
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~> 6.0" }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_s3_bucket" "lab" {
+  bucket = "workflow-lab-bucket"
+}
+```
+
+**`+` create.** `tflocal` supplies the emulator endpoints; the loop is otherwise identical to real AWS:
+
+```shell
+tflocal init
+tflocal plan -out=tfplan     # freeze the plan (the -out / apply-file discipline from above)
+tflocal apply tfplan         # apply exactly what you reviewed — no re-plan, no prompt
+```
+
+```
+Plan: 1 to add, 0 to change, 0 to destroy.
+```
+
+**`~` update in-place.** Add a tag — an attribute the provider can patch without recreating:
+
+```hcl
+resource "aws_s3_bucket" "lab" {
+  bucket = "workflow-lab-bucket"
+
+  tags = {
+    Env = "lab"          # new attribute — patchable in place
+  }
+}
+```
+
+```shell
+tflocal plan
+```
+
+```
+  # aws_s3_bucket.lab will be updated in-place
+  ~ resource "aws_s3_bucket" "lab" {
+      ~ tags = { + "Env" = "lab" }
+    }
+Plan: 0 to add, 1 to change, 0 to destroy.
+```
+
+**`-/+` replace.** Now change the `bucket` name. A bucket can't be renamed in place — the name is a **forced-new** attribute — so the same-looking edit flips to a destroy-then-create:
+
+```hcl
+resource "aws_s3_bucket" "lab" {
+  bucket = "workflow-lab-bucket-renamed"   # forced-new → replacement
+  tags   = { Env = "lab" }
+}
+```
+
+```
+  # aws_s3_bucket.lab must be replaced
+-/+ resource "aws_s3_bucket" "lab" {
+      ~ bucket = "workflow-lab-bucket" -> "workflow-lab-bucket-renamed" # forces replacement
+    }
+Plan: 1 to add, 0 to change, 1 to destroy.
+```
+
+That `1 to destroy` in the summary is the whole lesson of the chapter, made concrete and harmless: an "edit" that is really a rebuild. On a bucket holding objects, the replacement would drop them — which is why you read the plan. Apply it, then experiment with `-replace`:
+
+```shell
+tflocal apply
+tflocal apply -replace="aws_s3_bucket.lab"   # force a rebuild with nothing changed — shows -/+
+```
+
+**`-` destroy.** Finally the two teardown blast radii. Delete the `resource` block and `apply` to see the surgical single `-`; or `tflocal destroy` to tear down the whole workspace:
+
+```shell
+tflocal destroy
+```
+
+```
+Plan: 0 to add, 0 to change, 1 to destroy.
+Destroy complete! Resources: 1 destroyed.
+```
+
+You've now produced all four symbols and both teardown paths against a real API surface, at zero cost and zero risk — the ideal place to build the plan-reading reflex before a production plan is on the line.
+
+!!! warning "The safe-to-be-reckless caveat"
+    The emulator is exactly where you *should* apply a scary `-/+` on purpose, because nothing real is lost. Don't let that habit follow you to a real backend: the plan symbols mean the same thing there, but `1 to destroy` next to a production bucket is not a lab.
+
 ## Common pitfalls
 
 - **Applying without reading the plan.** The whole safety model is the plan-then-confirm gate. A `~` that's secretly a `-/+` on a stateful resource is the classic loss. Read the summary counts, then the per-resource headers.
@@ -430,3 +527,4 @@ terraform apply -target="aws_instance.app_server"   # exceptional use only
 - Topic page: [Core workflow](../topics/core-workflow.md)
 - [Version & Certification Facts](../research-cache/version-facts.md)
 - Web (verified 2026-07-08): [`terraform plan` reference](https://developer.hashicorp.com/terraform/cli/commands/plan) · [`terraform apply` reference](https://developer.hashicorp.com/terraform/cli/commands/apply) · [Use refresh-only mode](https://developer.hashicorp.com/terraform/tutorials/state/refresh)
+- 🧪 Lab: [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md) (Docker setup, `tflocal` — verified 2026-07-09)
