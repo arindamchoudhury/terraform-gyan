@@ -508,7 +508,7 @@ tflocal plan           # Plan: 0 to add, 0 to change, 0 to destroy.
 An empty plan. Terraform merged every `.tf`, rebuilt the same graph from the same references, and reached the same desired state — the layout changed nothing. That empty plan *is* the proof.
 
 !!! note "Why S3, not the EC2 example from the chapter"
-    The multi-file walkthrough earlier used `aws_ami` + `aws_instance` because it's the canonical teaching shape. The free emulator surface only *mocks* EC2, so this lab uses an S3 bucket to keep the `apply` reliable. The point being exercised — choosing the right block per job, wiring with references, splitting by convention — is identical regardless of the resource type.
+    The multi-file walkthrough earlier used `aws_ami` + `aws_instance` because it's the canonical teaching shape. On the free emulator *every* service is mocked (nothing here touches real AWS), but the mocks differ in depth: EC2's is only **partial**, so the `aws_ami` lookup and instance lifecycle apply unreliably, while **S3 is emulated reliably**. This lab uses an S3 bucket so the `apply` succeeds every time. The point being exercised — choosing the right block per job, wiring with references, splitting by convention — is identical regardless of the resource type.
 
 ## Common pitfalls
 
