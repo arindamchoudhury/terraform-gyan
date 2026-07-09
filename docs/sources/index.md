@@ -37,3 +37,4 @@ Log of all captured sources, organised by course.
 | Title | Type | Added | Tags | URL |
 |---|---|---|---|---|
 | [AWS Provider (overview)](terraform-registry/aws-provider.md) | documentation | 2026-07-09 | aws, provider, registry, authentication, default_tags, credentials | [url](https://registry.terraform.io/providers/hashicorp/aws/latest/docs) |
+| [Google Cloud Provider (overview)](terraform-registry/google-provider.md) | documentation | 2026-07-09 | gcp, google, provider, registry, authentication, adc, impersonation | [url](https://registry.terraform.io/providers/hashicorp/google/latest/docs) |

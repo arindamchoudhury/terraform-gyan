@@ -7,3 +7,4 @@ Notes captured from [registry.terraform.io](https://registry.terraform.io/) — 
 | # | Title | URL |
 |---|---|---|
 | 1 | [AWS Provider (overview)](aws-provider.md) | [registry](https://registry.terraform.io/providers/hashicorp/aws/latest/docs) |
+| 2 | [Google Cloud Provider (overview)](google-provider.md) | [registry](https://registry.terraform.io/providers/hashicorp/google/latest/docs) |

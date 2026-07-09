@@ -1,6 +1,6 @@
 # Providers
 
-> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch1 §1.2.3–1.2.4, Ch2 §2.4
+> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch1 §1.2.3–1.2.4, Ch2 §2.4 · Registry provider pages [[aws-provider]], [[google-provider]]
 
 ## In one paragraph
 
@@ -23,6 +23,20 @@ A provider is the plugin layer that lets Terraform talk to a specific vendor's A
     - **Independent lifecycle** — a provider is its own artifact with its own version, cadence, and registry namespace (`hashicorp/aws`). **Provider version ≠ vendor API version** — the AWS provider is on major 6 while AWS-the-service has no "v6." And the provider may be authored by the vendor, HashiCorp, *or* the community.
     - **The config split mirrors it** — `required_providers` picks the *provider* (what to install, which version); the `provider` block configures the connection to the *vendor* (credentials, region).
 
+## Configuration & authentication across providers (AWS vs GCP)
+
+The two Registry provider pages make the "declare vs. configure" split concrete, and show that the *configure* half is where providers genuinely differ. Same skeleton, different bodies:
+
+- **Tier / maintenance** — both are **Official**, but AWS is HashiCorp-only while GCP is **co-maintained by Google + HashiCorp**. Providers version independently: AWS is on 6.x, GCP on 7.x (pin each separately). GCP also ships a `google-beta` sibling for preview features; AWS has `awscc` (Cloud Control) alongside `aws`.
+- **Scoping arguments** — AWS's `provider` block scopes with just `region`. GCP adds a **`project` / `region` / `zone`** hierarchy (every GCP resource lives in a project; zonal resources take a zone). Per-resource values override the provider default in both.
+- **Credential precedence** — different default paths:
+    - **AWS** ([[aws-provider]]): provider params → env vars → `~/.aws/credentials` → `~/.aws/config` → container creds → instance profile.
+    - **GCP** ([[google-provider]]): `gcloud` ADC (recommended) → service-account key file → env vars (`GOOGLE_CREDENTIALS` → `GOOGLE_CLOUD_KEYFILE_JSON` → `GCLOUD_KEYFILE_JSON`) → access token → **impersonation** (`roles/iam.serviceAccountTokenCreator`).
+- **Least-privilege idiom** — same principle, different tools: AWS leans on instance profiles / OIDC roles; GCP leans on ADC + workload-identity **impersonation**. Both docs warn: never hard-code or commit credentials (static AWS keys ≈ downloaded GCP key files — avoid).
+- **Provider-wide conveniences that don't port** — AWS has **`default_tags`** (tag every resource); GCP has no tag-all argument (labels are per-resource) but adds **`user_project_override` / `billing_project`** (quota-project routing) with no AWS parallel.
+
+The lesson: the `required_providers` + `source` + version-pin mechanics are identical across providers, but the `provider` block's arguments and auth model are vendor-shaped — reading the specific provider's Registry page is non-optional.
+
 ## Where the sources differ
 
 - HCDocs treats providers as one bullet inside the broader "How does Terraform work?" section — brief, illustrative.
@@ -40,6 +54,8 @@ A provider is the plugin layer that lets Terraform talk to a specific vendor's A
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
 - [TID Ch 2 — Terraform HCL components](../books/tid/chapters/02-hcl-components.md) §2.4 — declare/configure/alias mechanics
 - [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on `required_providers` + `provider` block
+- [AWS Provider (Registry)](../sources/terraform-registry/aws-provider.md) — AWS auth precedence, `default_tags`, key arguments
+- [Google Cloud Provider (Registry)](../sources/terraform-registry/google-provider.md) — GCP ADC/impersonation auth, `project`/`region`/`zone`, quota-project routing
 
 ## Open questions
 

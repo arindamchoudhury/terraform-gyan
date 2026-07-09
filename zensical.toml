@@ -54,6 +54,7 @@ nav = [
         { "Terraform Registry" = [
             { "Overview" = "sources/terraform-registry/index.md" },
             { "1. AWS Provider (overview)" = "sources/terraform-registry/aws-provider.md" },
+            { "2. Google Cloud Provider (overview)" = "sources/terraform-registry/google-provider.md" },
         ]},
     ]},
     { "Books" = [
