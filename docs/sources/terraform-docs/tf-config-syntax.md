@@ -26,7 +26,7 @@ image_id = "abc123"
 
 Identifier before `=` is the **argument name**; the expression after is the **value**. The context (e.g. a resource type's schema) determines which value types are valid. Many arguments accept **arbitrary expressions** — literal, or computed from other values.
 
-!!! note "\"argument\" vs \"attribute\""
+!!! note "“argument” vs “attribute”"
     HCL's own docs call this an **attribute**. Terraform docs say **argument** instead, because Terraform also has resource **attributes** (like `id`) that can be *referenced* in expressions but *not assigned* in configuration. The terms are interchangeable in casual use; the docs reserve "attribute" for the read-only referenceable kind.
 
 ### Blocks

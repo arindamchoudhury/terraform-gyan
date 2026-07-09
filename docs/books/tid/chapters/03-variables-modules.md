@@ -112,7 +112,7 @@ flowchart LR
 
 Scope rule (Figure 3.1, above): from *outside* a module you can only set its **inputs** and read its **outputs**; **locals are invisible** outside the module. Like resources, locals **cannot have circular dependencies** (revisited Ch5).
 
-!!! note "\"parameter\" vs \"argument\" — the figure conflates two sides"
+!!! note "“parameter” vs “argument” — the figure conflates two sides"
     The figure's **parameters** box and the earlier "inputs (parameters)" metaphor use *parameter* loosely for a module's input variables. Strictly, the two words name opposite ends of the same wiring:
 
     - **Parameter** = the *declared* input slot — the `variable` block inside the module (name + type the module expects).
@@ -198,6 +198,16 @@ resource "aws_vpc_security_group_ingress_rule" "allow_access" {
   cidr_ipv4 = "${module.my_instance.aws_instance_ip}/32"   # module output → new string
 }
 ```
+
+!!! note "The `output` block *declares*; where it lives decides how it's read"
+    An `output "…" {}` block always does one job — it **declares** a value that leaves its module. It is *not* a way to reference an output; `module.<name>.<output>` is. Two sides of one wire: the block is `return x`, the `module.…` read is `y = f()`. And the read path depends on *where* the output sits:
+
+    | Output declared in… | How it's read |
+    |---|---|
+    | a **child module** (called via `module "<name>" {}`) | the parent reads `module.<name>.<output>` |
+    | the **root module** | surfaces on the CLI after `apply` and via `terraform output <name>`; other configs read it through `terraform_remote_state` — **never** through `module.` |
+
+    So a root-level `output "web_server_ip" { value = aws_instance.web.public_ip }` is not read as `module.web_server_ip.…` at all; that syntax only applies to outputs of a *child* module you called. Same keyword, different consumer — pick by which module the block lives in.
 
 ### 3.4.2 Sensitive outputs
 
@@ -303,8 +313,42 @@ variable "optional_keys" {
 
 ### Special types
 
-- **`null`** — the "not set" value. Common as an optional input's `default = null`, so a module can check `var.x != null` to tell whether the user set it. **`null` can't be used as a type constraint.**
-- **`any`** — accepts any type; the **default** for untyped variables and for child-type slots (`list(any)`). Even under `any`, a list/map still requires all elements to share one type.
+**`any`** — a placeholder that accepts any type. It's what you get when you omit `type` entirely, and it's the usual filler for a collection's element slot (`list(any)`). "Any" applies to the *whole* value, not to each element of a collection: a `list`/`map` still collapses to **one** element type.
+
+```hcl
+variable "whatever" {
+  type = any               # identical to writing no `type` at all
+}
+# whatever = "hi"          ✅  string
+# whatever = 42            ✅  number
+# whatever = ["a", "b"]    ✅  the whole thing is a list(string)
+
+variable "items" {
+  type = list(any)         # "a list of some single, to-be-inferred type"
+}
+# items = ["a", "b", "c"]  ✅  → list(string)
+# items = [1, 2, 3]        ✅  → list(number)
+# items = ["a", 1, true]   ⚠️  Terraform unifies to list(string): ["a", "1", "true"]
+```
+
+!!! warning "`list(any)` unifies, it does not mix"
+    The last case surprises people. `any` per element does **not** mean "a list of mixed types" — Terraform finds one common type all elements convert to (here `string`, since numbers and bools convert to strings) and silently coerces. If you genuinely need different types per position, use a **`tuple`** (`tuple([string, number, bool])`) or an **`object`**, not `list(any)`.
+
+**`null`** — the value meaning "not set / absent," distinct from `""`, `0`, or `false`. Its main use: an optional input's `default = null`, letting a module tell *"caller left this out"* apart from *"caller passed an empty value."*
+
+```hcl
+variable "description" {
+  type    = string
+  default = null                 # sentinel for "caller didn't supply one"
+}
+
+locals {
+  # null → fall back; a real "" from the caller is respected
+  final_description = var.description != null ? var.description : "auto-generated"
+}
+```
+
+With `default = ""` you couldn't distinguish "unset" from "deliberately empty"; `null` gives you that third state. Note `null` is a *value*, never a *type* — `type = null` is invalid; write `type = string` (or any real type) and set `default = null`.
 
 ## 3.7 Validating inputs
 

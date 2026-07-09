@@ -281,6 +281,36 @@ pip install terraform-local awscli-local   # provides `tflocal` and `awslocal`
 
 `awslocal` is the AWS CLI pre-pointed at `:4566` — `awslocal s3 ls` lists the buckets your Terraform labs create, a handy way to confirm an `apply` really did something.
 
+!!! warning "`awslocal` fails with `pip install "botocore[crt]"`?"
+    If `awslocal s3 ls` errors with *"Using the login credential provider requires an additional dependency. You will need to pip install "botocore[crt]" before proceeding."*, the AWS CLI found a real profile on your machine (SSO / IAM Identity Center) and is trying to resolve live cloud credentials — which the emulator neither needs nor wants. Two fixes:
+
+    ```shell
+    # Fix A — hand the CLI dummy static creds so it stops reaching for the login provider
+    export AWS_ACCESS_KEY_ID=test
+    export AWS_SECRET_ACCESS_KEY=test
+    export AWS_DEFAULT_REGION=us-east-1
+    awslocal s3 ls          # now hits :4566 with fake creds — exactly what the emulator expects
+    ```
+
+    ```powershell
+    # Fix A (PowerShell)
+    $env:AWS_ACCESS_KEY_ID="test"; $env:AWS_SECRET_ACCESS_KEY="test"; $env:AWS_DEFAULT_REGION="us-east-1"
+    awslocal s3 ls
+    ```
+
+    Dummy credentials are the right move for a local sandbox — the emulator ignores their value, it just wants *some* creds present so no login provider triggers. If you'd rather keep your real profile working, install the missing native dependency instead: `pip install "botocore[crt]"` (quote the brackets so the shell doesn't glob them).
+
+!!! warning "`awslocal` crashes with `Could not determine home directory` / `Failed to execute script 'aws'`?"
+    A separate failure, seen on Windows: `awslocal` errors deep in `awscli/telemetry.py` with `RuntimeError: Could not determine home directory`, even when `$env:USERPROFILE` is set. The cause is the **PyInstaller-frozen AWS CLI v2 bundle** (the `.msi` install) — its telemetry module runs `pathlib.Path.home()` at *import time*, and the frozen build fails to resolve it. Because the crash is at import, no runtime flag or env var prevents it.
+
+    Fix: install the **pip** AWS CLI instead of the frozen bundle. It runs on your own Python, so the broken telemetry bundle is out of the picture:
+
+    ```shell
+    pip install awscli awscli-local     # replaces the frozen v2 bundle; awslocal now works
+    ```
+
+    Independent of `awslocal`, you can always confirm a lab landed straight from Terraform — `terraform state list` shows the created resources, and `terraform output` shows any you defined.
+
 With Docker running, an emulator healthy on 4566, and `tflocal` installed, your lab is ready. Every chapter's **🧪 Lab** from B2 onward assumes exactly this — Floci by default, MiniStack or LocalStack if you prefer.
 
 ## Common misconceptions

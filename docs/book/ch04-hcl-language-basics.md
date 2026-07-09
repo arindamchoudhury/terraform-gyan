@@ -76,7 +76,7 @@ resource "aws_instance" "example" {
 | How many times | **once** per block | **repeatable** |
 | Exported as an attribute? | **yes** | **no** |
 
-The `=` is the tell. An argument is a single assignment and may appear only once in a block. A subblock is a nested container, takes no `=`, and can repeat — which is exactly how you stack several of the same thing, like multiple `filter` blocks on a data source or multiple firewall rules:
+The `=` is the tell. An argument is a single assignment and may appear only once in a block. A subblock is a nested container, takes no `=`, and can repeat — which is exactly how you stack several of the same thing, like the three `allow` rules on this firewall:
 
 ```hcl
 resource "google_compute_firewall" "example" {
@@ -128,7 +128,7 @@ flowchart TB
 
 One thing that is *not* an attribute: anything inside a subblock. Arguments export; subblock contents do not.
 
-!!! note "\"Argument\" vs. \"attribute\" — Terraform's careful wording"
+!!! note "“Argument” vs. “attribute” — Terraform's careful wording"
     HCL's own spec calls the `name = value` construct an **attribute**. Terraform's docs deliberately say **argument** instead, and reserve **attribute** for the read-only, *referenceable* kind (like `id` or `arn`) that you can read but never assign. So in Terraform-speak: you *set arguments*; you *reference attributes*. The two overlap — every argument is also readable as an attribute — but a computed attribute like `arn` is only ever an attribute, never an argument.
 
 ## Labels, references, and identifiers
@@ -150,6 +150,16 @@ The type plus labels combine into a **reference string** — the unique address 
 | `variable` | `instance_type` | — | `var.instance_type` |
 | `output` | (read from outside) | — | `module.<name>.<output>` |
 | `locals` | — | — | `local.<name>` |
+
+!!! note "The `output` block *declares*; where it lives decides how it's read"
+    An `output "…" {}` block always does one job — it **declares** a value that leaves its module. It is *not* a way to reference an output; `module.<name>.<output>` is. Two sides of one wire: the block is `return x`, the `module.…` read is `y = f()`. And the read path depends on *where* the output sits:
+
+    | Output declared in… | How it's read |
+    |---|---|
+    | a **child module** (called via `module "<name>" {}`) | the parent reads `module.<name>.<output>` |
+    | the **root module** | surfaces on the CLI after `apply` and via `terraform output <name>`; other configs read it through `terraform_remote_state` — **never** through `module.` |
+
+    So a root-level `output "web_server_ip" { value = aws_instance.web.public_ip }` is not read as `module.web_server_ip.…` at all; that syntax only applies to outputs of a *child* module you called. Same keyword, different consumer — pick by which module the block lives in.
 
 Note the leading keyword differs: `resource` references *drop* the `resource.` prefix (just `aws_instance.hello_world`), but `data`, `var`, and `local` keep theirs. For a resource, the subtype and name are enough because two resources can't share both — you can have `aws_instance.web` and `aws_instance.db`, or `aws_instance.web` and `aws_lb.web`, but not two `aws_instance.web`.
 
@@ -208,8 +218,33 @@ The map-vs-object distinction is the subtle one: a **map** allows any keys but f
 
 **Two special types:**
 
-- **`null`** — "not set." Often a variable's `default = null`, so a module can check `var.x != null` to see whether the caller supplied it. `null` can't itself be used as a type constraint.
-- **`any`** — accepts any type; it's the default for an untyped variable. Even under `any`, the elements of a single list or map must still share one type.
+**`any`** — a placeholder that accepts any type; it's what you get when a `variable` has no `type` at all. "Any" describes the *whole* value — a `list`/`map` still resolves to one shared element type:
+
+```hcl
+variable "items" {
+  type = list(any)
+}
+# items = ["a", "b"]     ✅  → list(string)
+# items = [1, 2]         ✅  → list(number)
+# items = ["a", 1, true] ⚠️  unified to list(string): ["a", "1", "true"]
+```
+
+Terraform doesn't allow a truly mixed list — it finds one common type every element converts to (strings win here) and coerces silently. For genuinely mixed positions use a `tuple([string, number, bool])` or an `object`, not `list(any)`.
+
+**`null`** — the value meaning "not set / absent," distinct from `""`, `0`, or `false`. The common use is an optional input's `default = null`, so a module can tell *"caller left it out"* from *"caller passed an empty value"*:
+
+```hcl
+variable "description" {
+  type    = string
+  default = null    # sentinel: caller didn't supply one
+}
+
+locals {
+  final = var.description != null ? var.description : "auto-generated"
+}
+```
+
+With `default = ""` you couldn't distinguish "unset" from "deliberately empty" — `null` gives that third state. Note `null` is a *value*, never a *type*: `type = null` is invalid; write a real type and set `default = null`.
 
 !!! note "This is a survey — B6 puts it to work"
     You'll define these types on real `variable` blocks in Chapter 6, with defaults, validation, and `optional()` object attributes. Here the goal is just to recognize the vocabulary so you know what can legally go on the right of an `=`.
