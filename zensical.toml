@@ -16,6 +16,7 @@ nav = [
         { "1. Infrastructure as Code & where Terraform fits" = "book/ch01-iac-fundamentals.md" },
         { "2. Install, providers & your first project" = "book/ch02-install-providers-first-project.md" },
         { "3. The core workflow: init / plan / apply / destroy" = "book/ch03-core-workflow.md" },
+        { "4. HCL language basics" = "book/ch04-hcl-language-basics.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },

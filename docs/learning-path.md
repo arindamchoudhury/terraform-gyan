@@ -124,7 +124,7 @@
 
 ---
 
-### ⬜ B4 — HCL language basics
+### ✅ B4 — HCL language basics
 
 **What it is:** HashiCorp Configuration Language — blocks, arguments, primitive/collection types, comments, and the top-level block kinds (`terraform`, `provider`, `resource`, `variable`, `output`, `locals`, `data`, `module`).
 
@@ -849,7 +849,7 @@ Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner — B1–B3 done (Ch 1–3 written). Next up: **B4 (HCL language basics)**.
+**You are currently here:** Beginner — B1–B4 done (Ch 1–4 written). Next up: **B5 (Providers & resources)**.
 
 ---
 
