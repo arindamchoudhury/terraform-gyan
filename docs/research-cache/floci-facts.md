@@ -17,6 +17,13 @@ AWS-Console-style local UI), `floci-cli`, and a Testcontainers module. **No auth
   endpoints, so **LocalStack's `tflocal` wrapper drives Floci directly**.
 - **~68 AWS services** (S3, SQS, SNS, DynamoDB, Lambda, RDS, ECS, EKS, IAM, STS, events, APIs,
   containers, databases, messaging, security, billing). 100% SDK compatibility claimed.
+- **EC2 mock is usable — verified 2026-07-09.** Unlike LocalStack's free Community tier (where EC2
+  is a shallow mock; see [[localstack-facts]]), Floci mocks EC2 deep enough that the full
+  Terraform hello-world shape applies clean via `tflocal`: `data.aws_ami` (Canonical Ubuntu
+  filter), `data.aws_vpc {default=true}`, `data.aws_subnets`, and `aws_instance` all resolve and
+  create. Confirmed with `terraform state list` (all four in state). Still a mock — no real VM
+  boots; a green apply proves HCL/workflow, not AWS fidelity. **Book labs keep S3** for
+  cross-emulator portability (S3 is reliable on all three), but EC2 examples are runnable on Floci.
 - **Real infra where it counts:** mounts the Docker socket to spin up real containers (RDS, ECS,
   Lambda). Run with `-u root` per the README so it can reach the socket.
 - **Quarkus-native footprint.** Project reports ~90 MB image, ~13 MiB idle memory, ~24 ms startup
