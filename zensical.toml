@@ -50,6 +50,10 @@ nav = [
             { "3. Manage infrastructure" = "sources/terraform-tutorials/tf-aws-manage.md" },
             { "4. Destroy infrastructure" = "sources/terraform-tutorials/tf-aws-destroy.md" },
         ]},
+        { "Terraform Registry" = [
+            { "Overview" = "sources/terraform-registry/index.md" },
+            { "1. AWS Provider (overview)" = "sources/terraform-registry/aws-provider.md" },
+        ]},
     ]},
     { "Books" = [
         { "Terraform in Depth (Hafner, 2025)" = [

@@ -30,3 +30,9 @@ Log of all captured sources, organised by course.
 | [Create infrastructure](terraform-tutorials/tf-aws-create.md) | documentation | 2026-07-04 | first-project, provider, resource, data-source, init, apply, state | [url](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create) |
 | [Manage infrastructure](terraform-tutorials/tf-aws-manage.md) | documentation | 2026-07-07 | variables, outputs, modules, plan-symbols, replace, vpc | [url](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-manage) |
 | [Destroy infrastructure](terraform-tutorials/tf-aws-destroy.md) | documentation | 2026-07-07 | destroy, remove-resource, teardown, plan-symbols | [url](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-destroy) |
+
+## 4. Terraform Registry
+
+| Title | Type | Added | Tags | URL |
+|---|---|---|---|---|
+| [AWS Provider (overview)](terraform-registry/aws-provider.md) | documentation | 2026-07-09 | aws, provider, registry, authentication, default_tags, credentials | [url](https://registry.terraform.io/providers/hashicorp/aws/latest/docs) |
