@@ -313,6 +313,9 @@ Under the hood, `terraform destroy` is `terraform apply` of a plan that removes 
 
 Data sources are refreshed but never destroyed — they only ever read, so there's nothing to tear down.
 
+!!! note "`destroy` works from state, not config"
+    Destroy tears down whatever is **in state**, not what's in your `.tf` files. A resource that exists in state but has been removed from (or edited out of) config still gets destroyed — the reverted or changed configuration doesn't matter. This is why you can always tear a workspace down even after gutting its `.tf`: the state is the record of what's real. (The corollary bites in reverse too — a resource in config but not yet in state is nothing for `destroy` to act on.)
+
 !!! danger "`destroy` does not know what's precious"
     `terraform destroy` deletes whatever the workspace manages, and prod databases look exactly like scratch VMs to it. Two habits protect you. Mark irreplaceable resources with `lifecycle { prevent_destroy = true }` (I2), which makes Terraform *error* rather than destroy them. And never point a `destroy` at a workspace whose state you haven't just read. The recovery story for an accidental destroy is re-running `apply` from config — which recreates the resource but does **not** bring a database's data back.
 
