@@ -10,3 +10,21 @@ docs/books/*/pdf-cache/
 
 # Cached web fetches (fetch_page.py output — research scratch, don't commit)
 cache/
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Terraform secrets (lab .tfvars stay committed on purpose)
+*.auto.tfvars
+secrets.tfvars
