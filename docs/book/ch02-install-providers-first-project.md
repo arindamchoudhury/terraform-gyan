@@ -512,10 +512,13 @@ That's the milestone met: a fresh directory, `init`-ed, with one real resource p
 
 ## 🧪 Lab: your first resource on LocalStack
 
-The `aws_instance` above assumes a real AWS account. You don't need one to practise. Ch1's [lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker) stood up a local **AWS emulator** in Docker on port 4566 — Floci by default (free, no account), or MiniStack / LocalStack. This lab runs a real `init`→`apply`→`destroy` against it, for free, with no cloud credentials. Make sure the emulator is healthy first:
+The `aws_instance` above assumes a real AWS account. You don't need one to practise. Ch1's [lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker) prepared a local **AWS emulator** — Floci by default (free, no account), or MiniStack / LocalStack. This lab runs a real `init`→`apply`→`destroy` against it, for free, with no cloud credentials.
+
+**Start the emulator** (from the repo root; skip if it's already running):
 
 ```shell
-curl -s http://localhost:4566/_localstack/health   # services should read "available"
+docker compose -f labs/docker-compose.yml up -d      # start Floci on :4566, detached
+curl -s http://localhost:4566/_localstack/health     # wait until services read "available"
 ```
 
 We swap the EC2 instance for an **S3 bucket**. Two reasons: S3 is fully emulated on the free surface (EC2 is only mocked), and a bucket needs no AMI lookup, so the config stays about the *workflow*, not AWS trivia. Create a fresh directory with one file:

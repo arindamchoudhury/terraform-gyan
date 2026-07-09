@@ -381,6 +381,13 @@ Run `terraform fmt` before every commit (a Git pre-commit hook is ideal) and `te
 
 The milestone for this chapter is authoring a multi-file configuration from the block down. This lab proves you can — and then actually applies it, for free, against the local **AWS emulator** (Ch1's [lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker) — Floci, MiniStack, or LocalStack). The AMI-lookup-plus-EC2 example above won't apply on the free emulator (EC2 is only mocked), so write the same *shape* with an S3 bucket — every block type still doing its one job, wired by references.
 
+**Start the emulator** (from the repo root; skip if it's already running):
+
+```shell
+docker compose -f labs/docker-compose.yml up -d      # start Floci on :4566, detached
+curl -s http://localhost:4566/_localstack/health     # wait until services read "available"
+```
+
 In an empty directory, create the conventional files by hand — no snippet to copy:
 
 ```hcl

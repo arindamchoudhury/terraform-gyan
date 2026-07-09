@@ -1,0 +1,22 @@
+# Free local AWS emulator for the book's 🧪 Labs (Ch2 / B2 onward).
+# Floci — MIT, no account, no auth token. Serves the LocalStack API on :4566,
+# so `tflocal` drives it directly.
+#
+#   Start:   docker compose -f labs/docker-compose.yml up -d
+#   Health:  curl -s http://localhost:4566/_localstack/health
+#   Stop:    docker compose -f labs/docker-compose.yml down
+#
+# Swap the image for a different free emulator without changing anything else:
+#   ministackorg/ministack           # MiniStack (MIT, no token)
+#   localstack/localstack:stable      # LocalStack (needs LOCALSTACK_AUTH_TOKEN)
+services:
+  floci:
+    image: floci/floci:latest
+    container_name: floci-lab
+    ports:
+      - "127.0.0.1:4566:4566"
+    volumes:
+      # Lets the emulator spin up real containers for RDS / ECS / Lambda.
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: root
+    restart: unless-stopped

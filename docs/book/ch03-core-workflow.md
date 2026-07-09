@@ -390,7 +390,16 @@ terraform apply -target="aws_instance.app_server"   # exceptional use only
 
 ## 🧪 Lab: read every plan symbol on LocalStack
 
-The four verbs and four symbols are worth *seeing*, not just reading. This lab drives the whole loop against the local **AWS emulator** (Ch1's [lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker) — Floci, MiniStack, or LocalStack) and deliberately produces a `+`, a `~`, a `-/+`, and a `-` — for free, no AWS account. Confirm the emulator is up (`curl -s http://localhost:4566/_localstack/health`), then start from this `main.tf`:
+The four verbs and four symbols are worth *seeing*, not just reading. This lab drives the whole loop against the local **AWS emulator** (Ch1's [lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker) — Floci, MiniStack, or LocalStack) and deliberately produces a `+`, a `~`, a `-/+`, and a `-` — for free, no AWS account.
+
+**Start the emulator** (from the repo root; skip if it's already running):
+
+```shell
+docker compose -f labs/docker-compose.yml up -d      # start Floci on :4566, detached
+curl -s http://localhost:4566/_localstack/health     # wait until services read "available"
+```
+
+Then start from this `main.tf`:
 
 ```hcl
 # main.tf

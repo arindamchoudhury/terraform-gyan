@@ -200,21 +200,28 @@ docker run -d --name floci \
   floci/floci:latest
 ```
 
-The Docker socket mount lets Floci spin up *real* containers for services like RDS and Lambda; `-u root` is what the project's README uses so it can reach the socket. A `docker-compose.yml`, if you'd rather keep it in the repo:
+The Docker socket mount lets Floci spin up *real* containers for services like RDS and Lambda; `-u root` is what the project's README uses so it can reach the socket.
+
+Better than a one-off `docker run`: this book ships a ready `labs/docker-compose.yml` (in the repo root) so you start the emulator the same way in every lab. It's the file below — Floci on `:4566`, with a comment showing how to swap in MiniStack or LocalStack:
 
 ```yaml
+# labs/docker-compose.yml
 services:
   floci:
-    image: floci/floci:latest
+    image: floci/floci:latest        # swap: ministackorg/ministack | localstack/localstack:stable
+    container_name: floci-lab
     ports:
       - "127.0.0.1:4566:4566"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock   # real RDS/ECS/Lambda containers
     user: root
+    restart: unless-stopped
 ```
 
+Start it (and re-use this exact command at the top of every 🧪 Lab):
+
 ```shell
-docker compose up -d
+docker compose -f labs/docker-compose.yml up -d      # start the emulator, detached
 ```
 
 ??? note "Alternative — MiniStack (also MIT, no signup)"
