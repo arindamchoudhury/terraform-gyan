@@ -35,6 +35,7 @@ nav = [
             { "4. Terraform CLI Overview (command index)" = "sources/terraform-docs/tf-cli-commands.md" },
             { "5. Configuration Syntax" = "sources/terraform-docs/tf-config-syntax.md" },
             { "6. Style Guide" = "sources/terraform-docs/tf-style-guide.md" },
+            { "7. Create and manage resources (overview)" = "sources/terraform-docs/tf-resources.md" },
         ]},
         { "OpenTofu Docs" = [
             { "Overview" = "sources/opentofu-docs/index.md" },
