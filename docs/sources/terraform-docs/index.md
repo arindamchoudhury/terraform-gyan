@@ -17,3 +17,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Style Guide | 2026-07-08 | [tf-style-guide](tf-style-guide.md) |
 | Create and manage resources (overview) | 2026-07-09 | [tf-resources](tf-resources.md) |
 | Providers (language overview) | 2026-07-09 | [tf-providers](tf-providers.md) |
+| Configure a resource | 2026-07-09 | [tf-configure-resource](tf-configure-resource.md) |

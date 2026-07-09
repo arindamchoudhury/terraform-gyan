@@ -14,6 +14,7 @@ Log of all captured sources, organised by course.
 | [Style Guide](terraform-docs/tf-style-guide.md) | documentation | 2026-07-08 | style, formatting, fmt, naming, file-layout, version-pinning, modules | [url](https://developer.hashicorp.com/terraform/language/style) |
 | [Create and manage resources (overview)](terraform-docs/tf-resources.md) | documentation | 2026-07-09 | resources, resource-block, meta-arguments, apply, workflow, data-sources | [url](https://developer.hashicorp.com/terraform/language/resources) |
 | [Providers (language overview)](terraform-docs/tf-providers.md) | documentation | 2026-07-09 | providers, registry, provider-tiers, plugin-cache, netrc, private-registry | [url](https://developer.hashicorp.com/terraform/language/providers) |
+| [Configure a resource](terraform-docs/tf-configure-resource.md) | documentation | 2026-07-09 | resources, timeouts, meta-arguments, terraform_data, local-only-resources, dependencies | [url](https://developer.hashicorp.com/terraform/language/resources/configure) |
 
 ## 2. OpenTofu Docs
 
