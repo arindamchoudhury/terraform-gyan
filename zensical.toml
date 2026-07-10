@@ -38,6 +38,7 @@ nav = [
             { "7. Create and manage resources (overview)" = "sources/terraform-docs/tf-resources.md" },
             { "8. Providers (language overview)" = "sources/terraform-docs/tf-providers.md" },
             { "9. Configure a resource" = "sources/terraform-docs/tf-configure-resource.md" },
+            { "10. Dependency Lock File" = "sources/terraform-docs/tf-dependency-lock.md" },
         ]},
         { "OpenTofu Docs" = [
             { "Overview" = "sources/opentofu-docs/index.md" },
