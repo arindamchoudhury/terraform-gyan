@@ -57,7 +57,10 @@ nav = [
                         { "Overview" = "sources/terraform-docs/tf-meta-arguments.md" },
                         { "depends_on" = "sources/terraform-docs/tf-meta-depends-on.md" },
                     ]},
-                    { "terraform_data resource reference" = "sources/terraform-docs/tf-terraform-data.md" },
+                    { "Built-in resources" = [
+                        { "terraform_data resource reference" = "sources/terraform-docs/tf-terraform-data.md" },
+                        { "The terraform_remote_state data source" = "sources/terraform-docs/tf-remote-state-data.md" },
+                    ]},
                 ]},
             ]},
         ]},

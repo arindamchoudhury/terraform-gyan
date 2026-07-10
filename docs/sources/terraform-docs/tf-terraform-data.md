@@ -14,7 +14,7 @@ The reference behind A1's step-1 citation. [[tf-configure-resource]] introduces 
 
 > "The `terraform_data` resource type implements the **standard resource lifecycle**, but does not directly take any other actions."
 
-No provider required or configured. It is always available through a **built-in provider** with the source address `terraform.io/builtin/terraform`.
+No provider required or configured. It is always available through a **built-in provider** with the source address `terraform.io/builtin/terraform`. That provider ships exactly two things: this resource and the `terraform_remote_state` data source ([[tf-remote-state-data]]).
 
 Two stated purposes:
 
@@ -109,4 +109,4 @@ Both merely store a value in state. The difference is what a change does:
 `null_resource` (from the `null` provider) did both jobs before Terraform 1.4, using a `triggers` **map**. `terraform_data` supersedes it: no provider dependency, and `triggers_replace` takes any value rather than a map of strings. Prefer `terraform_data` in new code. See [[feature-history]].
 
 ---
-Related: [[tf-configure-resource]] — introduces `terraform_data` among built-in and local-only resources. · [[meta-arguments-lifecycle]] — `replace_triggered_by`, the rule this resource exists to feed. · [[dependency-graph]] — implicit edges from `triggers_replace` references; also where this resource got used to isolate language behavior from providers. · [[tf-meta-arguments]] — the meta-argument set `lifecycle` belongs to.
+Related: [[tf-remote-state-data]] — the other half of the built-in provider. · [[tf-configure-resource]] — introduces `terraform_data` among built-in and local-only resources. · [[meta-arguments-lifecycle]] — `replace_triggered_by`, the rule this resource exists to feed. · [[dependency-graph]] — implicit edges from `triggers_replace` references; also where this resource got used to isolate language behavior from providers. · [[tf-meta-arguments]] — the meta-argument set `lifecycle` belongs to.
