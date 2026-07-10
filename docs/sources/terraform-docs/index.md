@@ -4,6 +4,7 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 
 **Source type:** official documentation
 **Version tracked:** v1.15.x (latest at first capture)
+**Nav mirrored from:** rung 1 — the site's `__NEXT_DATA__` payload (`props.pageProps.layoutProps.sidebarNavDataLevels`). Breadcrumbs on this site disagree with the sidebar and must not be used for grouping.
 
 ## Pages
 
