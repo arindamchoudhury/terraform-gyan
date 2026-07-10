@@ -6,7 +6,8 @@
 > **Tags:** removed-block, destroy, state, refactoring, destroy-time-provisioner, connection, breaking-change
 > **Type:** documentation
 
-*Developer › Terraform › Configuration Language › Reference › Configuration blocks › `removed` · v1.15.x*
+*Developer › Terraform › Configuration Language › State › `removed` block reference · v1.15.x*
+*(The sidebar lists this page twice — also under Reference › Configuration blocks. Filed under the task section, per convention.)*
 
 Captured because [[tf-destroy-resource]] leans on it, and because reading it exposed a **wrong claim repeated across four of our own documents**.
 

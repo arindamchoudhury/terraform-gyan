@@ -6,7 +6,8 @@
 > **Tags:** resource-block, lifecycle, action_trigger, actions, provisioners, connection, preconditions, docs-bug
 > **Type:** documentation
 
-*Developer › Terraform › Configuration Language › Reference › Configuration blocks › `resource` · v1.15.x*
+*Developer › Terraform › Configuration Language › Resources › `resource` block reference · v1.15.x*
+*(The sidebar lists this page twice — also under Reference › Configuration blocks. Filed under the task section, per convention.)*
 
 The complete argument surface of the `resource` block. Most of it is already covered: meta-arguments in [[tf-meta-arguments]], the `lifecycle` rules in [[meta-arguments-lifecycle]], the configure workflow in [[tf-configure-resource]]. Captured for the parts that are **not** — chiefly `action_trigger`, which appears nowhere else in these notes.
 
