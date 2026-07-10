@@ -20,3 +20,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Configure a resource | 2026-07-09 | [tf-configure-resource](tf-configure-resource.md) |
 | Dependency Lock File | 2026-07-10 | [tf-dependency-lock](tf-dependency-lock.md) |
 | `provider` block reference | 2026-07-10 | [tf-provider-block](tf-provider-block.md) |
+| Meta-arguments (index) | 2026-07-10 | [tf-meta-arguments](tf-meta-arguments.md) |

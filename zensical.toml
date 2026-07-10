@@ -24,6 +24,7 @@ nav = [
         { "Core workflow" = "topics/core-workflow.md" },
         { "Providers" = "topics/providers.md" },
         { "Modules" = "topics/modules.md" },
+        { "Meta-arguments & lifecycle" = "topics/meta-arguments-lifecycle.md" },
     ]},
     { "Notes" = [
         { "All Notes" = "sources/index.md" },
@@ -40,6 +41,7 @@ nav = [
             { "9. Configure a resource" = "sources/terraform-docs/tf-configure-resource.md" },
             { "10. Dependency Lock File" = "sources/terraform-docs/tf-dependency-lock.md" },
             { "11. `provider` block reference" = "sources/terraform-docs/tf-provider-block.md" },
+            { "12. Meta-arguments (index)" = "sources/terraform-docs/tf-meta-arguments.md" },
         ]},
         { "OpenTofu Docs" = [
             { "Overview" = "sources/opentofu-docs/index.md" },
