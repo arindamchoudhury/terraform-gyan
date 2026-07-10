@@ -80,6 +80,15 @@ Both edge kinds render identically. The graph does not distinguish an implicit r
 
 Terraform already refuses the plan with `Error: Cycle: terraform_data.a, terraform_data.b`. The flag matters on a large graph, where the error names the members but not which edges close the loop.
 
+!!! warning "`-draw-cycles` without `-type=` is silently ignored"
+    The docs say it "is supported only when selecting one of the real graph operation types." What that means in practice, verified on v1.15.6: passing `-draw-cycles` alone produces **no warning and exit 0**, and the default resources-only graph renders only **one** of the two cycle edges:
+
+    ```dot
+    "terraform_data.b" -> "terraform_data.a";   # the a -> b edge is simply absent
+    ```
+
+    So on the default graph a cycle is not merely un-highlighted — it is **invisible**. Always pair `-draw-cycles` with `-type=plan` (or another operation type).
+
 !!! warning "The graph shows what Terraform knows, not what's true"
     Deleting a `depends_on` silently deletes its edge. Nothing warns; `terraform validate` still returns `Success! The configuration is valid.` A resource with a missing hidden dependency is indistinguishable from a resource that genuinely has none. Use `graph` to **confirm** a suspected edge, never to **discover** a missing one. See [[dependency-graph]] and [[tf-meta-depends-on]].
 

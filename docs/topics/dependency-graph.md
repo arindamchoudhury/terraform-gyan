@@ -70,6 +70,9 @@ Richer views, at the cost of runtime implementation detail:
 
 On a cycle, Terraform refuses to plan at all: `Error: Cycle: terraform_data.a, terraform_data.b`. The error names the cycle's *members*; `-draw-cycles` shows which *edges* close the loop, which is what you need on a large graph.
 
+!!! warning "`-draw-cycles` needs an explicit `-type=`"
+    Passing it alone is **silently ignored** — no warning, exit 0. Worse, the default resources-only graph renders only one of the two cycle edges, so the cycle is invisible rather than merely unhighlighted. Verified on v1.15.6. Always write `terraform graph -type=plan -draw-cycles`.
+
 !!! tip "Use `graph` to confirm, never to discover"
     It faithfully renders every edge Terraform knows about. Bring the suspicion yourself — pick the two resources you think are wrongly parallel and check whether an edge exists between them.
 
