@@ -4,6 +4,7 @@ Notes captured from the official OpenTofu documentation and release blog at [ope
 
 **Source type:** official documentation
 **Focus:** OpenTofu-only features that diverge from Terraform's open-source CLI (drives the E3 milestone).
+**Nav mirrored from:** rung 3 — the rendered sidebar DOM (Docusaurus). There is no usable global nav payload, so the tree was read **per page** with `fetch_nav.py`; collapsed sections expand only for the page you are on. The `ot-dynamic-prevent-destroy` note comes from the release **blog**, not the docs tree, so it sits outside the sidebar grouping.
 
 ## Pages
 

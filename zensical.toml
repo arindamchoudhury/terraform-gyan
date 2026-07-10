@@ -66,11 +66,13 @@ nav = [
         ]},
         { "OpenTofu Docs" = [
             { "Overview" = "sources/opentofu-docs/index.md" },
-            { "1. Provider for_each" = "sources/opentofu-docs/ot-provider-for-each.md" },
-            { "2. Early eval in backend config" = "sources/opentofu-docs/ot-early-eval-backend.md" },
-            { "3. -exclude flag" = "sources/opentofu-docs/ot-exclude-flag.md" },
-            { "4. Dynamic prevent_destroy" = "sources/opentofu-docs/ot-dynamic-prevent-destroy.md" },
-            { "5. Dependency Lock File" = "sources/opentofu-docs/ot-dependency-lock.md" },
+            { "The OpenTofu Language" = [
+                { "Provider Configuration" = "sources/opentofu-docs/ot-provider-for-each.md" },
+                { "Dependency Lock File" = "sources/opentofu-docs/ot-dependency-lock.md" },
+                { "Backend Configuration" = "sources/opentofu-docs/ot-early-eval-backend.md" },
+            ]},
+            { "Command: plan" = "sources/opentofu-docs/ot-exclude-flag.md" },
+            { "Blog: OpenTofu 1.12 (dynamic prevent_destroy)" = "sources/opentofu-docs/ot-dynamic-prevent-destroy.md" },
         ]},
         { "HashiCorp Terraform Tutorials" = [
             { "Overview" = "sources/terraform-tutorials/index.md" },

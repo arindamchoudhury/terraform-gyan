@@ -72,7 +72,7 @@ The provider resolves credentials from these sources, **in precedence order** (f
 | `max_retries` | (Optional) Max API retry attempts; default **25**. |
 
 !!! tip "`default_tags` and the emulator"
-    `default_tags` is the provider-wide way to stamp tags on all resources without repeating a `tags` block. Note the lab emulators (Floci/LocalStack) often need `skip_credentials_validation` / `skip_requesting_account_id` — `tflocal` sets these for you, which is why the lab `provider` block stays clean. See [[project_localstack_labs]] context in the book's Ch1 lab setup.
+    `default_tags` is the provider-wide way to stamp tags on all resources without repeating a `tags` block. Note the lab emulators (Floci/LocalStack) often need `skip_credentials_validation` / `skip_requesting_account_id` — `tflocal` sets these for you, which is why the lab `provider` block stays clean. See the [Ch1 lab setup](../../book/ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker).
 
 ---
 Related: [[provider-requirements]] — the `required_providers` / source-address / version-constraint mechanics this page instantiates for AWS. · [[tf-aws-create]] — the Get-Started tutorial that first wires up this exact `provider "aws"` block. · [[tf-config-syntax]] — the declaration-vs-configuration (terraform{} vs provider{}) block distinction.

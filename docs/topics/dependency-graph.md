@@ -80,19 +80,29 @@ On a cycle, Terraform refuses to plan at all: `Error: Cycle: terraform_data.a, t
 
 Often overlooked. Each resource instance records the dependencies Terraform used, and this is what orders the **destroy**.
 
+Read it via `terraform show -json` rather than opening `terraform.tfstate`:
+
 ```shell
-terraform show -json | python -c "..."   # prefer this over reading terraform.tfstate directly
+terraform show -json | python -c "
+import json, sys
+d = json.load(sys.stdin)
+for r in d['values']['root_module']['resources']:
+    print(f\"{r['address']:22} depends_on={r.get('depends_on', [])}\")
+"
 ```
 
 After applying the config above:
 
 ```
-terraform_data.igw     dependencies=['terraform_data.vpc']
-terraform_data.nat     dependencies=['terraform_data.igw', 'terraform_data.vpc']
-terraform_data.vpc     dependencies=[]
+terraform_data.igw     depends_on=['terraform_data.vpc']
+terraform_data.nat     depends_on=['terraform_data.igw', 'terraform_data.vpc']
+terraform_data.vpc     depends_on=[]
 ```
 
 Note `nat` records `vpc` as well as `igw` — **transitive edges are materialized**, not just direct ones.
+
+!!! note "The field has two names"
+    In the **raw state file** each instance carries a `dependencies` array. In **`terraform show -json`** the same information appears on each resource as `depends_on`. Same edges, different key — don't grep for the wrong one.
 
 State is the right place to look when the *current* graph disagrees with what was actually applied: state holds the edges as of the last apply, `graph` holds the edges your configuration implies now.
 
