@@ -144,7 +144,7 @@ terraform providers lock \
 This downloads and verifies the official packages for every required provider across all four platforms, and records **both `zh:` and `h1:`** checksums for each. Future `init` calls can then verify that mirror packages match the official origin-registry packages. See the [`terraform providers lock`](https://developer.hashicorp.com/terraform/cli/commands/providers/lock) command docs.
 
 !!! info "OpenTofu — cross-platform hashes by default"
-    OpenTofu **1.12** records the full cross-platform `zh:`+`h1:` set automatically at `tofu init`, so the `providers lock -platform=…` dance is unnecessary. (See [[opentofu-feature-history]].)
+    OpenTofu **1.12** records the full cross-platform `zh:`+`h1:` set automatically at `tofu init`, because its registry now serves `h1:` hashes for every platform. The `providers lock -platform=…` dance becomes unnecessary. The gate is that `init` must reach the origin registry directly, which is the default. Override `provider_installation` to a mirror and Terraform's behavior above returns unchanged. `h1:` itself is still per-platform in both tools. (See [[ot-dependency-lock]] and [[opentofu-feature-history]].)
 
 ### 4. Providers that are no longer required
 
@@ -164,4 +164,4 @@ Terraform decides whether a provider is still needed from **two sources of truth
     In v1.0 and earlier, `init` did **not** remove now-unneeded providers from the lock file — it just ignored them. If you dropped a provider on an old CLI and then upgraded to v1.1+, you may hit `missing or corrupted provider plugins` from those stale entries. Run `terraform init` on the new version to tidy them, then retry.
 
 ---
-Related: [[provider-requirements]] — declares the constraints this file resolves; its `-upgrade` callout is the operational companion to "Dependency installation behavior" here. · [[tf-providers]] — the providers hub that points at this page. · [[tf-aws-create]] — a real `init` writing a real lock file. · [[tf-cli-commands]] — where `terraform providers lock` sits in the command surface. · [[opentofu-feature-history]] — OpenTofu 1.12 removes the manual cross-platform locking step.
+Related: [[provider-requirements]] — declares the constraints this file resolves; its `-upgrade` callout is the operational companion to "Dependency installation behavior" here. · [[tf-providers]] — the providers hub that points at this page. · [[tf-aws-create]] — a real `init` writing a real lock file. · [[tf-cli-commands]] — where `terraform providers lock` sits in the command surface. · [[ot-dependency-lock]] — the forked OpenTofu page; identical except for 1.12's cross-platform checksum pre-population and the `OPENTOFU_ENFORCE_GPG_VALIDATION` knob. · [[opentofu-feature-history]] — OpenTofu 1.12 removes the manual cross-platform locking step.

@@ -47,6 +47,7 @@ nav = [
             { "2. Early eval in backend config" = "sources/opentofu-docs/ot-early-eval-backend.md" },
             { "3. -exclude flag" = "sources/opentofu-docs/ot-exclude-flag.md" },
             { "4. Dynamic prevent_destroy" = "sources/opentofu-docs/ot-dynamic-prevent-destroy.md" },
+            { "5. Dependency Lock File" = "sources/opentofu-docs/ot-dependency-lock.md" },
         ]},
         { "HashiCorp Terraform Tutorials" = [
             { "Overview" = "sources/terraform-tutorials/index.md" },

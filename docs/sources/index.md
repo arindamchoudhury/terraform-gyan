@@ -26,6 +26,7 @@ Log of all captured sources, organised by course.
 | [Early variable eval in backend config](opentofu-docs/ot-early-eval-backend.md) | documentation | 2026-07-03 | opentofu, backend, early-evaluation | [url](https://opentofu.org/docs/language/settings/backends/configuration/) |
 | [`-exclude` flag](opentofu-docs/ot-exclude-flag.md) | documentation | 2026-07-03 | opentofu, cli, targeting | [url](https://opentofu.org/docs/cli/commands/plan/) |
 | [Dynamic `prevent_destroy`](opentofu-docs/ot-dynamic-prevent-destroy.md) | documentation | 2026-07-03 | opentofu, lifecycle, prevent_destroy | [url](https://opentofu.org/blog/opentofu-1-12-0/) |
+| [Dependency Lock File](opentofu-docs/ot-dependency-lock.md) | documentation | 2026-07-10 | opentofu, lock-file, checksums, hashing-schemes, h1, zh | [url](https://opentofu.org/docs/language/files/dependency-lock/) |
 
 ## 3. HashiCorp Terraform Tutorials
 
