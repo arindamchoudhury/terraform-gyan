@@ -75,7 +75,17 @@ It earns its keep in narrow compliance cases (logs that mustn't be deleted).
 
 The special value **`all`** (bare, **not** in brackets) ignores every change. TID recommends `ignore_changes` over `prevent_destroy` as the accidental-destruction guard: listing the forced-new fields keeps the resource from being recreated while still allowing other updates, and unlike `prevent_destroy` it doesn't block destroy plans.
 
-**`replace_triggered_by`** — force replacement when *another* resource changes. Takes resource references (any change → replace) or specific attribute references. Cannot be a variable — it must be a resource or resource attribute, which is the "known early" rule again.
+**`replace_triggered_by`** — force replacement when *another* resource changes. Takes resource references (any change → replace) or specific attribute references. It **cannot** take a plain value: local values and input variables are invalid.
+
+The reason isn't the "known early" rule, as it might appear. Per [[tf-terraform-data]], replacement is decided from the **planned operations** of the referenced resources — a plain value has no planned operation to inspect. The documented workaround is to wrap the value in a `terraform_data`, which plans an action whenever its `input` changes:
+
+```hcl
+resource "terraform_data" "replacement" { input = var.revision }
+
+resource "example_database" "test" {
+  lifecycle { replace_triggered_by = [terraform_data.replacement] }
+}
+```
 
 !!! info "OpenTofu — `lifecycle` divergences"
     OpenTofu directly lifts the `prevent_destroy` limitation TID calls out:
@@ -116,4 +126,4 @@ resource "aws_instance" "example" {
 ```
 
 ---
-Related: [[tf-meta-arguments]] — the HCDocs index, and the source of the six-member list. · [[tf-configure-resource]] — surveys the same set from the resource-block side. · [[ot-dynamic-prevent-destroy]] — OpenTofu's fix for the literal-only `prevent_destroy`. · [[tf-provider-block]] — the `provider` blocks that `provider`/`providers` select between. · [[tf-style-guide]] — ordering within a block. · [[providers]] — the provider topic page this one hands off to.
+Related: [[tf-terraform-data]] — the built-in resource that makes a plain value usable in `replace_triggered_by`. · [[tf-meta-arguments]] — the HCDocs index, and the source of the six-member list. · [[tf-configure-resource]] — surveys the same set from the resource-block side. · [[ot-dynamic-prevent-destroy]] — OpenTofu's fix for the literal-only `prevent_destroy`. · [[tf-provider-block]] — the `provider` blocks that `provider`/`providers` select between. · [[tf-style-guide]] — ordering within a block. · [[providers]] — the provider topic page this one hands off to.

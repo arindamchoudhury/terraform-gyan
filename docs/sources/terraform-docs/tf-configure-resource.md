@@ -60,7 +60,7 @@ Prefer **implicit** dependencies (attribute references) — Terraform builds the
 
 Special resource types that program actions without touching real infrastructure:
 
-- **`terraform_data`** — implements the standard resource lifecycle but takes no action itself. The modern replacement for the `null_resource` pattern. → **A1 (provisioners, `terraform_data` & escape hatches)**.
+- **`terraform_data`** — implements the standard resource lifecycle but takes no action itself. The modern replacement for the `null_resource` pattern. Full reference in [[tf-terraform-data]]. → **A1 (provisioners, `terraform_data` & escape hatches)**.
 - **Local-only resources** — compute values and store them in state; no cloud object is created. Destroying one just drops it from state. They use the built-in `terraform.io/builtin/terraform` provider. Examples:
     - `tls_private_key` — generate a TLS private key.
     - `tls_self_signed_cert` — issue a self-signed cert.

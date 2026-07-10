@@ -57,6 +57,7 @@ nav = [
                         { "Overview" = "sources/terraform-docs/tf-meta-arguments.md" },
                         { "depends_on" = "sources/terraform-docs/tf-meta-depends-on.md" },
                     ]},
+                    { "terraform_data resource reference" = "sources/terraform-docs/tf-terraform-data.md" },
                 ]},
             ]},
         ]},

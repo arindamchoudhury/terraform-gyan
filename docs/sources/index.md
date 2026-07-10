@@ -20,6 +20,7 @@ Log of all captured sources, organised by course.
 | [Meta-arguments (index)](terraform-docs/tf-meta-arguments.md) | documentation | 2026-07-10 | meta-arguments, count, for_each, depends_on, lifecycle, provider, providers, ephemeral | [url](https://developer.hashicorp.com/terraform/language/meta-arguments) |
 | [`depends_on` reference](terraform-docs/tf-meta-depends-on.md) | documentation | 2026-07-10 | meta-arguments, depends_on, hidden-dependencies, dag, known-after-apply, check-blocks | [url](https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on) |
 | [`terraform graph` command](terraform-docs/tf-cmd-graph.md) | documentation | 2026-07-10 | cli, graph, dag, dot, graphviz, cycles | [url](https://developer.hashicorp.com/terraform/cli/commands/graph) |
+| [`terraform_data` resource reference](terraform-docs/tf-terraform-data.md) | documentation | 2026-07-10 | terraform_data, built-in-resources, null_resource, replace_triggered_by, triggers_replace, provisioners | [url](https://developer.hashicorp.com/terraform/language/resources/terraform-data) |
 
 ## 2. OpenTofu Docs
 
