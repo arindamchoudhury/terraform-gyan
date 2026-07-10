@@ -6,7 +6,7 @@
 > **Tags:** lock-file, providers, checksums, trust-on-first-use, hashing-schemes, providers-lock, init
 > **Type:** documentation
 
-*Developer › Terraform › Configuration Language › Files › Dependency Lock File · v1.15.x*
+*Developer › Terraform › Configuration Language › Files and configuration structure › Dependency lock file · v1.15.x*
 
 !!! info "Hands-on"
     Try the [Lock and Upgrade Provider Versions](https://developer.hashicorp.com/terraform/tutorials/configuration-language/provider-versioning) tutorial.

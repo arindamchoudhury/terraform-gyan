@@ -6,7 +6,7 @@
 > **Tags:** providers, provider-block, alias, configuration_aliases, default-configuration, modules, deprecated-version
 > **Type:** documentation
 
-*Developer › Terraform › Configuration Language › Blocks › `provider` block reference · v1.15.x*
+*Developer › Terraform › Configuration Language › `provider` · v1.15.x*
 
 !!! info "Hands-on"
     Try the [Perform CRUD Operations with Providers](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework) tutorial.
