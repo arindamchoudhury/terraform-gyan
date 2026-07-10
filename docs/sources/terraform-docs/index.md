@@ -26,3 +26,5 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `terraform graph` command | 2026-07-10 | [tf-cmd-graph](tf-cmd-graph.md) |
 | `terraform_data` resource reference | 2026-07-10 | [tf-terraform-data](tf-terraform-data.md) |
 | The `terraform_remote_state` data source | 2026-07-10 | [tf-remote-state-data](tf-remote-state-data.md) |
+| Destroy a resource | 2026-07-10 | [tf-destroy-resource](tf-destroy-resource.md) |
+| `removed` block reference | 2026-07-10 | [tf-block-removed](tf-block-removed.md) |

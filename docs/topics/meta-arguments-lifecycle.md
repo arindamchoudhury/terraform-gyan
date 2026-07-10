@@ -91,7 +91,7 @@ resource "example_database" "test" {
     OpenTofu directly lifts the `prevent_destroy` limitation TID calls out:
 
     - **Dynamic `prevent_destroy`** (OT 1.12) — bind it to a variable or expression, so prod and dev *can* differ. Terraform still requires a literal. See [[ot-dynamic-prevent-destroy]].
-    - **`destroy = false`** (OT 1.12) — stop managing a resource without deleting the real object. Same outcome as Terraform's `removed` block, written as one line inside `lifecycle`.
+    - **`destroy = false`** (OT 1.12) — stop managing a resource without deleting the real object, written as one line inside the **resource's** `lifecycle`. Terraform's nearest equivalent is a separate `removed` block that *also* carries `lifecycle { destroy = false }` — and note that a Terraform `removed` block **without** that line destroys the object. See [[tf-block-removed]].
     - **`enabled` meta-argument** (OT 1.11) — a seventh meta-argument; a first-class on/off switch, cleaner than the `count = var.x ? 1 : 0` idiom that forces `[0]` addressing and index churn. Terraform has no equivalent. See [[opentofu-feature-history]].
 
     `create_before_destroy`, `ignore_changes`, and `replace_triggered_by` behave identically in both tools.

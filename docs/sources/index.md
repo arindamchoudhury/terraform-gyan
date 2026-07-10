@@ -22,6 +22,8 @@ Log of all captured sources, organised by course.
 | [`terraform graph` command](terraform-docs/tf-cmd-graph.md) | documentation | 2026-07-10 | cli, graph, dag, dot, graphviz, cycles | [url](https://developer.hashicorp.com/terraform/cli/commands/graph) |
 | [`terraform_data` resource reference](terraform-docs/tf-terraform-data.md) | documentation | 2026-07-10 | terraform_data, built-in-resources, null_resource, replace_triggered_by, triggers_replace, provisioners | [url](https://developer.hashicorp.com/terraform/language/resources/terraform-data) |
 | [The `terraform_remote_state` data source](terraform-docs/tf-remote-state-data.md) | documentation | 2026-07-10 | state, remote-state, terraform_remote_state, tfe_outputs, data-sharing, sensitive-data | [url](https://developer.hashicorp.com/terraform/language/state/remote-state-data) |
+| [Destroy a resource](terraform-docs/tf-destroy-resource.md) | documentation | 2026-07-10 | destroy, removed-block, destroy-time-provisioner, target | [url](https://developer.hashicorp.com/terraform/language/resources/destroy) |
+| [`removed` block reference](terraform-docs/tf-block-removed.md) | documentation | 2026-07-10 | removed-block, destroy, state, refactoring, version-drift | [url](https://developer.hashicorp.com/terraform/language/block/removed) |
 
 ## 2. OpenTofu Docs
 

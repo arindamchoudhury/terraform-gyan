@@ -37,8 +37,8 @@ As needs change, the docs point to four management moves (each its own sub-page)
 
 - **Creating modules** — collect resources into reusable modules.
 - **Refactoring modules** — move and rename resources (the `moved` block).
-- **Remove a resource from state** — drop it from state *without* destroying the real object (the `removed` block / `state rm`).
-- **Destroy a resource** — remove from state *and* destroy the real object.
+- **Remove a resource from state** — drop it from state *without* destroying the real object: `terraform state rm`, or a `removed` block **with `lifecycle { destroy = false }`**. A bare `removed` block destroys the object — see [[tf-block-removed]].
+- **Destroy a resource** — remove from state *and* destroy the real object. See [[tf-destroy-resource]].
 
 Providers also expose **data sources** — read existing infrastructure without provisioning anything. See [[tf-aws-create]] for a data-source (`aws_ami`) in use.
 

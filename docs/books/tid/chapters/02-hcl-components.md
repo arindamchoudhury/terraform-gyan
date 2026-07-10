@@ -556,7 +556,21 @@ Three refactoring blocks (full treatment in Ch9), added over successive releases
 |---|---|---|
 | `import` | v1.5.0 | Bring existing (e.g. console-created) infrastructure under Terraform without recreating it. |
 | `moved` | v1.5.0 | Tell Terraform a resource moved/renamed in your code, re-associating existing state. |
-| `removed` | v1.7.0 | Mark an item removed *without* destroying it. |
+| `removed` | v1.7.0 | Mark an item removed *without* destroying it. **⚠️ Stale on current Terraform — see the version box below.** |
+
+!!! warning "📌 Version drift — `removed` now destroys by default"
+    The book describes **v1.7** behavior, where `removed` was *forget-only*: "a resource was removed from Terraform configuration but … its managed object **should not be destroyed**" (v1.7.x + v1.11.x docs).
+
+    On **current Terraform** the block takes a `lifecycle { destroy = <bool> }` argument whose **default is `true`**. A bare `removed` block **destroys the object**. To get the book's behavior you must now write:
+
+    ```hcl
+    removed {
+      from = aws_instance.legacy
+      lifecycle { destroy = false }
+    }
+    ```
+
+    Verified on **v1.15.6**: without `lifecycle`, `plan` reports `1 to destroy`; with `destroy = false` it reports `0 to destroy` and warns the object "will no longer be managed by Terraform, but will not be destroyed." The `destroy = true` form is also what lets a **destroy-time provisioner** inside a `removed` block execute. (See [[tf-block-removed]].)
 
 **`import`** — the block form superseded the `terraform import` *command's* limitations: putting imports in code lets them be reviewed during `plan` and automated across environments. From **v1.6** the `id` can be a variable or data source (v1.5 required a hardcoded literal). Once imported, the blocks can be removed (they're ignored after doing their job) — but leaving them in makes the code harder to reuse in fresh environments with nothing to import.
 
