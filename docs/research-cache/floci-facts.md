@@ -2,6 +2,9 @@
 
 Verified facts for the book's lab sections. Refreshed by review passes.
 See also [[ministack-facts]] and [[localstack-facts]] — all three share port 4566 and are interchangeable in the labs.
+[[robotocore-facts]] also serves `:4566` but is not interchangeable. It is reserved for the IAM
+chapter, because it is the only free emulator that evaluates policy documents instead of merely
+storing them.
 
 _Last verified: 2026-07-09 (github.com/floci-io/floci)._
 
