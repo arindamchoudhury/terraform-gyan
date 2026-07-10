@@ -31,22 +31,26 @@ nav = [
         { "HashiCorp Terraform Docs" = [
             { "Overview" = "sources/terraform-docs/index.md" },
             { "Intro to Terraform" = [
-                { "What is Terraform?" = "sources/terraform-docs/terraform-intro.md" },
+                { "Overview" = "sources/terraform-docs/terraform-intro.md" },
                 { "Use Cases" = "sources/terraform-docs/terraform-use-cases.md" },
             ]},
-            { "Terraform CLI" = "sources/terraform-docs/tf-cli-commands.md" },
+            { "Terraform CLI (Basic CLI Features)" = "sources/terraform-docs/tf-cli-commands.md" },
             { "Configuration Language" = [
-                { "Configuration syntax" = "sources/terraform-docs/tf-config-syntax.md" },
-                { "Style guide" = "sources/terraform-docs/tf-style-guide.md" },
-                { "Meta-arguments" = "sources/terraform-docs/tf-meta-arguments.md" },
-                { "Create and manage resources" = "sources/terraform-docs/tf-resources.md" },
-                { "Configure a resource" = "sources/terraform-docs/tf-configure-resource.md" },
-                { "`provider` block reference" = "sources/terraform-docs/tf-provider-block.md" },
                 { "Configure providers" = [
                     { "Overview" = "sources/terraform-docs/tf-providers.md" },
                     { "Provider requirements" = "sources/terraform-docs/provider-requirements.md" },
+                    { "Dependency lock file" = "sources/terraform-docs/tf-dependency-lock.md" },
+                    { "provider block reference" = "sources/terraform-docs/tf-provider-block.md" },
                 ]},
-                { "Dependency lock file" = "sources/terraform-docs/tf-dependency-lock.md" },
+                { "Resources" = [
+                    { "Overview" = "sources/terraform-docs/tf-resources.md" },
+                    { "Configure a resource" = "sources/terraform-docs/tf-configure-resource.md" },
+                ]},
+                { "Meta-arguments" = "sources/terraform-docs/tf-meta-arguments.md" },
+                { "Reference" = [
+                    { "Style guide" = "sources/terraform-docs/tf-style-guide.md" },
+                    { "Configuration syntax" = "sources/terraform-docs/tf-config-syntax.md" },
+                ]},
             ]},
         ]},
         { "OpenTofu Docs" = [
