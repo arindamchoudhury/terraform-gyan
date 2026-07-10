@@ -31,6 +31,8 @@ Instructs Terraform to complete **all** actions on the dependency object — **i
 
 The "including read operations" clause is the precise part. It's stronger than "create A before B": a `data` read on the dependency also has to finish first.
 
+The index page omits the cost. Its reference page calls `depends_on` a **last resort** that makes plans more conservative. See [[tf-meta-depends-on]], and [[dependency-graph]] for why Terraform can never warn you that one is missing.
+
 → Reference: [depends_on](https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on) · Hands-on: [Create resource dependencies](https://developer.hashicorp.com/terraform/tutorials/configuration-language/dependencies)
 
 ### `count`
@@ -74,21 +76,24 @@ Confirms [[tf-provider-block]] and TID Ch3 on aliased providers never being inhe
 
 → Reference: [providers](https://developer.hashicorp.com/terraform/language/meta-arguments/providers)
 
-## Block applicability, as stated on this page
+## Block applicability
 
-| Meta-argument | `resource` | `data` | `module` | `ephemeral` |
-|---|---|---|---|---|
-| `depends_on` | ✅ | — | — | — |
-| `count` | ✅ | ✅ (from the `count` reference; also `list` blocks) | ✅ | ✅ |
-| `for_each` | ✅ | ✅ | ✅ | ✅ |
-| `lifecycle` | ✅ | varies by rule | varies by rule | varies by rule |
-| `provider` | ✅ | — | — | — |
-| `providers` | — | — | ✅ | — |
+Corrected against the per-argument reference pages, which are the authority. The index page's own lists are shown for contrast — it undercounts at least two meta-arguments.
 
-Read the blank cells as *"this page doesn't say"*, not *"illegal"*. The index page only names blocks where it happens to name them, and it already undercounts `count` (see above). `depends_on` in particular is documented on `module` blocks elsewhere. The per-argument reference pages are the authority.
+| Meta-argument | Supported blocks (per its reference page) | What the index page claims |
+|---|---|---|
+| `depends_on` | `check`, `data`, `ephemeral`, `module`, `output`, `resource` (+ `component` in Stacks) | `resource` only |
+| `count` | `data`, `ephemeral`, `module`, `resource` (+ `list` in query configs) | omits `data` |
+| `for_each` | `data`, `ephemeral`, `module`, `resource` | matches |
+| `lifecycle` | `resource`; support **varies by rule** across other block types | "varies" |
+| `provider` | `resource`, `data` | `resource` |
+| `providers` | `module` | `module` |
+
+!!! warning "The index page undercounts supported blocks"
+    Two confirmed cases so far: `count` (omits `data`) and `depends_on` (names only `resource`, while its reference page lists six block types). Both were found by opening the reference page after the index looked suspicious. Assume the index is a summary, not a spec — check the per-argument page before concluding a meta-argument is illegal somewhere. Sources: [[tf-meta-depends-on]], `cache/web/tf-meta-count.txt`.
 
 !!! info "OpenTofu — the `enabled` meta-argument"
     OpenTofu 1.11 adds a seventh meta-argument, **`enabled`**, a first-class on/off switch for a resource. Terraform has no equivalent; you still write `count = var.enabled ? 1 : 0`, which forces `[0]` addressing and index churn. See [[opentofu-feature-history]].
 
 ---
-Related: [[tf-configure-resource]] — surveys the same six from the resource-block side, with learning-path forward references. · [[tf-resources]] — the resources overview one level up. · [[tf-provider-block]] — the `provider` block that `provider`/`providers` select between. · [[tf-style-guide]] — meta-arguments go first in a block, meta-argument *blocks* (`lifecycle`) last. · [[opentofu-feature-history]] — OpenTofu's `enabled`.
+Related: [[tf-meta-depends-on]] — the `depends_on` reference, which corrects this page's block list and adds the "last resort" cost. · [[dependency-graph]] — how to inspect the DAG these arguments build. · [[tf-configure-resource]] — surveys the same six from the resource-block side, with learning-path forward references. · [[tf-resources]] — the resources overview one level up. · [[tf-provider-block]] — the `provider` block that `provider`/`providers` select between. · [[tf-style-guide]] — meta-arguments go first in a block, meta-argument *blocks* (`lifecycle`) last. · [[opentofu-feature-history]] — OpenTofu's `enabled`.

@@ -25,6 +25,7 @@ nav = [
         { "Providers" = "topics/providers.md" },
         { "Modules" = "topics/modules.md" },
         { "Meta-arguments & lifecycle" = "topics/meta-arguments-lifecycle.md" },
+        { "The dependency graph" = "topics/dependency-graph.md" },
     ]},
     { "Notes" = [
         { "All Notes" = "sources/index.md" },
@@ -34,7 +35,10 @@ nav = [
                 { "Overview" = "sources/terraform-docs/terraform-intro.md" },
                 { "Use Cases" = "sources/terraform-docs/terraform-use-cases.md" },
             ]},
-            { "Terraform CLI (Basic CLI Features)" = "sources/terraform-docs/tf-cli-commands.md" },
+            { "Terraform CLI" = [
+                { "Basic CLI Features" = "sources/terraform-docs/tf-cli-commands.md" },
+                { "graph" = "sources/terraform-docs/tf-cmd-graph.md" },
+            ]},
             { "Configuration Language" = [
                 { "Configure providers" = [
                     { "Overview" = "sources/terraform-docs/tf-providers.md" },
@@ -46,10 +50,13 @@ nav = [
                     { "Overview" = "sources/terraform-docs/tf-resources.md" },
                     { "Configure a resource" = "sources/terraform-docs/tf-configure-resource.md" },
                 ]},
-                { "Meta-arguments" = "sources/terraform-docs/tf-meta-arguments.md" },
                 { "Reference" = [
                     { "Style guide" = "sources/terraform-docs/tf-style-guide.md" },
                     { "Configuration syntax" = "sources/terraform-docs/tf-config-syntax.md" },
+                    { "Meta-arguments" = [
+                        { "Overview" = "sources/terraform-docs/tf-meta-arguments.md" },
+                        { "depends_on" = "sources/terraform-docs/tf-meta-depends-on.md" },
+                    ]},
                 ]},
             ]},
         ]},

@@ -18,6 +18,8 @@ Log of all captured sources, organised by course.
 | [Dependency Lock File](terraform-docs/tf-dependency-lock.md) | documentation | 2026-07-10 | lock-file, providers, checksums, trust-on-first-use, hashing-schemes, providers-lock | [url](https://developer.hashicorp.com/terraform/language/files/dependency-lock) |
 | [`provider` block reference](terraform-docs/tf-provider-block.md) | documentation | 2026-07-10 | providers, provider-block, alias, configuration_aliases, default-configuration, modules | [url](https://developer.hashicorp.com/terraform/language/block/provider) |
 | [Meta-arguments (index)](terraform-docs/tf-meta-arguments.md) | documentation | 2026-07-10 | meta-arguments, count, for_each, depends_on, lifecycle, provider, providers, ephemeral | [url](https://developer.hashicorp.com/terraform/language/meta-arguments) |
+| [`depends_on` reference](terraform-docs/tf-meta-depends-on.md) | documentation | 2026-07-10 | meta-arguments, depends_on, hidden-dependencies, dag, known-after-apply, check-blocks | [url](https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on) |
+| [`terraform graph` command](terraform-docs/tf-cmd-graph.md) | documentation | 2026-07-10 | cli, graph, dag, dot, graphviz, cycles | [url](https://developer.hashicorp.com/terraform/cli/commands/graph) |
 
 ## 2. OpenTofu Docs
 
