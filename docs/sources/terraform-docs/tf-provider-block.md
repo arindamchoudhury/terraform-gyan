@@ -156,6 +156,21 @@ resource "aws_s3_bucket" "default_provider" {
 
 The bucket does not specify `provider`, so it uses the implied empty default — not `east`, not `west`. This is a quiet trap: adding an `alias` to your only `provider` block changes the meaning of every resource that didn't ask for one.
 
+#### Can you stop Terraform creating it?
+
+> ❓ Beyond this page. Verified 2026-07-10 against [Providers Within Modules](https://developer.hashicorp.com/terraform/language/modules/develop/providers) and [terraform#35781](https://github.com/hashicorp/terraform/issues/35781); cached at `cache/search/implied-empty-default-provider.md`.
+
+**No.** No flag, argument, or setting suppresses it. Terraform assumes an empty default configuration for any provider that is not explicitly configured, unconditionally.
+
+But the empty default is **lazy**. This page raises the error only "when resources default to the empty configuration" — not when it is created. An implied empty default that nothing binds to is inert. The lever is **binding**, not creation. Two ways to pull it:
+
+1. **Supply a real default.** Keep one unaliased `provider` block alongside the aliased ones. The default configuration still exists; it is yours rather than empty. This is what the docs prescribe.
+
+2. **Name a provider on every block.** If every `resource`, `data`, and `module` sets `provider = aws.west`, nothing reaches for the default and it is never evaluated. Fragile — the next resource added without a `provider` argument silently regresses to the empty default, and it surfaces at apply.
+
+!!! warning "`providers = {}` does not disable inheritance"
+    A child module inherits only the **default** configuration; aliased configurations are never inherited and must be passed via `providers`. Passing an explicit `providers` map does **not** cut off the default. Terraform issue [#35781](https://github.com/hashicorp/terraform/issues/35781) (closed) showed that passing only `aws.other` left the unaliased `aws` working implicitly inside the module. The docs once claimed the `providers` argument "overrides all of the default inheritance behavior"; they now say it overrides it **for that provider** — per-provider, not global.
+
 ### Pass provider configurations to a child module
 
 A root-module `provider` configuration is **implicitly passed** to child modules, so all modules use the same configuration.

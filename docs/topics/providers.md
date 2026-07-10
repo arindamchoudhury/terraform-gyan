@@ -50,6 +50,8 @@ TID and the intro pages both present the `provider` block as the thing that conf
 
 The second is the trap. Adding `alias = "east"` to a single existing `provider "aws"` block does not just name it; it *demotes* it, and every resource that never specified a provider now points at an unconfigured default. The rule to remember: **the block without an `alias` is the default**, and if none exists, an empty one is invented.
 
+You cannot turn the implied default off. Nothing in the language suppresses it. What you can do is make sure nothing binds to it, because the error fires on *use*, not on creation: keep one unaliased `provider` block so the default is real, or set `provider =` on every `resource`, `data`, and `module`. See the "Can you stop Terraform creating it?" section of [[tf-provider-block]].
+
 Two further constraints from the same page, both consistent with [[providers]]'s declare-vs-configure split:
 
 - **Provider configuration inherits into child modules; `source` and `version` do not.** Each child module declares its own `required_providers` regardless. A child that needs an *aliased* config must declare `configuration_aliases = [aws.west]` — the receiving end of the caller's `providers = { aws.west = aws.west }`.
