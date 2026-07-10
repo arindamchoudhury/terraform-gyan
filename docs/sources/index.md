@@ -24,6 +24,7 @@ Log of all captured sources, organised by course.
 | [The `terraform_remote_state` data source](terraform-docs/tf-remote-state-data.md) | documentation | 2026-07-10 | state, remote-state, terraform_remote_state, tfe_outputs, data-sharing, sensitive-data | [url](https://developer.hashicorp.com/terraform/language/state/remote-state-data) |
 | [Destroy a resource](terraform-docs/tf-destroy-resource.md) | documentation | 2026-07-10 | destroy, removed-block, destroy-time-provisioner, target | [url](https://developer.hashicorp.com/terraform/language/resources/destroy) |
 | [`removed` block reference](terraform-docs/tf-block-removed.md) | documentation | 2026-07-10 | removed-block, destroy, state, refactoring, version-drift | [url](https://developer.hashicorp.com/terraform/language/block/removed) |
+| [`resource` block reference](terraform-docs/tf-block-resource.md) | documentation | 2026-07-10 | resource-block, lifecycle, action_trigger, actions, provisioners, connection, docs-bug | [url](https://developer.hashicorp.com/terraform/language/block/resource) |
 
 ## 2. OpenTofu Docs
 

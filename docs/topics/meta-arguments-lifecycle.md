@@ -55,11 +55,16 @@ TID's canonical example: an AWS **NAT Gateway** needs the **Internet Gateway** u
 
 An over-used `depends_on` serializes work the graph could have run in parallel.
 
-## `lifecycle` — the four rules
+## `lifecycle` — seven rules
 
-A **subblock**, declarable **once** per resource. It's a subblock deliberately: new options can be added over time without colliding with vendor-provided argument names (TID Ch2 §2.2.3).
+A **subblock**, declarable **once** per resource. It's a subblock deliberately: new options can be added over time without colliding with vendor-provided argument names (TID Ch2 §2.2.3) — and that is exactly what happened, twice.
+
+Per the [[tf-block-resource]] reference the full set is: `action_trigger`, `create_before_destroy`, `prevent_destroy`, `ignore_changes`, `replace_triggered_by`, `precondition`, `postcondition`. TID covers the middle four. The condition blocks belong to **A2**; `action_trigger` is new in the 1.14 actions work and is described below.
 
 HCDocs adds one qualifier the book doesn't: **support for each individual rule varies across block types.** A rule legal on `resource` isn't automatically legal elsewhere.
+
+!!! note "Why `lifecycle` accepts only literal values"
+    "Configurations defined in the `lifecycle` block **affect how Terraform constructs and traverses the dependency graph**. You can only use literal values … because Terraform processes them **before it evaluates arbitrary expressions**." The `lifecycle` block is an *input* to graph construction, so it cannot depend on anything the graph produces. That is the mechanism behind TID's "known early" warning.
 
 **`create_before_destroy`** — Terraform's default on replacement is destroy-then-create. That default is the safe one: many resources hold unique identifiers that can't be duplicated, so create-first would error. Two IAM roles can't share a name. Two instances can't share an Elastic IP. Set it `true` for high-availability cases where even brief loss hurts.
 
@@ -86,6 +91,19 @@ resource "example_database" "test" {
   lifecycle { replace_triggered_by = [terraform_data.replacement] }
 }
 ```
+
+**`action_trigger`** — invoke provider **actions** (Terraform 1.14) on lifecycle events. `events` and `actions` are required; `condition` gates the run.
+
+```hcl
+lifecycle {
+  action_trigger {
+    events  = [after_create]
+    actions = [action.ansible_playbook.provision]
+  }
+}
+```
+
+Only four events exist — `before_create`, `after_create`, `before_update`, `after_update`. **There is no destroy event** (verified on v1.15.6; `before_destroy` yields `Error: No events specified`). Destroy-time work still means a destroy-time provisioner. See [[tf-block-resource]].
 
 !!! info "OpenTofu — `lifecycle` divergences"
     OpenTofu directly lifts the `prevent_destroy` limitation TID calls out:
