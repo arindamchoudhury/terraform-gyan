@@ -19,3 +19,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Providers (language overview) | 2026-07-09 | [tf-providers](tf-providers.md) |
 | Configure a resource | 2026-07-09 | [tf-configure-resource](tf-configure-resource.md) |
 | Dependency Lock File | 2026-07-10 | [tf-dependency-lock](tf-dependency-lock.md) |
+| `provider` block reference | 2026-07-10 | [tf-provider-block](tf-provider-block.md) |

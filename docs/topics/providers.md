@@ -41,6 +41,20 @@ The lesson: the `required_providers` + `source` + version-pin mechanics are iden
 
 The Registry badge tells you who maintains a provider — a trust/cadence signal encoded in the source-address namespace: **Official** (`hashicorp`, `IBM`, `ansible`), **Partner Premier**, **Partner**, **Community** (`DeviaVir/gsuite`), and **Archived** (formerly maintained, now abandoned — pin off it). Both [[aws-provider]] and [[google-provider]] are Official; the full ladder only appears on the [[tf-providers]] hub. Installation-wise: HCP/Enterprise install providers every run, CLI installs on `init` (registry, mirror, or `plugin_cache_dir` cache). A **private** (non-HashiCorp) registry may need follow-up-request credentials via a `.netrc` file (`NETRC` env var overrides its location).
 
+### The default configuration is never absent ([[tf-provider-block]])
+
+TID and the intro pages both present the `provider` block as the thing that configures a provider. The block reference adds the case where you *don't* write one, and it has two shapes.
+
+- **No `provider` block at all** — Terraform assumes an **empty default configuration**. Fine for `random` or `null`; an error for any provider with required arguments.
+- **Every `provider` block carries an `alias`** — Terraform creates an **implied empty default configuration**, and any resource that omits the `provider` meta-argument silently binds to it rather than to one of your aliases.
+
+The second is the trap. Adding `alias = "east"` to a single existing `provider "aws"` block does not just name it; it *demotes* it, and every resource that never specified a provider now points at an unconfigured default. The rule to remember: **the block without an `alias` is the default**, and if none exists, an empty one is invented.
+
+Two further constraints from the same page, both consistent with [[providers]]'s declare-vs-configure split:
+
+- **Provider configuration inherits into child modules; `source` and `version` do not.** Each child module declares its own `required_providers` regardless. A child that needs an *aliased* config must declare `configuration_aliases = [aws.west]` — the receiving end of the caller's `providers = { aws.west = aws.west }`.
+- **The `version` argument inside a `provider` block is deprecated** and will be removed. Constraints belong in `required_providers` (see [[provider-requirements]]).
+
 ## Where the sources differ
 
 - HCDocs treats providers as one bullet inside the broader "How does Terraform work?" section — brief, illustrative.
@@ -56,6 +70,7 @@ The Registry badge tells you who maintains a provider — a trust/cadence signal
 
 - [What is Terraform? (Intro)](../sources/terraform-docs/terraform-intro.md)
 - [Providers (language overview)](../sources/terraform-docs/tf-providers.md) — provider tiers, installation/plugin cache, private-registry `.netrc`
+- [`provider` block reference](../sources/terraform-docs/tf-provider-block.md) — `alias`, implied empty default configuration, `configuration_aliases`, deprecated `version` argument
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
 - [TID Ch 2 — Terraform HCL components](../books/tid/chapters/02-hcl-components.md) §2.4 — declare/configure/alias mechanics
 - [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on `required_providers` + `provider` block

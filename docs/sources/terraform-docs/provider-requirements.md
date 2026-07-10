@@ -11,7 +11,7 @@
 !!! info "Hands-on"
     Try the [Lock and Upgrade Provider Versions](https://developer.hashicorp.com/terraform/tutorials/configuration-language/provider-versioning) tutorial.
 
-Note layout mirrors the source page's own section order. The `provider` block (auth/config) and `alias`/multi-instance detail live on the separate [Provider Configuration](https://developer.hashicorp.com/terraform/language/providers/configuration) page (learning-path **I8**).
+Note layout mirrors the source page's own section order. The `provider` block (auth/config) and `alias`/multi-instance detail live on the separate [`provider` block reference](https://developer.hashicorp.com/terraform/language/block/provider) page, captured as [[tf-provider-block]] (learning-path **I8**).
 
 > 📌 **Version note:** Captured against Terraform CLI **1.15.7** (2026-07-05, see [[version-facts]]). `required_providers` semantics are stable back to v0.13; the v0.12 backward-compat rules are the last section.
 
