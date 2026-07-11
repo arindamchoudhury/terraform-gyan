@@ -190,6 +190,9 @@ locals {
 }
 ```
 
+!!! info "`&&` / `||` now short-circuit — OpenTofu 1.10, Terraform 1.12"
+    A post-book change. Historically both operands were *always* evaluated, so `var.foo == null || var.foo.bar == 1` still errored when `var.foo` was null. Now the right operand is **skipped once the left decides the result**, so that null-guard is safe — a clean alternative to wrapping the access in `try()` (§4.7). **OpenTofu shipped it first in 1.10** ([#2084](https://github.com/opentofu/opentofu/issues/2084)); **Terraform followed in 1.12** ([#36224](https://github.com/hashicorp/terraform/issues/36224)). Note this is the *boolean operators* only — the **ternary `? :` still type-checks both result branches** (§4.2.4), so short-circuiting doesn't rescue an invalid untaken branch there.
+
 ### 4.2.4 Conditional (the ternary)
 
 `condition ? true_result : false_result`. The first operand must be a boolean; the second or third is returned. It's Terraform's `if/then/else`, and the most powerful branching tool in the language. Two dominant uses:
