@@ -830,6 +830,7 @@ You are ready to advance when you can:
     - **`-json-into=FILENAME`** (OpenTofu 1.12) — [1.12 release](https://opentofu.org/blog/opentofu-1-12-0/); write the JSON stream to a file while keeping the human UI on stdout (vs `-json`, which replaces stdout). Handy for CI that wants both. See the A3 callout. (See [[tf115-ot112-features]].)
     - **`.tofu` / `.tofurc` file extensions** (OpenTofu 1.8) — parsed alongside `.tf`/`.terraformrc`; lets a file target OpenTofu specifically (e.g. an OpenTofu-only override) without disturbing a Terraform toolchain reading the same directory. (See [[opentofu-feature-history]].)
     - **OpenTelemetry tracing** (OpenTofu 1.10, experimental) + **full cross-platform provider checksums** at `tofu init` (1.12) — see the E5 and B3 callouts. (See [[opentofu-feature-history]].)
+    - **Ephemeral resources + `issensitive()` unknown-correctness** (OpenTofu 1.11) — OpenTofu 1.11 added **ephemeral resources/values** (matching Terraform 1.10) and made **`issensitive()` return an *unknown* result when its argument is unknown**. That's a **breaking change**: code that fed an `issensitive()` result into `count`/`for_each` (where unknowns are illegal — see B7/I1 §4.8.4) now **fails at plan** — key on a plan-known value instead, or don't branch on the sensitivity of an unknown. (See [[opentofu-feature-history]].)
 4. **Book — TID (covers both)** (~1 hr) — re-read the sections contrasting the two tools with fresh eyes.
 
 !!! info "📌 OpenTofu ↔ Terraform — the gap runs both ways now"
