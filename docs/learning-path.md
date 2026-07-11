@@ -210,8 +210,8 @@
 2. **Reference — [HCDocs "Functions"](https://developer.hashicorp.com/terraform/language/functions) + ["Expressions"](https://developer.hashicorp.com/terraform/language/expressions)** (~40 min) — skim the function categories; bookmark for lookup. This page is the **exhaustive function list** — the path teaches the *skill* of using functions, not each of the ~150 individually; treat HCDocs + [[feature-history]] as the complete catalogue (e.g. `strcontains`/`plantimestamp` landed in 1.5, `templatestring` in 1.9). `terraform metadata functions -json` (TF 1.4+) dumps every function's signature machine-readably — mostly for editor/language-server tooling.
 3. **Book chapter — TID Ch 5** (~1 hr) — expression patterns used in real configs.
 
-!!! note "📌 `convert()` (Terraform 1.15)"
-    Terraform **1.15** added the `convert(value, type)` function for precise inline type conversion — cleaner than the old `tolist`/`tomap`/`tset` juggling in tricky spots. (See [[tf115-ot112-features]].)
+!!! note "📌 `convert()` (Terraform 1.15 — Terraform-only)"
+    Terraform **1.15** added the `convert(value, type)` function for precise inline type conversion — cleaner than the old `tolist`/`tomap`/`toset` juggling in tricky spots. **Terraform-only — OpenTofu has no `convert()`** (open request [opentofu #2630](https://github.com/opentofu/opentofu/issues/2630)); portable code sticks to the `toType` casters. (See [[tf115-ot112-features]].)
 
 !!! note "📌 Provider-defined functions (TF 1.8)"
     Beyond the built-ins, **provider-defined functions** (TF 1.8) let a provider ship its own functions, called as `provider::<name>::<fn>(...)` — e.g. `provider::aws::arn_parse(...)`. Available in the AWS, Google, and Kubernetes providers among others. Authoring them is E1. (See [[feature-coverage-matrix]].)
@@ -219,8 +219,8 @@
 !!! note "📌 `templatestring()` (Terraform 1.9)"
     Terraform **1.9** added **`templatestring(ref, vars)`** — like `templatefile()`, but renders a template string obtained at runtime (e.g. from a data source) instead of a file on disk. (See [[feature-history]].)
 
-!!! note "📌 Short-circuit `&&` / `||` (Terraform 1.12)"
-    Terraform **1.12** made logical operators **short-circuit** (`&&`/`||` stop evaluating once the result is decided), so guards like `var.x != null && var.x.enabled` no longer error on the null case. (See [[feature-history]].)
+!!! note "📌 Short-circuit `&&` / `||` (OpenTofu 1.10, Terraform 1.12)"
+    Logical operators now **short-circuit** (`&&`/`||` stop evaluating once the result is decided), so guards like `var.x != null && var.x.enabled` no longer error on the null case. **OpenTofu shipped it first in 1.10**; **Terraform followed in 1.12**. Boolean-only — the ternary `? :` still type-checks both branches. (See [[feature-history]].)
 
 !!! note "📌 Built-in named values"
     Learn the **built-in named values** you can reference anywhere: **`path.module`** / **`path.root`** / **`path.cwd`** (filesystem paths, e.g. for `templatefile`), **`terraform.workspace`** (current CLI workspace name), **`count.index`**, **`each.key`** / **`each.value`** (inside `count`/`for_each`), **`self`** (inside provisioners), and **`terraform.applying`** (ephemeral bool, true during apply; TF 1.10). ([HCDocs references](https://developer.hashicorp.com/terraform/language/expressions/references))
@@ -364,6 +364,9 @@ You are ready to advance when you can:
 1. **Reference — [HCDocs "dynamic blocks"](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks) + ["Type Constraints"](https://developer.hashicorp.com/terraform/language/expressions/type-constraints)** (~40 min) — syntax and when `dynamic` is worth the readability cost.
 2. **Interactive — build a security-group module** (~1 hr) — drive `ingress` rules from a list-of-objects variable via `dynamic`.
 3. **Book chapter — TID Ch 5** (~30 min) — complex type constraints and `optional()`.
+
+!!! note "📌 `dynamic` block anatomy — `content`, the label iterator, and `iterator`"
+    Inside a `dynamic "X"` block the iterator variable defaults to the label (`X.value` / `X.key`) and the body must sit in a **`content {}`** sub-block. Rename the iterator with the optional **`iterator = <name>`** argument — an **unquoted** name, not a string — which is needed when **nested** `dynamic` blocks share a label so the inner one doesn't shadow the outer's keyword. Toggle a whole block on/off with `for_each = cond ? ["x"] : []`. Stable in Terraform and OpenTofu (the only recent change is OpenTofu 1.12 allowing provider-defined functions in a dynamic `for_each`, #3429). Full treatment: TID Ch4 §4.10.
 
 !!! example "🧪 Lab (KL)"
     [Lab 06 — making code dynamic & reusable](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_06_making_code_dynamic_and_reusable) (dynamic-blocks section).
@@ -841,7 +844,7 @@ You are ready to advance when you can:
 4. **Book — TID (covers both)** (~1 hr) — re-read the sections contrasting the two tools with fresh eyes.
 
 !!! info "📌 OpenTofu ↔ Terraform — the gap runs both ways now"
-    **Terraform 1.15** (2026-04-29) closed several long-standing OpenTofu-only gaps — dynamic module sources, variable/output deprecation, inline `convert`, output type constraints — so "OpenTofu has features Terraform lacks" is narrower than it was. What remains OpenTofu-only: state encryption, provider `for_each`, early variable evaluation, `-exclude`, dynamic `prevent_destroy`, `destroy = false`, and `-json-into`. (See [[tf115-ot112-features]], [[version-facts]].)
+    **Terraform 1.15** (2026-04-29) closed several long-standing OpenTofu-only gaps — dynamic module sources, variable/output deprecation, output type constraints — and added the net-new **`convert()`** function (which OpenTofu still lacks entirely, [opentofu #2630](https://github.com/opentofu/opentofu/issues/2630)), so "OpenTofu has features Terraform lacks" is narrower than it was. What remains OpenTofu-only: state encryption, provider `for_each`, early variable evaluation, `-exclude`, dynamic `prevent_destroy`, `destroy = false`, and `-json-into`. (See [[tf115-ot112-features]], [[version-facts]].)
 
 **Milestone:** You can migrate a project from Terraform to OpenTofu, enable state encryption, and explain the OpenTofu-only features — provider `for_each`, early variable evaluation in backend config, the `-exclude` flag, dynamic `prevent_destroy`, `destroy = false`, and `-json-into` — including *why* a resource's `for_each` must be a subset of its provider's, and which gaps Terraform 1.15 has since closed.
 
