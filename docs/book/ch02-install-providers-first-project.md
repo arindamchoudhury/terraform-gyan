@@ -407,7 +407,7 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_instance" "app_server" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro" # free-tier eligible
+  instance_type = "t2.micro" # small, cheap burstable type — see the free-tier note
 
   tags = {
     Name = "learn-terraform"
@@ -416,6 +416,9 @@ resource "aws_instance" "app_server" {
 ```
 
 The `ami` argument references `data.aws_ami.ubuntu.id`. That reference is doing real work: it's an **implicit dependency**, telling Terraform to read the AMI *before* creating the instance. You never write "look up the AMI first" — the reference is the ordering. (B5 goes deep on resources and the dependency graph; B8 on data sources.)
+
+!!! warning "\"Free-tier eligible\" changed in July 2025 — check before you apply"
+    AWS overhauled its Free Tier on **15 July 2025**. Accounts created *before* that date keep the classic 12-month allowance (750 hrs/month of `t2.micro`/`t3.micro`). Accounts created *after* it get a **credit-based Free Plan** instead — $100 automatically, up to $200 total, expiring after ~6 months or when the credits run out — with no perpetual per-service free hours. So `t2.micro` is still the cheap default, but it is no longer blanket "free-tier eligible" for a brand-new account. The 🧪 Lab below sidesteps this entirely by running against a **local emulator** (no account, no bill); use that for practice and reserve real AWS for when you specifically need fidelity.
 
 The `aws_ami` lookup above is the canonical teaching example — it shows `filter`, `owners`, and `most_recent` in one place. But it carries two sharp edges worth naming, because both bite in production.
 
@@ -436,7 +439,7 @@ data "aws_ssm_parameter" "ubuntu_ami" {
 
 resource "aws_instance" "app_server" {
   ami           = data.aws_ssm_parameter.ubuntu_ami.value
-  instance_type = "t2.micro" # free-tier eligible
+  instance_type = "t2.micro" # small, cheap burstable type — see the free-tier note
 
   tags = {
     Name = "learn-terraform"
@@ -495,7 +498,7 @@ aws_instance.app_server: Creation complete after 14s [id=i-0c636e158c30e48f9]
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```
 
-The `+` means *create*; attributes shown as `(known after apply)` can't be resolved until the resource exists. Reviewing this plan before typing `yes` is the safety gate — cancel here if it shows anything unexpected. That's the whole loop in miniature; **B3 covers `init`/`plan`/`apply`/`destroy` command-by-command**, with every plan symbol (`+`, `~`, `-/+`, `-`) explained. When you're done, `terraform destroy` tears it back down so a free-tier instance doesn't quietly run up a bill.
+The `+` means *create*; attributes shown as `(known after apply)` can't be resolved until the resource exists. Reviewing this plan before typing `yes` is the safety gate — cancel here if it shows anything unexpected. That's the whole loop in miniature; **B3 covers `init`/`plan`/`apply`/`destroy` command-by-command**, with every plan symbol (`+`, `~`, `-/+`, `-`) explained. When you're done, `terraform destroy` tears it back down so the instance doesn't quietly run up a bill.
 
 `apply` also writes **`terraform.tfstate`** — the record of what now exists. Confirm it:
 
