@@ -594,6 +594,13 @@ output "first_instance" {
 !!! info "OpenTofu — same rule, plus `-exclude` as an extra escape hatch"
     The limitation is **identical** in OpenTofu: `for_each` keys (and set members) must be known at plan, values may be `(known after apply)`, and `count` must be fully known — same docs wording, and 1.10/1.11 did **not** relax it (unknown-value/deferred planning is still only a proposal, [opentofu #812](https://github.com/opentofu/opentofu/issues/812)). So the static-keys workaround is the same. The one divergence is at the last-resort level: OpenTofu's error message suggests **`-exclude`** (1.9+, the inverse of `-target`) as well as `-target`, so you can apply *everything except* the not-yet-known object. Terraform's open-source CLI has `-target` only. Same "exceptional use" caveat applies.
 
+!!! note "Where this is heading — **deferred actions** (Terraform-only)"
+    The proper fix for a genuinely-unknown `count`/`for_each` is **deferred actions**: instead of erroring, Terraform plans a *placeholder* for the unknown instances and defers their create/update to a **later apply round**, so a two-phase deploy needs no `-target` surgery. It's the productized version of "split the config so the dependency applies first."
+
+    - **Terraform Stacks** (HCP Terraform) ship this in production: a component whose inputs aren't known yet — the classic *provision an EKS cluster, then deploy Kubernetes resources into it* — has its changes deferred, and every downstream component with it, preserving order. Full treatment in **E2**.
+    - In the **open-source CLI** it's still **experimental** (`terraform plan -allow-deferral`), not GA as of 1.15.
+    - **OpenTofu has no equivalent** — another Terraform/Stacks-exclusive capability, reinforcing the divergence above.
+
 ---
 
 ## 4.9 The `for` expression
