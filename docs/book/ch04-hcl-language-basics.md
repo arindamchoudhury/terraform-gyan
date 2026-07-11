@@ -301,7 +301,7 @@ As a project grows, split `main.tf` by concern (`network.tf`, `storage.tf`, `com
 ```hcl
 # terraform.tf — what to install, and the CLI floor
 terraform {
-  required_version = ">= 1.15"
+  required_version = ">= 1.2"
 
   required_providers {
     aws = {
@@ -429,7 +429,7 @@ In an empty directory, create the conventional files by hand — no snippet to c
 ```hcl
 # terraform.tf — settings
 terraform {
-  required_version = ">= 1.15"
+  required_version = ">= 1.2"
 
   required_providers {
     aws = {
