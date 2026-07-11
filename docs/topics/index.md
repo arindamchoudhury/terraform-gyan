@@ -20,3 +20,7 @@ Topics to write once a second source covers them:
 - **hcl-block-syntax** — currently from: TID Ch2 §2.2 (blocks/labels/arguments/subblocks/attributes/ordering/style) + [[tf-config-syntax]] (HCDocs "Configuration Syntax": arguments vs blocks, identifiers, comments, encoding). Two sources now — promotable; feeds B2/B4.
 - **refactoring** — currently from: TID Ch2 §2.9 only (`import`/`moved`/`removed`); full treatment is TID Ch9.
 - **opentofu-divergence** — currently from: [[ot-provider-for-each]], [[ot-early-eval-backend]], [[ot-exclude-flag]], [[ot-dynamic-prevent-destroy]] (enough sources to promote to a topic page once TID's OpenTofu sections are captured — feeds E3)
+- **expressions-functions** — currently from: TID Ch4 §4.2–4.7 (operators, standard-library + provider-defined functions, string templates, regex, type conversion, `try`/`can`). Feeds B7.
+- **count-for_each** — currently from: TID Ch4 §4.8 (`count`/`for_each`, plan-time-known limitation, reindex footgun) + [[tf-meta-arguments]] (`count` vs `for_each` reference). Two sources — promotable; feeds I1.
+- **dynamic-blocks** — currently from: TID Ch4 §4.10 (`dynamic`/`content`, label-named iterator, `[]`-vs-`["placeholder"]` toggle). Feeds I3.
+- **for-expression-splat** — currently from: TID Ch4 §4.9 (list/object `for`, `=>`, `if` filter, `...` grouping, splat `[*]`). Feeds B7/I3.

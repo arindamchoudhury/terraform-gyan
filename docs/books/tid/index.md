@@ -7,7 +7,7 @@
 | ✅ done | 1. A brief overview of Terraform | — |
 | ✅ done | 2. Terraform HCL components | [Providers](../../topics/providers.md), [Core workflow](../../topics/core-workflow.md) |
 | ✅ done | 3. Terraform variables and modules | [Modules](../../topics/modules.md) |
-| ⬜ todo | 4. Expressions and iterations | — |
+| ✅ done | 4. Expressions and iterations | — (backlog: expressions-functions, count-for_each, dynamic-blocks) |
 | ⬜ todo | 5. The Terraform plan | — |
 | ⬜ todo | 6. State management | — |
 | ⬜ todo | 7. Code quality and continuous integration | — |

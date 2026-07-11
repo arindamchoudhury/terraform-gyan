@@ -18,7 +18,7 @@ AWS-Console-style local UI), `floci-cli`, and a Testcontainers module. **No auth
 - **Gateway port:** `4566` — same as LocalStack/MiniStack, so `:4566` tooling works unchanged.
 - **LocalStack-API-compatible:** it still serves the `/_localstack/health` and `/_localstack/init`
   endpoints, so **LocalStack's `tflocal` wrapper drives Floci directly**.
-- **~68 AWS services** (S3, SQS, SNS, DynamoDB, Lambda, RDS, ECS, EKS, IAM, STS, events, APIs,
+- **69 AWS services** (README, verified 2026-07-11) (S3, SQS, SNS, DynamoDB, Lambda, RDS, ECS, EKS, IAM, STS, events, APIs,
   containers, databases, messaging, security, billing). 100% SDK compatibility claimed.
 - **EC2 mock is usable — verified 2026-07-09.** Unlike LocalStack's free Community tier (where EC2
   is a shallow mock; see [[localstack-facts]]), Floci mocks EC2 deep enough that the full
@@ -113,7 +113,7 @@ Verify with `awslocal` or `aws --endpoint-url=http://localhost:4566 s3 ls`.
 | License | MIT | MIT | source-available |
 | Token / account | **None** | **None** | Free account + `LOCALSTACK_AUTH_TOKEN` |
 | Port / API | `:4566`, LocalStack-compatible | `:4566` | `:4566` |
-| Services | ~68 | ~60 | most |
+| Services | 69 | ~60 | most |
 | Image / startup | ~90 MB, native, very fast | ~270 MB | ~1 GB |
 | `tflocal` | ✅ (LS-compatible endpoints) | ✅ | ✅ |
 | Extras | UI, CLI, Azure/GCP siblings | — | mature docs/ecosystem |

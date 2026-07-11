@@ -20,7 +20,7 @@ other items above remain OpenTofu-only as of this check. HCL syntax, provider ec
 remain compatible. Both accept the same providers from the registry.
 
 **Licensing timeline.** HashiCorp relicensed Terraform from MPL to BSL 1.1 in Aug 2023 → triggered the OpenTofu fork.
-**IBM acquired HashiCorp in Dec 2024** for $6.4B — HashiCorp (and Terraform) is now an IBM company.
+**IBM announced its $6.4B acquisition of HashiCorp in April 2024; the deal closed 27 Feb 2025** (after US/UK regulatory review) — HashiCorp (and Terraform) is now an IBM company.
 HCP Terraform's legacy free managed plan ended 2026-03-31; the replacement free tier caps at **500 managed resources**.
 
 **Provider registry scale.** 3,000+ providers milestone (HashiCorp blog); **4,000+ providers** as of 2026 per third-party trackers (registry.terraform.io/browse/providers is the live count — treat any specific number as a snapshot, not a fixed fact).

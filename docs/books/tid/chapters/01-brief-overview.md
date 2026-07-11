@@ -198,7 +198,7 @@ Terraform started under MPL (open source). HashiCorp built a large ecosystem thi
 
 ### 1.6.3 Community reactions
 
-- A manifesto (Aug 2023) asked HashiCorp to reconsider — signed by 150+ companies, 11 software projects, 750+ individual developers — explicitly threatening a fork if HashiCorp didn't engage.
+- A manifesto (Aug 2023) asked HashiCorp to reconsider — co-signed by 140+ companies, 11 software projects, 700+ individual developers (and still growing since) — explicitly threatening a fork if HashiCorp didn't engage.
 - Concern centered on Terraform's dependence on third-party-built providers and tooling (e.g. Gruntworks' Terratest/Terragrunt) — community felt the shift undercut the ecosystem that made Terraform valuable in the first place.
 
 ### 1.6.4 OpenTofu fork

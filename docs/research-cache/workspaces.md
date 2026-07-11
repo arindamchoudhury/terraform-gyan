@@ -12,7 +12,7 @@ They are not the same concept, and they don't even share a license. TID Ch1 §1.
 ## Licensing of the layers (so the two workspace types don't blur)
 
 - **Terraform CLI** — source-available, BSL 1.1 since v1.6 (not OSI open source). **OpenTofu CLI** — open source, MPL 2.0. CLI workspaces ship in both.
-- **HCP Terraform** platform (workspaces, remote execution, RBAC, private registry, Sentinel policy, Stacks) — **proprietary SaaS**, run by HashiCorp (an IBM company since Dec 2024). **Terraform Enterprise** is the same platform self-hosted, also proprietary.
+- **HCP Terraform** platform (workspaces, remote execution, RBAC, private registry, Sentinel policy, Stacks) — **proprietary SaaS**, run by HashiCorp (an IBM company since Feb 2025). **Terraform Enterprise** is the same platform self-hosted, also proprietary.
 
 Source (licensing): [Terraform editions](https://developer.hashicorp.com/terraform/intro/terraform-editions), plus the OpenTofu-vs-Terraform notes in `version-facts.md`.
 
