@@ -304,7 +304,7 @@ So `hashicorp/aws` expands to `registry.terraform.io/hashicorp/aws`. The key on 
 | `= 6.53.0` | exactly this version |
 | (omitted) | any version — **not recommended** |
 
-`~> 6.0` is the common root-module choice: it accepts safe minor/patch updates within major 6 but blocks major 7, where breaking changes live. (Provider **6** is current — 6.0 went GA in 2026, latest `6.53.0` as of 2026-07-01. HashiCorp's own AWS tutorial still shows `~> 5.92`; that works but is a major behind. New projects pin `~> 6.0`.)
+`~> 6.0` is the common root-module choice: it accepts safe minor/patch updates within major 6 but blocks major 7, where breaking changes live. (Provider **6** is current — 6.0 went GA in April 2026, latest `6.54.0` as of 2026-07-08. HashiCorp's own AWS tutorial still shows `~> 5.92`; that works but is a major behind. New projects pin `~> 6.0`.)
 
 !!! note "Two different pinning disciplines: the CLI floor vs. the provider pin"
     `required_version` and provider `version` look similar but want **opposite** styles.
