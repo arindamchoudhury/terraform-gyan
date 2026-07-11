@@ -418,7 +418,7 @@ output "feature_enabled" {
 }
 ```
 
-!!! info "OpenTofu — no `convert()` built-in"
+!!! info "Terraform 1.15 — the `convert()` built-in"
     Terraform **1.15** added a general **`convert(value, type)`** function for precise inline conversion to any type constraint, e.g. `convert(var.x, list(string))` — more flexible than the fixed `toType` casters. See [[tf115-ot112-features]].
 
     **OpenTofu has no `convert()`** (as of 1.12) — it's a genuine divergence. OpenTofu still relies on the `toType` casters (`tostring`/`tonumber`/`tobool`/`tolist`/`tomap`/`toset`); a general `convert` is an open request ([opentofu #2630](https://github.com/opentofu/opentofu/issues/2630)), held up because it interacts poorly with OpenTofu's dependency analysis. The `toType` functions work in both tools and are what the book uses — portable code should prefer them.
