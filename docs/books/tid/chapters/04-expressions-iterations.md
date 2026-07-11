@@ -726,6 +726,18 @@ resource "aws_security_group" "main" {
 
     - The iterator is **not** `each`/`count`. Each `dynamic` block **invents a new keyword named after its label** (`ingress` above), so nested dynamic blocks can reference their parents. Even experienced users look this up.
     - The body must sit inside a **`content { }`** sub-subblock, not directly under `dynamic`.
+    - Rename that keyword with the optional **`iterator`** argument (an **unquoted** name, not a string) — needed when nested `dynamic` blocks share a label, so the inner one doesn't shadow the outer's keyword (e.g. `iterator = rule` → reference `rule.value`). Defaults to the block label; long-standing and still current.
+
+    ```hcl
+    dynamic "setting" {
+      for_each = var.settings
+      iterator = s                   # unquoted; avoids clashing with a nested "setting"
+      content {
+        namespace = s.value.namespace
+        value     = s.value.value
+      }
+    }
+    ```
 
 **Toggle a single block on/off** by switching `for_each` between an empty list and a one-element placeholder list — the value doesn't matter, only whether the list is non-empty:
 
