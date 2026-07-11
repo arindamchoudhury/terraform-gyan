@@ -593,7 +593,7 @@ output "first_instance" {
     ```
 
     !!! note "`element(list, index)` — index with wraparound"
-        A classic collection function (not new): returns the item at `index`, and **wraps around via modulo** when the index runs past the end. So `element(var.subnet_ids, count.index)` is the built-in form of the `var.subnet_ids[count.index % length(var.subnet_ids)]` round-robin from §4.8's `count` example — spreading N instances across a shorter subnet list without an index-out-of-range error. (Terraform **1.10**+ also accepts negative indices, counting from the end.)
+        Returns the item at `index`, and **wraps around via modulo** when the index runs past the end. So `element(var.subnet_ids, count.index)` is the built-in form of the `var.subnet_ids[count.index % length(var.subnet_ids)]` round-robin from §4.8's `count` example — spreading N instances across a shorter subnet list without an index-out-of-range error. (Terraform **1.10**+ also accepts negative indices, counting from the end.)
 
 - Split the apply into **batches** (`-target`) so dependencies materialize first. The book calls this **"a horrible practice"** — it forfeits Terraform's automatic ordering. Avoid; refactor instead.
 
