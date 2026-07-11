@@ -491,7 +491,7 @@ resource "aws_instance" "instances" {
 }
 ```
 
-Toggle form: `count = var.enable_resource ? 1 : 0`.
+Toggle form: `count = var.enable_resource ? var.num_instances : 0`.
 
 !!! danger "The `count` reindex footgun — prefer `for_each` for named sets"
     `count` instances are addressed **by position** — `aws_instance.instances[0]`, `[1]`, `[2]`. Delete or reorder an item in the **middle** of the list and every instance after it **shifts index**, so Terraform plans to **destroy and recreate** them all to match the new positions — not just the one you removed. `for_each` keys instances by a **stable string** instead, so removing one touches only that one. Rule of thumb (and this book's later chapters + the [style guide](https://developer.hashicorp.com/terraform/language/style)): use `count` only for a simple on/off (`? 1 : 0`) or a genuinely index-identical N; use **`for_each`** for any set of named/keyed resources.
