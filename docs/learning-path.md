@@ -804,10 +804,17 @@ You are ready to advance when you can:
 2. **Interactive — HCTut [Stacks: "Deploy a Stack with HCP Terraform"](https://developer.hashicorp.com/terraform/tutorials/cloud/stacks-deploy)** (~2 hrs) — define a stack with multiple deployments and run it in HCP Terraform.
 3. **Explainer — [HashiCorp "Terraform Stacks, explained"](https://www.hashicorp.com/en/blog/terraform-stacks-explained)** (~20 min) — see the deployment fan-out in practice; pair with a current Stacks demo on the [HashiCorp YouTube channel](https://www.youtube.com/@HashiCorp/search?query=terraform%20stacks).
 
+!!! info "Deferred actions — the real fix for an unknown `count`/`for_each`"
+    The plan-time-known limitation from **B7/I1** ([§4.8.4](../books/tid/chapters/04-expressions-iterations.md#484-the-plan-time-known-limitation-important) — a `count`/`for_each` that depends on a not-yet-created attribute errors at plan) is exactly what **deferred actions** resolve. Instead of erroring, Terraform plans a *placeholder* for the unknown instances and defers their create/update to a **later apply round** — the productized version of "split the config so the dependency applies first," with no `-target` surgery.
+
+    - **Stacks ship it in production:** a component whose inputs aren't known yet — the canonical *provision an EKS cluster, then deploy Kubernetes resources into it* — has its changes deferred, and every downstream component with it, preserving order ([Stacks EKS-deferred tutorial](https://developer.hashicorp.com/terraform/tutorials/cloud/stacks-eks-deferred)).
+    - **Open-source CLI:** the same machinery is **experimental** (`plan -allow-deferral`, [PR #34651](https://github.com/hashicorp/terraform/pull/34651)), not GA as of 1.15.
+    - **Terraform-exclusive** — OpenTofu has no deferred actions (see E3). This is a large part of *why* Stacks exist: they span create-then-configure boundaries a flat config can't.
+
 !!! note "📌 Stacks is newer than both books"
     Stacks is newer than both books — rely on HCDocs and verify feature availability (HCP vs CLI) as it evolves.
 
-**Milestone:** You can define a stack with reusable components and deploy it to three environments from a single stack configuration.
+**Milestone:** You can define a stack with reusable components and deploy it to three environments from a single stack configuration — and explain how **deferred changes** let a stack span a create-then-configure boundary (an unknown `count`/`for_each`) that a flat config can't.
 
 ---
 
