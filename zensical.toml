@@ -17,6 +17,7 @@ nav = [
         { "2. Install, providers & your first project" = "book/ch02-install-providers-first-project.md" },
         { "3. The core workflow: init / plan / apply / destroy" = "book/ch03-core-workflow.md" },
         { "4. HCL language basics" = "book/ch04-hcl-language-basics.md" },
+        { "5. Providers & resources" = "book/ch05-providers-resources.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },

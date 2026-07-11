@@ -152,7 +152,7 @@
 
 ---
 
-### ⬜ B5 — Providers & resources
+### ✅ B5 — Providers & resources
 
 **What it is:** How the provider plugin model works, resource blocks, resource addresses, arguments vs attributes, and the resource dependency graph Terraform builds implicitly.
 
@@ -947,7 +947,7 @@ Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner — B1–B4 done (Ch 1–4 written). Next up: **B5 (Providers & resources)**.
+**You are currently here:** Beginner — B1–B5 done (Ch 1–5 written). Next up: **B6 (Input variables, outputs & locals)**.
 
 ---
 
