@@ -48,7 +48,7 @@ $ touch {main,lookups,providers}.tf   # on Windows PowerShell use New-Item inste
     Project layout is identical, but OpenTofu adds file extensions Terraform doesn't have (OT 1.8+):
 
     - **`.tofu`** — read *instead of* a same-named `.tf` when present, so you can ship OpenTofu-only config (e.g. a `providers.tofu` that overrides `providers.tf`) without forking the whole project. Plain `.tf` still works and stays the portable default.
-    - **`.tofurc`** — OpenTofu's CLI config file (Terraform's is `.terraformrc`); OpenTofu also honors `TOFU_*` env vars alongside the `TF_*` ones.
+    - **`.tofurc`** — OpenTofu's CLI config file (Terraform's is `.terraformrc`); OpenTofu reads the same `TF_*` env vars as Terraform (no separate `TOFU_*` prefix — a compatibility point, not a divergence).
 
     `git init` and the project structure are otherwise unchanged. See [[version-facts]].
 

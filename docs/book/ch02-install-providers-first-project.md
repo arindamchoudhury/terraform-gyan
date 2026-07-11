@@ -175,8 +175,8 @@ Note the ordering catch: a `terraform.tfvars` file **overrides** a `TF_VAR_*` en
 
     OpenTofu users have one extra option here (see the box below), but the same discipline applies: encrypting the file is a safety net, not a licence to relax about what state contains.
 
-!!! info "OpenTofu — extra env prefix and encrypted state"
-    OpenTofu honors `TOFU_VAR_*` alongside `TF_VAR_*` (a `TOFU_VAR_` value wins where both are set), letting you diverge from Terraform without renaming everything.
+!!! info "OpenTofu — encrypted state (and the same `TF_VAR_` vars)"
+    OpenTofu reads the **same** `TF_VAR_*` and `TF_*` environment variables as Terraform — there is *no* separate `TOFU_VAR_` prefix, so credentials and variables carry over unchanged (a compatibility win, not a divergence).
 
     It also ships **native state (and plan) encryption**, which Terraform's open-source CLI lacks — a built-in answer to the plaintext-in-state problem above. Two caveats keep the warning true even so. It is **opt-in and per-target**: you add an `encryption` block with separate `state` and `plan` sections, so state stays plaintext until you configure it, and a plan file stays plaintext unless you encrypt that target too. And it only protects data **at rest**; OpenTofu's own docs note it "cannot protect the sensitive values in the state file from the person running the `tofu` command," since the value is decrypted for the run. Treat it as defence in depth on top of "state is sensitive," not a replacement. E3 covers the setup.
 
@@ -194,7 +194,7 @@ A Terraform project is just a directory of `.tf` files. Terraform loads **every 
 For a first project, `terraform.tf` and `main.tf` are enough; the other two arrive when you parameterize in B6.
 
 !!! info "OpenTofu — extra file extensions"
-    OpenTofu reads the same `.tf` files, and (1.8+) also `.tofu` files — loaded *instead of* a same-named `.tf` when present, so you can ship OpenTofu-only overrides without forking the project. Its CLI config file is `.tofurc` (Terraform's is `.terraformrc`), and it honors `TOFU_*` environment variables alongside `TF_*`. Keep everything in `.tf` for portable, tool-neutral projects; reach for `.tofu` only when a file must diverge.
+    OpenTofu reads the same `.tf` files, and (1.8+) also `.tofu` files — loaded *instead of* a same-named `.tf` when present, so you can ship OpenTofu-only overrides without forking the project. Its CLI config file is `.tofurc` (Terraform's is `.terraformrc`); it reads the same `TF_*` environment variables as Terraform (no separate `TOFU_*` prefix). Keep everything in `.tf` for portable, tool-neutral projects; reach for `.tofu` only when a file must diverge.
 
 Alongside the files you write, Terraform **generates three of its own** on first use. Knowing what each is — and whether to commit it — is half of avoiding beginner pain:
 
