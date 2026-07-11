@@ -498,7 +498,7 @@ Toggle form: `count = var.enable_resource ? var.num_instances : 0`.
 
 ### 4.8.2 `for_each`
 
-Takes a **map**, **object**, or **set** (not an integer) and exposes **`each`** with `each.key` and `each.value`. For a set, key and value are the same element. Each instance gets its own configuration:
+Takes a **map**, **object**, or **set** — a collection, not an integer the way `count` does (and not a plain list; see below) — and exposes **`each`** with `each.key` and `each.value`. For a set, key and value are the same element. Each instance gets its own configuration:
 
 ```hcl
 locals {
