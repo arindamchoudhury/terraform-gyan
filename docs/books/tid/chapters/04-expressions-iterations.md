@@ -418,8 +418,10 @@ output "feature_enabled" {
 }
 ```
 
-!!! info "Terraform 1.15 — the `convert()` built-in"
-    Terraform **1.15** added a general **`convert(value, type)`** function for precise inline conversion to any type constraint, e.g. `convert(var.x, list(string))` — more flexible than the fixed `toType` casters. See [[tf115-ot112-features]]. (The `toType` functions remain valid and are what the book uses.)
+!!! info "OpenTofu — no `convert()`; `convert()` is Terraform 1.15-only"
+    Terraform **1.15** added a general **`convert(value, type)`** function for precise inline conversion to any type constraint, e.g. `convert(var.x, list(string))` — more flexible than the fixed `toType` casters. See [[tf115-ot112-features]].
+
+    **OpenTofu has no `convert()`** (as of 1.12) — it's a genuine divergence. OpenTofu still relies on the `toType` casters (`tostring`/`tonumber`/`tobool`/`tolist`/`tomap`/`toset`); a general `convert` is an open request ([opentofu #2630](https://github.com/opentofu/opentofu/issues/2630)), held up because it interacts poorly with OpenTofu's dependency analysis. The `toType` functions work in both tools and are what the book uses — portable code should prefer them.
 
 ### 4.6.3 `sensitive` and `nonsensitive`
 
@@ -707,7 +709,7 @@ dynamic "ingress" {
 - **Functions transform data**, they don't act. Standard library + (since **1.8**, both tools) provider-defined functions. Beware **impure** functions (`uuid`/`timestamp`) — they cause perpetual diffs; use the `random`/`time` providers instead.
 - **Strings**: `file` for static blobs, `templatefile` for interpolated/iterated ones (`${…}` expressions, `%{…}` directives), `templatestring` (OpenTofu-led, Terraform 1.9+). For JSON/YAML, **encode** with `jsonencode`/`yamlencode`, don't template.
 - **Regex** via `regex` (errors on miss), `regexall` (empty list on miss — used in validation), `replace`. Go/RE2 syntax.
-- **Type conversion**: implicit where safe; `toType` casters to normalize; `convert()` in 1.15; `sensitive`/`nonsensitive` return *new* flagged values.
+- **Type conversion**: implicit where safe; `toType` casters to normalize; `convert()` in Terraform 1.15 (**Terraform-only — OpenTofu has no `convert()`**); `sensitive`/`nonsensitive` return *new* flagged values.
 - **`try`** returns the first non-erroring arg; **`can`** returns a boolean for `validation` conditions. Don't hide real errors.
 - **Iteration**: `count` (integer, `count.index`, on/off toggles — but reindexes on middle-delete), `for_each` (map/set/object, `each.key`/`each.value`, stable keys — prefer for named sets). Both must be **known at plan start**. The `for` expression transforms collections (list `[]` or object `{}` with `=>`, `if` filter, `...` grouping); **splat `[*]`** is its shorthand. **`dynamic` blocks** generate repeated subblocks (`for_each` + `content`, label-named iterator).
 
