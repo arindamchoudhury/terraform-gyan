@@ -591,6 +591,9 @@ output "first_instance" {
 
 - Split the apply into **batches** (`-target`) so dependencies materialize first. The book calls this **"a horrible practice"** — it forfeits Terraform's automatic ordering. Avoid; refactor instead.
 
+!!! info "OpenTofu — same rule, plus `-exclude` as an extra escape hatch"
+    The limitation is **identical** in OpenTofu: `for_each` keys (and set members) must be known at plan, values may be `(known after apply)`, and `count` must be fully known — same docs wording, and 1.10/1.11 did **not** relax it (unknown-value/deferred planning is still only a proposal, [opentofu #812](https://github.com/opentofu/opentofu/issues/812)). So the static-keys workaround is the same. The one divergence is at the last-resort level: OpenTofu's error message suggests **`-exclude`** (1.9+, the inverse of `-target`) as well as `-target`, so you can apply *everything except* the not-yet-known object. Terraform's open-source CLI has `-target` only. Same "exceptional use" caveat applies.
+
 ---
 
 ## 4.9 The `for` expression
