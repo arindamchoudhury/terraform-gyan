@@ -517,6 +517,16 @@ resource "aws_instance" "for_each" {
 }
 ```
 
+!!! note "What `each.key` / `each.value` resolve to (map case)"
+    For a **map/object**, the two differ (unlike a set): `each.key` is the map key (the string label), `each.value` is the whole value that key points to — reach inside it with `each.value.<attr>`. Per the [official docs](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each): *each.key* = "the map key … corresponding to this instance"; *each.value* = "the map value corresponding to this instance."
+
+    | Instance | `each.key` | `each.value` | `each.value.type` |
+    |---|---|---|---|
+    | 1 | `"web_server"` | `{ type = "t3.nano" }` | `"t3.nano"` |
+    | 2 | `"background_processor"` | `{ type = "t3.micro" }` | `"t3.micro"` |
+
+    This is *why* you reach for a map/object over a set when each instance needs distinct arguments: the key names the instance (→ `aws_instance.for_each["web_server"]`), the value carries its settings.
+
 Passing a **list** to `for_each` errors — convert with **`toset(...)`** first (remember: dedups and drops order):
 
 ```hcl
