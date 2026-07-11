@@ -550,17 +550,36 @@ output "first_instance" {
 ### 4.8.4 The plan-time-known limitation (important)
 
 !!! warning "`count`/`for_each` values must be known at the *start* of plan"
-    The value you pass to `count` or `for_each` has to be resolvable **before** Terraform reads any resource. That rules out:
+    Terraform has to know how many instances a block makes **before** it reads any resource. The exact rule differs between the two, and the difference is the key to the best workaround:
+
+    - **`count`** — the integer must be **fully known**.
+    - **`for_each`** — only the **map keys** (or set members) must be known; the **map values may be `(known after apply)`**. The official [docs](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) are precise: *"The keys of the map (or all values in a set of strings) must be known values."* So the loose mental model "the whole `for_each` value must be known" over-restricts you — it's really just the keys.
+
+    What therefore **can't** be a `count` value or a `for_each` **key**:
 
     - values derived from **resource attributes** (things `(known after apply)`),
     - data sources that themselves depend on resource attributes (a data source resolvable during the initial refresh is fine),
     - impure functions like `timestamp`/`uuid`.
 
-    Hit one of these and Terraform errors at plan. It bites **`for_each` hardest**, because you usually feed it complex configs assembled from other resources.
+    Hit one of these and Terraform errors at plan (*"…cannot be determined until apply … a `-target` may be needed"*). The classic trap: keying a map on a computed ID instead of a static name.
 
 **Workarounds** (in order of preference):
 
-- **Refactor** so the count/key source is static. Best fix.
+- **`for_each`: key on something static, put the apply-time data in the value.** This is the single most useful fix and follows straight from the rule above. Build the map with **keys known at plan** (a name, an environment, a config-derived string) and let the **values** carry the `(known after apply)` attributes:
+
+    ```hcl
+    # ✗ errors: keys are computed instance IDs, unknown at plan
+    # for_each = { for i in aws_instance.web : i.id => i }
+
+    # ✓ works: keys are the static names you already used to build the instances;
+    #   the unknown attribute (private_ip) rides in the value
+    resource "aws_route53_record" "web" {
+      for_each = { for name, inst in aws_instance.web : name => inst.private_ip }
+      # each.key = "web-a" (known at plan)   each.value = the IP (known after apply)
+    }
+    ```
+
+- **Refactor** so the count/key source is static. Best general fix.
 - Store the config in an **intermediate `local`** and drive the block with **`count`** + `count.index` (only the meta-parameter must be known early; the per-instance *config* it pulls from the local can resolve later):
 
     ```hcl
