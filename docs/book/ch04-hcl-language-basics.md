@@ -251,7 +251,7 @@ With `default = ""` you couldn't distinguish "unset" from "deliberately empty" �
 
 ## The top-level block catalog
 
-A **top-level block** is one that appears outside any other block — the outermost structures in a `.tf` file. Terraform's language has a small, fixed set of them (twelve at the time of writing). The milestone rests on picking the right one, so here is the whole menu, with the eight you'll use daily called out:
+A **top-level block** is one that appears outside any other block — the outermost structures in a `.tf` file. Terraform's language has a small, fixed set of them (thirteen at the time of writing). The milestone rests on picking the right one, so here is the whole menu, with the eight you'll use daily called out:
 
 | Block | Labels | Job | Goes deep in |
 |---|---|---|---|
@@ -267,6 +267,7 @@ A **top-level block** is one that appears outside any other block — the outerm
 | `moved` | none | Record that a resource was renamed/relocated, without recreating it. | I7, A8 |
 | `removed` | none | Drop a resource from management **without** destroying it. | I7 |
 | `check` | 1 | Validate deployed infrastructure with assertions. | A2 |
+| `ephemeral` | 2 | Temporary resource (e.g. a secret/token) that is **never written to state or plan** (Terraform 1.10+). | A6 |
 
 The eight in bold are what "author a configuration by hand" means. A one-line mental model for each:
 
@@ -547,7 +548,7 @@ An empty plan. Terraform merged every `.tf`, rebuilt the same graph from the sam
 - [Configuration Syntax (HCDocs)](../sources/terraform-docs/tf-config-syntax.md) — arguments/blocks, labels, identifiers, comments, encoding
 - [Style Guide (HCDocs)](../sources/terraform-docs/tf-style-guide.md) — formatting, naming, file layout, `.gitignore`, ordering
 - [Provider Requirements (HCDocs)](../sources/terraform-docs/provider-requirements.md) — the `terraform`/`required_providers` block
-- TID Ch2 — Terraform HCL components: [book reading notes](../books/tid/chapters/02-hcl-components.md) (block anatomy, the 12 block types, arguments/subblocks/attributes, order-is-a-DAG)
+- TID Ch2 — Terraform HCL components: [book reading notes](../books/tid/chapters/02-hcl-components.md) (block anatomy, the block-type catalog, arguments/subblocks/attributes, order-is-a-DAG)
 - TID Ch3 — Terraform variables and modules: [book reading notes](../books/tid/chapters/03-variables-modules.md) (the type system, the three "variables", argument vs. parameter)
 - [Feature history](../reference/feature-history.md) — JSON syntax, override files
 - [Version & Certification Facts](../research-cache/version-facts.md)

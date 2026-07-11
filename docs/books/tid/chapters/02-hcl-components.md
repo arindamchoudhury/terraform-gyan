@@ -186,6 +186,9 @@ HCL is not Terraform-only — Packer, Consul, and Nomad each have their *own* fl
 | `check` | Validate deployed infrastructure. |
 | `output` | Share data out of a module to other modules/workspaces. |
 
+!!! info "Terraform 1.10 added a 13th: `ephemeral`"
+    The book's list of 12 predates it. **Terraform 1.10** (Nov 2024) added the top-level **`ephemeral`** block (two labels, like `resource`/`data`) — a temporary resource whose data is **never written to state or plan files**, for short-lived secrets/tokens. So current Terraform has **13** top-level block types. OpenTofu added ephemeral resources in **1.11**.
+
 `terraform` + `provider` are set once when starting a project; **`resource` blocks are the most important** — everything else supports them (supplying config values or organizing them into reusable components).
 
 ### 2.2.2 Labels and subtypes
@@ -555,7 +558,7 @@ Three refactoring blocks (full treatment in Ch9), added over successive releases
 | Block | Added | Purpose |
 |---|---|---|
 | `import` | v1.5.0 | Bring existing (e.g. console-created) infrastructure under Terraform without recreating it. |
-| `moved` | v1.5.0 | Tell Terraform a resource moved/renamed in your code, re-associating existing state. |
+| `moved` | **v1.1.0** | Tell Terraform a resource moved/renamed in your code, re-associating existing state. (The book §2.9 says v1.5.0 — that's an error; `moved` shipped in **1.1**, only `import` was v1.5.0.) |
 | `removed` | v1.7.0 | Mark an item removed *without* destroying it. **⚠️ Stale on current Terraform — see the version box below.** |
 
 !!! warning "📌 Version drift — `removed` now destroys by default"
