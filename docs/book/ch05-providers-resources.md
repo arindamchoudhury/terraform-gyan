@@ -495,6 +495,16 @@ awslocal s3 ls "s3://$BUCKET/"                # index.html is listed, with its s
 awslocal s3 cp "s3://$BUCKET/index.html" -    # dumps content to stdout: hello from terraform
 ```
 
+!!! note "Windows / PowerShell"
+    Only the `BUCKET=…` capture line is bash-specific; every `tflocal` and `awslocal` command runs unchanged, and `"s3://$BUCKET/"` interpolates the same in PowerShell. Capture the name with `Select-String` instead of `awk`:
+
+    ```powershell
+    $BUCKET = (tflocal state show aws_s3_bucket.site |
+      Select-String '^\s*bucket\s+= "(.+)"').Matches[0].Groups[1].Value
+    ```
+
+    Cleaner on either shell: add `output "bucket" { value = aws_s3_bucket.site.bucket }` to the config, then `$BUCKET = tflocal output -raw bucket`.
+
 Notice `random_id.suffix` is in state but never appears in `awslocal s3 ls` — it's a **local-only** resource, a value in state with no cloud object behind it. The bucket and object are real (emulated) S3 objects.
 
 Now prove the graph is built from references, not file order. **Shuffle the three blocks** in `main.tf` into any order — put the object first, the `random_id` last — and re-plan:
