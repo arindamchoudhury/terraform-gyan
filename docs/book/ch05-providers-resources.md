@@ -59,7 +59,7 @@ There are thousands of providers in the Registry. Most wrap an infrastructure pl
 
 Look at any resource type: `aws_instance`, `google_compute_instance`, `random_id`. The prefix before the first underscore is the provider's **local name**. `aws_instance` implies the `aws` provider; `google_storage_bucket` implies `google`. That is how Terraform knows which plugin owns a resource type — it reads the prefix.
 
-This is why you almost never spell out which provider a resource uses. Terraform infers it from the type name. You only override that inference (with the `provider` meta-argument) when you have several configurations of the same provider — covered in Part 2 and, in depth, in I8.
+This is why you almost never spell out which provider a resource uses. Terraform infers it from the type name. You only override that inference (with the `provider` meta-argument) when you have several configurations of the same provider — covered in depth in I8.
 
 ### Declare, then configure — two blocks, two jobs
 
@@ -180,9 +180,6 @@ The credential models also differ. The AWS provider resolves credentials in a de
 
 !!! danger "Never hard-code credentials in a `provider` block"
     Both providers' docs warn against it explicitly, and for the same reason: a `provider` block lives in a `.tf` file, and a `.tf` file gets committed. A leaked static AWS key or a committed GCP service-account key file is a long-lived secret in your history. Prefer environment variables, a named profile, or — best — short-lived role credentials (AWS instance profiles / OIDC, GCP workload-identity impersonation). Full secrets handling is A6.
-
-!!! info "OpenTofu — one provider instance per element with `for_each`"
-    Terraform's open-source CLI lets you write multiple named configurations of a provider with `alias` (Part 2). OpenTofu (since 1.9) generalizes this: an **aliased** `provider` block can take `for_each` to spin up one instance per map/set element — e.g. one AWS region per element — without repeating the block. The default (unaliased) configuration must still be exactly one instance. Terraform has no equivalent as of 1.15; this is an OpenTofu-only divergence you'll meet again in E3.
 
 ### Utility providers and the one built-in
 
