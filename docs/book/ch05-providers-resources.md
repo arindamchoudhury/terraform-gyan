@@ -276,7 +276,13 @@ A small set of arguments are defined by Terraform **core**, work on any resource
     }
     ```
 
-    It looks core-defined, but it is **provider-defined** — it exists only where the resource type implements it, and which operations (`create`/`update`/`delete`/…) are configurable varies by type. Don't assume every resource has it; check the provider docs.
+    It reads as core-defined for good reason: it wears three of the visual signatures of a real meta-argument.
+
+    - **It spells the same on every provider.** `timeouts { create = "60m" }` looks identical on `aws_db_instance`, `google_container_cluster`, and everywhere else. That cross-provider sameness is exactly what marks the genuine meta-arguments. `count`, `for_each`, and `lifecycle` look the same on every resource, whereas vendor arguments like `ami`, `region`, and `project` differ from provider to provider.
+    - **It is a nested block, like `lifecycle`.** It is a child block with keyword sub-arguments, structurally a twin of the `lifecycle { … }` block, which is itself the one meta-argument that takes block form. Same shape, so it reads as the same category.
+    - **It tunes Terraform's behavior, not the object.** It bounds how long Terraform *waits* on an operation. That is a "how Terraform manages this" knob rather than a property of the infrastructure, and its keys (`create`/`update`/`delete`) even echo the lifecycle verbs.
+
+    But it is **provider-defined**. A `timeouts` block is part of a specific resource type's schema, so it exists only where that resource's author implemented it, and which operations are configurable varies by type. The tell is right there: real meta-arguments are **universal** (every resource type accepts them) and have a **fixed, core-defined shape**. `timeouts` has neither. Don't assume a resource has it; check the provider docs.
 
 ### What `apply` does to a resource
 
