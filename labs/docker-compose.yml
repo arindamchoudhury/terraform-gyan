@@ -20,3 +20,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     user: root
     restart: unless-stopped
+    # IAM authorization enforcement is OFF by default, which is what the
+    # hello-world labs want (their throwaway `test` creds must never be denied).
+    # For the IAM chapter only, uncomment the block below and recreate the
+    # container (`docker compose -f labs/docker-compose.yml up -d --force-recreate`).
+    # Floci then evaluates attached policies: an explicit Deny, an implicit
+    # default-deny, and denials on iam:* actions all take effect. The root/seed
+    # key `test` still bypasses enforcement, so lab setup steps keep working.
+    # environment:
+    #   FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED: "true"
