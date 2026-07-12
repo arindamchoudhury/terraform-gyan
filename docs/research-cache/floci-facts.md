@@ -2,11 +2,10 @@
 
 Verified facts for the book's lab sections. Refreshed by review passes.
 See also [[ministack-facts]] and [[localstack-facts]] — all three share port 4566 and are interchangeable in the labs.
-[[robotocore-facts]] also serves `:4566` but is not interchangeable. It is reserved for the IAM
-chapter, because it is the only free emulator that evaluates policy documents instead of merely
-storing them.
+[[robotocore-facts]] also serves `:4566` and enforces IAM, but Floci enforces IAM natively (see
+below) and covers `iam:*`/`sts:*` actions that Robotocore cannot, so the book does not need it.
 
-_Last verified: 2026-07-09 (github.com/floci-io/floci)._
+_Last verified: 2026-07-09; IAM enforcement added 2026-07-12 (github.com/floci-io/floci)._
 
 ## What it is
 
@@ -33,6 +32,45 @@ AWS-Console-style local UI), `floci-cli`, and a Testcontainers module. **No auth
   (vs LocalStack's ~1 GB / ~143 MiB / ~3.3 s). Treat the exact numbers as the project's own
   benchmarks, not independently verified — the *order of magnitude* (much smaller/faster) is the point.
 - MIT, actively developed with ongoing security updates (newer than LocalStack; very popular).
+
+## IAM policy enforcement — off by default, one flag to turn on
+
+Floci ships a real IAM authorization engine: `IamPolicyEvaluator`, `AssumeRolePolicyEvaluator`,
+`IamActionRegistry`, and 50 seeded AWS managed policies (all found in the native binary). It is
+**disabled by default** — with it off, a user carrying `Deny * on *` still creates buckets, which
+is why earlier notes wrongly called Floci's IAM "CRUD-only." One undocumented env var switches it
+on:
+
+```
+FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED=true
+```
+
+On boot Floci then logs `Seeded 50 AWS managed policies`. Verified empirically 2026-07-12 against
+`floci/floci:latest`:
+
+| Scenario | Result |
+|---|---|
+| Explicit `Deny s3:CreateBucket` on an otherwise-allowed user | ✅ `AccessDenied` |
+| `Allow s3:*` → `s3:ListBuckets` | ✅ allowed |
+| Explicit deny → `iam:CreateUser` | ✅ `AccessDenied` — **enforced on IAM itself** |
+| Implicit deny (user has no `sqs` permission) → `sqs:CreateQueue` | ✅ `AccessDeniedException` |
+| Root/seed access key (`test`) | god-mode, bypasses enforcement — use it to set labs up |
+
+The denial wording is AWS-shaped: `User is not authorized to perform: s3:CreateBucket`. (Real AWS
+appends `with an explicit deny in an identity-based policy`; Floci stops at the action.)
+
+!!! warning "Enforcement is authorization, not authentication"
+    A wrong secret key is **not** rejected even with enforcement on (`FLOCI_AUTH_VALIDATE_SIGNATURES`
+    did not change this in testing). The calling principal is identified by its access-key ID and
+    the attached policy is evaluated against it; the SigV4 signature itself is not verified. So a
+    lab here teaches how AWS **evaluates a policy** — explicit deny beats allow, default is deny —
+    not credential security. Say so in the chapter.
+
+This makes Floci a strict superset of [[robotocore-facts]] for teaching IAM: same explicit-deny
+behavior, plus implicit default-deny, plus enforcement on `iam:*`/`sts:*` actions that Robotocore
+permanently exempts. The IAM chapter adds `-e FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED=true` to the
+`docker run` and needs no second emulator. Leave the flag **off** in every other chapter — the
+hello-world labs use throwaway `test` creds and should not hit denials.
 
 ## Install & run (Docker)
 
@@ -114,6 +152,7 @@ Verify with `awslocal` or `aws --endpoint-url=http://localhost:4566 s3 ls`.
 | Token / account | **None** | **None** | Free account + `LOCALSTACK_AUTH_TOKEN` |
 | Port / API | `:4566`, LocalStack-compatible | `:4566` | `:4566` |
 | Services | 69 | ~60 | most |
+| IAM authz enforcement | ✅ opt-in flag, covers `iam:*` too | ❌ | Pro only |
 | Image / startup | ~90 MB, native, very fast | ~270 MB | ~1 GB |
 | `tflocal` | ✅ (LS-compatible endpoints) | ✅ | ✅ |
 | Extras | UI, CLI, Azure/GCP siblings | — | mature docs/ecosystem |

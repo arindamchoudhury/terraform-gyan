@@ -1,11 +1,20 @@
-# Robotocore Facts (IAM-enforcing emulator — specialist, not the default)
+# Robotocore Facts (IAM-enforcing emulator — NOT used by the book)
 
 Verified facts for the book's lab sections. Refreshed by review passes.
 See also [[floci-facts]] (book default), [[ministack-facts]] and [[localstack-facts]] — all four
 serve port 4566 and the `/_localstack/health` endpoint.
 
+!!! danger "Superseded — the book does not use Robotocore"
+    Robotocore was evaluated as the IAM chapter's emulator on the belief that it was the only free
+    tool that enforces IAM. That belief was wrong. **Floci enforces IAM natively** behind
+    `FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED=true` (see [[floci-facts]]), and does it *better* —
+    Floci enforces on `iam:*`/`sts:*` actions, which Robotocore permanently exempts
+    (`gateway/iam_middleware.py:339`). The book therefore stays single-emulator on Floci. This file
+    is kept as a comparison record, not a recommendation.
+
 _Last verified: 2026-07-10, empirically, against `ghcr.io/robotocore/robotocore:latest`
-(digest `sha256:0fe802ee1120556ae349d2e6e8a183e6a02e4d995d1199bdc2fea0d02cbe9b44`)._
+(digest `sha256:0fe802ee1120556ae349d2e6e8a183e6a02e4d995d1199bdc2fea0d02cbe9b44`).
+Superseded 2026-07-12 when Floci's own IAM enforcement was found and verified._
 
 ## What it is
 
@@ -27,9 +36,9 @@ than replacing it. **No auth token, no account.**
     `2026.5.15.dev0+g0741e7120.d20260514`. There is no tagged release behind `latest`. Pin by
     digest in any lab that uses it.
 
-## Why the book cares: it is the only free emulator that enforces IAM
+## What it does: enforce IAM authorization (with enforcement on)
 
-With enforcement on, a principal carrying an explicit `Deny` gets a verbatim-AWS refusal:
+With `ENFORCE_IAM=1`, a principal carrying an explicit `Deny` gets a verbatim-AWS refusal:
 
 ```
 An error occurred (AccessDenied) when calling the CreateBucket operation:
@@ -37,10 +46,16 @@ User is not authorized to perform: s3:CreateBucket
 with an explicit deny in an identity-based policy
 ```
 
-Nothing else in the free tier produces this. Floci ships IAM and STS as CRUD-only services. Tested
-2026-07-10 against `floci/floci:latest`: a user carrying `{"Effect": "Deny", "Action": "*",
-"Resource": "*"}` created an S3 bucket without complaint. The policy document is stored and
-returned faithfully. It is never evaluated.
+The message is a shade closer to real AWS than Floci's (Robotocore appends `with an explicit deny
+in an identity-based policy`; Floci stops at the action name). That is Robotocore's one remaining
+edge, and it is cosmetic.
+
+!!! warning "The claim this file was built on was false"
+    It was recorded here that "nothing else in the free tier produces this" and that Floci's IAM is
+    CRUD-only. Both are wrong. The 2026-07-10 Floci test that "proved" CRUD-only was run with
+    Floci's enforcement flag **off**. With `FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED=true`, Floci
+    denies the same request — and also denies `iam:CreateUser`, which Robotocore does not. See the
+    A–F results in [[floci-facts]].
 
 ## Verified 2026-07-10 (empirical, this machine)
 
@@ -142,12 +157,14 @@ an explicit `Deny` beat a broad `Allow`.
 | Latest | `1.5.31`, 2026-07-07 | untagged dev build |
 | Services | ~68, real Docker-backed | 158 claimed; ~112 are thin moto passthrough |
 | Startup | ~24 ms | not published |
-| **IAM enforcement** | ❌ CRUD only | ✅ opt-in, partial |
+| **IAM enforcement** | ✅ opt-in flag; covers `iam:*`/`sts:*`; implicit + explicit deny | ✅ opt-in; **exempts `iam:*`/`sts:*`** |
+| Deny message fidelity | stops at action name | appends "…explicit deny in an identity-based policy" |
 | Terraform / OpenTofu | ✅ 2,506 compat tests | ✅ port and health endpoint match; end-to-end unverified |
 
-**Book stance:** Floci stays the default for every lab. Robotocore earns exactly one appearance,
-in the IAM chapter, as the only free way to watch a policy actually deny something. Pin the digest,
-set `ENFORCE_IAM=1`, deny a non-IAM action, and tell the reader signatures are not checked.
+**Book stance:** Floci is the default *and* the IAM chapter's emulator. Robotocore earns **no
+appearance** — Floci enforces IAM natively, covers the `iam:*` actions Robotocore can't, and avoids
+running a second emulator. Robotocore's only edge is a slightly more verbatim deny string, which is
+not worth a whole extra tool. Kept here as a record of what was evaluated and why it lost.
 
 ## Sources
 
