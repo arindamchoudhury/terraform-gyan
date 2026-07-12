@@ -40,7 +40,17 @@ flowchart LR
     P2 -- HTTPS API --> GCP["Google Cloud APIs"]
 ```
 
-This design is why one tool manages everything: core stays small and vendor-neutral, and each provider is a swappable plugin with its own release cadence, version numbers, and docs. There are thousands of providers in the Registry — most wrap an infrastructure platform, some are pure local utilities (`random`, `null`, `time`, `tls`). Without a provider, Terraform manages nothing.
+This design is why one tool manages everything: core stays small and vendor-neutral, while each provider is a swappable plugin with its own release cadence, version numbers, and docs. Each of those is worth unpacking.
+
+**Swappable** means a provider is never compiled into the Terraform CLI. `terraform init` reads your `required_providers` and downloads each one as a separate binary into `.terraform/`. You can add, drop, or upgrade one provider without touching core or the others — bump `aws` from 5 to 6 while `google` stays put.
+
+**Own release cadence** means each provider ships on its own schedule, independent of the Terraform CLI *and* of every other provider. The `aws` provider releases often to keep up with new AWS services; core releases on a wholly separate timeline. A new AWS feature usually means a new `aws` provider version, not a new Terraform CLI.
+
+**Own version numbers** means each provider carries its own independent semver, unrelated to the CLI version or to each other — the box below unpacks this. One configuration routinely mixes providers at very different version numbers.
+
+**Own docs** means each provider publishes its own reference pages on the Registry, versioned per provider release. That is where a resource's arguments and attributes are documented, by the provider's authors — because core does not know them.
+
+There are thousands of providers in the Registry. Most wrap an infrastructure platform; a few are pure local utilities (`random`, `null`, `time`, `tls`). Without a provider, Terraform manages nothing.
 
 !!! note "Provider version ≠ vendor API version"
     The `aws` provider is on major version 6, but AWS-the-service has no "v6." The provider is its own artifact, versioned independently of both the vendor's API and the Terraform CLI. When you pin `~> 6.0`, you are pinning the *plugin*, not anything AWS publishes. This is also why "vendor" is only a teaching word — Terraform has no `vendor` object; the only language construct is `provider`.
@@ -77,6 +87,37 @@ provider "aws" {
 
 - `required_providers` (inside the `terraform` block) tells Terraform **what to install and from where**. Each entry maps a local name (`aws`) to a `source` address and a `version` constraint.
 - The `provider "aws"` block **configures the connection** — region, credentials, and any provider-wide settings.
+
+The word `aws` is doing more work than it looks. It shows up three times — as the `required_providers` key, as the `provider` block label, and as the prefix of every `aws_*` resource type — and all three are the same **local name**. That shared name is the wiring. The `provider` block label *must* equal the `required_providers` key: `provider "aws"` configures the entry whose key is `aws`, and nothing else. A resource's type prefix is then matched against that same key to find which provider configures it.
+
+!!! warning "Rename the local name and your resources stop finding it"
+    The key is yours to choose — nothing forces it to be `aws`. But it is load-bearing, so renaming it means rewiring every resource by hand:
+
+    ```hcl
+    terraform {
+      required_providers {
+        myaws = {
+          source  = "hashicorp/aws"
+          version = "~> 6.0"
+        }
+      }
+    }
+
+    provider "myaws" {
+      region = "us-east-1"
+    }
+    ```
+
+    Now `aws_instance` no longer resolves to this block. Terraform reads the `aws` prefix, looks for a local name `aws`, and doesn't find one — `myaws` doesn't match. It treats the bare `aws` prefix as a *different*, default `hashicorp/aws` provider that your `provider "myaws"` block never configured, so the `region` and credentials you set are ignored. To bind a resource to the renamed provider you must name it explicitly on every one:
+
+    ```hcl
+    resource "aws_instance" "web" {
+      provider = myaws
+      # ...
+    }
+    ```
+
+    This is why the local name almost always matches the provider's preferred name. You only diverge when two providers would otherwise collide on one local name, and then a `provider` meta-argument on every affected resource is mandatory. The full mechanics live in I8.
 
 The two are genuinely independent. You can declare a provider without a `provider` block (Terraform assumes an empty default configuration), and the `provider` block's arguments are entirely defined by the provider, not by Terraform core.
 
@@ -133,6 +174,9 @@ provider "google" {
 ```
 
 The credential models also differ. The AWS provider resolves credentials in a defined order (first match wins): provider-block parameters → environment variables (`AWS_ACCESS_KEY_ID`, …) → `~/.aws/credentials` → `~/.aws/config` → container credentials → EC2 instance profile. The Google provider's *idiomatic* path is instead **Application Default Credentials** — `gcloud auth application-default login` on a workstation, or an attached service account / Workload Identity Federation in CI — rather than AWS's static-key-first habit. It still accepts an explicit key file (the `credentials` argument or the `GOOGLE_CREDENTIALS` / `GOOGLE_APPLICATION_CREDENTIALS` env vars, which take precedence over the gcloud ADC file) and `impersonate_service_account` for least-privilege impersonation.
+
+!!! note "OIDC is not a separate entry in the list — it rides the chain"
+    Web-identity federation (OIDC) is how CI runners like GitHub Actions authenticate with no static keys, but it isn't a seventh entry in the list above. It plugs into the top tiers: an `assume_role_with_web_identity` block in the `provider` block, or the `AWS_ROLE_ARN` + `AWS_WEB_IDENTITY_TOKEN_FILE` environment variables (the pattern EKS IRSA also uses). The provider then exchanges that token for short-lived credentials via STS `AssumeRoleWithWebIdentity`. The plain `assume_role` block layers the same exchange on top of any base identity for role chaining, but unlike the base chain it can't be set from environment variables. Full CI credential setup is A3 and A6.
 
 !!! danger "Never hard-code credentials in a `provider` block"
     Both providers' docs warn against it explicitly, and for the same reason: a `provider` block lives in a `.tf` file, and a `.tf` file gets committed. A leaked static AWS key or a committed GCP service-account key file is a long-lived secret in your history. Prefer environment variables, a named profile, or — best — short-lived role credentials (AWS instance profiles / OIDC, GCP workload-identity impersonation). Full secrets handling is A6.
