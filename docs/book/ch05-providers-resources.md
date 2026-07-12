@@ -261,7 +261,7 @@ A small set of arguments are defined by Terraform **core**, work on any resource
 | `provider` | Pick a non-default (aliased) provider configuration | I8 |
 | `lifecycle` | Tune create/destroy/replace behavior | I2 |
 
-`count` and `for_each` are **mutually exclusive** on one resource. Each of these gets a full chapter later; for now, know they exist and that they are the *only* arguments not defined by the provider.
+`count` and `for_each` are **mutually exclusive** on one resource. Each is covered in depth in the chapter the table names: `count`, `for_each`, and `depends_on` share I1, while `lifecycle` is I2 and `provider` is I8. For now, know they exist and that they are the *only* arguments not defined by the provider.
 
 !!! note "`timeouts` looks like a meta-argument but isn't"
     Some resource types accept a `timeouts` child block to bound how long Terraform waits per operation:
