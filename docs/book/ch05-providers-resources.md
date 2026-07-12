@@ -360,6 +360,9 @@ resource "aws_s3_object" "index" {
 }
 ```
 
+!!! note "`${ … }` is string interpolation"
+    Two reference forms appear above. A **bare** reference like `aws_s3_bucket.site.id` stands where a whole value is expected. To splice a reference *into* a string you wrap it in `${ … }`, so `"site-${random_id.suffix.hex}"` embeds the attribute's value in the text. Both are the same reference and create the same edge; `${ }` is only how you put an expression inside a string literal. Ch4 showed it once in passing (`"${var.prefix}-web"`); the full string-template treatment is B7.
+
 Three references, three edges: `aws_s3_object.index → aws_s3_bucket.site → random_id.suffix`. The apply order falls straight out of them, with no `depends_on` anywhere:
 
 1. `random_id.suffix` has no dependencies, so it's created first (locally, instantly).
