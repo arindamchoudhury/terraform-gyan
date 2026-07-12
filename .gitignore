@@ -30,3 +30,6 @@ terraform.rc
 # Terraform secrets (lab .tfvars stay committed on purpose)
 *.auto.tfvars
 secrets.tfvars
+
+# tflocal auto-generates this; never commit it
+localstack_providers_override.tf
