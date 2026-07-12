@@ -19,7 +19,7 @@ Two machines do the work, and this chapter is about both:
 1. **The provider plugin** turns your declarative HCL into concrete API calls against a vendor. It is the thing that knows what an `aws_instance` *is*, which arguments it takes, and how to create one. Terraform core does not.
 2. **The dependency graph** decides *when* each resource is created relative to the others. It is built entirely from the references you write — and getting those references right is the whole milestone for this topic.
 
-Miss the first and you can't read a provider's docs or reason about credentials. Miss the second and you get race conditions that pass locally and fail in CI. Resources are the unit of everything Terraform manages, so both machines are worth understanding before you build anything real.
+Miss the first and you'll expect Terraform to know your infrastructure out of the box — it doesn't; every resource type comes from a provider, bar the handful built into core. Miss the second and you get race conditions — flaky create-order that works from your local state and breaks on a clean apply in CI. Resources are the unit of everything Terraform manages, so both machines are worth understanding before you build anything real.
 
 ---
 
