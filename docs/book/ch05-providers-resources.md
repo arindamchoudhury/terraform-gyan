@@ -29,7 +29,7 @@ Miss the first and you'll expect Terraform to know your infrastructure out of th
 
 Terraform core is a single, statically-compiled binary. It parses HCL, builds a graph, computes a plan, and manages state. It does **not** know what AWS, Cloudflare, or GitHub are. Every vendor-specific fact — that an EC2 instance takes an `ami`, what arguments an `aws_s3_bucket` accepts, how to authenticate — lives in a **provider**.
 
-A provider is a plugin: a standalone binary, written in Go, that Terraform core launches as a subprocess and talks to over **gRPC**. Core sends the provider a desired-state description; the provider translates it into calls against the vendor's API and reports back. The provider *is* the boundary between "one engine" and "any platform."
+A provider is a plugin: a standalone binary, written in Go, that Terraform core launches as a subprocess and talks to over **gRPC**. Core sends the provider a desired-state description; the provider translates it into calls against the vendor's API and reports back. The provider *is* the boundary between "one core" and "any platform."
 
 ```mermaid
 flowchart LR
