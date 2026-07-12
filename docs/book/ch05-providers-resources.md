@@ -55,6 +55,14 @@ There are thousands of providers in the Registry. Most wrap an infrastructure pl
 !!! note "Provider version ≠ vendor API version"
     The `aws` provider is on major version 6, but AWS-the-service has no "v6." The provider is its own artifact, versioned independently of both the vendor's API and the Terraform CLI. When you pin `~> 6.0`, you are pinning the *plugin*, not anything AWS publishes. This is also why "vendor" is only a teaching word — Terraform has no `vendor` object; the only language construct is `provider`.
 
+!!! note "What a provider upgrade can add: quietly or loudly"
+    A new feature in AWS-the-service changes nothing on its own. Terraform only sees what the *provider's schema* declares, so a new attribute doesn't exist for you until a provider release adds it. And because you pin (`~> 6.0`), that release arrives only when you run `terraform init -upgrade`, never on AWS's schedule. How the upgrade lands then depends on how the provider modeled the attribute:
+
+    - **Optional or computed — the quiet path.** A new *computed* (read-only) attribute just appears in state on the next refresh, no diff. A new *optional* argument you leave unset stays unset. You may not even notice. Providers usually make such fields optional-and-computed so an unset value tracks whatever the API returns rather than forcing a change.
+    - **Required — the loud path.** Terraform's schema rules make an omitted required argument a **plan-time error**: `The argument "X" is required, but no definition was found`. Terraform refuses to plan until you add it to config. No apply, no drift, no partial change — a safe stop at the door.
+
+    A provider *shouldn't* add a required argument in a routine (minor) release, precisely because it breaks every existing config; the backward-compatible move is optional/computed, and a genuine break belongs in a major version with an upgrade guide. HashiCorp's versioning guidance doesn't spell out "new required argument = major," but it does flag a subtler footgun as breaking: **adding a default value that doesn't match the API's default**, which can surface as an unexpected `~` on upgrade. Either way the lesson is the same: read the plan, and the provider CHANGELOG, after any version bump.
+
 ### Every resource type is named after its provider
 
 Look at any resource type: `aws_instance`, `google_compute_instance`, `random_id`. The prefix before the first underscore is the provider's **local name**. `aws_instance` implies the `aws` provider; `google_storage_bucket` implies `google`. That is how Terraform knows which plugin owns a resource type — it reads the prefix.
