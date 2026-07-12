@@ -181,8 +181,6 @@ The credential models also differ. The AWS provider resolves credentials in a de
 !!! danger "Never hard-code credentials in a `provider` block"
     Both providers' docs warn against it explicitly, and for the same reason: a `provider` block lives in a `.tf` file, and a `.tf` file gets committed. A leaked static AWS key or a committed GCP service-account key file is a long-lived secret in your history. Prefer environment variables, a named profile, or — best — short-lived role credentials (AWS instance profiles / OIDC, GCP workload-identity impersonation). Full secrets handling is A6.
 
-Two provider-wide conveniences worth knowing because they do *not* port between clouds: AWS's `default_tags` block stamps a set of tags on **every** resource the provider manages, so you don't repeat a `tags` block. GCP has no tag-all argument (labels are per-resource), but adds `user_project_override` / `billing_project` for quota-project routing, which AWS has no parallel to.
-
 !!! info "OpenTofu — one provider instance per element with `for_each`"
     Terraform's open-source CLI lets you write multiple named configurations of a provider with `alias` (Part 2). OpenTofu (since 1.9) generalizes this: an **aliased** `provider` block can take `for_each` to spin up one instance per map/set element — e.g. one AWS region per element — without repeating the block. The default (unaliased) configuration must still be exactly one instance. Terraform has no equivalent as of 1.15; this is an OpenTofu-only divergence you'll meet again in E3.
 

@@ -503,6 +503,9 @@ You are ready to advance when you can:
 
 **Why you need it:** Multi-region and multi-account deployments require aliased providers; version drift between team members causes silent breakage.
 
+!!! note "Cover here (deferred from Ch5 §5.4)"
+    Provider-wide conveniences that do not port between clouds belong in this chapter, not first-contact §5.4: AWS's `default_tags` block (stamps a tag set on **every** resource the provider manages, so you don't repeat a `tags` block) and GCP's `user_project_override` / `billing_project` (quota-project routing, which AWS has no parallel to).
+
 **How to learn it:**
 
 1. **Reference — [HCDocs "`provider` block reference"](https://developer.hashicorp.com/terraform/language/block/provider)** (~40 min) — alias syntax and passing providers to modules. Captured as [[tf-provider-block]]. A module that needs a caller to hand it multiple provider configs declares **`configuration_aliases`** inside its `required_providers` — the explicit contract for the `providers = { … }` argument on the module block. (See [[feature-history]].)
