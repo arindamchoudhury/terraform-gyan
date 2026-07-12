@@ -734,6 +734,9 @@ You are ready to advance when you can:
 2. **Reference — [HCDocs "Workspaces" (CLI)](https://developer.hashicorp.com/terraform/language/state/workspaces) vs [HCP workspaces](https://developer.hashicorp.com/terraform/cloud-docs/workspaces)** (~30 min) — understand why CLI workspaces are *not* environment isolation. In automation, **`TF_WORKSPACE`** selects the workspace non-interactively (instead of `terraform workspace select`).
 3. **Interactive — restructure** (~1.5 hrs) — lay out one module consumed by isolated dev/prod stacks with separate state.
 
+!!! note "📌 DRY across environments → Terragrunt (E4)"
+    A7 covers isolation with **native Terraform** primitives — the scope the Pro exam tests. The DRY tooling that removes the copy-paste between per-env directories is **Terragrunt** (third-party, Gruntwork), deep-dived in **E4 — Large-scale state & repo architecture** below. Reach for it once you have many states and teams, not for a single dev/prod split.
+
 **Milestone:** You can design an env layout where prod and dev have fully isolated state and blast radius, sharing modules but not state.
 
 ---
