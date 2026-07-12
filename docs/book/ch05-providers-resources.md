@@ -192,6 +192,22 @@ resource "random_id" "suffix" {
 # random_id.suffix.hex → a computed attribute, e.g. "a1b2c3d4"
 ```
 
+!!! note "It installs even if you forget to declare it — but pin it anyway"
+    The block above has no `required_providers` entry, yet `terraform init` still downloads `random` (it is a real provider, not the one built-in). Terraform maps the `random_` prefix to the local name `random`, finds it undeclared, and assumes the default address `hashicorp/random` — the same prefix-to-local-name resolution from §5.4, and here it works because you didn't rename anything and the default namespace is `hashicorp`. So a bare utility resource inits and applies. What you give up by omitting the declaration is the **version constraint**: Terraform installs whatever is newest, so a future major release can shift behavior under you. Declare it to pin the constraint:
+
+    ```hcl
+    terraform {
+      required_providers {
+        random = {
+          source  = "hashicorp/random"
+          version = "~> 3.0"
+        }
+      }
+    }
+    ```
+
+    The `.terraform.lock.hcl` records the exact resolved version either way; only the declaration lets you *control* which versions are allowed.
+
 There is exactly **one** resource type built into Terraform core itself, needing no provider: `terraform_data`. It implements the standard resource lifecycle but takes no action — the modern replacement for the old `null_resource` pattern (full treatment in A1). The built-in provider (`terraform.io/builtin/terraform`) also backs the `terraform_remote_state` data source (B9/I6).
 
 !!! warning "Local-only ≠ secret-safe"
