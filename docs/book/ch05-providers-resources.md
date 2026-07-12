@@ -390,6 +390,9 @@ Because the graph has only those two inputs, a dependency Terraform cannot see *
 !!! danger "No tool will warn you about a forgotten `depends_on`"
     Not `plan`, not `validate`, not the provider, not `tflint`. Terraform has no signal that an edge is absent. A resource with a forgotten hidden dependency looks identical to one that genuinely has none. The failure surfaces only at apply time — as a race that passes locally and fails in CI, a provider API error that doesn't mention ordering, or a "success" that isn't (the classic: an EC2 instance comes up before the IAM policy its software needs, so the box runs but can't reach S3). Teardown walks the same graph in reverse, so the missing edge bites again on destroy.
 
+!!! tip "You can't detect a missing edge, but you can surface one"
+    No tool *discovers* an absent edge, because there is nothing in the config to analyze against. But two habits catch them. **Render the graph** with `terraform graph` (next section) to *confirm* a suspicion: check whether two resources you think are wrongly parallel actually share an edge. **Test from clean state** to run the real parallel graph and expose the race an incremental local apply hides: `terraform test`, or a destroy-and-reapply from an empty state. What does *not* help is `-parallelism=1`, which can make a racy config pass by luck without imposing the order you actually need — false confidence, not a fix.
+
 The fix — when a dependency is real but leaves no attribute to reference — is `depends_on`. But reach for it only then. The single question that decides it: *does A depend on B's **behavior** while never reading B's **data**?* If yes, no edge exists and you need `depends_on`. If A reads any attribute of B, the edge already exists and you must **not** add one. This is the whole of I1; the rule to carry now is the next one.
 
 ### Prefer implicit references; `depends_on` is a last resort
