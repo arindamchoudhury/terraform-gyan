@@ -296,6 +296,19 @@ When you run `terraform apply`, Terraform reconciles config, real infrastructure
 
 These are the same plan symbols from Chapter 3. The one to respect is `-/+`: changing certain arguments (an EC2 instance's `ami`, a bucket's `bucket` name) forces a full replacement, not an edit. The plan tells you which — read it.
 
+!!! note "Drift: when the cloud changes but your config doesn't"
+    The list above assumes your config is what moved. But the real object can change on its own: someone edits it in the console, or the cloud provider mutates it. That is **drift**, and Terraform's answer is blunt — your config wins.
+
+    Every `plan`/`apply` starts by **refreshing**. Terraform calls the provider's read API on each resource to pull the object's *current* real state into memory. If that differs from the last-known state, `plan` reports it under `Note: Objects have changed outside of Terraform` and then plans to steer reality back toward the config: `~` to patch the drifted attribute, or `-/+` if it is forced-new. `apply` undoes the out-of-band change.
+
+    Three ways that plays out differently:
+
+    - **Unmanaged attribute** — if your config never sets the attribute that changed, Terraform absorbs the new value into state and proposes nothing.
+    - **`ignore_changes`** — a `lifecycle { ignore_changes = [...] }` rule tells Terraform to leave those attributes alone even when they drift (I2).
+    - **`-refresh-only`** — `terraform apply -refresh-only` accepts the drift *into state* instead of reverting it, so state is updated to match reality rather than the other way round (I7).
+
+    Full drift and refresh mechanics live with state in B9.
+
 ---
 
 ## Part 3 — The implicit dependency graph
