@@ -488,6 +488,11 @@ The plan shows all three as `+ create`, with `random_id.suffix.hex` and the buck
 tflocal apply                 # review the three '+ create', type yes
 tflocal state list            # random_id.suffix / aws_s3_bucket.site / aws_s3_object.index
 awslocal s3 ls                # the emulator's own view: the bucket exists
+
+# check the object and its content (the bucket name carries a random suffix)
+BUCKET=$(tflocal state show aws_s3_bucket.site | awk -F'"' '/^ *bucket /{print $2; exit}')
+awslocal s3 ls "s3://$BUCKET/"                # index.html is listed, with its size
+awslocal s3 cp "s3://$BUCKET/index.html" -    # dumps content to stdout: hello from terraform
 ```
 
 Notice `random_id.suffix` is in state but never appears in `awslocal s3 ls` — it's a **local-only** resource, a value in state with no cloud object behind it. The bucket and object are real (emulated) S3 objects.
