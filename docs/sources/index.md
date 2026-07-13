@@ -25,6 +25,7 @@ Log of all captured sources, organised by course.
 | [Destroy a resource](terraform-docs/tf-destroy-resource.md) | documentation | 2026-07-10 | destroy, removed-block, destroy-time-provisioner, target | [url](https://developer.hashicorp.com/terraform/language/resources/destroy) |
 | [`removed` block reference](terraform-docs/tf-block-removed.md) | documentation | 2026-07-10 | removed-block, destroy, state, refactoring, version-drift | [url](https://developer.hashicorp.com/terraform/language/block/removed) |
 | [`resource` block reference](terraform-docs/tf-block-resource.md) | documentation | 2026-07-10 | resource-block, lifecycle, action_trigger, actions, provisioners, connection, docs-bug | [url](https://developer.hashicorp.com/terraform/language/block/resource) |
+| [Input Variables (Use variables)](terraform-docs/tf-input-variables.md) | documentation | 2026-07-13 | variables, tfvars, precedence, TF_VAR, sensitive, ephemeral, validation | [url](https://developer.hashicorp.com/terraform/language/values/variables) |
 
 ## 2. OpenTofu Docs
 

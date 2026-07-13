@@ -29,3 +29,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Destroy a resource | 2026-07-10 | [tf-destroy-resource](tf-destroy-resource.md) |
 | `removed` block reference | 2026-07-10 | [tf-block-removed](tf-block-removed.md) |
 | `resource` block reference | 2026-07-10 | [tf-block-resource](tf-block-resource.md) |
+| Input Variables (Use variables) | 2026-07-13 | [tf-input-variables](tf-input-variables.md) |
