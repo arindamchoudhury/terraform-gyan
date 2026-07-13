@@ -54,6 +54,7 @@ Log of all captured sources, organised by course.
 | [Define resources (Configuration Language)](terraform-tutorials/tut-resource.md) | documentation | 2026-07-13 | resources, arguments, attributes, meta-arguments, implicit-dependency, security-group | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/resource) |
 | [Customize with variables (Configuration Language)](terraform-tutorials/tut-variables.md) | documentation | 2026-07-13 | variables, types, list, map, tfvars, validation, interpolation, terraform-console, slice, regexall | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/variables) |
 | [Simplify with locals (Configuration Language)](terraform-tutorials/tut-locals.md) | documentation | 2026-07-13 | locals, merge, dynamic-expressions, resource-tags, dry | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/locals) |
+| [Output data (Configuration Language)](terraform-tutorials/tut-outputs.md) | documentation | 2026-07-13 | outputs, terraform-output, sensitive, json, raw, state | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/outputs) |
 
 ## 4. Terraform Registry
 
