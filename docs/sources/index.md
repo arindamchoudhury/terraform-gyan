@@ -27,6 +27,7 @@ Log of all captured sources, organised by course.
 | [`resource` block reference](terraform-docs/tf-block-resource.md) | documentation | 2026-07-10 | resource-block, lifecycle, action_trigger, actions, provisioners, connection, docs-bug | [url](https://developer.hashicorp.com/terraform/language/block/resource) |
 | [Input Variables (Use variables)](terraform-docs/tf-input-variables.md) | documentation | 2026-07-13 | variables, tfvars, precedence, TF_VAR, sensitive, ephemeral, validation | [url](https://developer.hashicorp.com/terraform/language/values/variables) |
 | [`variable` block reference](terraform-docs/tf-block-variable.md) | documentation | 2026-07-13 | variable-block, type-constraint, validation, sensitive, ephemeral, const, deprecated, nullable | [url](https://developer.hashicorp.com/terraform/language/block/variable) |
+| [Manage sensitive data](terraform-docs/tf-manage-sensitive-data.md) | documentation | 2026-07-13 | secrets, sensitive, ephemeral, write-only, state-security, encryption | [url](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) |
 
 ## 2. OpenTofu Docs
 

@@ -57,6 +57,9 @@ nav = [
                     { "Use variables" = "sources/terraform-docs/tf-input-variables.md" },
                     { "variable block reference" = "sources/terraform-docs/tf-block-variable.md" },
                 ]},
+                { "Sensitive data" = [
+                    { "Manage sensitive data" = "sources/terraform-docs/tf-manage-sensitive-data.md" },
+                ]},
                 { "removed block reference" = "sources/terraform-docs/tf-block-removed.md" },
                 { "Reference" = [
                     { "Style guide" = "sources/terraform-docs/tf-style-guide.md" },
