@@ -25,6 +25,8 @@ flowchart LR
     M -- "output.*" --> Consumer["CLI · parent module · remote state"]
 ```
 
+Read it left to right. Data enters the module from the left: a **caller** — the CLI, a `.tfvars` file, or a parent module — sets **input variables**, which the module reads as `var.*`. Inside the box, **locals** compute intermediate values from those inputs (and from resource attributes); they never cross the boundary in either direction. Data leaves on the right: the module publishes **output values** (`output.*`) to whatever consumes it — the CLI after `apply`, a parent module, or another configuration via remote state. So the three blocks are three positions relative to that boundary: variables cross **inward**, outputs cross **outward**, locals stay **inside**.
+
 - **`variable`** — an **input**. The caller sets it; inside the module you read `var.name`. This is a function parameter.
 - **`output`** — a **return value**. The module computes it and exposes it to the CLI, a parent module, or another configuration. This is a function's return.
 - **`locals`** — an **internal** named value. Computed inside the module, invisible outside. This is a local variable.
