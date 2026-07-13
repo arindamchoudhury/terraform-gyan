@@ -61,6 +61,9 @@ nav = [
                     { "Use locals" = "sources/terraform-docs/tf-locals.md" },
                     { "locals block reference" = "sources/terraform-docs/tf-block-locals.md" },
                 ]},
+                { "Outputs" = [
+                    { "Use outputs" = "sources/terraform-docs/tf-outputs.md" },
+                ]},
                 { "Sensitive data" = [
                     { "Manage sensitive data" = "sources/terraform-docs/tf-manage-sensitive-data.md" },
                 ]},

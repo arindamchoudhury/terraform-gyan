@@ -30,6 +30,7 @@ Log of all captured sources, organised by course.
 | [Manage sensitive data](terraform-docs/tf-manage-sensitive-data.md) | documentation | 2026-07-13 | secrets, sensitive, ephemeral, write-only, state-security, encryption | [url](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) |
 | [Local Values (Use locals)](terraform-docs/tf-locals.md) | documentation | 2026-07-13 | locals, expressions, dry, naming, module-scope | [url](https://developer.hashicorp.com/terraform/language/values/locals) |
 | [`locals` block reference](terraform-docs/tf-block-locals.md) | documentation | 2026-07-13 | locals-block, expressions, identifiers, multiple-blocks, module-scope | [url](https://developer.hashicorp.com/terraform/language/block/locals) |
+| [Output Values (Use outputs)](terraform-docs/tf-outputs.md) | documentation | 2026-07-13 | outputs, output-block, module-outputs, sensitive, ephemeral, remote-state | [url](https://developer.hashicorp.com/terraform/language/values/outputs) |
 
 ## 2. OpenTofu Docs
 
