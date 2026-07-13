@@ -12,9 +12,11 @@ By the end of this chapter you can:
 
 ## The problem: every config so far is frozen
 
-By the end of Chapter 5 you could wire resources together and predict their apply order. But look back at any example you wrote: the region is `"us-east-1"`, the bucket is `"site-…"`, the instance type is `"t2.micro"` — all hard-coded. That configuration builds exactly one thing, one way. To stand up a second copy for staging, or flip the instance type for production, you would **edit the `.tf` files** and risk changing the wrong line.
+You have already *met* all three blocks in this chapter's title. Chapter 4 introduced `variable`, `locals`, and `output` as three of the twelve block types, and showed `var.region` and `local.tags` as reference strings. Chapter 2 used `.tfvars` files and `TF_VAR_` to inject a secret, and even sketched the precedence order. So the raw syntax is not new.
 
-That is the wall this chapter removes. A configuration should have a **consistent interface**: a set of knobs a user turns from the outside, and a set of values it reports back — without anyone editing its source. Three blocks provide that interface, and they map cleanly onto something you already know:
+What you have *not* seen is the whole model — and that gap is where real configurations go wrong. So far a variable has been "a knob you can reference." This chapter makes it a **contract**: a typed, validated, documented input with a defined assignment order; an `output` with its own type and redaction rules; a `locals` block that does more than hold a tag map. The three blocks together form a module's **interface** — the knobs a caller turns from outside and the values it reports back, without anyone editing the source. Chapter 4 named the pieces; this chapter is where you learn to *design* the interface, and use it to make one configuration serve many environments.
+
+They map cleanly onto something you already know:
 
 ```mermaid
 flowchart LR
