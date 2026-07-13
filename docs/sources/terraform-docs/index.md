@@ -35,3 +35,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Local Values (Use locals) | 2026-07-13 | [tf-locals](tf-locals.md) |
 | `locals` block reference | 2026-07-13 | [tf-block-locals](tf-block-locals.md) |
 | Output Values (Use outputs) | 2026-07-13 | [tf-outputs](tf-outputs.md) |
+| `output` block reference | 2026-07-13 | [tf-block-output](tf-block-output.md) |
