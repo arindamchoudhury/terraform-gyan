@@ -32,6 +32,7 @@ Log of all captured sources, organised by course.
 | [`locals` block reference](terraform-docs/tf-block-locals.md) | documentation | 2026-07-13 | locals-block, expressions, identifiers, multiple-blocks, module-scope | [url](https://developer.hashicorp.com/terraform/language/block/locals) |
 | [Output Values (Use outputs)](terraform-docs/tf-outputs.md) | documentation | 2026-07-13 | outputs, output-block, module-outputs, sensitive, ephemeral, remote-state | [url](https://developer.hashicorp.com/terraform/language/values/outputs) |
 | [`output` block reference](terraform-docs/tf-block-output.md) | documentation | 2026-07-13 | output-block, type, precondition, depends_on, deprecated, sensitive, ephemeral | [url](https://developer.hashicorp.com/terraform/language/block/output) |
+| [Conditional Expressions](terraform-docs/tf-conditionals.md) | documentation | 2026-07-13 | conditionals, ternary, can, self, precondition, postcondition, alltrue | [url](https://developer.hashicorp.com/terraform/language/expressions/conditionals) |
 
 ## 2. OpenTofu Docs
 
