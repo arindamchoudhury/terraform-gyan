@@ -29,6 +29,7 @@ Log of all captured sources, organised by course.
 | [`variable` block reference](terraform-docs/tf-block-variable.md) | documentation | 2026-07-13 | variable-block, type-constraint, validation, sensitive, ephemeral, const, deprecated, nullable | [url](https://developer.hashicorp.com/terraform/language/block/variable) |
 | [Manage sensitive data](terraform-docs/tf-manage-sensitive-data.md) | documentation | 2026-07-13 | secrets, sensitive, ephemeral, write-only, state-security, encryption | [url](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) |
 | [Local Values (Use locals)](terraform-docs/tf-locals.md) | documentation | 2026-07-13 | locals, expressions, dry, naming, module-scope | [url](https://developer.hashicorp.com/terraform/language/values/locals) |
+| [`locals` block reference](terraform-docs/tf-block-locals.md) | documentation | 2026-07-13 | locals-block, expressions, identifiers, multiple-blocks, module-scope | [url](https://developer.hashicorp.com/terraform/language/block/locals) |
 
 ## 2. OpenTofu Docs
 

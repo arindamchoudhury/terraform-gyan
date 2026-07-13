@@ -33,3 +33,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `variable` block reference | 2026-07-13 | [tf-block-variable](tf-block-variable.md) |
 | Manage sensitive data | 2026-07-13 | [tf-manage-sensitive-data](tf-manage-sensitive-data.md) |
 | Local Values (Use locals) | 2026-07-13 | [tf-locals](tf-locals.md) |
+| `locals` block reference | 2026-07-13 | [tf-block-locals](tf-block-locals.md) |
