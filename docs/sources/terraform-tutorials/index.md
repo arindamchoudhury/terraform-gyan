@@ -18,3 +18,4 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Page | Added | File |
 |---|---|---|
 | Define resources | 2026-07-13 | [tut-resource](tut-resource.md) |
+| Customize with variables | 2026-07-13 | [tut-variables](tut-variables.md) |

@@ -50,6 +50,7 @@ Log of all captured sources, organised by course.
 | [Manage infrastructure](terraform-tutorials/tf-aws-manage.md) | documentation | 2026-07-07 | variables, outputs, modules, plan-symbols, replace, vpc | [url](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-manage) |
 | [Destroy infrastructure](terraform-tutorials/tf-aws-destroy.md) | documentation | 2026-07-07 | destroy, remove-resource, teardown, plan-symbols | [url](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-destroy) |
 | [Define resources (Configuration Language)](terraform-tutorials/tut-resource.md) | documentation | 2026-07-13 | resources, arguments, attributes, meta-arguments, implicit-dependency, security-group | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/resource) |
+| [Customize with variables (Configuration Language)](terraform-tutorials/tut-variables.md) | documentation | 2026-07-13 | variables, types, list, map, tfvars, validation, interpolation, terraform-console, slice, regexall | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/variables) |
 
 ## 4. Terraform Registry
 

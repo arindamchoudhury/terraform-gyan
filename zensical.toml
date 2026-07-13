@@ -99,6 +99,7 @@ nav = [
             ]},
             { "Configuration Language" = [
                 { "1. Define resources" = "sources/terraform-tutorials/tut-resource.md" },
+                { "2. Customize with variables" = "sources/terraform-tutorials/tut-variables.md" },
             ]},
         ]},
         { "Terraform Registry" = [
