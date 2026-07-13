@@ -53,7 +53,9 @@ nav = [
                     { "Destroy a resource" = "sources/terraform-docs/tf-destroy-resource.md" },
                     { "resource block reference" = "sources/terraform-docs/tf-block-resource.md" },
                 ]},
-                { "Use variables" = "sources/terraform-docs/tf-input-variables.md" },
+                { "Variables" = [
+                    { "Use variables" = "sources/terraform-docs/tf-input-variables.md" },
+                ]},
                 { "removed block reference" = "sources/terraform-docs/tf-block-removed.md" },
                 { "Reference" = [
                     { "Style guide" = "sources/terraform-docs/tf-style-guide.md" },
