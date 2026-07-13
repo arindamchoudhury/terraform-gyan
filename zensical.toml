@@ -91,10 +91,15 @@ nav = [
         ]},
         { "HashiCorp Terraform Tutorials" = [
             { "Overview" = "sources/terraform-tutorials/index.md" },
-            { "1. Install Terraform" = "sources/terraform-tutorials/tf-install-cli.md" },
-            { "2. Create infrastructure" = "sources/terraform-tutorials/tf-aws-create.md" },
-            { "3. Manage infrastructure" = "sources/terraform-tutorials/tf-aws-manage.md" },
-            { "4. Destroy infrastructure" = "sources/terraform-tutorials/tf-aws-destroy.md" },
+            { "AWS Get Started" = [
+                { "1. Install Terraform" = "sources/terraform-tutorials/tf-install-cli.md" },
+                { "2. Create infrastructure" = "sources/terraform-tutorials/tf-aws-create.md" },
+                { "3. Manage infrastructure" = "sources/terraform-tutorials/tf-aws-manage.md" },
+                { "4. Destroy infrastructure" = "sources/terraform-tutorials/tf-aws-destroy.md" },
+            ]},
+            { "Configuration Language" = [
+                { "1. Define resources" = "sources/terraform-tutorials/tut-resource.md" },
+            ]},
         ]},
         { "Terraform Registry" = [
             { "Overview" = "sources/terraform-registry/index.md" },
