@@ -10,6 +10,6 @@ Synthesized chapters, one per learning-path topic. Each chapter blends every sou
 | [04](ch04-hcl-language-basics.md) | B4 — HCL language basics | ✅ 2026-07-09 |
 | [05](ch05-providers-resources.md) | B5 — Providers & resources | ✅ 2026-07-11 |
 | [06](ch06-input-variables-outputs-locals.md) | B6 — Input variables, outputs & locals | ✅ 2026-07-13 |
-| 07 | B7 — Expressions, operators & built-in functions | ⬜ |
+| [07](ch07-expressions-operators-functions.md) | B7 — Expressions, operators & built-in functions | ✅ 2026-07-15 |
 | 08 | B8 — Data sources | ⬜ |
 | 09 | B9 — State fundamentals | ⬜ |

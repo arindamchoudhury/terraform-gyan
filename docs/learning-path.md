@@ -201,7 +201,7 @@
 
 ---
 
-### ⬜ B7 — Expressions, operators & built-in functions
+### ✅ B7 — Expressions, operators & built-in functions
 
 **What it is:** HCL expressions — references, conditionals (`? :`), `for` expressions, splat, string templates — and the built-in function library (`for_each` helpers, `lookup`, `merge`, `try`, `coalesce`, `templatefile`, etc.).
 
@@ -973,7 +973,7 @@ Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner — B1–B6 done (Ch 1–6 written). Next up: **B7 (Expressions, operators & built-in functions)**.
+**You are currently here:** Beginner — B1–B7 done (Ch 1–7 written). Next up: **B8 (Data sources)**.
 
 ---
 
