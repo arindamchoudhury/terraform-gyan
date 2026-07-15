@@ -48,3 +48,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `dynamic` Blocks | 2026-07-15 | [tf-expr-dynamic-blocks](tf-expr-dynamic-blocks.md) |
 | Type Constraints | 2026-07-15 | [tf-expr-type-constraints](tf-expr-type-constraints.md) |
 | Version Constraints | 2026-07-15 | [tf-expr-version-constraints](tf-expr-version-constraints.md) |
+| Built-in Functions (catalogue) | 2026-07-15 | [tf-functions](tf-functions.md) |
