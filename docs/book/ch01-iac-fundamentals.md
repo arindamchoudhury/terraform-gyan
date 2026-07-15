@@ -265,6 +265,88 @@ curl -s http://localhost:4566/_localstack/health
 { "services": { "s3": "available", "dynamodb": "available", "iam": "available", ... } }
 ```
 
+### See what you create — the Floci console (floci-ui)
+
+The single most useful extra for learning is the **Floci console**, a local web UI (`floci-io/floci-ui`, MIT). It's an AWS-Console-style **Cloud Explorer** over the *real* emulator state — after a lab's `apply`, you *see* the S3 buckets, DynamoDB tables, Lambda functions, RDS/EKS/VPC/secrets the run created, instead of squinting at `awslocal` output. For a beginner this closes the loop between "I wrote HCL" and "a thing exists".
+
+You don't clone or build anything — the console ships as a published image (`floci/floci-ui`), and this book's `labs/docker-compose.yml` already includes it. It comes up **together with the emulator** on the same start command from Step 2:
+
+```shell
+docker compose -f labs/docker-compose.yml up -d   # emulator (:4566) + console (:4500)
+```
+
+Open **http://localhost:4500** — the console is just there, no extra step.
+
+!!! info "How it's wired (one image, not a stack)"
+    The published `floci/floci-ui` image is **all-in-one**: a single process serves both the web frontend and its small API on `:4500`, and reads the emulator over the compose network via **`FLOCI_ENDPOINT=http://floci:4566`** (already set in the compose file). No second emulator, no port juggling — the console reads the *same* `:4566` your `tflocal` labs write to. Verified 2026-07-15: a secret created on `:4566` shows up immediately in the console's API.
+
+The service in `labs/docker-compose.yml`:
+
+```yaml
+  floci-ui:
+    image: floci/floci-ui:latest
+    container_name: floci-ui
+    ports:
+      - "127.0.0.1:4500:4500"
+    environment:
+      FLOCI_ENDPOINT: http://floci:4566    # emulator, by its compose service name
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    depends_on:
+      - floci
+```
+
+!!! tip "Don't want the console every time?"
+    It's a convenience, not a requirement. To make it opt-in, add `profiles: ["ui"]` to the `floci-ui` service — then a plain `up -d` starts only the emulator, and `docker compose -f labs/docker-compose.yml --profile ui up -d` adds the console. Or just comment the service out.
+
+### Optional — the `floci-cli` (a thin wrapper you don't strictly need)
+
+`floci-io/floci-cli` (MIT) is a convenience CLI. Worth knowing what it does — and that the **already-running container does all of it**, so the labs never depend on it. Install per platform:
+
+```powershell
+# Windows
+scoop bucket add floci https://github.com/floci-io/scoop-floci
+scoop install floci
+# or: iwr https://floci.io/install.ps1 | iex
+```
+
+```shell
+# Linux / macOS
+curl -fsSL https://floci.io/install.sh | sh
+# macOS (Homebrew): brew install floci-io/floci/floci
+# any OS with Java 25+: download floci.jar from the latest release, then `java -jar floci.jar version`
+```
+
+!!! note "`floci` the binary vs `floci/floci` the emulator"
+    All four methods install the **CLI** — a binary named `floci`, from the `floci-io/floci-cli` repo. That's *not* the emulator: the emulator is the Docker image `floci/floci`, which your `docker compose up` pulls separately. Same name, two different things.
+
+Under the hood every command just shells out to `docker` or does an HTTP `GET` on Floci's native health path `/_floci/health` (same JSON as the `/_localstack/health` alias you curled above). So each maps to a plain command against your running `floci-lab`:
+
+| `floci-cli` | What it really does | Do the same with the running container |
+|---|---|---|
+| `floci start` | builds a `docker run -d -p 4566:4566 … floci/floci:latest` line, then waits | `docker compose -f labs/docker-compose.yml up -d` (your Step 2) |
+| `floci status` | `docker inspect` + `GET /_floci/health` | `docker ps --filter name=floci-lab` &nbsp;+&nbsp; `curl -s http://localhost:4566/_floci/health` |
+| `floci wait` | polls `/_floci/health` every 500 ms until 200 | `until curl -sf http://localhost:4566/_floci/health >/dev/null; do sleep 1; done` |
+| `floci env` | prints **4 constant** vars — no container call | `export`/`$env:` them yourself (see below) |
+| `floci logs` | `docker logs` | `docker logs -f floci-lab` |
+| `floci stop` | stops + removes the container | `docker compose -f labs/docker-compose.yml down` |
+| `floci doctor` | **11 environment checks + `--fix`** | no one-liner — this is the wrapper's real value |
+
+`floci env` emits only these, identical every time (the emulator ignores the key *values*, it just needs some creds present):
+
+```shell
+AWS_ENDPOINT_URL=http://localhost.floci.io:4566
+AWS_ACCESS_KEY_ID=test
+AWS_SECRET_ACCESS_KEY=test
+AWS_DEFAULT_REGION=us-east-1
+```
+
+It knows your shell — `floci env --shell powershell | Invoke-Expression` sets them on Windows (`eval $(floci env)` is the bash form). The book doesn't use this path anyway: **`tflocal` injects those for you**, keeping your `.tf` portable.
+
+!!! tip "The one command worth installing the CLI for: `floci doctor`"
+    `floci doctor` runs 11 checks in sequence — docker installed, daemon up, socket reachable, docker version, port 4566 free, image present/current, container running, endpoint reachable, plus aws-cli endpoint + S3 path-style config — and `--fix` auto-resolves the fixable ones. That's a genuinely useful **one-shot setup check** you'd otherwise run by hand. Everything else the CLI does, the running container already gives you, so treat the CLI as optional and skip it in the per-chapter labs.
+
 ### Step 3 — how Terraform will talk to it
 
 The Terraform **CLI itself** you install in the next chapter (B2) — this section only stands up the *sandbox*. When B2's lab arrives, there are three ways to aim Terraform at the emulator instead of real AWS, all pointing at `localhost:4566`. The labs use `tflocal`, which works against **any** of the three:
@@ -350,3 +432,4 @@ With Docker running, an emulator healthy on 4566, and `tflocal` installed, your 
 - [MiniStack Facts](../research-cache/ministack-facts.md) (MIT, free-forever emulator; Docker, Terraform wiring — verified 2026-07-09)
 - [LocalStack Facts](../research-cache/localstack-facts.md) (Docker setup, 2026 packaging/auth-token change, `tflocal` — verified 2026-07-09)
 - Web (verified 2026-07-09): [Floci](https://github.com/floci-io/floci) · [floci-io org](https://github.com/floci-io) · [MiniStack](https://github.com/ministackorg/ministack) · [LocalStack install](https://docs.localstack.cloud/aws/getting-started/installation/) · [Terraform with LocalStack](https://docs.localstack.cloud/aws/integrations/infrastructure-as-code/terraform/) · [The Road Ahead for LocalStack](https://blog.localstack.cloud/the-road-ahead-for-localstack/)
+- Floci extras (verified 2026-07-15): [floci-ui](https://github.com/floci-io/floci-ui) (console, `:4500`→`:4501`→`:4566`) · [floci-cli](https://github.com/floci-io/floci-cli) (thin wrapper — `env` = 4 constants, `doctor` = 11-check setup diagnostic, health polled on native `/_floci/health`)

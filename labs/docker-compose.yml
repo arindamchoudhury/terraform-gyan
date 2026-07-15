@@ -4,6 +4,7 @@
 #
 #   Start:   docker compose -f labs/docker-compose.yml up -d
 #   Health:  curl -s http://localhost:4566/_localstack/health
+#   Console: http://localhost:4500   (starts with the emulator, see floci-ui below)
 #   Stop:    docker compose -f labs/docker-compose.yml down
 #
 # Swap the image for a different free emulator without changing anything else:
@@ -29,3 +30,22 @@ services:
     # key `test` still bypasses enforcement, so lab setup steps keep working.
     # environment:
     #   FLOCI_SERVICES_IAM_ENFORCEMENT_ENABLED: "true"
+
+  # Web console — see what your labs create at http://localhost:4500.
+  # Starts alongside the emulator on a plain `up -d`. Don't want it? Comment
+  # this service out, or add `profiles: ["ui"]` to make it opt-in.
+  # All-in-one image: one process serves the frontend + its API on :4500 and
+  # reads the emulator over the compose network via FLOCI_ENDPOINT.
+  floci-ui:
+    image: floci/floci-ui:latest
+    container_name: floci-ui
+    ports:
+      - "127.0.0.1:4500:4500"
+    environment:
+      FLOCI_ENDPOINT: http://floci:4566     # emulator, by its compose service name
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    depends_on:
+      - floci
+    restart: unless-stopped

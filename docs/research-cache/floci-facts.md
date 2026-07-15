@@ -5,7 +5,8 @@ See also [[ministack-facts]] and [[localstack-facts]] — all three share port 4
 [[robotocore-facts]] also serves `:4566` and enforces IAM, but Floci enforces IAM natively (see
 below) and covers `iam:*`/`sts:*` actions that Robotocore cannot, so the book does not need it.
 
-_Last verified: 2026-07-09; IAM enforcement added 2026-07-12 (github.com/floci-io/floci)._
+_Last verified: 2026-07-09; IAM enforcement added 2026-07-12; floci-cli internals + health-path
+(`/_floci/health` native, `/_localstack/health` alias) verified 2026-07-15 (github.com/floci-io/floci-cli)._
 
 ## What it is
 
@@ -16,7 +17,10 @@ AWS-Console-style local UI), `floci-cli`, and a Testcontainers module. **No auth
 
 - **Gateway port:** `4566` — same as LocalStack/MiniStack, so `:4566` tooling works unchanged.
 - **LocalStack-API-compatible:** it still serves the `/_localstack/health` and `/_localstack/init`
-  endpoints, so **LocalStack's `tflocal` wrapper drives Floci directly**.
+  endpoints, so **LocalStack's `tflocal` wrapper drives Floci directly**. Floci's own **native**
+  control-plane path is **`/_floci/health`** (what `floci-cli` polls); `/_localstack/health` is a
+  compat **alias** — verified 2026-07-15 that both return **200** with an **identical** JSON body
+  (`{"edition":"community","version":"1.5.31","original_edition":"floci-always-free","services":{…}}`).
 - **69 AWS services** (README, verified 2026-07-11) (S3, SQS, SNS, DynamoDB, Lambda, RDS, ECS, EKS, IAM, STS, events, APIs,
   containers, databases, messaging, security, billing). 100% SDK compatibility claimed.
 - **EC2 mock is usable — verified 2026-07-09.** Unlike LocalStack's free Community tier (where EC2
@@ -95,14 +99,68 @@ services:
     user: root
 ```
 
-Health (LocalStack-compatible path):
+Health — native path and the LocalStack-compat alias both return **200** with the same body:
 
 ```bash
-curl -s http://localhost:4566/_localstack/health
+curl -s http://localhost:4566/_floci/health        # native (floci-cli uses this)
+curl -s http://localhost:4566/_localstack/health   # compat alias — identical body
 ```
 
 Optional: `floci-ui` gives an AWS-Console-style view of what the labs create; `floci-cli`
-orchestrates emulator instances.
+orchestrates the container (see next section).
+
+### floci-ui — the web console (published all-in-one image)
+
+`floci-io/floci-ui` (MIT) publishes an **all-in-one** image `floci/floci-ui:latest` (tags `latest`,
+`0.2.0`, ~40 MB): one compiled process serves both the web frontend and its API on **`:4500`**, and
+reads the emulator over the network via **`FLOCI_ENDPOINT`** (Hono `serveStatic` from `./public` +
+`/api/*` routes for ec2/rds/eks/secretsmanager/clouds). **No repo clone, no build, no second
+emulator** — point it at the running `:4566` and it reflects real state. The book's
+`labs/docker-compose.yml` ships it as a **normal service** that comes up with the emulator on a plain
+`docker compose up -d` (console on `:4500`); add `profiles: ["ui"]` to make it opt-in.
+
+```yaml
+  floci-ui:
+    image: floci/floci-ui:latest
+    container_name: floci-ui               # add `profiles: ["ui"]` to make opt-in
+    ports: ["127.0.0.1:4500:4500"]
+    environment:
+      FLOCI_ENDPOINT: http://floci:4566    # emulator by compose service name
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    depends_on: [floci]
+```
+
+Verified end-to-end 2026-07-15: `aws --endpoint-url :4566 secretsmanager create-secret` → the same
+secret returned by `GET http://localhost:4500/api/secretsmanager/secrets`. The floci-ui *repo*
+compose (`docker-compose.yml`) instead **builds from source** and bundles its own `floci` on `:4566`
+(dev setup) — for the book, prefer the published image service above, not the repo clone.
+
+## floci-cli internals — it's a thin wrapper on `floci/floci`
+
+Verified against the floci-cli source (`github.com/floci-io/floci-cli`, 2026-07-15). The cli shells
+out to the `docker` binary and talks HTTP to `/_floci/health`; it adds **no capability the container
+lacks**. So the labs do **not** need it — bare `docker run` + `tflocal` covers everything. Map:
+
+| cli command | what it actually does | raw equivalent |
+|---|---|---|
+| `floci start` | builds a `docker run -d --name floci -p <port>:4566 <socket-mount> [-v dir:/app/data -e FLOCI_STORAGE_MODE=persistent] floci/floci:latest` line, `docker pull` per policy, then calls `wait` | the `docker run` above |
+| `floci env` | prints **4 constant** vars, no container call: `AWS_ENDPOINT_URL=http://localhost.floci.io:4566`, `AWS_ACCESS_KEY_ID=test`, `AWS_SECRET_ACCESS_KEY=test`, `AWS_DEFAULT_REGION=us-east-1` | hardcode them |
+| `floci wait` | polls `GET /_floci/health` every 500 ms until 200 / timeout | curl-loop |
+| `floci status` | `docker inspect` + one `GET /_floci/health` (version/edition) | `docker ps` + curl |
+| `floci doctor` | **11 checks + `--fix`** (below) | not trivially replaceable |
+
+**`floci env` supports PowerShell** — `floci env --shell powershell` emits `$env:KEY = "…"`, so on
+Windows: `floci env --shell powershell | Invoke-Expression` (bash default is `eval $(floci env)`).
+The book still drives Terraform via **`tflocal`** (portable, no env juggling); `env` is only for the
+raw-endpoint path.
+
+**`floci doctor`** is the one genuine value-add — a beginner-proof setup check. Checks: docker
+installed, daemon up, socket reachable, docker version, port free, image present, image version,
+container running, endpoint reachable (`/_floci/health`), aws-cli endpoint configured, aws-cli S3
+path-style. `--fix` auto-resolves the fixable ones. **Use it as the Ch1 lab health check**; skip cli
+elsewhere.
 
 ## Terraform integration
 
