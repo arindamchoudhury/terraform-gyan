@@ -361,7 +361,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Reference — [HCDocs "dynamic blocks"](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks) + ["Type Constraints"](https://developer.hashicorp.com/terraform/language/expressions/type-constraints)** (~40 min) — syntax and when `dynamic` is worth the readability cost.
+1. **Reference — [HCDocs "dynamic blocks"](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks) + ["Type Constraints"](https://developer.hashicorp.com/terraform/language/expressions/type-constraints)** (~40 min) — syntax and when `dynamic` is worth the readability cost. The dynamic-blocks page is captured as [[tf-expr-dynamic-blocks]] — full anatomy (`for_each`/`iterator`/`labels`/`content`, the `key`/`value` iterator attributes and the set-key caveat), the meta-argument-block limitation (can't generate `lifecycle`/`provisioner`), multi-level nesting with a distinct `iterator` per level, `flatten`/`setproduct` to shape `for_each`, and the "write blocks literally where possible" best practice.
 2. **Interactive — build a security-group module** (~1 hr) — drive `ingress` rules from a list-of-objects variable via `dynamic`.
 3. **Book chapter — TID Ch 5** (~30 min) — complex type constraints and `optional()`.
 

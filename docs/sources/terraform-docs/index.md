@@ -45,3 +45,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Function Calls | 2026-07-15 | [tf-expr-function-calls](tf-expr-function-calls.md) |
 | `for` Expressions | 2026-07-15 | [tf-expr-for](tf-expr-for.md) |
 | Splat Expressions | 2026-07-15 | [tf-expr-splat](tf-expr-splat.md) |
+| `dynamic` Blocks | 2026-07-15 | [tf-expr-dynamic-blocks](tf-expr-dynamic-blocks.md) |

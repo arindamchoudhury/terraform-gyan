@@ -41,6 +41,7 @@ Log of all captured sources, organised by course.
 | [Function Calls](terraform-docs/tf-expr-function-calls.md) | documentation | 2026-07-15 | function-calls, built-in-functions, argument-expansion, sensitive, pure-functions, plan-time | [url](https://developer.hashicorp.com/terraform/language/expressions/function-calls) |
 | [`for` Expressions](terraform-docs/tf-expr-for.md) | documentation | 2026-07-15 | for-expressions, transform, filtering, grouping, element-ordering, type-conversion | [url](https://developer.hashicorp.com/terraform/language/expressions/for) |
 | [Splat Expressions](terraform-docs/tf-expr-splat.md) | documentation | 2026-07-15 | splat, for-expressions, single-value-as-list, dynamic-blocks, legacy-splat, for_each | [url](https://developer.hashicorp.com/terraform/language/expressions/splat) |
+| [`dynamic` Blocks](terraform-docs/tf-expr-dynamic-blocks.md) | documentation | 2026-07-15 | dynamic-blocks, nested-blocks, for_each, iterator, multi-level-nesting, module-abstraction | [url](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks) |
 
 ## 2. OpenTofu Docs
 
