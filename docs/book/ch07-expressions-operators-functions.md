@@ -64,14 +64,35 @@ resource "aws_instance" "web" {
 }
 ```
 
-**Accessing elements.** Square brackets index lists (`local.list[3]`) and maps (`local.map["key"]`); dot notation reaches object attributes with identifier-safe names (`local.obj.name`). Sets have **no index** — convert to a list first with `tolist()` if you need positional access.
+**Accessing elements.** Square brackets index lists (`local.list[3]`) and maps (`local.map["key"]`); dot notation reaches object attributes with identifier-safe names (`local.obj.name`). Sets have **no index** — convert to a list first with `tolist()` if you need positional access. Watch it in the console:
+
+```
+> ["a", "b", "c"][1]
+"b"
+> { name = "John", age = 52 }.name
+"John"
+> tolist(toset(["b", "a", "b"]))    # set → list: deduped and sorted
+tolist([
+  "a",
+  "b",
+])
+```
 
 ### Type conversion — automatic, except `==`
 
 Where an argument expects a type, Terraform **auto-converts** when it safely can: `number`/`bool` → `string`, and a `string` → number/bool when the string holds a valid representation (`"15"` ↔ `15`, `"true"` ↔ `true`).
 
 !!! warning "Equality never auto-converts"
-    The one place conversion does **not** happen is the equality operators. `"15" == 15` is **`false`** — different types. Cast first: `tonumber("15") == 15` is `true`. This is the single most common expression surprise, so when comparing, make the types match explicitly.
+    The one place conversion does **not** happen is the equality operators. Prove it in the console:
+
+    ```
+    > "15" == 15
+    false
+    > tonumber("15") == 15
+    true
+    ```
+
+    `"15"` and `15` are different types, so `==` reports `false`. Cast first. This is the single most common expression surprise, so when comparing, make the types match explicitly.
 
 ---
 
@@ -135,13 +156,29 @@ locals {
 | Equality | `==` `!=` | any (same type) → bool |
 | Logical | `&&` `\|\|` `!` | bool → bool |
 
-**Precedence** (highest first): `!`/unary `-` → `*` `/` `%` → `+` `-` → comparison → equality → `&&` → `||`. So `1 + 2 * 3` is `7`, not `9`.
+**Precedence** (highest first): `!`/unary `-` → `*` `/` `%` → `+` `-` → comparison → equality → `&&` → `||`. Check it rather than trust it:
+
+```
+> 1 + 2 * 3
+7
+> (1 + 2) * 3
+9
+```
 
 !!! tip "Parenthesize for the reader, even when it changes nothing"
     A long chain like `2 + 4 / 5 * var.m` is legal but fragile to edit. Add parentheses to make the grouping obvious — future-you will thank you.
 
 !!! warning "`var.list == []` does not test for empty"
-    An empty list literal `[]` builds a `tuple([])`, whose type never matches a `list(string)`, so the comparison is always `false` regardless of contents. Test length instead: `length(var.list) == 0`. (Same reason as the equality-type rule in §2 — `==` compares type *and* value, and never converts.)
+    An empty list literal `[]` builds a `tuple([])`, whose type never matches a `list(string)`, so the comparison is always `false` regardless of contents. Test length instead:
+
+    ```
+    > tolist([]) == []
+    false
+    > length(tolist([])) == 0
+    true
+    ```
+
+    (Same reason as the equality-type rule in §2 — `==` compares type *and* value, and never converts.)
 
 !!! info "`&&` and `\|\|` short-circuit — OpenTofu 1.10, Terraform 1.12"
     Historically both sides of a logical operator were always evaluated, so a null-guard like `var.foo != null && var.foo.enabled` still **errored** when `var.foo` was null. Now the right side is skipped once the left decides the result, making that guard safe. **OpenTofu shipped it first in 1.10; Terraform followed in 1.12.** This is boolean-only — the ternary `? :` still checks both result branches (§5).
@@ -166,7 +203,14 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 
 The `count = bool ? 1 : 0` idiom is *the* standard way to make a resource optional in a module — a cleaner interface than asking the caller for a number.
 
-**Both result values must share a type.** So Terraform can determine the expression's return type without knowing the condition. If they differ, it hunts for a common type and auto-converts (`var.x ? 12 : "hello"` is always a string). When the result type is uncertain, be explicit: `var.x ? tostring(12) : "hello"`.
+**Both result values must share a type.** So Terraform can determine the expression's return type without knowing the condition. If they differ, it hunts for a common type and auto-converts — note the `12` comes back **quoted**, because the branches unified to `string`:
+
+```
+> true ? 12 : "hello"
+"12"
+```
+
+When the result type is uncertain, be explicit: `var.x ? tostring(12) : "hello"`.
 
 !!! danger "The untaken branch still has to be valid"
     Terraform returns only the selected branch, but **both branches must evaluate without error and be type-compatible.** The bite: if the *unused* branch references something absent — `module.nat_instance[0].ip` when its `count` is 0, or an out-of-range index — the whole expression can error even though that branch was never returned. Guard the risky side with `try`:
@@ -237,6 +281,26 @@ There are ~150 functions; you learn the *skill* of finding one, not the whole li
 | IP network | [`cidrhost`](https://developer.hashicorp.com/terraform/language/functions/cidrhost) [`cidrsubnet`](https://developer.hashicorp.com/terraform/language/functions/cidrsubnet) [`cidrsubnets`](https://developer.hashicorp.com/terraform/language/functions/cidrsubnets) [`cidrnetmask`](https://developer.hashicorp.com/terraform/language/functions/cidrnetmask) |
 | Type conversion | [`tostring`](https://developer.hashicorp.com/terraform/language/functions/tostring) [`tonumber`](https://developer.hashicorp.com/terraform/language/functions/tonumber) [`tobool`](https://developer.hashicorp.com/terraform/language/functions/tobool) [`tolist`](https://developer.hashicorp.com/terraform/language/functions/tolist) [`tomap`](https://developer.hashicorp.com/terraform/language/functions/tomap) [`toset`](https://developer.hashicorp.com/terraform/language/functions/toset) [`try`](https://developer.hashicorp.com/terraform/language/functions/try) [`can`](https://developer.hashicorp.com/terraform/language/functions/can) [`type`](https://developer.hashicorp.com/terraform/language/functions/type) [`sensitive`](https://developer.hashicorp.com/terraform/language/functions/sensitive)/[`nonsensitive`](https://developer.hashicorp.com/terraform/language/functions/nonsensitive) |
 
+A few in the console to make the shapes concrete:
+
+```
+> merge({ env = "dev" }, { env = "prod", team = "sre" })   # later keys win
+{
+  "env" = "prod"
+  "team" = "sre"
+}
+> split("-", "dev-web-01")
+tolist([
+  "dev",
+  "web",
+  "01",
+])
+> join("/", ["a", "b", "c"])
+"a/b/c"
+> jsonencode({ name = "web", replicas = 3 })
+"{\"name\":\"web\",\"replicas\":3}"
+```
+
 !!! info "`convert()` — Terraform 1.15, Terraform-only"
     Terraform **1.15** added `convert(value, type)` for precise inline conversion to any type constraint, e.g. `convert(var.x, list(string))` — more flexible than the fixed `toType` casters. **OpenTofu has no `convert()`** as of 1.12 ([open request](https://github.com/opentofu/opentofu/issues/2630)); portable code sticks to `tostring`/`tonumber`/`tolist`/etc., which both tools have.
 
@@ -250,10 +314,15 @@ They all appear near "default values," but they solve different problems:
 | `try(a, b, ...)` | expression **errors** during evaluation | first argument that evaluates without error |
 | `lookup(map, key, default)` | key may be **missing** from a map | the value, or the default |
 
-```hcl
-coalesce(var.name, "fallback")          # var.name is null?  use "fallback"
-try(local.parsed.field, "fallback")     # local.parsed has no .field? use "fallback"
-lookup(var.sizes, var.env, "t3.micro")  # var.env not a key?  use "t3.micro"
+```
+> coalesce(null, "", "fallback")                      # skip null AND "", take first real value
+"fallback"
+> try(tonumber("not-a-number"), -1)                   # tonumber ERRORS → fall through
+-1
+> lookup({ small = "t3.micro" }, "large", "t3.small") # key "large" MISSING → default
+"t3.small"
+> try(null, "x")                                      # null is a SUCCESS for try, not an error
+null
 ```
 
 !!! tip "Normalize once in locals; keep `try` for real errors"
@@ -329,9 +398,18 @@ To emit a **literal** `${` or `%{`, double the first character: `$${` and `%%{`.
 
 A `for` expression builds one complex value by transforming another. The **bracket** decides the result type: `[ ]` → a tuple, `{ }` → an object.
 
-```hcl
-[for s in var.list : upper(s)]              # tuple:  ["A", "B", "C"]
-{for s in var.list : s => upper(s)}         # object: { a = "A", b = "B" }
+```
+> [for s in ["a", "b", "c"] : upper(s)]        # [ ] → tuple
+[
+  "A",
+  "B",
+  "C",
+]
+> { for s in ["foo", "bar"] : s => upper(s) }  # { } → object
+{
+  "bar" = "BAR"
+  "foo" = "FOO"
+}
 ```
 
 Add a second loop symbol to get the key (maps/objects) or index (lists), and an `if` clause to filter:
@@ -344,14 +422,27 @@ Add a second loop symbol to get the key (maps/objects) or index (lists), and an 
 
 **Grouping mode.** An object result normally requires **unique** keys. When keys repeat, add `...` after the value expression to collect all values per key into a list:
 
-```hcl
-{for name, u in var.users : u.role => name...}   # role => [names…]
+```
+> { for n, u in { am = { role = "dev" }, jb = { role = "dev" }, ps = { role = "ops" } } : u.role => n... }
+{
+  "dev" = [
+    "am",
+    "jb",
+  ]
+  "ops" = [
+    "ps",
+  ]
+}
 ```
 
 **Splat (`[*]`)** is shorthand for the common `for` that pulls one attribute off a list:
 
-```hcl
-var.list[*].id            # ≡ [for o in var.list : o.id]
+```
+> [{ id = "i-1" }, { id = "i-2" }][*].id     # ≡ [for o in var.list : o.id]
+[
+  "i-1",
+  "i-2",
+]
 ```
 
 Splat works on **lists, sets, and tuples only** — a `for_each` resource is a *map*, so use `values(aws_instance.web)[*].id` or a full `for`. Splat has one special trick: on a non-list value it wraps it in a one-element tuple, and on `null` it yields an **empty** tuple — handy for feeding an optional variable into a `dynamic` block's `for_each` (Ch 12).
@@ -381,6 +472,22 @@ locals {
 resource "aws_s3_bucket" "this" {
   for_each = local.buckets_by_name       # a map → for_each is happy
   bucket   = "${each.key}-${random_id.suffix.hex}"
+}
+```
+
+The reshape itself, in the console — a list indexed by position becomes a map keyed by name:
+
+```
+> { for b in [{ name = "logs", versioning = true }, { name = "uploads", versioning = false }] : b.name => b }
+{
+  "logs" = {
+    "name" = "logs"
+    "versioning" = true
+  }
+  "uploads" = {
+    "name" = "uploads"
+    "versioning" = false
+  }
 }
 ```
 
