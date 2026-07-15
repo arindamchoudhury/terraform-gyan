@@ -82,7 +82,7 @@
 **How to learn it:**
 
 1. **Interactive — HCTut ["Install Terraform"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) + ["Create infrastructure"](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/aws-create)** (~1 hr) — follow the AWS (or Docker) quick-start end to end in your own account. (Captured notes: [[tf-install-cli]], [[tf-aws-create]].)
-2. **Reference — [HCDocs "Provider Requirements"](https://developer.hashicorp.com/terraform/language/providers/requirements)** (~20 min) — understand `required_providers`, source addresses, and version pinning. ([Install](https://developer.hashicorp.com/terraform/install)) (Captured notes: [[provider-requirements]].)
+2. **Reference — [HCDocs "Provider Requirements"](https://developer.hashicorp.com/terraform/language/providers/requirements)** (~20 min) — understand `required_providers`, source addresses, and version pinning. ([Install](https://developer.hashicorp.com/terraform/install)) (Captured notes: [[provider-requirements]]; the version-constraint operator syntax used for pinning — `~>`, `>=`, ranges — is in [[tf-expr-version-constraints]].)
 3. **Book chapter — TID Ch 2** (~1 hr) — first-project walkthrough; note the `.terraform/` and lock-file layout.
 
 !!! example "🧪 Labs"
@@ -384,7 +384,7 @@ You are ready to advance when you can:
 **How to learn it:**
 
 1. **Interactive — HCTut ["Use registry modules in configuration"](https://developer.hashicorp.com/terraform/tutorials/modules/module-use)** (~45 min) — pull a registry module (e.g. AWS VPC) and wire it up. (A first taste is captured in [[tf-aws-manage]] — the `terraform-aws-modules/vpc/aws` module block, `module.<name>.<output>` references, re-`init` to install it, and `module.vpc.*` state addressing.)
-2. **Reference — [HCDocs "Module Sources"](https://developer.hashicorp.com/terraform/language/modules/sources) + [version constraint syntax](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)** (~30 min) — `~>`, git refs, local paths.
+2. **Reference — [HCDocs "Module Sources"](https://developer.hashicorp.com/terraform/language/modules/sources) + [version constraint syntax](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)** (~30 min) — `~>`, git refs, local paths. The version-constraints page is captured as [[tf-expr-version-constraints]] — the operators (`=`/`!=`/`>`/`>=`/`<`/`<=`/`~>`, with the `~>` right-most-increment rule), that constraints apply to modules, provider requirements, and `required_version`, the "newest installed that qualifies, else download" resolution, pre-release matching only via `=`, and the reusable-module (min-only `>=`) vs root-module (`~>` upper+lower bound) best-practice split.
 3. **Book chapter — TUR Ch 4** (~1.5 hrs) — the classic module treatment; still the best explanation of inputs/outputs/composition.
 
 !!! note "📌 Dynamic module sources (Terraform 1.15)"

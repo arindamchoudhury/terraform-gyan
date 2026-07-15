@@ -47,3 +47,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Splat Expressions | 2026-07-15 | [tf-expr-splat](tf-expr-splat.md) |
 | `dynamic` Blocks | 2026-07-15 | [tf-expr-dynamic-blocks](tf-expr-dynamic-blocks.md) |
 | Type Constraints | 2026-07-15 | [tf-expr-type-constraints](tf-expr-type-constraints.md) |
+| Version Constraints | 2026-07-15 | [tf-expr-version-constraints](tf-expr-version-constraints.md) |

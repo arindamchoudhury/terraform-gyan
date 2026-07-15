@@ -43,6 +43,7 @@ Log of all captured sources, organised by course.
 | [Splat Expressions](terraform-docs/tf-expr-splat.md) | documentation | 2026-07-15 | splat, for-expressions, single-value-as-list, dynamic-blocks, legacy-splat, for_each | [url](https://developer.hashicorp.com/terraform/language/expressions/splat) |
 | [`dynamic` Blocks](terraform-docs/tf-expr-dynamic-blocks.md) | documentation | 2026-07-15 | dynamic-blocks, nested-blocks, for_each, iterator, multi-level-nesting, module-abstraction | [url](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks) |
 | [Type Constraints](terraform-docs/tf-expr-type-constraints.md) | documentation | 2026-07-15 | type-constraints, primitive-types, collection-types, structural-types, any, optional-attributes, type-conversion | [url](https://developer.hashicorp.com/terraform/language/expressions/type-constraints) |
+| [Version Constraints](terraform-docs/tf-expr-version-constraints.md) | documentation | 2026-07-15 | version-constraints, required_version, provider-requirements, module-versions, pessimistic-operator, pre-release | [url](https://developer.hashicorp.com/terraform/language/expressions/version-constraints) |
 
 ## 2. OpenTofu Docs
 
