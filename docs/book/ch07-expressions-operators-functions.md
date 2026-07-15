@@ -12,7 +12,7 @@ By the end you can:
 
 - Read any expression and predict its type, including where Terraform auto-converts and where it refuses to.
 - Reference every kind of named value (`var`, `local`, resource, `data`, `module`, `path.*`, `each`) and know that a reference *is* a dependency edge.
-- Branch with the ternary safely, knowing why the untaken branch still has to be valid.
+- Branch with the ternary safely, knowing both branches must share a type but only the taken one is evaluated.
 - Reach for the right function — `merge`, `lookup`, `coalesce`, `try`, `toset`, `jsonencode` — and know `try` from `coalesce`.
 - Build strings with interpolation, heredocs, and template directives, and know when to `jsonencode` instead.
 - **Transform a list of maps into a keyed map with a `for` expression and use it to drive `for_each`.**
@@ -212,14 +212,28 @@ The `count = bool ? 1 : 0` idiom is *the* standard way to make a resource option
 
 When the result type is uncertain, be explicit: `var.x ? tostring(12) : "hello"`.
 
-!!! danger "The untaken branch still has to be valid"
-    Terraform returns only the selected branch, but **both branches must evaluate without error and be type-compatible.** The bite: if the *unused* branch references something absent — `module.nat_instance[0].ip` when its `count` is 0, or an out-of-range index — the whole expression can error even though that branch was never returned. Guard the risky side with `try`:
+!!! warning "Both branches must share a type — but only the taken branch is evaluated"
+    Two separate rules, often conflated. The **type** rule is unconditional: both result values must be type-compatible, and Terraform checks that regardless of the condition so it can know the expression's type. `true ? 1 : ["a"]` fails at plan with *"Inconsistent conditional result types"* even though the `true` branch is perfectly fine.
+
+    A branch's **runtime** error is different. An out-of-range index, indexing a `count = 0` resource, a division by zero — these surface **only when that branch is the one selected.** The untaken branch is not evaluated, even when the condition is unknown at plan time. Verified on Terraform 1.15.6:
+
+    ```
+    > true  ? "safe" : [1,2,3][5]      # untaken bad index → no error
+    "safe"
+    > false ? [1,2,3][5] : "safe"      # untaken bad index → no error
+    "safe"
+    ```
+
+    So guard the branch you might **take**, not "both." `try` is the tool when the branch you select could itself error:
 
     ```hcl
     output "nat_ip" {
+      # if use_instance is true, the module[0] index it TAKES must be safe
       value = var.use_instance ? try(module.nat_instance[0].ip, null) : module.nat_gateway[0].ip
     }
     ```
+
+    Older material — *Terraform in Depth* (2025) and pre-1.x guidance — says Terraform "evaluates both results," so a `count = 0` index in the *unused* branch would error. That is not the behavior on current Terraform; only the type check is unconditional. (Not re-verified on OpenTofu — don't assume identical.) See [[conditional-branch-evaluation]].
 
 The condition can be any bool expression. A cookbook of the idioms that build good conditions — `contains(...)`, `length(...) != 0`, `alltrue([for ...])`, `can(...)` — appears in the function section next, because they're what you'll feed to `validation` and `precondition` blocks (Ch 19).
 
@@ -608,7 +622,7 @@ tflocal destroy -auto-approve
 - **`==` with mismatched types.** `"15" == 15` is `false`; equality never converts. Cast first.
 - **`var.list == []`.** Always false — `[]` is a `tuple`, not a `list`. Use `length(...) == 0`.
 - **Impure functions in config.** `uuid()`/`timestamp()` in a resource argument = perpetual diff. Use the `random`/`time` providers for stable values.
-- **The untaken ternary branch.** Both branches must be valid and same-typed even though only one is returned. Guard fragile indexing with `try`.
+- **Ternary branch types.** Both branches must be **type-compatible** (checked unconditionally — `true ? 1 : ["a"]` errors). Runtime errors, though, only fire in the branch actually *taken* (verified TF 1.15.6), so guard the branch you might select with `try`, not "both."
 - **`for_each` on a computed value.** The map/set must be fully known at plan time — no resource IDs, nothing `(known after apply)`.
 - **`count` over a list you'll edit.** Reindex-on-delete destroys unrelated resources. Build a keyed map with `for` and use `for_each`.
 - **`try` where you meant `coalesce`.** `try` catches *errors*; `coalesce` catches *null/empty*. `null` is a successful result for `try`.
@@ -632,7 +646,7 @@ tflocal destroy -auto-approve
 - Expressions add computation to a declarative language: everything right of `=` is one.
 - Every value has a **type**; Terraform auto-converts widely, but **`==` never does** — cast explicitly.
 - **References** name values and *create dependency edges*; `count`/`for_each` cannot reference unknown (`(known after apply)`) values.
-- The **ternary** branches, but both branches must be valid and same-typed — guard fragile ones with `try`.
+- The **ternary** branches must be **type-compatible** (an unconditional check); a branch's runtime error only fires when that branch is taken, so guard the branch you might select with `try`.
 - **Functions transform, never act.** Know `merge`/`lookup`/`coalesce`/`try`/`toset`/`jsonencode`, keep impure functions out of resource config, and reach for `try` on *errors* vs `coalesce` on *null*.
 - **Strings** interpolate with `${}`, loop/branch with `%{}` directives, and structured formats should be `jsonencode`d, not hand-built.
 - The headline skill: a **`for` expression turns a list of maps into a keyed map** that drives `for_each` — stable string keys, so editing the list is surgical, not destructive.

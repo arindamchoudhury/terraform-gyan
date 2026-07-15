@@ -206,8 +206,13 @@ output "nat_ip_address" {
 }
 ```
 
-!!! danger "The untaken branch still has to hold up — guard optional-resource indexing with `try`"
-    Terraform returns only the selected branch's value, but **both branches must be valid and type-compatible** — and the book (§4.2.5) frames this as "Terraform evaluates both results." The practical bite: if the *unused* branch references something that isn't there (e.g. `module.nat_instance[0]` when its `count` is 0, an out-of-range index), it can **error even though that branch was never returned.** (Mismatched branch types raise the separate "Inconsistent conditional result types" error.) Guard the risky side with the **`try`** function (§4.7): `try(module.nat_instance[0].ip, null)`.
+!!! danger "Branch types must match — but the book's 'evaluates both results' is outdated"
+    The book (§4.2.5) frames this as "Terraform evaluates both results," so an out-of-range index or a `count = 0` index in the *unused* branch supposedly errors even when never returned. **Verified false on Terraform 1.15.6.** Two separate rules:
+
+    - **Type compatibility** is checked unconditionally: `true ? 1 : ["a"]` raises *"Inconsistent conditional result types"* even though the taken branch is fine.
+    - **Runtime errors** (bad index, `count=0` index, div-by-zero) fire **only when that branch is selected** — the untaken branch is not evaluated, even when the condition is unknown at plan time.
+
+    So guard the branch you might **take**, not "both": `try(module.nat_instance[0].ip, null)` protects the case where `use_instance` is actually true. The book's claim was correct for older Terraform / the type-check framing, not current runtime behavior. (OpenTofu not re-verified.) Full evidence: [[conditional-branch-evaluation]].
 
 ### Order of operations
 
