@@ -67,6 +67,10 @@ nav = [
                     { "output block reference" = "sources/terraform-docs/tf-block-output.md" },
                 ]},
                 { "Expressions" = [
+                    { "Overview" = "sources/terraform-docs/tf-expressions.md" },
+                    { "Types and values" = "sources/terraform-docs/tf-expr-types.md" },
+                    { "Strings and templates" = "sources/terraform-docs/tf-expr-strings.md" },
+                    { "References to values" = "sources/terraform-docs/tf-expr-references.md" },
                     { "Conditional expressions" = "sources/terraform-docs/tf-conditionals.md" },
                 ]},
                 { "Sensitive data" = [

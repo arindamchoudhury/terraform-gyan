@@ -37,3 +37,7 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Output Values (Use outputs) | 2026-07-13 | [tf-outputs](tf-outputs.md) |
 | `output` block reference | 2026-07-13 | [tf-block-output](tf-block-output.md) |
 | Conditional Expressions | 2026-07-13 | [tf-conditionals](tf-conditionals.md) |
+| Expressions (section overview) | 2026-07-14 | [tf-expressions](tf-expressions.md) |
+| Types and Values | 2026-07-14 | [tf-expr-types](tf-expr-types.md) |
+| Strings and Templates | 2026-07-14 | [tf-expr-strings](tf-expr-strings.md) |
+| References to Named Values | 2026-07-14 | [tf-expr-references](tf-expr-references.md) |

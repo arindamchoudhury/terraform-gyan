@@ -33,6 +33,10 @@ Log of all captured sources, organised by course.
 | [Output Values (Use outputs)](terraform-docs/tf-outputs.md) | documentation | 2026-07-13 | outputs, output-block, module-outputs, sensitive, ephemeral, remote-state | [url](https://developer.hashicorp.com/terraform/language/values/outputs) |
 | [`output` block reference](terraform-docs/tf-block-output.md) | documentation | 2026-07-13 | output-block, type, precondition, depends_on, deprecated, sensitive, ephemeral | [url](https://developer.hashicorp.com/terraform/language/block/output) |
 | [Conditional Expressions](terraform-docs/tf-conditionals.md) | documentation | 2026-07-13 | conditionals, ternary, can, self, precondition, postcondition, alltrue | [url](https://developer.hashicorp.com/terraform/language/expressions/conditionals) |
+| [Expressions (section overview)](terraform-docs/tf-expressions.md) | documentation | 2026-07-14 | expressions, functions, references, console, overview | [url](https://developer.hashicorp.com/terraform/language/expressions) |
+| [Types and Values](terraform-docs/tf-expr-types.md) | documentation | 2026-07-14 | types, values, primitives, collections, null, literals, type-conversion | [url](https://developer.hashicorp.com/terraform/language/expressions/types) |
+| [Strings and Templates](terraform-docs/tf-expr-strings.md) | documentation | 2026-07-14 | strings, heredoc, interpolation, template-directives, escape-sequences, whitespace-strip | [url](https://developer.hashicorp.com/terraform/language/expressions/strings) |
+| [References to Named Values](terraform-docs/tf-expr-references.md) | documentation | 2026-07-14 | references, named-values, resource-attributes, path, workspace, sensitive, unknown-values | [url](https://developer.hashicorp.com/terraform/language/expressions/references) |
 
 ## 2. OpenTofu Docs
 
