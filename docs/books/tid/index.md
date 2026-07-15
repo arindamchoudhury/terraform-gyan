@@ -8,7 +8,7 @@
 | ✅ done | 2. Terraform HCL components | [Providers](../../topics/providers.md), [Core workflow](../../topics/core-workflow.md) |
 | ✅ done | 3. Terraform variables and modules | [Modules](../../topics/modules.md) |
 | ✅ done | 4. Expressions and iterations | — (backlog: expressions-functions, count-for_each, dynamic-blocks) |
-| ⬜ todo | 5. The Terraform plan | — |
+| ✅ done | 5. The Terraform plan | [The dependency graph](../../topics/dependency-graph.md), [Core workflow](../../topics/core-workflow.md) |
 | ⬜ todo | 6. State management | — |
 | ⬜ todo | 7. Code quality and continuous integration | — |
 | ⬜ todo | 8. Continuous delivery and deployment | — |

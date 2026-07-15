@@ -1,8 +1,8 @@
 # The dependency graph: seeing it, and its blind spot
 
-Cross-source topic page. Sources: [[tf-cmd-graph]] (HCDocs `terraform graph`), [[tf-meta-depends-on]] (HCDocs `depends_on`), TID Ch2 §2.2.5 + §2.7.3, [[tf-configure-resource]] (HCDocs), plus experiments run locally against **Terraform v1.15.6**.
+Cross-source topic page. Sources: [[tf-cmd-graph]] (HCDocs `terraform graph`), [[tf-meta-depends-on]] (HCDocs `depends_on`), TID Ch2 §2.2.5 + §2.7.3, [TID Ch5 §5.1–5.2 + §5.7](../books/tid/chapters/05-terraform-plan.md) (the DAG chapter — nodes, node types, cycles), [[tf-configure-resource]] (HCDocs), plus experiments run locally against **Terraform v1.15.6**.
 
-Feeds learning-path **B3** (plan/apply ordering) and **I1** (`depends_on`).
+Feeds learning-path **B3** (plan/apply ordering), **I1** (`depends_on`), and **E5** (`terraform graph`).
 
 ## How the graph gets built
 
@@ -123,6 +123,26 @@ Because it is not free. The docs call it a **last resort**:
 An expression reference tells Terraform *which value* the dependency derives from, so it can skip planning changes when that value is unchanged. `depends_on` makes the entire upstream object opaque. Over-using it also serializes work the graph could have run in parallel.
 
 The rule that falls out: **prefer implicit references; reach for `depends_on` only when there is no attribute to reference.**
+
+## What TID Ch5 adds: the node types and cycles
+
+TID Ch5 is the book's dedicated DAG chapter and fills in two things this page's HCDocs sources gloss:
+
+- **The graph has exactly three node types** — **Resource** (one per instance; data sources count as Resource nodes too), **Provider Configuration** (one per provider config; every resource edges to one), and **Resource Meta** (a cosmetic grouping node when `count > 1`). See [TID Ch5 §5.2.1](../books/tid/chapters/05-terraform-plan.md).
+- **Modules are *not* nodes.** Terraform flattens module boundaries into the flat resource graph, so a resource in module B can be created before one in module A if the resource-level edges allow it — module nesting does **not** serialize execution.
+
+**Breaking a cycle by routing through a variable.** When two resources form a cycle only because they share a value, break the edge by moving that value into a `variable`/`local` instead of a resource attribute — the shared value survives, the resource-to-resource edge disappears:
+
+```hcl
+# cycle: alpha.triggers → charlie.id, charlie → bravo, bravo → alpha
+variable "build_id" { default = null }
+resource "null_resource" "alpha" {
+  triggers = { rebuild = var.build_id }   # was null_resource.charlie.id
+}
+# bravo, charlie: same — all keyed off var.build_id, no cycle
+```
+
+Same principle as the "prefer implicit references" rule below, applied in reverse: sometimes you *want* to sever an inferred edge, and the fix is to depend on data (a variable) rather than a resource.
 
 ---
 Related: [[tf-cmd-graph]] — the command reference and its DOT dialects. · [[tf-meta-depends-on]] — the hidden-dependency meta-argument, its cost, and the `check`-block pattern. · [[meta-arguments-lifecycle]] — `depends_on` among the other five meta-arguments. · [[tf-configure-resource]] — "prefer implicit dependencies," stated without the plan-degradation reason.

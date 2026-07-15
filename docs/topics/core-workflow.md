@@ -1,6 +1,6 @@
 # Core workflow (Write / Plan / Apply)
 
-> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch1 §1.4
+> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch1 §1.4 + Ch5 (plan/apply mechanics)
 
 ## In one paragraph
 
@@ -23,12 +23,17 @@ Both sources describe the same three-ish stage loop: write configuration describ
 - Want to see the actual CLI output and understand the refresh/compare/plan subphases? → TID Ch1 §1.4.
 - Want to run the loop for real (init/validate/apply on an EC2 instance)? → [[tf-aws-create]].
 
+## What TID Ch5 adds: the plan/apply engine in detail
+
+Ch1's five-box flow is the overview; **Ch5** is the mechanics ([TID Ch5](../books/tid/chapters/05-terraform-plan.md)):
+
+- **Three planning modes** — **default** (reconcile), **destroy** (`-destroy`, all `-`), **refresh-only** (`-refresh-only`, state-only, ignores code edits). Every default/destroy plan **starts with a refresh**; destroy walks the DAG in **reverse**.
+- **Two apply paths** — `terraform apply` with **no** plan file runs its own plan + asks to confirm; `terraform apply plan.tfplan` applies a **saved** plan with no re-prompt (the automation pattern). `terraform destroy` = `terraform apply -destroy`.
+- **`-replace`** supersedes deprecated `taint` for forced recreation; **`-target`** is an antipattern for exceptional recovery only.
+
 ## Sources
 
 - [What is Terraform? (Intro)](../sources/terraform-docs/terraform-intro.md)
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
+- [TID Ch 5 — The Terraform plan](../books/tid/chapters/05-terraform-plan.md) — planning modes, apply paths, plan-symbol semantics
 - [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on init/validate/apply
-
-## Open questions
-
-> ❓ TID promises deeper DAG/circular-dependency debugging content in Ch5 ("The Terraform plan") — revisit this page once that chapter is captured.
