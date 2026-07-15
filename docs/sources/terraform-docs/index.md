@@ -43,3 +43,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | References to Named Values | 2026-07-14 | [tf-expr-references](tf-expr-references.md) |
 | Arithmetic and Logical Operators | 2026-07-15 | [tf-expr-operators](tf-expr-operators.md) |
 | Function Calls | 2026-07-15 | [tf-expr-function-calls](tf-expr-function-calls.md) |
+| `for` Expressions | 2026-07-15 | [tf-expr-for](tf-expr-for.md) |

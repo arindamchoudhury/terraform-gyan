@@ -39,6 +39,7 @@ Log of all captured sources, organised by course.
 | [References to Named Values](terraform-docs/tf-expr-references.md) | documentation | 2026-07-14 | references, named-values, resource-attributes, path, workspace, sensitive, unknown-values | [url](https://developer.hashicorp.com/terraform/language/expressions/references) |
 | [Arithmetic and Logical Operators](terraform-docs/tf-expr-operators.md) | documentation | 2026-07-15 | operators, arithmetic, equality, comparison, logical, order-of-operations, type-conversion | [url](https://developer.hashicorp.com/terraform/language/expressions/operators) |
 | [Function Calls](terraform-docs/tf-expr-function-calls.md) | documentation | 2026-07-15 | function-calls, built-in-functions, argument-expansion, sensitive, pure-functions, plan-time | [url](https://developer.hashicorp.com/terraform/language/expressions/function-calls) |
+| [`for` Expressions](terraform-docs/tf-expr-for.md) | documentation | 2026-07-15 | for-expressions, transform, filtering, grouping, element-ordering, type-conversion | [url](https://developer.hashicorp.com/terraform/language/expressions/for) |
 
 ## 2. OpenTofu Docs
 
