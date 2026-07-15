@@ -212,7 +212,7 @@ output "nat_ip_address" {
     - **Type compatibility** is checked unconditionally: `true ? 1 : ["a"]` raises *"Inconsistent conditional result types"* even though the taken branch is fine.
     - **Runtime errors** (bad index, `count=0` index, div-by-zero) fire **only when that branch is selected** — the untaken branch is not evaluated, even when the condition is unknown at plan time.
 
-    So guard the branch you might **take**, not "both": `try(module.nat_instance[0].ip, null)` protects the case where `use_instance` is actually true. The book's claim was correct for older Terraform / the type-check framing, not current runtime behavior. (OpenTofu not re-verified.) Full evidence: [[conditional-branch-evaluation]].
+    So guard the branch you might **take**, not "both": `try(module.nat_instance[0].ip, null)` protects the case where `use_instance` is actually true. The book's claim was true only **before Terraform 0.12.0** — the HCL2 rewrite (May 2019) made branch evaluation lazy (bug [#15605](https://github.com/hashicorp/terraform/issues/15605), fixed in 0.12.0-alpha1), so it's been outdated for ~6 years. (OpenTofu not re-verified.) Full evidence: [[conditional-branch-evaluation]].
 
 ### Order of operations
 

@@ -233,7 +233,7 @@ When the result type is uncertain, be explicit: `var.x ? tostring(12) : "hello"`
     }
     ```
 
-    Older material — *Terraform in Depth* (2025) and pre-1.x guidance — says Terraform "evaluates both results," so a `count = 0` index in the *unused* branch would error. That is not the behavior on current Terraform; only the type check is unconditional. (Not re-verified on OpenTofu — don't assume identical.) See [[conditional-branch-evaluation]].
+    Lazy branch evaluation has been the behavior since **Terraform 0.12.0** (the HCL2 rewrite, May 2019); the pre-0.12 HIL engine really did evaluate both branches (bug [#15605](https://github.com/hashicorp/terraform/issues/15605), fixed in 0.12.0-alpha1). So sources that say "Terraform evaluates both results" — including *Terraform in Depth* (2025) — describe behavior that's been gone for years; only the type check is unconditional now. (Not re-verified on OpenTofu.) Evidence: [[conditional-branch-evaluation]].
 
 The condition can be any bool expression. A cookbook of the idioms that build good conditions — `contains(...)`, `length(...) != 0`, `alltrue([for ...])`, `can(...)` — appears in the function section next, because they're what you'll feed to `validation` and `precondition` blocks (Ch 19).
 

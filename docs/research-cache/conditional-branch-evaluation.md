@@ -16,6 +16,24 @@ Does `cond ? a : b` evaluate **both** result branches (so an error in the unused
 | Runtime error in untaken branch, **unknown** condition | **No** | condition = `known after apply`, false-branch indexes a `count=0` resource → plan succeeds, `picked = (known after apply)` |
 | Static reference error (undeclared var/resource) | **Yes** — but that's decode-time config invalidity, not branch evaluation | `true ? "safe" : var.nope` → `Error: Reference to undeclared input variable` |
 
+## When it changed — Terraform 0.12.0 (verified, not recalled)
+
+Lazy branch evaluation arrived with the **0.12.0 HCL2 expression-engine rewrite** (GA May 2019). Before 0.12, the old HIL interpolation engine evaluated *both* branches — that was the bug tracked in [hashicorp/terraform#15605](https://github.com/hashicorp/terraform/issues/15605) ("Interpolation should only evaluate one branch of a condition").
+
+Evidence (via `gh` API, 2026-07-15):
+
+- Issue #15605 closed **2018-10-27**, milestone **v0.12.0**.
+- Closing comment from core maintainer **apparentlymart**: *"I've just verified that this is now working correctly in v0.12.0-alpha1"* — with a `terraform console` test matching this file's:
+
+    ```
+    > false ? file("nonexist") : "it was false"
+    it was false
+    > true ? file("nonexist") : "it was false"
+    Error: Error in function call
+    ```
+
+So any source describing "both branches are evaluated" is pre-0.12 behavior (≥ 6 years stale as of 2026). A later comment (2020, v0.12.23) noted a separate edge case when a branch references a whole *resource object* (`true ? aws_security_group.test : null`) — a type/reference-resolution quirk, distinct from the runtime-index case tested here, which does **not** error on 1.15.6.
+
 ## Takeaways
 
 - Both result branches must be **type-compatible** — this is a type check Terraform does regardless of the condition, so it fails even when the taken branch is valid.
