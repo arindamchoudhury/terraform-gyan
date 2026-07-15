@@ -77,6 +77,7 @@ nav = [
                     { "for expressions" = "sources/terraform-docs/tf-expr-for.md" },
                     { "Splat expressions" = "sources/terraform-docs/tf-expr-splat.md" },
                     { "Dynamic blocks" = "sources/terraform-docs/tf-expr-dynamic-blocks.md" },
+                    { "Type constraints" = "sources/terraform-docs/tf-expr-type-constraints.md" },
                 ]},
                 { "Sensitive data" = [
                     { "Manage sensitive data" = "sources/terraform-docs/tf-manage-sensitive-data.md" },
