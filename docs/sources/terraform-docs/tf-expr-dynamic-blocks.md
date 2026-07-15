@@ -52,6 +52,47 @@ The iterator object has two attributes:
 - **`key`** — map key or list index of the current element. If `for_each` produces a **set**, `key` equals `value` and should not be used.
 - **`value`** — the current element's value.
 
+### Example: the `labels` argument
+
+Most nested block types take **no label** (`setting {}`, `ingress {}`), so `labels` is rarely needed — that's why the HCDocs page doesn't demonstrate it. It matters only when the nested block you're generating expects a label of its own, i.e. `block "somelabel" { ... }`.
+
+Concrete case (from Terraform maintainer *apparentlymart* on [HashiCorp Discuss — "Labels in dynamic block"](https://discuss.hashicorp.com/t/labels-in-dynamic-block/21461)): the `testing_assertions` data source has an `equal` nested block that expects **one** label. A `dynamic "equal"` block sets that label per iteration from the map key via `labels = [equal.key]`:
+
+```hcl
+locals {
+  test_assertions = {
+    contents = {
+      statement = "has the expected content"
+      got       = jsondecode(data.http.terraform_disco.body)
+      want = {
+        "modules.v1" : "${module.mut.base_url}/modules/v1"
+      }
+    }
+    content_type = {
+      statement = "has JSON content type"
+      got       = data.http.terraform_disco.response_headers["content-type"]
+      want      = "application/json"
+    }
+  }
+}
+
+data "testing_assertions" "terraform_disco" {
+  subject = "Terraform discovery document"
+
+  dynamic "equal" {
+    for_each = local.test_assertions
+    labels   = [equal.key]
+    content {
+      statement = equal.value.statement
+      got       = equal.value.got
+      want      = equal.value.want
+    }
+  }
+}
+```
+
+This generates two labeled blocks — `equal "contents" { ... }` and `equal "content_type" { ... }` — one per map entry, each block's label taken from `equal.key`. `labels` is a **list** because a block type can require more than one label (you'd supply one list element per label position, in order).
+
 ## Limits
 
 A `dynamic` block can only generate arguments/blocks that belong to the resource type, data source, provider, or provisioner being configured. It **cannot** generate meta-argument blocks like `lifecycle` or `provisioner` — Terraform must process those before it's safe to evaluate expressions.
