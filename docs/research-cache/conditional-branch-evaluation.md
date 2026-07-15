@@ -1,6 +1,6 @@
 # Conditional (ternary) branch evaluation — verified facts
 
-Last verified: **2026-07-15** against **Terraform 1.15.6** (empirical: `terraform console` + `terraform plan`).
+Last verified: **2026-07-15** against **Terraform 1.15.6** and **OpenTofu 1.12.4** (empirical: `terraform console`/`plan` and `tofu console`). Both tools behave identically.
 
 ## The question
 
@@ -41,4 +41,6 @@ So any source describing "both branches are evaluated" is pre-0.12 behavior (≥
 - Practical rule: **guard the branch you might take**, not "both." `try(...)` is the tool when the branch you select could itself error (e.g. `try(module.x[0].ip, null)`), not to protect an unused branch.
 - **Outdated sources:** TID (2025) and pre-1.x guidance say both branches are evaluated. Correct historically for older Terraform / the type-check framing, but not the runtime behavior on 1.15.6.
 
-> ❓ Not re-verified on OpenTofu 1.12 — the tool differs from Terraform on `&&`/`||` short-circuit history, so don't assume identical ternary behavior without testing. Scope claims to Terraform unless checked.
+## OpenTofu — verified identical (1.12.4)
+
+Ran the same tests in `tofu console` (OpenTofu 1.12.4, 2026-07-15): untaken bad index → `"safe"`, untaken `count=0` attribute access → `"safe"`, type mismatch → `Error: Inconsistent conditional result types`. Same behavior as Terraform. Expected — OpenTofu forked from Terraform **1.5.x**, well after the 0.12 HCL2 rewrite, so it inherited lazy branch evaluation. (Note: OpenTofu *does* differ from Terraform on `&&`/`||` short-circuit history — that's a separate feature — but the ternary behaves the same.)
