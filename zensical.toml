@@ -72,6 +72,7 @@ nav = [
                     { "Strings and templates" = "sources/terraform-docs/tf-expr-strings.md" },
                     { "References to values" = "sources/terraform-docs/tf-expr-references.md" },
                     { "Operators" = "sources/terraform-docs/tf-expr-operators.md" },
+                    { "Function calls" = "sources/terraform-docs/tf-expr-function-calls.md" },
                     { "Conditional expressions" = "sources/terraform-docs/tf-conditionals.md" },
                 ]},
                 { "Sensitive data" = [

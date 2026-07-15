@@ -38,6 +38,7 @@ Log of all captured sources, organised by course.
 | [Strings and Templates](terraform-docs/tf-expr-strings.md) | documentation | 2026-07-14 | strings, heredoc, interpolation, template-directives, escape-sequences, whitespace-strip | [url](https://developer.hashicorp.com/terraform/language/expressions/strings) |
 | [References to Named Values](terraform-docs/tf-expr-references.md) | documentation | 2026-07-14 | references, named-values, resource-attributes, path, workspace, sensitive, unknown-values | [url](https://developer.hashicorp.com/terraform/language/expressions/references) |
 | [Arithmetic and Logical Operators](terraform-docs/tf-expr-operators.md) | documentation | 2026-07-15 | operators, arithmetic, equality, comparison, logical, order-of-operations, type-conversion | [url](https://developer.hashicorp.com/terraform/language/expressions/operators) |
+| [Function Calls](terraform-docs/tf-expr-function-calls.md) | documentation | 2026-07-15 | function-calls, built-in-functions, argument-expansion, sensitive, pure-functions, plan-time | [url](https://developer.hashicorp.com/terraform/language/expressions/function-calls) |
 
 ## 2. OpenTofu Docs
 
