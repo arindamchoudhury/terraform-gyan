@@ -51,6 +51,29 @@ Every value has a type, and the type decides where the value is legal and how it
 | `set` | no | none | one type, no duplicates |
 | `map` / `object` | no | string labels | one type (`map`) / per-key (`object`) |
 
+!!! note "There is no set literal — `toset()` is how you build one"
+    Brackets always produce a tuple. Nothing you can type makes a set directly:
+
+    ```
+    > type(["p", "q"])
+    tuple([string, string])
+    > type(toset(["p", "q"]))
+    set(string)
+    ```
+
+    That's why `toset([...])` shows up wrapped around `for_each` arguments so often: `for_each` takes a map or a set, and won't quietly convert a list for you (Ch 10).
+
+    For a **module input**, don't push that onto your callers. Declare the type and Terraform converts — and dedupes — whatever list they hand you:
+
+    ```hcl
+    variable "names" {
+      type    = set(string)
+      default = ["p", "q", "p"]   # var.names is toset(["p", "q"])
+    }
+    ```
+
+    The `set*` functions (`setunion`, `setsubtract`, `setintersection`, `setproduct`) return sets too. `distinct()` is the one that looks like it should and doesn't — it returns a **list**.
+
 **The typeless value — `null`.** `null` means "absent." Setting a resource argument to `null` makes Terraform behave as if you omitted it entirely: it falls back to the argument's default, or errors if the argument is required. That makes `null` the tool for *conditionally omitting* an argument.
 
 ```hcl
