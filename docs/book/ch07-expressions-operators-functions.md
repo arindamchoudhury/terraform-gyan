@@ -9,6 +9,7 @@ By the end you can:
 - Branch with the ternary safely, knowing both branches must share a type but only the taken one is evaluated.
 - Reach for the right function — `merge`, `lookup`, `coalesce`, `try`, `toset`, `jsonencode` — and know `try` from `coalesce`.
 - Build strings with interpolation, heredocs, and template directives, and know when to `jsonencode` instead.
+- Pull long content out of your `.tf` files with `file()` / `templatefile()`, anchored with `path.module`.
 - **Transform a list of maps into a keyed map with a `for` expression and use it to drive `for_each`.**
 
 ---
@@ -135,6 +136,8 @@ module "app" {
   name_prefix = "app-${terraform.workspace}"   # workspace used at the ROOT, passed in
 }
 ```
+
+The one you'll reach for constantly is **`path.module`**, and it earns its own treatment in §7 — it's how `file()` and `templatefile()` locate files bundled inside a module. `terraform.workspace` is a different story: it's the tip of the **CLI workspaces** model, which is an environment-isolation strategy rather than an expression feature. Ch 24 weighs it against directory-per-environment and HCP workspaces; treat this chapter's mention as "the name exists," not "this is how to do environments."
 
 ### Values not yet known
 
@@ -411,8 +414,44 @@ To emit a **literal** `${` or `%{`, double the first character: `$${` and `%%{`.
 
     For specialty documents like IAM policies, go further and use the dedicated data source (`aws_iam_policy_document`) — it enforces the document's structure and gives clearer errors than a raw string ever will.
 
-!!! info "`templatefile` and OpenTofu's `templatestring`"
-    `templatefile(path, vars)` reads a file and renders it as a template with the given variables — the standard way to produce cloud-init or config files. `templatestring(str, vars)` does the same but takes the template as a **string** (from a variable or data source) instead of a path. OpenTofu introduced `templatestring` first; **Terraform added it in 1.9**. The old `template_file` *data source* is deprecated — replace it with these on sight.
+### Templates from files — `file`, `templatefile`, and `path.*`
+
+Long strings don't belong inline in a `.tf` file. A cloud-init script or an Nginx config is easier to read, diff, and lint as its own file. Two functions bring one in:
+
+- **`file(path)`** returns a file's contents as a string. No substitution.
+- **`templatefile(path, vars)`** is `file` plus rendering: the map you pass becomes the variables available inside the template, so `${}` interpolation and `%{}` directives work exactly as above.
+
+This is where **`path.*`** earns its keep. A relative path would be resolved against whatever directory Terraform happened to run from, so you anchor it explicitly:
+
+| Reference | Points at |
+| --- | --- |
+| `path.module` | the directory of **the module being evaluated** — use this to read files bundled *inside* a module |
+| `path.root` | the directory of the **root** module (the entry point) |
+| `path.cwd` | the working directory before any `-chdir` — rarely what you want |
+
+```hcl
+resource "aws_instance" "web" {
+  # a static file shipped alongside the module
+  user_data = file("${path.module}/files/cloud-init.txt")
+}
+
+resource "aws_instance" "app" {
+  # the same, but rendered with values
+  user_data = templatefile("${path.module}/templates/cloud-init.tftpl", {
+    hostname = "${var.name}-app"
+    services = ["nomad", "consul"]
+    backups  = var.enable_backups
+  })
+}
+```
+
+**`path.module` is almost always the right one.** It keeps a module self-contained: the file travels with the module, so the config works no matter where the caller invokes it from. `path.root` and `path.cwd` reach *outside* the module and reintroduce exactly the portability problem §3 warned about.
+
+!!! warning "Don't use `path.module` for writing files"
+    It's for *reading* files that ship with the module. Writing through it is unreliable: local and remote module sources behave differently, and several calls to the same local module share one source directory, so concurrent writes race and overwrite each other.
+
+!!! info "`templatestring` — the runtime variant (OpenTofu first, Terraform 1.9)"
+    `templatestring(str, vars)` renders a template that arrives as a **string** at runtime (from a variable or a data source) rather than a file on disk. OpenTofu introduced it; **Terraform added it in 1.9**. The old `template_file` *data source* is deprecated — replace it with `templatefile`/`templatestring` on sight.
 
 ---
 
@@ -689,7 +728,7 @@ tflocal destroy -auto-approve
 - **References** name values and *create dependency edges*; `count`/`for_each` cannot reference unknown (`(known after apply)`) values.
 - The **ternary** branches must be **type-compatible** (an unconditional check); a branch's runtime error only fires when that branch is taken, so guard the branch you might select with `try`.
 - **Functions transform, never act.** Know `merge`/`lookup`/`coalesce`/`try`/`toset`/`jsonencode`, keep impure functions out of resource config, and reach for `try` on *errors* vs `coalesce` on *null*.
-- **Strings** interpolate with `${}`, loop/branch with `%{}` directives, and structured formats should be `jsonencode`d, not hand-built.
+- **Strings** interpolate with `${}`, loop/branch with `%{}` directives, and structured formats should be `jsonencode`d, not hand-built. Long content lives in its own file, read with `file()`/`templatefile()` anchored at **`path.module`** so the module stays self-contained.
 - The headline skill: a **`for` expression turns a list of maps into a keyed map** that drives `for_each` — stable string keys, so editing the list is surgical, not destructive.
 
 Chapter 8 turns to **data sources** — reading infrastructure Terraform doesn't manage — which are the other common source of the values these expressions reshape.
