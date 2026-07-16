@@ -51,19 +51,23 @@ Every value has a type, and the type decides where the value is legal and how it
 | `set` | no | none | one type, no duplicates |
 | `map` / `object` | no | string labels | one type (`map`) / per-key (`object`) |
 
-!!! note "There is no set literal — `toset()` is how you build one"
-    Brackets always produce a tuple. Nothing you can type makes a set directly:
+!!! note "Brackets build a tuple — not a list, and not a set"
+    There is no list literal and no set literal. Anything you type in brackets is a **tuple**, and the `to*` functions are what convert it:
 
     ```
     > type(["p", "q"])
     tuple([string, string])
+    > type(tolist(["p", "q"]))
+    list(string)
     > type(toset(["p", "q"]))
     set(string)
     ```
 
-    That's why `toset([...])` shows up wrapped around `for_each` arguments so often: `for_each` takes a map or a set, and won't quietly convert a list for you (Ch 10).
+    That sounds alarming and mostly isn't, because a tuple **auto-converts to a list** wherever one is expected — `join("-", ["p", "q"])` and `length(["p", "q"])` just work, and `tolist()` is rarely needed.
 
-    For a **module input**, don't push that onto your callers. Declare the type and Terraform converts — and dedupes — whatever list they hand you:
+    **Sets are the exception, and that's the whole reason `toset([...])` is everywhere.** `for_each` accepts a map or a set and will *not* convert a list for you (Ch 10), so there the wrapper is mandatory.
+
+    For a **module input**, don't push either onto your callers. Declare the type and Terraform converts — and, for a set, dedupes — whatever list they hand you:
 
     ```hcl
     variable "names" {
@@ -71,6 +75,8 @@ Every value has a type, and the type decides where the value is legal and how it
       default = ["p", "q", "p"]   # var.names is toset(["p", "q"])
     }
     ```
+
+    One catch when converting by hand: lists and sets hold a **single element type**, while a tuple can mix. Convert a mixed tuple and the elements get unified — `tolist(["a", 1])` returns `["a", "1"]`, the number quietly becoming a string.
 
     The `set*` functions (`setunion`, `setsubtract`, `setintersection`, `setproduct`) return sets too. `distinct()` is the one that looks like it should and doesn't — it returns a **list**.
 
