@@ -1,11 +1,5 @@
 # Chapter 7 — Expressions, operators & built-in functions
 
-> Everything to the right of an `=` is an **expression** — the part of HCL that *computes* rather than merely *declares*. This chapter is where a configuration stops being a static list of literals and starts adapting: choosing values with conditionals, reshaping data with `for` expressions and the function library, and building strings from templates. It closes on the milestone that expressions exist to serve — turning a list of maps into a keyed map that drives resource creation.
->
-> **Blends:** HashiCorp docs (Expressions section: types, references, operators, strings, function-calls, for, splat; Conditionals; the Built-in Functions catalogue) · *Terraform in Depth* Ch 4 (Hafner) · the `terraform console` tutorial workflow · current best-practice guidance on `try`/`coalesce` and `for_each` stability.
->
-> **See also:** builds on [Ch 6 — variables, outputs & locals](ch06-input-variables-outputs-locals.md) (where you assign the values this chapter computes); the `for`-produced map feeds Ch 10 (meta-arguments `count`/`for_each`, I1); complex `type` constraints and `dynamic` blocks are Ch 12 (I3). Both are forthcoming.
-
 ## Learning outcomes
 
 By the end you can:
@@ -23,7 +17,7 @@ By the end you can:
 
 A configuration full of literals can only ever describe one thing. The moment you want *the same code* to produce a dev environment and a prod environment, name three instances distinctly, or attach a policy only when a flag is set, you need to **compute** values rather than type them out. Expressions are how a declarative language stays DRY.
 
-An expression is anything that resolves to a value: a literal (`"hello"`, `5`, `true`), a reference (`var.region`), an operator chain (`var.count * 2`), a function call (`merge(a, b)`), a conditional, a `for`, or a splat. Every argument in every block is one.
+Everything to the right of an `=` is an expression — the part of HCL that *computes* rather than merely *declares*. An expression is anything that resolves to a value: a literal (`"hello"`, `5`, `true`), a reference (`var.region`), an operator chain (`var.count * 2`), a function call (`merge(a, b)`), a conditional, a `for`, or a splat. Every argument in every block is one.
 
 !!! tip "Live-test everything in `terraform console`"
     The single most useful habit for this chapter: open the REPL with `terraform console` (`tofu console`) and type expressions against your real variables and state. It evaluates and prints the result immediately — the fastest way to build intuition for the function library, `for` transforms, and type conversion.
