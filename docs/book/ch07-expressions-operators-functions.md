@@ -583,8 +583,43 @@ That's a phantom diff with no cause a reviewer can see in the code.
 !!! warning "Don't use `path.module` for writing files"
     It's for *reading* files that ship with the module. Writing through it is unreliable: local and remote module sources behave differently, and several calls to the same local module share one source directory, so concurrent writes race and overwrite each other.
 
-!!! info "`templatestring` — the runtime variant (OpenTofu first, Terraform 1.9)"
-    `templatestring(str, vars)` renders a template that arrives as a **string** at runtime (from a variable or a data source) rather than a file on disk. OpenTofu introduced it; **Terraform added it in 1.9**. The old `template_file` *data source* is deprecated — replace it with `templatefile`/`templatestring` on sight.
+!!! tip "Iterate on templates in `terraform console`"
+    Templates are fiddly in exactly one way — whitespace — and the console shows it. It prints a multi-line result as a `<<EOT` heredoc, so every stray blank line is visible. That makes it the fastest way to get `~` strip markers right, without an apply:
+
+    ```
+    > templatefile("${path.module}/templates/servers.tftpl", { xs = ["a","b"] })
+
+    # %{ for s in xs }  — no strip markers
+    <<EOT
+    servers:
+
+    - a
+
+    - b
+
+    EOT
+
+    # %{ for s in xs ~} — with strip markers
+    <<EOT
+    servers:
+    - a
+    - b
+    EOT
+    ```
+
+    Edit the `.tftpl`, re-run the call, look at the heredoc. The template file is read fresh each time, so unlike config changes you don't need to restart the console.
+
+!!! info "`templatestring` — for templates you don't have on disk (OpenTofu first, Terraform 1.9)"
+    `templatestring(ref, vars)` renders a template that arrives as a **string at runtime** — from a variable, a local, or a data source — rather than from a file:
+
+    ```
+    > templatestring(var.tmpl, { name = "bo", xs = ["a", "b"] })
+    "hi bo, count=2"
+    ```
+
+    Note the signature: the first argument is a **reference**, not a string literal. Terraform rejects a literal outright — *"templatestring is only for rendering templates retrieved dynamically from elsewhere, and so does not support providing a literal template; consider using a template string expression instead."* Which is fair: if the template is already sitting in your `.tf` file, `"${...}"` interpolation is right there.
+
+    OpenTofu introduced it; **Terraform added it in 1.9**. The old `template_file` *data source* is deprecated — replace it with `templatefile`/`templatestring` on sight.
 
 ---
 
