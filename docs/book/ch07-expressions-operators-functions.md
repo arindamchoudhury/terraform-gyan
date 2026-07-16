@@ -186,7 +186,7 @@ locals {
 | Arithmetic | `+` `-` `*` `/` `%` and unary `-` | number → number |
 | Comparison | `<` `<=` `>` `>=` | number → bool |
 | Equality | `==` `!=` | any (same type) → bool |
-| Logical | `&&` `\|\|` `!` | bool → bool |
+| Logical | `&&` <code>&#124;&#124;</code> `!` | bool → bool |
 
 **Precedence** (highest first): `!`/unary `-` → `*` `/` `%` → `+` `-` → comparison → equality → `&&` → `||`. Check it rather than trust it:
 
@@ -212,7 +212,7 @@ locals {
 
     (Same reason as the equality-type rule in §2 — `==` compares type *and* value, and never converts.)
 
-!!! info "`&&` and `\|\|` short-circuit — OpenTofu 1.10, Terraform 1.12"
+!!! info "`&&` and `||` short-circuit — OpenTofu 1.10, Terraform 1.12"
     Historically both sides of a logical operator were always evaluated, so a null-guard like `var.foo != null && var.foo.enabled` still **errored** when `var.foo` was null. Now the right side is skipped once the left decides the result, making that guard safe. **OpenTofu shipped it first in 1.10; Terraform followed in 1.12.** This is boolean-only — the ternary `? :` still checks both result branches (§5).
 
 ---

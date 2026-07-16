@@ -87,8 +87,8 @@ This is Terraform's internal view — you won't think about it daily, but it mak
 | Output | Command |
 | --- | --- |
 | dot file | `terraform graph > graph.dot` |
-| SVG | `terraform graph \| dot -Tsvg > graph.svg` |
-| PNG | `terraform graph \| dot -Tpng > graph.png` |
+| SVG | <code>terraform graph &#124; dot -Tsvg > graph.svg</code> |
+| PNG | <code>terraform graph &#124; dot -Tpng > graph.png</code> |
 
 Use `-type` to pick the mode: `plan` (default, simplified), `plan-refresh-only`, `plan-destroy`, or `apply`.
 
