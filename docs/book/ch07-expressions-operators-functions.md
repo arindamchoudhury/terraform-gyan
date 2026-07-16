@@ -108,7 +108,21 @@ Terraform exposes a fixed set of named values. Each is an expression on its own 
 A resource reference's *shape* depends on its meta-arguments: with neither `count` nor `for_each` it's a single **object**; with `count` it's a **list** of instance objects (`aws_instance.web[0].id`); with `for_each` it's a **map** (`aws_instance.web["a"].id`).
 
 !!! note "References look like objects but aren't"
-    The dotted paths resemble attribute access, but you cannot treat the prefix as a real object. You cannot iterate `aws_instance` to "loop over all instances," and you cannot swap dot notation for bracket notation on the fixed parts of the path. Use them exactly as written.
+    The dotted paths resemble attribute access, but the prefix is not a real object you can traverse. You cannot swap dot notation for bracket notation on the fixed parts of the path, and you cannot iterate a **resource type** to reach every block of that type. There is no reflection over resource types in HCL, and splat does not rescue it — the bare type name isn't a value at all:
+
+    ```
+    > terraform_data
+    Error: Invalid reference
+    > terraform_data[*]
+    Error: Invalid reference
+    > [for r in terraform_data : r]
+    Error: Invalid reference
+    ```
+
+    Be careful with the phrase "loop over all instances" — it means two different things, and only one is impossible:
+
+    - **Every instance of *one* resource block** (the block uses `count`/`for_each`) — **yes**, that's an ordinary value, and splat is exactly the tool. See §8.
+    - **Every resource block of a given type** across the config — **no**. To enumerate that, step outside expressions entirely: `terraform state list`, or `terraform show -json` for machine-readable output.
 
 !!! info "A reference *is* a dependency edge"
     When one block's argument references another resource's attribute, Terraform records an **implicit dependency** and orders the graph accordingly (Ch 3, Ch 5). This is the preferred way to express ordering — reach for `depends_on` only when there's genuinely no attribute to reference (Ch 10).
@@ -453,7 +467,39 @@ Add a second loop symbol to get the key (maps/objects) or index (lists), and an 
 ]
 ```
 
-Splat works on **lists, sets, and tuples only** — a `for_each` resource is a *map*, so use `values(aws_instance.web)[*].id` or a full `for`. Splat has one special trick: on a non-list value it wraps it in a one-element tuple, and on `null` it yields an **empty** tuple — handy for feeding an optional variable into a `dynamic` block's `for_each` (Ch 12).
+Splat works on **lists, sets, and tuples only**. This is exactly how you loop over every instance of one resource block — but *only* when the block uses `count`, because a `count` resource is a **list**. A `for_each` resource is a **map**, and splat does not apply:
+
+```
+> terraform_data.web[*].output        # count = 3 -> a list, splat works
+[
+  "web-0",
+  "web-1",
+  "web-2",
+]
+> terraform_data.db[*].output         # for_each -> a MAP, splat does not
+Error: Unsupported attribute
+This object does not have an attribute named "output".
+```
+
+!!! note "Why that error is so confusing"
+    You'd expect "splat doesn't work on maps." Instead you get *"This object does not have an attribute named `output`"* — because of splat's single-value rule below. The map isn't a list, so splat wraps **the whole map** in a one-element tuple, then looks for `.output` **on the map itself**. The map has keys `primary`/`replica`, not `output`, so the complaint is about the attribute rather than the splat.
+
+Two ways to get the same list from a `for_each` resource — convert the map to a list first, or skip splat and write the full `for`:
+
+```
+> values(terraform_data.db)[*].output
+[
+  "db-primary",
+  "db-replica",
+]
+> [for k, v in terraform_data.db : v.output]
+[
+  "db-primary",
+  "db-replica",
+]
+```
+
+Splat has one special trick: on a non-list value it wraps it in a one-element tuple, and on `null` it yields an **empty** tuple — handy for feeding an optional variable into a `dynamic` block's `for_each` (Ch 12).
 
 ### The milestone: list of maps → keyed map → `for_each`
 
@@ -620,7 +666,8 @@ tflocal destroy -auto-approve
 - **`for_each` on a computed value.** The map/set must be fully known at plan time — no resource IDs, nothing `(known after apply)`.
 - **`count` over a list you'll edit.** Reindex-on-delete destroys unrelated resources. Build a keyed map with `for` and use `for_each`.
 - **`try` where you meant `coalesce`.** `try` catches *errors*; `coalesce` catches *null/empty*. `null` is a successful result for `try`.
-- **Splat on a `for_each` resource.** It's a map, not a list — splat won't apply. Use `values(...)` first, or a full `for`.
+- **Splat on a `for_each` resource.** It's a map, not a list — splat won't apply, and the error misleadingly reads `Unsupported attribute` rather than mentioning splat. Use `values(...)[*]` first, or a full `for`. (Splat over a `count` resource works fine — that's a list.)
+- **Trying to iterate a resource *type*.** `[for r in aws_instance : r]` is an `Invalid reference` — HCL has no reflection over types. Enumerate with `terraform state list` / `terraform show -json` instead.
 - **Hand-templated JSON/YAML.** Use `jsonencode`/`yamlencode` (or `aws_iam_policy_document`) so the syntax is guaranteed.
 
 ---
