@@ -133,7 +133,7 @@ A resource reference's *shape* depends on its meta-arguments: with neither `coun
 
 **`path.*` and `terraform.workspace` are the odd ones out.** Every other named value describes *what* your config declares; these two describe *where and how it was run* — the invoking directory, the selected workspace. Bake that into the config and its meaning starts depending on the circumstances of the run. So: apart from `path.module`, use them **only in the root module**.
 
-For `path.*` that plays out through `file()` and `templatefile()`, so §7 handles it where it's actually used. `terraform.workspace` has no later home in this chapter, so here's its failure now: **used as a name prefix inside a shared module, it stops you calling that module twice.** Both calls read the same workspace name, derive the same resource names, and collide. A shared module that needs a unique prefix takes it as an input variable instead, and the root caller supplies it:
+`terraform.workspace` shows the cost plainly. Used as a name prefix **inside** a shared module, it quietly makes that module single-use: call it twice in one config and both calls read the same workspace name, derive the same resource names, and collide. Take the prefix as an input variable instead, and let the root caller build it:
 
 ```hcl
 module "app" {
@@ -142,7 +142,7 @@ module "app" {
 }
 ```
 
-That aside, `terraform.workspace` is the tip of the **CLI workspaces** model — an environment-isolation strategy, not an expression feature. Ch 24 weighs it against directory-per-environment and HCP workspaces; treat this mention as "the name exists," not "this is how to do environments."
+The workspace name is only the visible tip of **CLI workspaces**, an environment-isolation strategy rather than an expression feature — Ch 24 weighs it against directory-per-environment and HCP workspaces. `path.*` earns its keep through `file()` and `templatefile()`, in §7.
 
 ### Values not yet known
 
