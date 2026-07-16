@@ -560,29 +560,6 @@ Treat that as the feature it is. A template's inputs are declared at the call si
 !!! tip "Name templates `*.tftpl`"
     Terraform renders any file regardless of extension, but `.tftpl` is the recommended convention: *"following this convention will help your editor understand the content and likely provide better editing experience as a result."* You'll also see `.tpl` in older code.
 
-**`path.module` is almost always the right one.** It keeps a module self-contained: the file travels with the module, so the config works no matter where the caller invokes it from, or how many times. The other two reach *outside* the module and drag the run's circumstances back in (§3), each in its own way.
-
-**`path.root`** resolves to the entry-point directory. A module reading `${path.root}/files/x` only works while the caller keeps that file there — move the module into another config and the path breaks. It's the caller's layout, not yours.
-
-**`path.cwd` is the one that bites.** It's the directory you *invoked* Terraform from — not where the config lives — so it changes when you `cd`. Put it in a resource argument and an unchanged config plans a change purely because you ran it from somewhere else. Same config, same byte-identical file, two runs:
-
-```
-# run from the config's own directory
-> path.cwd
-".../scratchpad/tftest"
-
-# same config, invoked from the parent with -chdir=tftest
-> path.cwd
-".../scratchpad"          ← changed
-> path.root
-"."                       ← stable across both
-```
-
-That's a phantom diff with no cause a reviewer can see in the code.
-
-!!! warning "Don't use `path.module` for writing files"
-    It's for *reading* files that ship with the module. Writing through it is unreliable: local and remote module sources behave differently, and several calls to the same local module share one source directory, so concurrent writes race and overwrite each other.
-
 !!! tip "Iterate on templates in `terraform console`"
     Templates are fiddly in exactly one way — whitespace — and the console shows it. It prints a multi-line result as a `<<EOT` heredoc, so every stray blank line is visible. That makes it the fastest way to get `~` strip markers right, without an apply:
 
@@ -608,6 +585,29 @@ That's a phantom diff with no cause a reviewer can see in the code.
     ```
 
     Edit the `.tftpl`, re-run the call, look at the heredoc. The template file is read fresh each time, so unlike config changes you don't need to restart the console.
+
+**`path.module` is almost always the right one.** It keeps a module self-contained: the file travels with the module, so the config works no matter where the caller invokes it from, or how many times. The other two reach *outside* the module and drag the run's circumstances back in (§3), each in its own way.
+
+**`path.root`** resolves to the entry-point directory. A module reading `${path.root}/files/x` only works while the caller keeps that file there — move the module into another config and the path breaks. It's the caller's layout, not yours.
+
+**`path.cwd` is the one that bites.** It's the directory you *invoked* Terraform from — not where the config lives — so it changes when you `cd`. Put it in a resource argument and an unchanged config plans a change purely because you ran it from somewhere else. Same config, same byte-identical file, two runs:
+
+```
+# run from the config's own directory
+> path.cwd
+".../scratchpad/tftest"
+
+# same config, invoked from the parent with -chdir=tftest
+> path.cwd
+".../scratchpad"          ← changed
+> path.root
+"."                       ← stable across both
+```
+
+That's a phantom diff with no cause a reviewer can see in the code.
+
+!!! warning "Don't use `path.module` for writing files"
+    It's for *reading* files that ship with the module. Writing through it is unreliable: local and remote module sources behave differently, and several calls to the same local module share one source directory, so concurrent writes race and overwrite each other.
 
 !!! info "`templatestring` — for templates you don't have on disk (OpenTofu first, Terraform 1.9)"
     `templatestring(ref, vars)` renders a template that arrives as a **string at runtime** — from a variable, a local, or a data source — rather than from a file:
