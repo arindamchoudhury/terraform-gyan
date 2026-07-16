@@ -141,10 +141,31 @@ The one you'll reach for constantly is **`path.module`**, and it earns its own t
 
 ### Values not yet known
 
-During `plan`, some attributes aren't decided yet — a generated ID, an assigned IP. Terraform fills them with an **unknown value** placeholder, rendered as `(known after apply)`. It propagates: known + unknown = unknown.
+During `plan`, some attributes aren't decided yet. A generated ID, an assigned IP, an ARN — the remote system picks them at create time, and Terraform refuses to guess. It substitutes an **unknown value** placeholder and prints it as `(known after apply)`.
+
+Unknown-ness spreads, but the rule is narrower than "anything touching an unknown goes unknown." An expression is unknown only when its **result actually depends on** the unknown value. Structure that Terraform can determine without the value stays known. With `terraform_data.a.id` not yet created, a plan shows:
+
+```
++ interp = (known after apply)   # "prefix-${terraform_data.a.id}" — the text depends on the id
++ upper  = (known after apply)   # upper(terraform_data.a.id)      — the result depends on the id
++ len    = 1                     # length([terraform_data.a.id])   — depends only on the list's SIZE
+```
+
+That third line is the one worth internalizing. The list *contains* an unknown, yet its length is known: one element is one element no matter what the element turns out to be. Terraform tracks unknown-ness per value, not per expression-that-mentions-one.
+
+This matters because the shape of a thing is often computable before its values exist — which is exactly the escape hatch for the constraint below.
+
+Four places unknowns change behavior rather than just printing oddly:
+
+- **`count` / `for_each` cannot be unknown at all** (see the warning below).
+- **A data source with an unknown in its config** has its read **deferred to apply**, and everything it returns becomes unknown too.
+- **An unknown passed to a `module` argument** makes the child's input variable unknown, propagating the problem across the boundary.
+- **An unknown in an `output`'s value** makes every parent-module reference to that output unknown.
 
 !!! warning "`count`/`for_each` cannot be unknown"
-    Terraform must evaluate `count` and `for_each` *during* plan to know how many instances to graph. So their values **cannot** depend on anything `(known after apply)` — no resource IDs, no computed attributes. This is the single biggest constraint on iteration, and Ch 5 §5.7 shows exactly how it fails. The fix is to key off inputs and locals, never resource outputs.
+    Terraform must evaluate `count` and `for_each` *during* plan to know how many instances to put in the graph. So their values **cannot** depend on anything `(known after apply)` — no resource IDs, no computed attributes. This is the single biggest constraint on iteration, and Ch 5 §5.7 shows exactly how it fails.
+
+    The fix follows from the rule above: key the iteration off something whose *shape* is known at plan time — input variables, locals, literals — and let the unknown values land inside the resource body instead. You can build three buckets named after a list you control while each bucket's ARN stays `(known after apply)`.
 
 ---
 
