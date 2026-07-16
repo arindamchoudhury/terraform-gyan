@@ -677,7 +677,17 @@ Add a second name and they **shift** rather than accumulate: the *first* now bin
 ]
 ```
 
-A set has neither keys nor indices, so both names land on the same element — `[for i, v in toset(["p","q"]) : "${i}:${v}"]` gives `["p:p", "q:q"]`. If you want a set's elements, one name is all there is.
+A set has neither keys nor indices, so both names land on the same element:
+
+```
+> [for k, v in toset(["p", "q"]) : "${k}:${v}" ]      # set → no key, so k is the element too
+[
+  "p:p",
+  "q:q",
+]
+```
+
+If you want a set's elements, one name is all there is.
 
 An **`if` clause** on the end filters, dropping elements instead of transforming them:
 
