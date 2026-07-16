@@ -65,7 +65,28 @@ Every value has a type, and the type decides where the value is legal and how it
 
     That sounds alarming and mostly isn't, because a tuple **auto-converts to a list** wherever one is expected — `join("-", ["p", "q"])` and `length(["p", "q"])` just work, and `tolist()` is rarely needed.
 
-    **Sets are the exception, and that's the whole reason `toset([...])` is everywhere.** `for_each` accepts a map or a set and will *not* convert a list for you (Ch 10), so there the wrapper is mandatory.
+    **Sets are the exception, and that's the whole reason `toset([...])` is everywhere.** `for_each` takes a **map, or a set of strings** — and will *not* convert a list for you, so there the wrapper is mandatory:
+
+    ```
+    for_each = var.names        # var.names is list(string)
+
+    Error: Invalid for_each argument
+      The given "for_each" argument value is unsuitable: the "for_each" argument
+      must be a map, or set of strings, and you have provided a value of type
+      list of string.
+    ```
+
+    Read that error closely, because `toset()` isn't a magic word — it has to produce a set **of strings**. A set of anything else fails just as hard:
+
+    ```
+    for_each = toset([1, 2])
+
+    Error: Invalid for_each set argument
+      "for_each" supports maps and sets of strings, but you have provided a set
+      containing type number.
+    ```
+
+    The `for_each` mechanics themselves are Ch 10.
 
     For a **module input**, don't push either onto your callers. Declare the type and Terraform converts — and, for a set, dedupes — whatever list they hand you:
 
