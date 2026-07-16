@@ -652,7 +652,34 @@ A `for` expression builds one complex value by transforming another. The **brack
 }
 ```
 
-Add a second loop symbol to get the key (maps/objects) or index (lists), and an `if` clause to filter:
+**One name after `for`, or two.** A single name binds the **value** — whatever you're iterating, and even for a map, where you might expect the key:
+
+```
+> [for v in { a = "x", b = "y" } : v]
+[
+  "x",
+  "y",
+]
+```
+
+Add a second name and they **shift** rather than accumulate: the *first* now binds the key or index, the second binds the value. So it's `for key, value`, not `for value, key`.
+
+```
+> [for k, v in { a = "x", b = "y" } : "${k}=${v}" ]   # map/object → the key
+[
+  "a=x",
+  "b=y",
+]
+> [for i, v in ["p", "q"] : "${i}:${v}" ]             # list/tuple → 0-based index
+[
+  "0:p",
+  "1:q",
+]
+```
+
+A set has neither keys nor indices, so both names land on the same element — `[for i, v in toset(["p","q"]) : "${i}:${v}"]` gives `["p:p", "q:q"]`. If you want a set's elements, one name is all there is.
+
+An **`if` clause** on the end filters, dropping elements instead of transforming them:
 
 ```hcl
 {for name, user in var.users : name => user if user.is_admin}   # keep admins only
