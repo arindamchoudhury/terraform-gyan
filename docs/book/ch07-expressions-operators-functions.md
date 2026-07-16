@@ -6,7 +6,7 @@ By the end you can:
 
 - Read any expression and predict its type, including where Terraform auto-converts and where it refuses to.
 - Reference every kind of named value (`var`, `local`, resource, `data`, `module`, `path.*`, `each`) and know that a reference *is* a dependency edge.
-- Branch with the ternary safely, knowing both branches must share a type but only the taken one is evaluated.
+- Branch with the ternary safely, knowing both branches must be type-compatible but only the taken one is evaluated.
 - Reach for the right function — `merge`, `lookup`, `coalesce`, `try`, `toset`, `jsonencode` — and know `try` from `coalesce`.
 - Build strings with interpolation, heredocs, and template directives, and know when to `jsonencode` instead.
 - Pull long content out of your `.tf` files with `file()` / `templatefile()`, anchored with `path.module`.
@@ -242,7 +242,7 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 
 The `count = bool ? 1 : 0` idiom is *the* standard way to make a resource optional in a module — a cleaner interface than asking the caller for a number.
 
-**Both result values must share a type.** So Terraform can determine the expression's return type without knowing the condition. If they differ, it hunts for a common type and auto-converts — note the `12` comes back **quoted**, because the branches unified to `string`:
+**Both result values must be type-compatible.** So Terraform can determine the expression's return type without knowing the condition. If they differ, it hunts for a common type and auto-converts — note the `12` comes back **quoted**, because the branches unified to `string`:
 
 ```
 > true ? 12 : "hello"
@@ -251,15 +251,19 @@ The `count = bool ? 1 : 0` idiom is *the* standard way to make a resource option
 
 When the result type is uncertain, be explicit: `var.x ? tostring(12) : "hello"`.
 
-!!! warning "Both branches must share a type — but only the taken branch is evaluated"
-    Two separate rules, often conflated. The **type** rule is unconditional: both result values must be type-compatible, and Terraform checks that regardless of the condition so it can know the expression's type. `true ? 1 : ["a"]` fails at plan with *"Inconsistent conditional result types"* even though the `true` branch is perfectly fine.
+!!! warning "Both branches must be type-compatible — but only the taken branch is evaluated"
+    Two separate rules, often conflated. The **type** rule doesn't care about the condition: both result values must unify to a common type, and Terraform checks that whichever way the condition goes, so it can know the expression's type up front. `true ? 1 : ["a"]` fails at plan with *"Inconsistent conditional result types"* even though the `true` branch is perfectly fine.
 
-    A branch's **runtime** error is different. An out-of-range index, indexing a `count = 0` resource, a division by zero — these surface **only when that branch is the one selected.** The untaken branch is not evaluated, even when the condition is unknown at plan time. Verified on Terraform 1.15.6:
+    "Compatible" is looser than "identical" — a `number` and a `string` unify (that's the `true ? 12 : "hello"` → `"12"` case above). A `string` and a tuple don't: `true ? "safe" : [1,2]` errors.
+
+    A branch's **runtime** error is different. An out-of-range index, indexing a `count = 0` resource, a division by zero — these surface **only when that branch is the one selected.** The untaken branch is not evaluated, even when the condition is unknown at plan time.
+
+    Both branches below are **strings**, so the type rule is satisfied and the only thing left to observe is evaluation. Verified on Terraform 1.15.6:
 
     ```
-    > true  ? "safe" : [1,2,3][5]      # untaken bad index → no error
+    > true  ? "safe" : ["a","b","c"][5]      # untaken bad index → never evaluated
     "safe"
-    > false ? [1,2,3][5] : "safe"      # untaken bad index → no error
+    > false ? ["a","b","c"][5] : "safe"      # same, on the other side
     "safe"
     ```
 
