@@ -27,7 +27,10 @@ Everything to the right of an `=` is an expression — the part of HCL that *com
     > max(5, 12, 9)
     12
     > [for s in ["a", "b"] : upper(s)]
-    ["A", "B"]
+    [
+      "A",
+      "B",
+    ]
     ```
 
     One gotcha: the console loads config **only at startup**. Edit a `.tf` file and you must restart the console to see the change.
@@ -213,7 +216,11 @@ locals {
     (Same reason as the equality-type rule in §2 — `==` compares type *and* value, and never converts.)
 
 !!! info "`&&` and `||` short-circuit — OpenTofu 1.10, Terraform 1.12"
-    Historically both sides of a logical operator were always evaluated, so a null-guard like `var.foo != null && var.foo.enabled` still **errored** when `var.foo` was null. Now the right side is skipped once the left decides the result, making that guard safe. **OpenTofu shipped it first in 1.10; Terraform followed in 1.12.**
+    Historically both sides of a logical operator were always evaluated, so a null-guard like `var.foo != null && var.foo.enabled` still **errored** when `var.foo` was null. Now the right side is skipped once the left decides the result, making that guard safe.
+
+    **OpenTofu shipped it first, in 1.10** ("in OpenTofu v1.10 and later the logical operators are short-circuiting"); **Terraform followed in 1.12.0** (May 2025 — *"Logical binary operators can now short-circuit"*, [#36224](https://github.com/hashicorp/terraform/issues/36224)). HashiCorp's operators page still doesn't document the behavior, so the changelog is the citable source.
+
+    Skipping is about **evaluation only**. A skipped operand is still **statically validated** — `var.foo` must still refer to a declared `variable "foo"` block, or the config fails regardless. That's the same static-vs-runtime split as the ternary in §5, and it's the one rule worth carrying across both.
 
 ---
 
@@ -291,7 +298,38 @@ min([55, 3, 12]...)       # → 3     expand a list into separate args with ...
 The expansion symbol is **three periods** (`...`), not a Unicode ellipsis, and works only in function calls.
 
 !!! warning "A sensitive argument makes the whole result sensitive"
-    If any argument is a `sensitive` variable or attribute, the call's result is marked sensitive too — conservatively, regardless of the function. `keys(a_map_with_one_sensitive_value)` returns a `(sensitive value)`. Useful to know when a value mysteriously starts printing redacted.
+    If an argument **is itself** marked sensitive, the call's result is sensitive too — conservatively, regardless of what the function does. Even `length` returns a redacted number. That's why a value sometimes starts printing `(sensitive value)` for no obvious reason:
+
+    ```
+    > length(sensitive({ a = "1" }))
+    (sensitive value)
+    > upper(var.secret)
+    (sensitive value)
+    ```
+
+    But the mark is tracked **per value**, including nested ones — so a map that merely *contains* a sensitive element is not itself sensitive, and functions that don't touch that element come back clean:
+
+    ```
+    > local.baz                      # { a = var.secret, b = "dog" }
+    {
+      "a" = (sensitive value)
+      "b" = "dog"
+    }
+    > keys(local.baz)                # keys don't depend on the secret VALUE
+    [
+      "a",
+      "b",
+    ]
+    > values(local.baz)              # values do — the mark survives on that element
+    [
+      (sensitive value),
+      "dog",
+    ]
+    ```
+
+    Use `issensitive(expr)` to settle it rather than guessing — `issensitive(keys(local.baz))` is `false`, `issensitive(upper(var.secret))` is `true`.
+
+    Note the HashiCorp docs still show `keys(local.baz)` returning `(sensitive value)` for exactly this map. That example is stale: verified on **Terraform 1.15.6**, it returns the plain key list. Sensitivity tracking got more precise, the way unknown-ness did (§3).
 
 ### Pure vs impure — and the perpetual-diff trap
 
@@ -313,7 +351,7 @@ Most functions are **pure**: same inputs, same output, always (`max`, `merge`, `
 
 ### The library, by category
 
-There are ~150 functions; you learn the *skill* of finding one, not the whole list by heart. The categories:
+Terraform 1.15.6 ships **119** built-in functions — you learn the *skill* of finding one, not the whole list by heart. (`terraform metadata functions -json` dumps every signature; it reports 238 because each function is also exposed under a `core::` alias, so `core::max(1, 9)` and `max(1, 9)` are the same function. The alias exists to disambiguate built-ins from provider-defined functions.) The categories:
 
 | Category | Representative functions |
 |---|---|
@@ -372,7 +410,21 @@ null
 ```
 
 !!! tip "Normalize once in locals; keep `try` for real errors"
-    `null` is a *valid value*, not an error — `try` returns it as a success rather than moving on, so if you also want null treated as missing, wrap it: `coalesce(try(x, null), default)`. All arguments to `try` must share a type. The clean pattern: normalize uncertain inputs **once, in a `locals` block**, and let the rest of the module consume predictable values. `can(expr)` — which returns a bool instead of a value — belongs almost exclusively inside `validation` conditions; anywhere else you probably want `try`.
+    `null` is a *valid value*, not an error — `try` returns it as a success rather than moving on, so if you also want null treated as missing, wrap it: `coalesce(try(x, null), default)`. The clean pattern: normalize uncertain inputs **once, in a `locals` block**, and let the rest of the module consume predictable values.
+
+    You'll see it claimed that every argument to `try` must share a type. Not so — `try` just returns the first argument that evaluates, whatever its type (verified on 1.15.6):
+
+    ```
+    > try(tonumber("nope"), "a-string")
+    "a-string"
+    > try(tonumber("nope"), [1, 2])
+    [
+      1,
+      2,
+    ]
+    ```
+
+    Matching types is still a good idea, because whatever consumes the result has to accept every shape `try` might hand it — but it's your design constraint, not a rule Terraform enforces. `can(expr)` — which returns a bool instead of a value — belongs almost exclusively inside `validation` conditions; anywhere else you probably want `try`.
 
 ### Building conditions (the `can`/`contains`/`alltrue` cookbook)
 

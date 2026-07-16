@@ -44,3 +44,20 @@ So any source describing "both branches are evaluated" is pre-0.12 behavior (≥
 ## OpenTofu — verified identical (1.12.4)
 
 Ran the same tests in `tofu console` (OpenTofu 1.12.4, 2026-07-15): untaken bad index → `"safe"`, untaken `count=0` attribute access → `"safe"`, type mismatch → `Error: Inconsistent conditional result types`. Same behavior as Terraform. Expected — OpenTofu forked from Terraform **1.5.x**, well after the 0.12 HCL2 rewrite, so it inherited lazy branch evaluation. (Note: OpenTofu *does* differ from Terraform on `&&`/`||` short-circuit history — that's a separate feature — but the ternary behaves the same.)
+
+---
+
+## Related verified facts (Ch7 audit, 2026-07-15)
+
+Same session, same method (`terraform console` / `plan` on **Terraform 1.15.6**, `tofu console` on **OpenTofu 1.12.4**).
+
+| Claim | Verdict | Evidence |
+|---|---|---|
+| <code>&&</code>/<code>&#124;&#124;</code> short-circuit: OpenTofu **1.10**, Terraform **1.12.0** | **True** | OpenTofu operators docs ("v1.10 and later … short-circuiting"); TF v1.12 CHANGELOG (May 2025): *"Logical binary operators can now short-circuit"* (#36224). HashiCorp's operators **page does not document it** — cite the changelog. A skipped operand is **still statically validated**. |
+| The OpenTofu short-circuit issue is `opentofu#2084` | **FALSE — fabricated** | #2084 is *"`tofu init` should warn if a provider exists with a prefix"*. Unrelated. Cite the OpenTofu docs instead. |
+| "All arguments to `try` must share a type" | **FALSE** | `try(tonumber("nope"), "a-string")` → `"a-string"`; `try(tonumber("nope"), [1,2])` → `[1,2]`. A blog claim, not a Terraform rule. |
+| Terraform ships "~150" functions | **FALSE — 119** | `terraform metadata functions -json` reports **238** entries = 119 real functions × 2, because each is also exposed as `core::<name>` (`core::max(1,9)` → 9). |
+| `keys(map_with_one_sensitive_element)` → `(sensitive value)` (HashiCorp docs example) | **FALSE on 1.15.6** | Returns the plain key list; `issensitive(keys(local.baz))` → `false`. Sensitivity is tracked **per value**: a map *containing* a sensitive element isn't itself sensitive. But when the **argument itself** is marked, propagation is blanket — even `length(sensitive({a="1"}))` → `(sensitive value)`. The docs' example is stale. |
+| `convert()` is Terraform-only | **True** | TF 1.15.6: `convert("5", number)` → `5`. OpenTofu 1.12.4: `Error: Invalid reference`. |
+| Comparison operators are number-only | **True** | `"a" < "b"` → `Error: Invalid operand`; `2 < 10` → `true`. |
+| Splat works on lists, sets, and tuples | **True** | `toset([{id="i-1"},{id="i-2"}])[*].id` → `tolist(["i-1","i-2"])`. |
