@@ -131,7 +131,7 @@ A resource reference's *shape* depends on its meta-arguments: with neither `coun
 !!! info "A reference *is* a dependency edge"
     When one block's argument references another resource's attribute, Terraform records an **implicit dependency** and orders the graph accordingly (Ch 3, Ch 5). This is the preferred way to express ordering — reach for `depends_on` only when there's genuinely no attribute to reference (Ch 10).
 
-**`path.*` and `terraform.workspace` are the odd ones out.** Every other named value describes *what* your config declares; these two describe *where and how it was run* — the invoking directory, the selected workspace. Bake that into the config and its meaning starts depending on the circumstances of the run. The rule the docs draw from it: apart from `path.module`, use these **only in the root module**.
+**`path.*` and `terraform.workspace` are the odd ones out.** Every other named value describes *what* your config declares; these two describe *where and how it was run* — the invoking directory, the selected workspace. Bake that into the config and its meaning starts depending on the circumstances of the run. So: apart from `path.module`, use them **only in the root module**.
 
 For `path.*` that plays out through `file()` and `templatefile()`, so §7 handles it where it's actually used. `terraform.workspace` has no later home in this chapter, so here's its failure now: **used as a name prefix inside a shared module, it stops you calling that module twice.** Both calls read the same workspace name, derive the same resource names, and collide. A shared module that needs a unique prefix takes it as an input variable instead, and the root caller supplies it:
 
@@ -260,7 +260,7 @@ When the result type is uncertain, be explicit: `var.x ? tostring(12) : "hello"`
 
     A branch's **runtime** error is different. An out-of-range index, indexing a `count = 0` resource, a division by zero — these surface **only when that branch is the one selected.** The untaken branch is not evaluated, even when the condition is unknown at plan time.
 
-    Both branches below are **strings**, so the type rule is satisfied and the only thing left to observe is evaluation. Verified on Terraform 1.15.6:
+    Both branches below are **strings**, so the type rule is satisfied and the only thing left to observe is evaluation:
 
     ```
     > true  ? "safe" : ["a","b","c"][5]      # untaken bad index → never evaluated
@@ -278,7 +278,7 @@ When the result type is uncertain, be explicit: `var.x ? tostring(12) : "hello"`
     }
     ```
 
-    Lazy branch evaluation has been the behavior since **Terraform 0.12.0** (the HCL2 rewrite, May 2019); the pre-0.12 HIL engine really did evaluate both branches (bug [#15605](https://github.com/hashicorp/terraform/issues/15605), fixed in 0.12.0-alpha1). So sources that say "Terraform evaluates both results" — including *Terraform in Depth* (2025) — describe behavior that's been gone for years; only the type check is unconditional now. Same on OpenTofu 1.12.4 (it forked post-0.12). Evidence: [[conditional-branch-evaluation]].
+    Lazy evaluation arrived with **Terraform 0.12.0** (the HCL2 rewrite, May 2019). The old pre-0.12 engine really did evaluate both branches, which is where the folklore comes from — so material asserting that Terraform "evaluates both results" is describing a version that has been gone for years. Expect to meet the claim anyway; it outlived the behavior. OpenTofu inherits the modern rule, having forked well after 0.12.
 
 The condition can be any bool expression. A cookbook of the idioms that build good conditions — `contains(...)`, `length(...) != 0`, `alltrue([for ...])`, `can(...)` — appears in the function section next, because they're what you'll feed to `validation` and `precondition` blocks (Ch 19).
 
@@ -335,7 +335,7 @@ The expansion symbol is **three periods** (`...`), not a Unicode ellipsis, and w
 
     Use `issensitive(expr)` to settle it rather than guessing — `issensitive(keys(local.baz))` is `false`, `issensitive(upper(var.secret))` is `true`.
 
-    Note the HashiCorp docs still show `keys(local.baz)` returning `(sensitive value)` for exactly this map. That example is stale: verified on **Terraform 1.15.6**, it returns the plain key list. Sensitivity tracking got more precise, the way unknown-ness did (§3).
+    Worth knowing: the HashiCorp docs still show `keys(local.baz)` returning `(sensitive value)` for exactly this map. That example is stale — as of 1.15.6 it returns the plain key list. Sensitivity tracking got more precise, the way unknown-ness did (§3).
 
 ### Pure vs impure — and the perpetual-diff trap
 
@@ -418,7 +418,7 @@ null
 !!! tip "Normalize once in locals; keep `try` for real errors"
     `null` is a *valid value*, not an error — `try` returns it as a success rather than moving on, so if you also want null treated as missing, wrap it: `coalesce(try(x, null), default)`. The clean pattern: normalize uncertain inputs **once, in a `locals` block**, and let the rest of the module consume predictable values.
 
-    You'll see it claimed that every argument to `try` must share a type. Not so — `try` just returns the first argument that evaluates, whatever its type (verified on 1.15.6):
+    You'll see it claimed that every argument to `try` must share a type. Not so — `try` returns the first argument that evaluates, whatever its type:
 
     ```
     > try(tonumber("nope"), "a-string")
@@ -542,7 +542,7 @@ resource "aws_instance" "app" {
 "."                       ← stable across both
 ```
 
-That's a phantom diff with no cause a reviewer can see in the code. Verified on Terraform 1.15.6.
+That's a phantom diff with no cause a reviewer can see in the code.
 
 !!! warning "Don't use `path.module` for writing files"
     It's for *reading* files that ship with the module. Writing through it is unreliable: local and remote module sources behave differently, and several calls to the same local module share one source directory, so concurrent writes race and overwrite each other.
@@ -798,7 +798,7 @@ tflocal destroy -auto-approve
 - **`==` with mismatched types.** `"15" == 15` is `false`; equality never converts. Cast first.
 - **`var.list == []`.** Always false — `[]` is a `tuple`, not a `list`. Use `length(...) == 0`.
 - **Impure functions in config.** `uuid()`/`timestamp()` in a resource argument = perpetual diff. Use the `random`/`time` providers for stable values.
-- **Ternary branch types.** Both branches must be **type-compatible** (checked unconditionally — `true ? 1 : ["a"]` errors). Runtime errors, though, only fire in the branch actually *taken* (verified TF 1.15.6), so guard the branch you might select with `try`, not "both."
+- **Ternary branch types.** Both branches must be **type-compatible** (checked unconditionally — `true ? 1 : ["a"]` errors). Runtime errors, though, only fire in the branch actually *taken*, so guard the branch you might select with `try`, not "both."
 - **`for_each` on a computed value.** The map/set must be fully known at plan time — no resource IDs, nothing `(known after apply)`.
 - **`count` over a list you'll edit.** Reindex-on-delete destroys unrelated resources. Build a keyed map with `for` and use `for_each`.
 - **`try` where you meant `coalesce`.** `try` catches *errors*; `coalesce` catches *null/empty*. `null` is a successful result for `try`.
@@ -834,5 +834,5 @@ Chapter 8 turns to **data sources** — reading infrastructure Terraform doesn't
 
 - HashiCorp Docs — [Expressions](https://developer.hashicorp.com/terraform/language/expressions) · [Types](https://developer.hashicorp.com/terraform/language/expressions/types) · [References](https://developer.hashicorp.com/terraform/language/expressions/references) · [Operators](https://developer.hashicorp.com/terraform/language/expressions/operators) · [Conditionals](https://developer.hashicorp.com/terraform/language/expressions/conditionals) · [Strings](https://developer.hashicorp.com/terraform/language/expressions/strings) · [For](https://developer.hashicorp.com/terraform/language/expressions/for) · [Splat](https://developer.hashicorp.com/terraform/language/expressions/splat) · [Function calls](https://developer.hashicorp.com/terraform/language/expressions/function-calls) · [Built-in functions](https://developer.hashicorp.com/terraform/language/functions)
 - Reading notes: [[tf-expressions]], [[tf-expr-types]], [[tf-expr-references]], [[tf-expr-operators]], [[tf-conditionals]], [[tf-expr-strings]], [[tf-expr-for]], [[tf-expr-splat]], [[tf-expr-function-calls]], [[tf-functions]] · *Terraform in Depth* Ch 4 ([[04-expressions-iterations]]) · [[tut-variables]] (console workflow)
-- Version facts: [[version-facts]], [[tf115-ot112-features]]
+- Version facts: [[version-facts]], [[tf115-ot112-features]], [[conditional-branch-evaluation]] (ternary evaluation, short-circuit versions, function count, sensitivity propagation — tested against 1.15.6 / OpenTofu 1.12.4)
 - 🧪 Lab: [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)
