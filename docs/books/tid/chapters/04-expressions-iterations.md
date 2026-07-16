@@ -191,7 +191,7 @@ locals {
 ```
 
 !!! info "`&&` / `||` now short-circuit — OpenTofu 1.10, Terraform 1.12"
-    A post-book change. Historically both operands were *always* evaluated, so `var.foo == null || var.foo.bar == 1` still errored when `var.foo` was null. Now the right operand is **skipped once the left decides the result**, so that null-guard is safe — a clean alternative to wrapping the access in `try()` (§4.7). **OpenTofu shipped it first in 1.10** ([#2084](https://github.com/opentofu/opentofu/issues/2084)); **Terraform followed in 1.12** ([#36224](https://github.com/hashicorp/terraform/issues/36224)). Note this is the *boolean operators* only — the **ternary `? :` still type-checks both result branches** (§4.2.4), so short-circuiting doesn't rescue an invalid untaken branch there.
+    A post-book change. Historically both operands were *always* evaluated, so `var.foo == null || var.foo.bar == 1` still errored when `var.foo` was null. Now the right operand is **skipped once the left decides the result**, so that null-guard is safe — a clean alternative to wrapping the access in `try()` (§4.7). **OpenTofu shipped it first in 1.10** ([#2084](https://github.com/opentofu/opentofu/issues/2084)); **Terraform followed in 1.12** ([#36224](https://github.com/hashicorp/terraform/issues/36224)). Note this is the *boolean operators* only. The ternary is a separate mechanism, and not the counter-example it looks like: it skips the untaken branch's **evaluation** too (has done since TF 0.12 — see §4.2.5), but it **type-checks both result branches regardless of the condition**, so a type mismatch still errors even in a branch that's never returned.
 
 ### 4.2.4 Conditional (the ternary)
 
@@ -767,7 +767,7 @@ dynamic "ingress" {
 ## Summary
 
 - **Every value right of `=` is an expression.** This chapter adds logic to a declarative language.
-- **Operators**: math (`+ - * / %`), comparison (`== != < <= > >=`, type-sensitive, no auto-convert on `==`/`!=`), boolean (`|| && !`), and the **ternary** `c ? a : b` — which **evaluates both branches** (guard with `try`).
+- **Operators**: math (`+ - * / %`), comparison (`== != < <= > >=`, type-sensitive, no auto-convert on `==`/`!=`), boolean (`|| && !`), and the **ternary** `c ? a : b` — whose branches must be **type-compatible** (checked regardless of the condition), though only the **taken** branch is evaluated; the book's "evaluates both results" is outdated (§4.2.5).
 - **Functions transform data**, they don't act. Standard library + (since **1.8**, both tools) provider-defined functions. Beware **impure** functions (`uuid`/`timestamp`) — they cause perpetual diffs; use the `random`/`time` providers instead.
 - **Strings**: `file` for static blobs, `templatefile` for interpolated/iterated ones (`${…}` expressions, `%{…}` directives), `templatestring` (OpenTofu-led, Terraform 1.9+). For JSON/YAML, **encode** with `jsonencode`/`yamlencode`, don't template.
 - **Regex** via `regex` (errors on miss), `regexall` (empty list on miss — used in validation), `replace`. Go/RE2 syntax.
