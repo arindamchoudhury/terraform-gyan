@@ -570,7 +570,7 @@ You are ready to advance when you can:
 
     Distinguish the two arguments: changing **`input`** updates in place, changing **`triggers_replace`** forces replacement (and so re-runs any provisioner the resource hosts). (See [[tf-terraform-data]].)
 2. **Interactive — replace a provisioner** (~45 min) — take a `local-exec` hack and re-express it with `terraform_data` triggers or a data source.
-3. **Book chapter — TID Ch 10 §10.3 "Provisioners"** (+ §10.4 External provider, §10.5 Local provider) **/ TUR provisioners section** (~45 min) — legitimate vs illegitimate uses. `terraform_data` and other state-only resources are Ch 6 §6.8.
+3. **Book chapter — TID Ch 10 §10.3 "Provisioners"** (+ §10.4 External provider, §10.5 Local provider) **/ TUR Ch 8** (~45 min) — legitimate vs illegitimate uses. TUR Ch 8 treats these under the exact name this topic uses — *"escape hatches"* (p305): provisioners, provisioners with `null_resource`, and the external data source. `terraform_data` and other state-only resources are Ch 6 §6.8.
 
 !!! note "📌 `actions` block (Terraform 1.14)"
     Terraform **1.14** added the top-level **`actions` block** — provider-defined operations *outside* the normal CRUD lifecycle (e.g. invoke a Lambda, trigger a CloudFront invalidation). This is the modern, provider-native successor to abusing a provisioner or `terraform_data` for one-off side effects: the action is declared by the provider and invoked during apply (or via `-invoke`), with a count reported in the summary. Newer than both books; verify against the CHANGELOG. (See [[feature-history]].)
@@ -714,7 +714,7 @@ You are ready to advance when you can:
 1. **Reference — [HCDocs "Manage sensitive data"](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) (umbrella) + ["Sensitive data in state"](https://developer.hashicorp.com/terraform/language/state/sensitive-data) + ["Dynamic Provider Credentials"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials)** (~40 min) — why `sensitive` isn't encryption and how OIDC removes static keys. (Umbrella captured in [[tf-manage-sensitive-data]] — the hide-vs-omit-vs-both decision framework, the version-requirements matrix (0.15 `sensitive` / 1.10 `ephemeral` / 1.11 write-only), write-only `_wo`/`_wo_version`, and the state-encryption backends.)
 2. **Reference — [HCDocs "Ephemeral values"](https://developer.hashicorp.com/terraform/language/manage-sensitive-data/ephemeral)** (~40 min) — the current best-practice for secrets. `sensitive` only hides a value in output; it's still written to state in plaintext. **Ephemeral values** (TF 1.10) exist only during a single command run and are *never* written to state or plan. **Ephemeral resources** (a block type that opens/closes a short-lived external object, e.g. fetch a token) and **write-only arguments** (TF 1.11 — resource arguments like a DB password that Terraform can write but never read back, versioned via a companion `*_wo_version` attribute) together let you pass a secret straight into a resource with nothing persisted. OpenTofu reached parity in 1.11.
 3. **Interactive — HCTut [dynamic credentials lab](https://developer.hashicorp.com/terraform/tutorials/cloud/dynamic-credentials)** (~1.5 hrs) — configure OIDC so a pipeline assumes a role with no stored secret.
-4. **Book chapter — TID secrets section / TUR secrets management** (~1 hr) — Vault integration and secret-injection patterns.
+4. **Book chapter — TID Ch 8 §8.5 "Managing secrets" / TUR Ch 6 "Managing Secrets with Terraform"** (~1 hr) — Vault integration and secret-injection patterns.
 
 !!! warning "📌 `sensitive` leaks through `terraform output -json` / `-raw`"
     `sensitive` redacts values in normal CLI logs and the HCP UI, but the redaction is **narrower than it looks**. It redacts on plan/apply/destroy and on `terraform output` (all). It does **not** redact when you query **by name** (`terraform output db_password` → plaintext), with `-json`, or with `-raw`, nor when a child module's output is used in the root — the flags feed automation, so they bypass redaction by design. Combined with the fact that `sensitive` values are stored in state/plan as **plain text** anyway, this is why `sensitive` alone is *hiding*, not *protecting*. Use `ephemeral` (+ write-only args) to keep a secret out of state entirely. (See [[tf-manage-sensitive-data]]; the full redaction matrix is in [[tut-outputs]].)
@@ -736,7 +736,7 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Book chapter — TUR Ch 3 (isolation) + Ch 5** (~2 hrs) — file-layout / workspace tradeoffs; the definitive treatment.
+1. **Book chapter — TUR Ch 3 (§ "Isolation via Workspaces" p94 / "Isolation via File Layout" p100) + Ch 7 "Working with Multiple Providers"** (~2 hrs) — file-layout vs workspace tradeoffs (the definitive treatment), then Ch 7 for the multi-account/multi-region half of this topic (§ "Working with Multiple AWS Accounts" p238).
 2. **Reference — [HCDocs "Workspaces" (CLI)](https://developer.hashicorp.com/terraform/language/state/workspaces) vs [HCP workspaces](https://developer.hashicorp.com/terraform/cloud-docs/workspaces)** (~30 min) — understand why CLI workspaces are *not* environment isolation. In automation, **`TF_WORKSPACE`** selects the workspace non-interactively (instead of `terraform workspace select`).
 3. **Interactive — restructure** (~1.5 hrs) — lay out one module consumed by isolated dev/prod stacks with separate state.
 
@@ -756,7 +756,7 @@ You are ready to advance when you can:
 **How to learn it:**
 
 1. **Reference — [HCDocs "Refactoring" (moved blocks)](https://developer.hashicorp.com/terraform/language/modules/develop/refactoring)** (~40 min) — config-driven refactors that keep the plan empty.
-2. **Book chapter — TID Ch 9 §9.5 "Refactoring" + §9.6 "External refactoring" / TUR refactoring** (~1 hr) — splitting state and versioned module rollouts. The state-surgery side (`terraform state mv`, moved blocks) is Ch 6 §6.5 *Manipulating state*.
+2. **Book chapter — TID Ch 9 §9.5 "Refactoring" + §9.6 "External refactoring" / TUR Ch 5 "Refactoring Can Be Tricky" (p186)** (~1 hr) — splitting state and versioned module rollouts. The state-surgery side (`terraform state mv`, moved blocks) is Ch 6 §6.5 *Manipulating state*.
 3. **Interactive — split a monolith** (~1.5 hrs) — carve one big config into two states with `moved`/`removed` and `state mv`, verifying empty plans.
 
 **Milestone:** You can split a monolithic configuration into two independently-stated configs with no resource re-creation.
@@ -792,7 +792,10 @@ You are ready to advance when you can:
 1. **Interactive — HCTut ["Implement a provider with the Plugin Framework"](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework/providers-plugin-framework-provider)** (~4 hrs) — build a working provider against a sample API end to end.
 2. **Reference — [TPF docs](https://developer.hashicorp.com/terraform/plugin/framework)** (~ongoing) — schema, resource lifecycle, plan modification, acceptance testing.
 3. **Reference — [Provider-defined functions](https://developer.hashicorp.com/terraform/plugin/framework/functions)** (~30 min) — the author side of the B7 note: expose your own `provider::<name>::<fn>()` functions from the provider (TF 1.8+), not just resources and data sources.
-4. **Book chapter — TUR "extending Terraform" / provider dev material** (~2 hrs) — the mental model of the plugin protocol.
+4. **Book chapter — TID Ch 12 "Terraform providers"** (~2 hrs) — the book's provider-authoring chapter and the mental model of the plugin protocol: §12.1 Design, §12.2 Developer environment, §12.3 Plugin Framework features, §12.4 Provider interface, §12.5 Data source, §12.6 Resources, §12.7 Functions, §12.8 Publishing.
+
+!!! note "TUR does not cover writing providers"
+    **TUR has no provider-authoring content** — verified against the book. Its Ch 7 is *"Working with Multiple Providers"* (using several providers: multiple regions/accounts/clouds), and its only "custom provider" mentions are about *downloading* one from a private registry. For authoring, use **TID Ch 12** plus the TPF docs above.
 
 !!! note "📌 `dev_overrides` for local provider testing"
     To test a locally-built provider without publishing it, add a **`dev_overrides`** block (inside `provider_installation` in the [CLI config file](https://developer.hashicorp.com/terraform/cli/config/config-file), v0.14+) pointing at your compiled binary. It bypasses the registry, version, and lock-file checks — `terraform init` is skipped entirely. Point `TF_CLI_CONFIG_FILE` at a dev-only config so you don't disturb your normal setup. Temporary dev use only. (See [[feature-history]].)
@@ -897,7 +900,7 @@ You are ready to advance when you can:
 2. **Reference — [HCDocs `terraform graph`](https://developer.hashicorp.com/terraform/cli/commands/graph)** (~20 min) — the DOT output, `-type=plan|apply|plan-destroy|plan-refresh-only` for the runtime graph (provider nodes, `(expand)` nodes), `-plan=tfplan` for a saved plan, and `-draw-cycles`. Notes: [[tf-cmd-graph]], [[dependency-graph]].
 3. **Interactive — diagnose a cycle** (~30 min) — write two resources that reference each other, watch `plan` fail with `Error: Cycle: …`, then run `terraform graph -type=plan -draw-cycles | dot -Tsvg > cycle.svg` and find the red edges that close the loop.
 4. **Interactive — profile a slow plan** (~1.5 hrs) — enable the plugin cache, tune `-parallelism`, and measure the difference on a large config.
-5. **Book chapter — TID troubleshooting / TUR gotchas** (~1 hr) — common failure modes and their fixes.
+5. **Book chapter — TID Ch 5 §5.7 "Common pitfalls and errors" / TUR Ch 5 (the "Gotchas" half of *Tips and Tricks: Loops, If-Statements, Deployment, and Gotchas*)** (~1 hr) — common failure modes and their fixes. (TID has no dedicated troubleshooting chapter; §5.7 is the closest — captured in [[05-terraform-plan]].)
 
 !!! tip "🔧 Diagnosing `Error: Cycle`"
     The error names the cycle's **members**, not the **edges** that close it. On a two-resource cycle that's the same thing; on a real config it isn't. `-draw-cycles` reddens the offending edges:
