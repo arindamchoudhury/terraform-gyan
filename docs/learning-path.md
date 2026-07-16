@@ -549,9 +549,9 @@ You are ready to advance when you can:
 
 ### ⬜ A1 — Provisioners, terraform_data & escape hatches
 
-**What it is:** `provisioner` blocks (`local-exec`, `remote-exec`), `null_resource`/`terraform_data`, `connection` blocks — and, crucially, when *not* to use them.
+**What it is:** `provisioner` blocks (`local-exec`, `remote-exec`), `null_resource`/`terraform_data`, `connection` blocks, the **`local` provider** (`local_file` / `local_sensitive_file` — writing files from a config) and the **`external`** provider — and, crucially, when *not* to use any of them.
 
-**Why you need it:** Sometimes you must run a script or trigger a rebuild; you also need to recognize when a provisioner is a design smell to be replaced by a data source or provider feature.
+**Why you need it:** Sometimes you must run a script, write a rendered file to disk, or trigger a rebuild; you also need to recognize when a provisioner is a design smell to be replaced by a data source or provider feature. B7 renders templates with `templatefile()` but never writes one out — `local_file` is the piece that puts a rendered template on disk, and it carries the escape-hatch costs (it re-creates on any machine where the file is absent, adding diff noise).
 
 **How to learn it:**
 

@@ -607,7 +607,18 @@ Treat that as the feature it is. A template's inputs are declared at the call si
 That's a phantom diff with no cause a reviewer can see in the code.
 
 !!! warning "Don't use `path.module` for writing files"
-    It's for *reading* files that ship with the module. Writing through it is unreliable: local and remote module sources behave differently, and several calls to the same local module share one source directory, so concurrent writes race and overwrite each other.
+    Everything above is about *reading* files that ship with the module. Terraform can also **write** them — not through a function, but with the `local` provider's **`local_file`** resource (`local_sensitive_file` for secrets):
+
+    ```hcl
+    resource "local_file" "rendered" {
+      filename = "/tmp/cloud-init.yaml"
+      content  = templatefile("${path.module}/templates/cloud-init.tftpl", { hostname = "web-01" })
+    }
+    ```
+
+    Writing *through `path.module`* is where it goes wrong. Local and remote module sources behave differently, and several calls to the same local module share one source directory, so concurrent writes race and overwrite each other. Write to a path the caller controls instead.
+
+    Generating files at all is an escape hatch with its own costs — `local_file` reports itself deleted on any machine where the file isn't present, so it re-creates on every fresh checkout and adds diff noise in CI. Ch 18 covers it with the other escape hatches.
 
 !!! info "`templatestring` — for templates you don't have on disk (OpenTofu first, Terraform 1.9)"
     `templatestring(ref, vars)` renders a template that arrives as a **string at runtime** — from a variable, a local, or a data source — rather than from a file:
