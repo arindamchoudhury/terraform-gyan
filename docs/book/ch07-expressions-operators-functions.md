@@ -121,7 +121,7 @@ A resource reference's *shape* depends on its meta-arguments: with neither `coun
 
     Be careful with the phrase "loop over all instances" — it means two different things, and only one is impossible:
 
-    - **Every instance of *one* resource block** (the block uses `count`/`for_each`) — **yes**, that's an ordinary value, and splat is exactly the tool. See §8.
+    - **Every instance of *one* resource block** — **yes**. That block *is* an ordinary value: a **list** under `count`, a **map** under `for_each`. Splat reads the list form directly — `terraform_data.web[*].output` returns `["web-0", "web-1", "web-2"]`. The map form needs `values(...)` or a `for`, and its error message is misleading; §8 has the full treatment.
     - **Every resource block of a given type** across the config — **no**. To enumerate that, step outside expressions entirely: `terraform state list`, or `terraform show -json` for machine-readable output.
 
 !!! info "A reference *is* a dependency edge"
