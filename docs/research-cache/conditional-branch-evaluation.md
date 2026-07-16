@@ -1,6 +1,11 @@
-# Conditional (ternary) branch evaluation — verified facts
+# B7 expressions — verified facts
 
-Last verified: **2026-07-15** against **Terraform 1.15.6** and **OpenTofu 1.12.4** (empirical: `terraform console`/`plan` and `tofu console`). Both tools behave identically.
+Last verified: **2026-07-15** against **Terraform 1.15.6** and **OpenTofu 1.12.4** (empirical: `terraform console`/`plan` and `tofu console`).
+
+!!! note "Scope has outgrown the filename"
+    This file started as the ternary branch-evaluation investigation (below) and grew into the verification record for the whole **B7 / Ch 7** chapter. The slug stays `conditional-branch-evaluation` so existing `[[conditional-branch-evaluation]]` links keep resolving.
+
+    **Method, and why it matters:** every row here was *run*, not recalled. The pattern across the audit was blunt — claims taken from memory, blogs, or even the official docs were repeatedly wrong; claims that were executed were right. Two HashiCorp doc examples turned out stale (`keys()` sensitivity, and the `local_file` example writing through `path.module`), one cited GitHub issue was fabricated, and several of *my own* statements of a true fact were imprecise. Re-verify before trusting any of it against a newer release.
 
 ## The question
 
@@ -61,3 +66,20 @@ Same session, same method (`terraform console` / `plan` on **Terraform 1.15.6**,
 | `convert()` is Terraform-only | **True** | TF 1.15.6: `convert("5", number)` → `5`. OpenTofu 1.12.4: `Error: Invalid reference`. |
 | Comparison operators are number-only | **True** | `"a" < "b"` → `Error: Invalid operand`; `2 < 10` → `true`. |
 | Splat works on lists, sets, and tuples | **True** | `toset([{id="i-1"},{id="i-2"}])[*].id` → `tolist(["i-1","i-2"])`. |
+
+### Second pass (same session — questions that found gaps, not just errors)
+
+| Claim | Verdict | Evidence (TF 1.15.6) |
+|---|---|---|
+| There is a set literal | **False** | No set *or* list literal exists. `type(["p","q"])` → `tuple([string,string])`; `tolist(...)` → `list(string)`; `toset(...)` → `set(string)`. |
+| You must `tolist()` to get a list | **False — rarely needed** | A tuple auto-converts to a list wherever one is expected: `join("-",["p","q"])` → `"p-q"`, `length(["p","q"])` → `2`. **Sets are the exception** — that's the whole reason `toset()` is idiomatic. |
+| `for_each` accepts "a map or a set" | **Imprecise — map or set OF STRINGS** | `for_each = var.names` (`list(string)`) → *"must be a map, or set of strings, and you have provided a value of type list of string."* And `toset()` is not a magic word: `for_each = toset([1,2])` → *"supports maps and sets of strings, but you have provided a set containing type number."* `toset(var.names)` works. |
+| Converting a mixed tuple is lossless | **False** | Lists/sets hold one element type; `tolist(["a", 1])` → `["a", "1"]` — the number silently becomes a string. |
+| `templatestring(str, vars)` | **Wrong signature — it's `(ref, vars)`** | Literals are refused by design: *"templatestring is only for rendering templates retrieved dynamically from elsewhere, and so does not support providing a literal template."* A literal can't work anyway — HCL interpolates `"${name}"` at the call site first, giving the baffling *"A reference to a resource type must be followed by at least one attribute access"*. Works off `var.`/`local.`: `templatestring(var.tmpl, {...})` → `"hi bo, count=2"`. |
+| A template can read `var.*` | **False — the vars map is the whole scope** | `${var.name}` in a `.tftpl` → *"vars map does not contain key \"var\", referenced at ./templates/bad.tftpl:1,3-6"* (`var` is read as a missing key). `${missing}` likewise. Errors point into the template at the column. |
+| Terraform can't write files | **False** | The `local` provider's **`local_file`** resource (`local_sensitive_file` for secrets) — *"Generates a local file with the given content."* Caveat from its docs: it reports itself deleted wherever the file is absent → re-creates on fresh checkouts, diff noise in CI. Note the provider's own example writes to `${path.module}/foo.bar`, contradicting the references doc's "not recommended for write operations". |
+| `path.cwd` is stable for a given config | **False** | It's the *invoking* directory: same config reports `.../scratchpad/tftest` from its own dir and `.../scratchpad` via `-chdir` from the parent. `path.root` stays `"."` in both. In a resource argument that's a phantom diff. |
+| `for` loop names: a second name "also gives you the key" | **Misleading — they shift** | One name binds the **value**, even for a map: `[for v in {a="x",b="y"} : v]` → `["x","y"]`. Two names → key/index **first**: `[for k,v in {a="x",b="y"} : "${k}=${v}"]` → `["a=x","b=y"]`; `[for i,v in ["p","q"] : "${i}:${v}"]` → `["0:p","1:q"]`. A set has neither, so both bind the element → `["p:p","q:q"]`. |
+| `.tftpl` is required | **False — convention only** | Terraform renders any extension (verified with `.txt`). The docs recommend `.tftpl` so editors highlight it. |
+
+**Console is the verification tool.** `templatefile()` renders in `terraform console`, and multi-line results print as a `<<EOT` heredoc — which makes whitespace visible, so `~` strip markers can be checked without an apply. The `.tftpl` is re-read per call (no console restart); config changes still need one.
