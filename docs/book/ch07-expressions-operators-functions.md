@@ -131,21 +131,18 @@ A resource reference's *shape* depends on its meta-arguments: with neither `coun
 !!! info "A reference *is* a dependency edge"
     When one block's argument references another resource's attribute, Terraform records an **implicit dependency** and orders the graph accordingly (Ch 3, Ch 5). This is the preferred way to express ordering — reach for `depends_on` only when there's genuinely no attribute to reference (Ch 10).
 
-**Use `path.*` and `terraform.workspace` sparingly.** They carry context about *where* a config is being applied. Bake that into the config and its meaning starts depending on who ran it, from which directory, in which workspace. Two concrete failures:
+**`path.*` and `terraform.workspace` are the odd ones out.** Every other named value describes *what* your config declares; these two describe *where and how it was run* — the invoking directory, the selected workspace. Bake that into the config and its meaning starts depending on the circumstances of the run. The rule the docs draw from it: apart from `path.module`, use these **only in the root module**.
 
-- **`path.cwd` in a resource argument produces a phantom diff.** It's the directory Terraform was invoked from, so it changes when you `cd` — the same config, pointing at the same byte-identical file, plans a change purely because you ran it from somewhere else. Verified: the same config reports `".../scratchpad/tftest"` when run from its own directory and `".../scratchpad"` when run from the parent via `-chdir`. `path.root` stays `"."` across both.
-- **`terraform.workspace` as a name prefix inside a shared module stops you calling that module twice.** Both calls read the same workspace name, so both derive the same resource names, and they collide.
-
-The rule that falls out: apart from `path.module`, use these **only in the root module**. A shared module that needs a unique prefix takes it as an input variable, and the root caller supplies it:
+For `path.*` that plays out through `file()` and `templatefile()`, so §7 handles it where it's actually used. `terraform.workspace` has no later home in this chapter, so here's its failure now: **used as a name prefix inside a shared module, it stops you calling that module twice.** Both calls read the same workspace name, derive the same resource names, and collide. A shared module that needs a unique prefix takes it as an input variable instead, and the root caller supplies it:
 
 ```hcl
 module "app" {
   source      = "./modules/app"
-  name_prefix = "app-${terraform.workspace}"   # workspace used at the ROOT, passed in
+  name_prefix = "app-${terraform.workspace}"   # workspace read at the ROOT, passed in
 }
 ```
 
-The one you'll reach for constantly is **`path.module`**, and it earns its own treatment in §7 — it's how `file()` and `templatefile()` locate files bundled inside a module. `terraform.workspace` is a different story: it's the tip of the **CLI workspaces** model, which is an environment-isolation strategy rather than an expression feature. Ch 24 weighs it against directory-per-environment and HCP workspaces; treat this chapter's mention as "the name exists," not "this is how to do environments."
+That aside, `terraform.workspace` is the tip of the **CLI workspaces** model — an environment-isolation strategy, not an expression feature. Ch 24 weighs it against directory-per-environment and HCP workspaces; treat this mention as "the name exists," not "this is how to do environments."
 
 ### Values not yet known
 
@@ -527,9 +524,25 @@ resource "aws_instance" "app" {
 }
 ```
 
-**`path.module` is almost always the right one.** It keeps a module self-contained: the file travels with the module, so the config works no matter where the caller invokes it from, or how many times.
+**`path.module` is almost always the right one.** It keeps a module self-contained: the file travels with the module, so the config works no matter where the caller invokes it from, or how many times. The other two reach *outside* the module and drag the run's circumstances back in (§3), each in its own way.
 
-The other two reach *outside* the module and drag the caller's context back in — the §3 problem exactly. `path.root` resolves to the entry-point directory, so a module using it only works when the caller happens to keep that file there; move the module into another config and the path breaks. `path.cwd` is worse: it tracks the directory you *invoked* Terraform from, so it can change between two runs of an unchanged config and plan a diff for it.
+**`path.root`** resolves to the entry-point directory. A module reading `${path.root}/files/x` only works while the caller keeps that file there — move the module into another config and the path breaks. It's the caller's layout, not yours.
+
+**`path.cwd` is the one that bites.** It's the directory you *invoked* Terraform from — not where the config lives — so it changes when you `cd`. Put it in a resource argument and an unchanged config plans a change purely because you ran it from somewhere else. Same config, same byte-identical file, two runs:
+
+```
+# run from the config's own directory
+> path.cwd
+".../scratchpad/tftest"
+
+# same config, invoked from the parent with -chdir=tftest
+> path.cwd
+".../scratchpad"          ← changed
+> path.root
+"."                       ← stable across both
+```
+
+That's a phantom diff with no cause a reviewer can see in the code. Verified on Terraform 1.15.6.
 
 !!! warning "Don't use `path.module` for writing files"
     It's for *reading* files that ship with the module. Writing through it is unreliable: local and remote module sources behave differently, and several calls to the same local module share one source directory, so concurrent writes race and overwrite each other.
