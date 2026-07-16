@@ -9,7 +9,7 @@ By the end you can:
 - Branch with the ternary safely, knowing both branches must be type-compatible but only the taken one is evaluated.
 - Reach for the right function — `merge`, `lookup`, `coalesce`, `try`, `toset`, `jsonencode` — and know `try` from `coalesce`.
 - Build strings with interpolation, heredocs, and template directives, and know when to `jsonencode` instead.
-- Pull long content out of your `.tf` files with `file()` / `templatefile()`, anchored with `path.module`.
+- Pull long content out of your `.tf` files with `file()` / `templatefile()`, anchored with `path.module`, and write the `.tftpl` template it renders.
 - **Transform a list of maps into a keyed map with a `for` expression and use it to drive `for_each`.**
 
 ---
@@ -523,6 +523,42 @@ resource "aws_instance" "app" {
   })
 }
 ```
+
+#### Writing the template itself
+
+The template file is where the `${}` and `%{}` syntax from earlier in this section actually lives — that's all a template is. `templates/cloud-init.tftpl`:
+
+```bash
+#!/bin/bash
+hostname ${hostname}
+%{ for svc in services ~}
+systemctl enable ${svc}
+%{ endfor ~}
+```
+
+Render it with the map above and you get:
+
+```
+#!/bin/bash
+hostname web-01
+systemctl enable nomad
+systemctl enable consul
+```
+
+**The vars map is the template's entire world.** Inside the file you write `${hostname}` — bare. Not `${var.hostname}`: the template cannot see your variables, locals, or resources, only the keys you handed it. Both ways of forgetting that fail loudly, and the error points into the template file at the exact column:
+
+```
+# ${var.name} inside the template — "var" is read as a map key that isn't there
+vars map does not contain key "var", referenced at ./templates/bad.tftpl:1,3-6
+
+# ${missing} inside the template
+vars map does not contain key "missing", referenced at ./templates/miss.tftpl:1,9-16
+```
+
+Treat that as the feature it is. A template's inputs are declared at the call site, so you can read the `templatefile` call and know everything the file is allowed to use — no hunting through the template for hidden dependencies on your config.
+
+!!! tip "Name templates `*.tftpl`"
+    Terraform renders any file regardless of extension, but `.tftpl` is the recommended convention: *"following this convention will help your editor understand the content and likely provide better editing experience as a result."* You'll also see `.tpl` in older code.
 
 **`path.module` is almost always the right one.** It keeps a module self-contained: the file travels with the module, so the config works no matter where the caller invokes it from, or how many times. The other two reach *outside* the module and drag the run's circumstances back in (§3), each in its own way.
 
