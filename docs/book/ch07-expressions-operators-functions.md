@@ -433,7 +433,7 @@ Those are structural types, and that is worth a moment, because you will read ot
 
     That is the whole reason. A collection isn't *impossible* here, it's *not free* — it would quietly turn your number into a string, and `b.input * 2` would stop working. The structural type keeps every instance exactly the type it is. So Terraform hands you `tuple`/`object` for resources **unconditionally**, rather than gambling on whether one particular resource's instances happen to match.
 
-    **And "nothing stops it" only holds while unification can find a type.** Give the instances values with no common type and the map stops existing altogether:
+    **All of which assumes unification can find a type at all.** When it can't, the map doesn't merely cost something — it stops existing. Give the instances values with no common type:
 
     ```hcl
     for_each = { a = ["x"], b = 5 }     # a tuple and a number
