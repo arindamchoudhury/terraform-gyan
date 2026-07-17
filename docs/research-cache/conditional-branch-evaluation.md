@@ -268,9 +268,38 @@ object({
 })
 ```
 
-`a` and `b` are **different object types**, so no `map(...)` could hold them. For resources this is **unconditional** — `internal/terraform/evaluate.go:931` (`cty.TupleVal`) and `:952` (`cty.ObjectVal`), with `:844`/`:846` returning `EmptyTupleVal`/`EmptyObjectVal`. No type check, no fallback.
+`a` and `b` are **different object types**.
 
-**Modules are different, and it's a payoff for typed outputs.** `GetModule` (`evaluate.go:~429-609`) computes `noDynamicTypes` = "the module fully defines all output types" and *does* branch on it: `cty.ListVal` / `cty.MapVal` when true, `cty.TupleVal` / `cty.ObjectVal` otherwise. Verified end-to-end:
+!!! warning "A wrong claim I made first — “no map could hold them”"
+    False. A map **can** hold them; it just unifies, and unification coerces. Verified:
+
+    ```
+    > terraform_data.mixed["b"].input                # structural
+    5                                                # number
+    > tomap(terraform_data.mixed)["b"].input         # collection
+    "5"                                              # string
+    > type(tomap(terraform_data.mixed))
+    map(object({ id: string, input: string, output: string, ... }))
+    ```
+
+    So the reason resources are structural is **not impossibility, it's fidelity**: a collection is available but lossy, and would silently retype `b.input` from `number` to `string`. The correct claim is "a collection is possible but not free." Caught only by *running* `tomap()` on the value instead of reasoning about it from §2's rule — the rule predicted a failure that doesn't happen.
+
+    **How the map is reachable at all:** unification recurses per attribute. `id` is `string` on both instances. `input` is `string` vs `number`, which meet at `string` because (`cty` convert.md, verbatim) *"String is the most general type, since the other two primitive types have safe conversions to string."* Hence the element type `object({ id: string, input: string, output: string, ... })`.
+
+    **But the original claim is true in the other case.** Unification can genuinely fail, and then no map exists:
+
+    ```
+    # for_each = { a = ["x"], b = 5 }   -> input is tuple vs number
+    > tomap(terraform_data.nounify)
+    Invalid value for "v" parameter: cannot convert object to map of any single
+    type.
+    ```
+
+    Same error as `tomap({ name = ["a"], age = 12 })` in the map rows above. So "no map could hold them" was not nonsense — it described the *no-common-type* case while the example on screen was the *coercible* case. Two regimes, and the example decides which one you're in. State which.
+
+For resources the structural path is **unconditional** — `internal/terraform/evaluate.go:931` (`cty.TupleVal`) and `:952` (`cty.ObjectVal`), with `:844`/`:846` returning `EmptyTupleVal`/`EmptyObjectVal`. No type check, no fallback: Terraform never gambles on whether a given resource's instances happen to match.
+
+**Modules are different, and it's a payoff for typed outputs.** `GetModule` (`evaluate.go:~429-609`) computes `noDynamicTypes` = "the module fully defines all output types" and *does* branch on it: `cty.ListVal` / `cty.MapVal` when true, `cty.TupleVal` / `cty.ObjectVal` otherwise. That condition follows from the fidelity argument above: fully-typed outputs mean every instance has the *same declared type*, so unification has nothing to reconcile and the collection is lossless. Verified end-to-end:
 
 | Module call | Output declaration | Actual |
 |---|---|---|

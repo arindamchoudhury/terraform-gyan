@@ -390,23 +390,68 @@ A resource reference's *shape* depends on its meta-arguments. With neither `coun
 
 Those are structural types, and that is worth a moment, because you will read otherwise. HashiCorp's [references page](https://developer.hashicorp.com/terraform/language/expressions/references) describes the same two shapes as collections: with `count`, "the reference's value is a *list* of objects representing its instances"; with `for_each`, "a *map* of objects". Ask Terraform and you get `tuple` and `object`. Both descriptions are usable, because the docs [say plainly](https://developer.hashicorp.com/terraform/language/expressions/types) that they use list/tuple and map/object interchangeably wherever the distinction doesn't matter, and for indexing and splat it doesn't. This chapter names the real type because §2 spent its length on the difference.
 
-!!! note "Why the container is structural — §2's rule, applied to instances"
-    A collection needs **one** element type, and instances of a single block aren't guaranteed to share one. Hand `for_each` a map of mixed values and they genuinely diverge:
+!!! note "Why the container is structural — it's §2's unification rule, with a bill attached"
+    A collection needs **one** element type, and instances of a single block aren't guaranteed to share one. Give `for_each` a map whose values differ in type, and the instances diverge:
+
+    ```hcl
+    resource "terraform_data" "mixed" {
+      for_each = { a = "str", b = 5 }
+      input    = each.value          # string for a, number for b
+    }
+    ```
 
     ```
-    > type(terraform_data.mixed)       # for_each = { a = "str", b = 5 }
+    > type(terraform_data.mixed)
     object({
-        a: object({ input: string,  output: string,  ... }),
-        b: object({ input: number,  output: number,  ... }),
+        a: object({ id: string, input: string, output: string, ... }),
+        b: object({ id: string, input: number, output: number, ... }),
     })
     ```
 
-    Instance `a` and instance `b` are **different object types**, so no `map(...)` could hold both. Structural is the only shape that survives that, which is why resources take it unconditionally rather than only when the instances happen to differ.
+    Instance `a` carries `input: string`; instance `b` carries `input: number`. Two different object types under one resource block.
 
-    None of it disturbs the instance-level story: the *elements* are still objects, which is exactly why `[0]` and `["a"]` hand you one back.
+    A `map` **could** still hold those two, and the *how* is worth following, because it's §2's machinery. A map has one element type, so Terraform has to **unify** the two instance objects into a single type, attribute by attribute. `id` is `string` on both, so it stays. `input` is `string` on `a` and `number` on `b`, and those two meet at `string` — the `cty` docs say why: *"String is the most general type, since the other two primitive types have safe conversions to string."* So the unified element type comes out as:
+
+    ```
+    > type(tomap(terraform_data.mixed))
+    map(object({ id: string, input: string, output: string, ... }))
+    ```
+
+    Every value is then converted into that type, and here is the bill:
+
+    ```
+    > terraform_data.mixed["b"].input                  # structural — preserved
+    5
+    > type(terraform_data.mixed["b"].input)
+    number
+
+    > tomap(terraform_data.mixed)["b"].input           # collection — coerced
+    "5"
+    > type(tomap(terraform_data.mixed)["b"].input)
+    string
+    ```
+
+    That is the whole reason. A collection isn't *impossible* here, it's *not free* — it would quietly turn your number into a string, and `b.input * 2` would stop working. The structural type keeps every instance exactly the type it is. So Terraform hands you `tuple`/`object` for resources **unconditionally**, rather than gambling on whether one particular resource's instances happen to match.
+
+    **And "nothing stops it" only holds while unification can find a type.** Give the instances values with no common type and the map stops existing altogether:
+
+    ```hcl
+    for_each = { a = ["x"], b = 5 }     # a tuple and a number
+    ```
+
+    ```
+    > tomap(terraform_data.nounify)
+    Error: Invalid function argument
+    Invalid value for "v" parameter: cannot convert object to map of any single
+    type.
+    ```
+
+    That is the same error the `map` subsection hit in §2, for the same reason: no single type is both a tuple and a number, so there is no map to convert to. Structural handles that case too, without complaint.
+
+    None of it disturbs the instance-level story: the elements are still objects, which is why `[0]` and `["a"]` hand you one back.
 
 !!! tip "Modules are the exception, and it's a reason to type your outputs"
-    A **module** call with `count`/`for_each` gets the same treatment only when Terraform can't pin the types down. If every output the module declares is fully typed, it can use the collection type instead — and `type` on an `output` is exactly the knob (Terraform **1.15+**, Ch 6). The same module, before and after adding `type = string` to its one output:
+    A **module** call with `count`/`for_each` only gets the structural treatment when Terraform can't pin the types down — and now you can see why the condition is what it is. If every output the module declares is **fully typed**, then every instance has the *same declared type*, unification has nothing to reconcile, and the collection costs nothing. So Terraform uses it. `type` on an `output` is exactly that knob (Terraform **1.15+**, Ch 6). The same module, before and after adding `type = string` to its one output:
 
     ```
     > type(module.c)      # count = 2, output has no type
