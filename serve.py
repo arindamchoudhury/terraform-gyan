@@ -40,25 +40,18 @@ _docs_dir = os.path.join(os.path.dirname(os.path.abspath("zensical.toml")), "doc
 import markdown.extensions.wikilinks as _wikilinks_ext
 _wikilinks_ext.build_url = _make_wikilink_resolver(_docs_dir)
 
-# Add [[slug]] wikilink support to the default extension set.
+# Add [[slug]] wikilink support to the default extension set. zensical.toml
+# defines no markdown_extensions of its own, so this dict is what every build
+# resolves to. build_url stays out of this config on purpose: zensical pickles
+# mdx_configs to hash it, and a closure isn't picklable — the module-global
+# patch above carries the resolver instead.
+# The ```mermaid fence needs no patch. DEFAULT_MARKDOWN_EXTENSIONS already
+# registers pymdownx.superfences with a mermaid custom fence.
 # Must happen before importing zensical.build so the patch is in effect when
 # Rust calls back into parse_zensical_config().
 _zc.DEFAULT_MARKDOWN_EXTENSIONS["wikilinks"] = {
     "base_url": "/sources/",
     "end_url": "/",
-}
-
-# Render ```mermaid fences as <pre class="mermaid"> blocks so mermaid.js
-# (loaded via extra_javascript) can pick them up and draw diagrams.
-import pymdownx.superfences as _superfences
-_zc.DEFAULT_MARKDOWN_EXTENSIONS["pymdownx.superfences"] = {
-    "custom_fences": [
-        {
-            "name": "mermaid",
-            "class": "mermaid",
-            "format": _superfences.fence_code_format,
-        }
-    ]
 }
 
 from zensical import build as _zensical_build
