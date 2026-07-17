@@ -246,6 +246,44 @@ So the real gap is **arbitrary object/tuple schemas applied inline**, with no de
 
 [opentofu#2630](https://github.com/opentofu/opentofu/issues/2630) verified via the GitHub API (raw JSON, not a summarized fetch — cf. the fabricated `#2084` row above): title *"General-purpose `convert` function for converting values to conform to specific type constraints"*, **state open**, created **2025-03-25**. Its motivating case is coercing `jsondecode`/`yamldecode` output, which is exactly the no-boundary situation.
 
+### Reference shapes — resources are structural, modules switch (2026-07-17, TF 1.15.8)
+
+The docs (and [[tf-expr-references]], faithfully) say a `count` resource is a **list** and a `for_each` resource is a **map**. The real types are structural. Verified with `terraform_data` + `terraform console`:
+
+| Reference | Docs say | Actual |
+|---|---|---|
+| resource, no meta-args | object | `object` ✓ |
+| resource, `count` | list of objects | **`tuple([obj, obj])`** |
+| resource, `for_each` | map of objects | **`object({ x: obj, y: obj })`** |
+
+This is the docs' declared conflation ([[tf-expr-types]] §"More About Complex Types": lists/tuples and maps/objects are used interchangeably where the distinction is irrelevant), not an error — but Ch 7 §2 teaches the distinction, so it must name the real type.
+
+**Why structural.** Instances of one block are not guaranteed to share a type, and a collection needs exactly one element type:
+
+```
+> type(terraform_data.mixed)     # for_each = { a = "str", b = 5 }
+object({
+    a: object({ input: string, output: string, ... }),
+    b: object({ input: number, output: number, ... }),
+})
+```
+
+`a` and `b` are **different object types**, so no `map(...)` could hold them. For resources this is **unconditional** — `internal/terraform/evaluate.go:931` (`cty.TupleVal`) and `:952` (`cty.ObjectVal`), with `:844`/`:846` returning `EmptyTupleVal`/`EmptyObjectVal`. No type check, no fallback.
+
+**Modules are different, and it's a payoff for typed outputs.** `GetModule` (`evaluate.go:~429-609`) computes `noDynamicTypes` = "the module fully defines all output types" and *does* branch on it: `cty.ListVal` / `cty.MapVal` when true, `cty.TupleVal` / `cty.ObjectVal` otherwise. Verified end-to-end:
+
+| Module call | Output declaration | Actual |
+|---|---|---|
+| `count = 2` | `output "x" { value = ... }` | `tuple([obj, obj])` |
+| `count = 2` | `output "x" { type = string, ... }` | **`list(object({...}))`** |
+| `for_each` | `output "x" { type = string, ... }` | **`map(object({...}))`** |
+
+So **`type` on an output (TF 1.15+) changes the type your callers receive**, not just the docs. That's the concrete reason behind "prefer typing the outputs of any module others consume" (Ch 6). OpenTofu has no typed outputs, so module references there stay structural.
+
+!!! warning "Two method failures worth remembering"
+    1. **Generalising from `terraform_data`.** It is the only provider-free resource, and it is *atypical*: `input`/`output`/`triggers_replace` are `dynamic`. Conclusions drawn from it about schema-driven behavior may not transfer to a normal provider resource. Here the resource answer held (the code path is unconditional), but only checking the source proved that rather than luck.
+    2. **Reading the wrong function.** The `noDynamicTypes` list/map branch was found first and looked like it governed resources. It is inside **`GetModule`**. Confirm the enclosing `func` before generalising from a code fragment — the resource path is `GetResource`, ~200 lines later, and behaves differently.
+
 ### Method note — every quote above was checked against raw bytes
 
 Each quotation in this section was **first obtained via a summarizing fetch, then re-verified against the raw file** (`curl` the `raw.githubusercontent.com` URL, `grep -F` the exact string). This mattered:

@@ -295,7 +295,7 @@ object({
 
 Compare that to `tomap()` on the same value: the map flattened `52` into `"52"`, the object kept it a `number`. That is the collection-versus-structural split in one example. The type output lists attributes alphabetically, which is a display convenience; an object has no ordering.
 
-Objects are everywhere in Terraform whether you notice or not. **Every resource and data source reference is an object**, which is why `aws_instance.web.id` works.
+Objects are everywhere in Terraform whether you notice or not. **Every resource and data source *instance* is an object**, which is why `aws_instance.web.id` works: `aws_instance.web` is an object with an `id` attribute. Say *instance* rather than *reference*, because the meta-arguments change the shape around it, and the bare type name `aws_instance` is not a value at all. §3 has both.
 
 Reach attributes with dot notation when the name is identifier-safe, brackets otherwise:
 
@@ -386,10 +386,50 @@ Terraform exposes a fixed set of named values. Each is an expression on its own 
 | `terraform.workspace` | the current CLI workspace name |
 | `count.index`, `each.key` / `each.value`, `self` | block-local values inside `count`/`for_each`/provisioners |
 
-A resource reference's *shape* depends on its meta-arguments: with neither `count` nor `for_each` it's a single **object**; with `count` it's a **list** of instance objects (`aws_instance.web[0].id`); with `for_each` it's a **map** (`aws_instance.web["a"].id`).
+A resource reference's *shape* depends on its meta-arguments. With neither `count` nor `for_each` it's a single **object**. With `count` it's a **tuple** of instance objects (`aws_instance.web[0].id`). With `for_each` it's an **object** keyed by your `for_each` keys, each attribute an instance object (`aws_instance.web["a"].id`).
 
-!!! note "References look like objects but aren't"
-    The dotted paths resemble attribute access, but the prefix is not a real object you can traverse. You cannot swap dot notation for bracket notation on the fixed parts of the path, and you cannot iterate a **resource type** to reach every block of that type. There is no reflection over resource types in HCL, and splat does not rescue it — the bare type name isn't a value at all:
+!!! info "The docs say “list” and “map” here — and why it's structural"
+    HashiCorp's references page describes a `count` resource as a **list** and a `for_each` resource as a **map**. Ask Terraform and you get the structural types:
+
+    ```
+    > type(terraform_data.counted)     # count = 2
+    tuple([ object({...}), object({...}) ])
+    > type(terraform_data.keyed)       # for_each = toset(["x","y"])
+    object({ x: object({...}), y: object({...}) })
+    ```
+
+    Both descriptions are usable, because the docs [state outright](https://developer.hashicorp.com/terraform/language/expressions/types) that they use list/tuple and map/object interchangeably where the distinction doesn't matter. Indexing and splat behave the same either way.
+
+    **Why structural, though?** Because §2's rule applies: a collection needs *one* element type, and instances of one block are not guaranteed to share one. Give `for_each` a map of mixed values and the instances genuinely diverge:
+
+    ```
+    > type(terraform_data.mixed)       # for_each = { a = "str", b = 5 }
+    object({
+        a: object({ input: string,  output: string,  ... }),
+        b: object({ input: number,  output: number,  ... }),
+    })
+    ```
+
+    No `map(...)` can hold those two, because they are different object types. Structural is the only shape that survives it, so resources use it unconditionally. None of this touches the instance-level story: the *elements* are objects, which is why `[0]` and `["a"]` hand you one back.
+
+!!! tip "Modules are the exception, and it's a reason to type your outputs"
+    A **module** call with `count`/`for_each` gets the same treatment only when Terraform can't pin the types down. If every output the module declares is fully typed, it can use the collection type instead — and `type` on an `output` is exactly the knob (Terraform **1.15+**, Ch 6). The same module, before and after adding `type = string` to its one output:
+
+    ```
+    > type(module.c)      # count = 2, output has no type
+    tuple([ object({ untyped: string }), object({ untyped: string }) ])
+
+    > type(module.c)      # count = 2, output declares type = string
+    list(object({ untyped: string }))
+
+    > type(module.f)      # for_each, output declares type = string
+    map(object({ untyped: string }))
+    ```
+
+    Tuple becomes **list**, object becomes **map**. Resources have no equivalent switch because a provider's dynamic-typed attributes can always diverge per instance, but a module's interface is yours to declare. That is the concrete payoff behind Ch 6's "prefer typing the outputs of any module others consume": it isn't only documentation, it changes the type your callers actually receive.
+
+!!! note "A resource **type** isn't a value you can traverse"
+    An instance is an object, but the dotted path is not object access all the way up. The prefix is not a real object: you cannot swap dot notation for bracket notation on the fixed parts of the path, and you cannot iterate a **resource type** to reach every block of that type. There is no reflection over resource types in HCL, and splat does not rescue it — the bare type name isn't a value at all:
 
     ```
     > terraform_data
@@ -999,24 +1039,26 @@ An **`if` clause** on the end filters, dropping elements instead of transforming
 ]
 ```
 
-Splat works on **lists, sets, and tuples only**. This is exactly how you loop over every instance of one resource block — but *only* when the block uses `count`, because a `count` resource is a **list**. A `for_each` resource is a **map**, and splat does not apply:
+Splat works on **lists, sets, and tuples only**. This is exactly how you loop over every instance of one resource block — but *only* when the block uses `count`, because a `count` resource is a **tuple** (§3), and a tuple is one of the three splat accepts. A `for_each` resource is an **object**, which is not, so splat does not apply:
 
 ```
-> terraform_data.web[*].output        # count = 3 -> a list, splat works
+> terraform_data.web[*].output        # count = 3 -> a tuple, splat works
 [
   "web-0",
   "web-1",
   "web-2",
 ]
-> terraform_data.db[*].output         # for_each -> a MAP, splat does not
+> terraform_data.db[*].output         # for_each -> an OBJECT, splat does not
 Error: Unsupported attribute
 This object does not have an attribute named "output".
 ```
 
 !!! note "Why that error is so confusing"
-    You'd expect "splat doesn't work on maps." Instead you get *"This object does not have an attribute named `output`"* — because of splat's single-value rule below. The map isn't a list, so splat wraps **the whole map** in a one-element tuple, then looks for `.output` **on the map itself**. The map has keys `primary`/`replica`, not `output`, so the complaint is about the attribute rather than the splat.
+    You'd expect "splat doesn't work on that." Instead you get *"This object does not have an attribute named `output`"* — because of splat's single-value rule below. The `for_each` value isn't a list, set, or tuple, so splat treats it as a lone value: it wraps **the whole object** in a one-element tuple, then looks for `.output` **on that object itself**. The object's attributes are your `for_each` keys, not `output`, so the complaint lands on the attribute rather than the splat.
 
-Two ways to get the same list from a `for_each` resource — convert the map to a list first, or skip splat and write the full `for`:
+    Note the error says "This **object**" and means it literally. That word is the tell: a `for_each` resource really is an object, which is exactly why splat can't touch it.
+
+Two ways to get the same list from a `for_each` resource. Collapse the object down to just its values first, or skip splat and write the full `for`:
 
 ```
 > values(terraform_data.db)[*].output
