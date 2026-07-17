@@ -43,65 +43,295 @@ Every value has a type, and the type decides where the value is legal and how it
 
 **Primitives:** `string` (`"hello"`), `number` (`15` or `6.283`), `bool` (`true`/`false`).
 
-**Complex (collection / structural) types:**
+**Complex types** group several values into one. They fall into two families, and that split predicts nearly every behavior in this section:
 
-| Family | Ordered? | Keys | Element types |
-|---|---|---|---|
-| `list` / `tuple` | yes (index from 0) | integer index | one type (`list`) / per-position (`tuple`) |
-| `set` | no | none | one type, no duplicates |
-| `map` / `object` | no | string labels | one type (`map`) / per-key (`object`) |
+- **Collection** types hold **one element type** across a value of any length: `list`, `map`, `set`.
+- **Structural** types hold a **fixed schema**, where each position or key carries its own type: `tuple`, `object`.
 
-!!! note "Brackets build a tuple — not a list, and not a set"
-    There is no list literal and no set literal. Anything you type in brackets is a **tuple**, and the `to*` functions are what convert it:
+!!! info "These families are HCL's own definitions, not a teaching device"
+    HCL's specification defines both, and Terraform inherits them wholesale. A **collection type** combines *"an arbitrary number of values of some other single type"*, in three kinds: list (ordered), map (accessed by string keys), set (unordered, distinct). A **structural type** is *"constructed by combining other types"*, in two kinds: an object is a set of named attributes each having its own type, and a tuple a sequence of elements each having its own type.
+
+    The spec also fixes what makes two types **identical**, which is what the `==` pitfall at the end of this section turns on. Two collection types are identical when they share a kind and an element type. Two structural types are identical when they share a kind and their attributes or elements have identical types one-for-one.
+
+    Anything else is a different type, and that bites harder than it sounds. `list(string)`, `list(number)`, and `set(string)` are three unrelated types. And since a tuple's elements must match one-for-one, its **length** is part of its type rather than a property of the value: `tuple([string, string])` and `tuple([string])` are as unrelated as `string` and `bool`.
+
+| Type | Family | Ordered? | Keys | Element types |
+|---|---|---|---|---|
+| `list` | collection | yes (index from 0) | integer index | one type, any length |
+| `tuple` | structural | yes (index from 0) | integer index | per-position, fixed length |
+| `set` | collection | no | none | one type, no duplicates |
+| `map` | collection | no | string labels | one type, any size |
+| `object` | structural | no | string labels | per-key, fixed schema |
+
+!!! note "Only two of the five have a literal"
+    HCL gives you exactly two ways to write a complex value: brackets and braces. **Brackets always build a `tuple`. Braces always build an `object`.** There is no list literal, no set literal, and no map literal anywhere in the language. Those three types only ever arrive by conversion (`tolist`, `toset`, `tomap`), from a declared `type` constraint, or out of a provider's own schema. Every subsection below follows from that one fact.
+
+!!! note "Why those two, and not the other three"
+    A literal's text states each element's own type and exactly how many there are. That *is* a structural schema, so a `tuple` and an `object` can be read straight off the syntax with nothing inferred. A collection type needs something the text never supplies: one element type shared by every element. Finding it means **unifying** the elements, and unification needs a target type to aim at. That target only exists at a `type =` constraint, a provider schema, or an explicit `tolist`/`toset`/`tomap` call. HCL's spec states the rule outright: *"Only tuple and object values can be directly constructed via native syntax."*
+
+    So "has a literal" and "is structural" aren't two facts that happen to line up. They're the same property. Which is also why there is no `totuple()` or `toobject()` function: the three `to*` collection converters exist precisely because those are the three types you can't write down.
+
+The five subsections that follow each cover the **value** side: what actually produces the type, how it behaves, and where it bites. The **constraint** side (writing `type = ...` to restrict a module input) is Ch 12; each subsection signposts its constraint form so you can connect the two halves.
+
+### `list` — ordered, one element type
+
+A sequence indexed by whole numbers from zero, holding any number of elements that all share **one** type. `list(string)` and `list(number)` are different types.
+
+You never write a list directly. It shows up when you declare `type = list(string)` on a variable, when a resource uses `count`, or when you convert:
+
+```
+> type(tolist(["a", "b"]))
+list(string)
+```
+
+Because a list holds a single element type, converting a mixed value **unifies** the elements into whichever type they all fit:
+
+```
+> tolist(["a", 15])
+tolist([
+  "a",
+  "15",
+])
+```
+
+The number quietly became a string. That is usually harmless and occasionally a real surprise. When no single type fits, the conversion fails instead of guessing: `tolist(["a", []])` has no type that both a string and an empty tuple convert to.
+
+Index with square brackets. Note the `tolist()` here is doing real work, not decoration: without it you'd be indexing a tuple, and this subsection would be demonstrating the wrong type.
+
+```
+> tolist(["a", "b", "c"])[1]
+"b"
+```
+
+!!! note "Constraint form — `list(string)`"
+    Written `list(<TYPE>)`. Bare `list` means `list(any)`, a backwards-compatibility shorthand; prefer the full form. Ch 12 covers the constructor syntax and why `any` is almost always the wrong answer.
+
+### `tuple` — ordered, per-position types
+
+What brackets actually build. Each position gets its own type, and the **length is part of the type**:
+
+```
+> type(["a", 15, true])
+tuple([
+    string,
+    number,
+    bool,
+])
+```
+
+This is the mirror image of a list. A list says "any number of one type"; a tuple says "exactly three elements, and here is the type of each." Nothing unifies, so a tuple is the one complex type that holds mixed values as-is.
+
+Mostly you can ignore the distinction, because a tuple **auto-converts to a list** wherever one is expected. `join("-", ["p", "q"])` and `length(["p", "q"])` just work, and `tolist()` is rarely needed.
+
+The exception is `==`, which never converts. Declare a variable and the trap is easy to see:
+
+```hcl
+variable "list" {
+  type = list(string)
+}
+```
+
+`var.list == []` is now **always** `false`. The left side is a `list(string)`, the right side is a `tuple([])`, and by the identity rule above those are simply different types. The sting is that it stays `false` even when the variable really is empty, which is the one case you wrote the comparison for. That pitfall gets its own treatment under **Type conversion** at the end of this section.
+
+!!! note "Constraint form — `tuple([string, number])`"
+    Written `tuple([<TYPE>, <TYPE>, ...])`. A value matches only if it has **exactly** that many elements, each convertible to the type at its position. Ch 12 has the schema rules.
+
+### `set` — unordered, unique, no index
+
+A collection of unique values with no keys and no ordering. Converting to a set deduplicates:
+
+```
+> toset(["b", "a", "b"])
+toset([
+  "a",
+  "b",
+])
+```
+
+Sets have no index at all, and the error says exactly why:
+
+```
+> toset(["a", "b"])[0]
+
+Error: Invalid index
+
+Elements of a set are identified only by their value and don't have any
+separate index or key to select with, so it's only possible to perform
+operations across all elements of the set.
+```
+
+Convert to a list first with `tolist()` if you need positional access.
+
+**Sets are the reason `toset([...])` is everywhere.** `for_each` accepts a **map**, an **object**, or a **set of strings**. It converts nothing: it inspects the type kind directly, so a list is rejected outright rather than quietly converted, and the wrapper is mandatory:
+
+```
+for_each = var.names        # var.names is list(string)
+
+Error: Invalid for_each argument
+  The given "for_each" argument value is unsuitable: the "for_each" argument
+  must be a map, or set of strings, and you have provided a value of type
+  list of string.
+```
+
+Read that error closely, because `toset()` isn't a magic word. It has to produce a set **of strings**. A set of anything else fails just as hard:
+
+```
+for_each = toset([1, 2])
+
+Error: Invalid for_each set argument
+  "for_each" supports maps and sets of strings, but you have provided a set
+  containing type number.
+```
+
+A **tuple** is refused on the same grounds as a list, which is worth seeing given that brackets are the only thing they build:
+
+```
+for_each = ["p", "q"]
+
+Error: Invalid for_each argument
+  The given "for_each" argument value is unsuitable: the "for_each" argument
+  must be a map, or set of strings, and you have provided a value of type
+  tuple.
+```
+
+!!! warning "That error message under-reports what `for_each` actually accepts"
+    Both the message and HashiCorp's `for_each` page say "a map, or set of strings" and never mention **objects**. The implementation checks for three kinds, map *and* set *and* object, and accepts all of them (`internal/terraform/eval_for_each.go`, verified on 1.15.8). OpenTofu's docs get this right and list all three.
+
+    It matters here because braces build an **object**, not a map. `for_each = { a = "1", b = "2" }` works directly, with no `tomap()` anywhere. Take the error message literally and you'd think otherwise.
+
+    Note also that "of strings" binds only to the **set**. Only keys become instance addresses, so a map or object may carry values of any type: `for_each = { a = 1, b = "x" }` plans fine even though that object holds a number and a string.
+
+The `for_each` mechanics themselves are Ch 10.
+
+For a **module input**, don't push the wrapper onto your callers. Declare the type and Terraform converts, and dedupes, whatever list they hand you:
+
+```hcl
+variable "names" {
+  type    = set(string)
+  default = ["p", "q", "p"]   # var.names is toset(["p", "q"])
+}
+```
+
+!!! warning "Set ordering is only guaranteed for strings"
+    Converting an unordered set into an ordered list forces an order from somewhere. For **strings** that order is lexicographical and dependable. For any other element type it is **arbitrary**, so don't read a pattern into it:
 
     ```
-    > type(["p", "q"])
-    tuple([string, string])
-    > type(tolist(["p", "q"]))
-    list(string)
-    > type(toset(["p", "q"]))
-    set(string)
+    > tolist(toset([3, 1, 2]))
+    tolist([
+      1,
+      2,
+      3,
+    ])
     ```
 
-    That sounds alarming and mostly isn't, because a tuple **auto-converts to a list** wherever one is expected — `join("-", ["p", "q"])` and `length(["p", "q"])` just work, and `tolist()` is rarely needed.
+    That came out sorted. Nothing promises it will stay that way for numbers, so sort explicitly when the order matters.
 
-    **Sets are the exception, and that's the whole reason `toset([...])` is everywhere.** `for_each` takes a **map, or a set of strings** — and will *not* convert a list for you, so there the wrapper is mandatory:
+The `set*` functions (`setunion`, `setsubtract`, `setintersection`, `setproduct`) return sets too. `distinct()` is the one that looks like it should and doesn't. It returns a **list**.
 
-    ```
-    for_each = var.names        # var.names is list(string)
+!!! note "Constraint form — `set(string)`"
+    Written `set(<TYPE>)`. The type `for_each` wants is specifically `set(string)`. Ch 12 covers the conversion rules in full.
 
-    Error: Invalid for_each argument
-      The given "for_each" argument value is unsuitable: the "for_each" argument
-      must be a map, or set of strings, and you have provided a value of type
-      list of string.
-    ```
+### `map` — string keys, one value type
 
-    Read that error closely, because `toset()` isn't a magic word — it has to produce a set **of strings**. A set of anything else fails just as hard:
+Values identified by string labels, unordered, all sharing **one** value type. Braces build an object rather than a map, so a map arrives by conversion, by a `type = map(string)` constraint, or from a `for_each` resource:
 
-    ```
-    for_each = toset([1, 2])
+```
+> type(tomap({ name = "John", age = 52 }))
+map(string)
+```
 
-    Error: Invalid for_each set argument
-      "for_each" supports maps and sets of strings, but you have provided a set
-      containing type number.
-    ```
+`52` became `"52"`. This is the same single-type unification a list does, and for the same reason. When no single value type fits, the conversion fails outright:
 
-    The `for_each` mechanics themselves are Ch 10.
+```
+> tomap({ name = ["a"], age = 12 })
 
-    For a **module input**, don't push either onto your callers. Declare the type and Terraform converts — and, for a set, dedupes — whatever list they hand you:
+Error: Invalid function argument
 
-    ```hcl
-    variable "names" {
-      type    = set(string)
-      default = ["p", "q", "p"]   # var.names is toset(["p", "q"])
-    }
-    ```
+Invalid value for "v" parameter: cannot convert object to map of any single
+type.
+```
 
-    One catch when converting by hand: lists and sets hold a **single element type**, while a tuple can mix. Convert a mixed tuple and the elements get unified — `tolist(["a", 1])` returns `["a", "1"]`, the number quietly becoming a string.
+**Key syntax.** Strictly these are the *brace literal's* rules, so they produce an object that then converts, and they apply just as much to the next subsection. They're here because `tags` is where you actually type them. Keys must be strings. Write them unquoted when they're valid identifiers, quoted otherwise (leading digits, spaces, special characters). Both `=` and `:` are valid delimiters, so `{ foo = "bar" }` and `{ "foo": "bar" }` are the same value, and Terraform normalizes on the way out:
 
-    The `set*` functions (`setunion`, `setsubtract`, `setintersection`, `setproduct`) return sets too. `distinct()` is the one that looks like it should and doesn't — it returns a **list**.
+```
+> { "foo": "bar" }
+{
+  "foo" = "bar"
+}
+```
 
-**The typeless value — `null`.** `null` means "absent." Setting a resource argument to `null` makes Terraform behave as if you omitted it entirely: it falls back to the argument's default, or errors if the argument is required. That makes `null` the tool for *conditionally omitting* an argument.
+!!! tip "Prefer `=` over `:`"
+    `terraform fmt` vertically aligns equals signs but ignores colons entirely. The colon form is legal, just unformatted.
+
+To use a non-literal expression as a key, wrap it in parentheses, otherwise it's read as a bare identifier:
+
+```hcl
+tags = {
+  (var.business_unit_tag_name) = "SRE"
+}
+```
+
+Access with brackets, which is also the right choice whenever keys are user-supplied rather than known:
+
+```
+> tomap({ name = "John" })["name"]
+"John"
+```
+
+!!! note "Constraint form — `map(string)`"
+    Written `map(<TYPE>)`. Bare `map` means `map(any)`. Ch 12 covers the constructors.
+
+### `object` — string keys, per-key types
+
+What braces actually build. Each attribute carries its own type:
+
+```
+> type({ name = "John", age = 52 })
+object({
+    age: number,
+    name: string,
+})
+```
+
+Compare that to `tomap()` on the same value: the map flattened `52` into `"52"`, the object kept it a `number`. That is the collection-versus-structural split in one example. The type output lists attributes alphabetically, which is a display convenience; an object has no ordering.
+
+Objects are everywhere in Terraform whether you notice or not. **Every resource and data source reference is an object**, which is why `aws_instance.web.id` works.
+
+Reach attributes with dot notation when the name is identifier-safe, brackets otherwise:
+
+```
+> { name = "John", age = 52 }.name
+"John"
+```
+
+**Extra attributes are discarded on conversion, silently.** An object value matches an object type as long as it carries **all** the required keys; anything extra is dropped:
+
+```
+> convert({ name = "John", age = 52 }, object({ name = string }))
+{
+  "name" = "John"
+}
+```
+
+`age` is simply gone. This is what makes a `map → object → map` round trip **lossy**, and it's worth knowing before you rely on one. A *missing* required attribute is the opposite, an error rather than a silent drop:
+
+```
+> convert({ name = "John" }, object({ name = string, age = number }))
+
+Error: Invalid function argument
+
+Invalid value for "value" parameter: attribute "age" is required.
+```
+
+!!! info "OpenTofu — no `convert()`"
+    The two blocks above use `convert(value, type)`, added in **Terraform 1.15** and **not present in OpenTofu** as of 1.12 ([open request](https://github.com/opentofu/opentofu/issues/2630)). The *behavior* they demonstrate is identical in both tools; only this way of demonstrating it inline is Terraform-only. In OpenTofu, observe the same rules by declaring a typed variable and passing a value.
+
+!!! note "Constraint form — `object({ name = string })`"
+    Written `object({ <KEY> = <TYPE>, ... })`. Ch 12 covers the schema rules and **`optional(type, default)`**, which is how an object attribute becomes genuinely optional instead of merely defaulting to `null`.
+
+### `null` — the typeless value
+
+`null` means "absent." Setting a resource argument to `null` makes Terraform behave as if you omitted it entirely: it falls back to the argument's default, or errors if the argument is required. That makes `null` the tool for *conditionally omitting* an argument.
 
 ```hcl
 resource "aws_instance" "web" {
@@ -110,20 +340,6 @@ resource "aws_instance" "web" {
   # supply a key name only if the caller gave one; otherwise omit the argument
   key_name      = var.key_name != "" ? var.key_name : null
 }
-```
-
-**Accessing elements.** Square brackets index lists (`local.list[3]`) and maps (`local.map["key"]`); dot notation reaches object attributes with identifier-safe names (`local.obj.name`). Sets have **no index** — convert to a list first with `tolist()` if you need positional access. Watch it in the console:
-
-```
-> ["a", "b", "c"][1]
-"b"
-> { name = "John", age = 52 }.name
-"John"
-> tolist(toset(["b", "a", "b"]))    # set → list: deduped and sorted
-tolist([
-  "a",
-  "b",
-])
 ```
 
 ### Type conversion — automatic, except `==`
@@ -1002,6 +1218,7 @@ Chapter 8 turns to **data sources** — reading infrastructure Terraform doesn't
 ## References
 
 - HashiCorp Docs — [Expressions](https://developer.hashicorp.com/terraform/language/expressions) · [Types](https://developer.hashicorp.com/terraform/language/expressions/types) · [References](https://developer.hashicorp.com/terraform/language/expressions/references) · [Operators](https://developer.hashicorp.com/terraform/language/expressions/operators) · [Conditionals](https://developer.hashicorp.com/terraform/language/expressions/conditionals) · [Strings](https://developer.hashicorp.com/terraform/language/expressions/strings) · [For](https://developer.hashicorp.com/terraform/language/expressions/for) · [Splat](https://developer.hashicorp.com/terraform/language/expressions/splat) · [Function calls](https://developer.hashicorp.com/terraform/language/expressions/function-calls) · [Built-in functions](https://developer.hashicorp.com/terraform/language/functions)
-- Reading notes: [[tf-expressions]], [[tf-expr-types]], [[tf-expr-references]], [[tf-expr-operators]], [[tf-conditionals]], [[tf-expr-strings]], [[tf-expr-for]], [[tf-expr-splat]], [[tf-expr-function-calls]], [[tf-functions]] · *Terraform in Depth* Ch 4 ([[04-expressions-iterations]]) · [[tut-variables]] (console workflow)
-- Version facts: [[version-facts]], [[tf115-ot112-features]], [[conditional-branch-evaluation]] (ternary evaluation, short-circuit versions, function count, sensitivity propagation — tested against 1.15.6 / OpenTofu 1.12.4)
+- Reading notes: [[tf-expressions]], [[tf-expr-types]], [[tf-expr-type-constraints]] (constraint forms; the schema rules themselves are Ch 12), [[tf-expr-references]], [[tf-expr-operators]], [[tf-conditionals]], [[tf-expr-strings]], [[tf-expr-for]], [[tf-expr-splat]], [[tf-expr-function-calls]], [[tf-functions]] · *Terraform in Depth* Ch 4 ([[04-expressions-iterations]]) · [[tut-variables]] (console workflow)
+- Primary sources for §2 — HCL [information model spec](https://github.com/hashicorp/hcl/blob/main/spec.md) (the Structural Types / Collection Types definitions and the type-identity rules quoted above) · HCL [native syntax spec](https://github.com/hashicorp/hcl/blob/main/hclsyntax/spec.md) ("Only tuple and object values can be directly constructed via native syntax") · `cty` [type conversion](https://github.com/zclconf/go-cty/blob/main/docs/convert.md) (unification, and the conversion charts marking tuple → set "safe+lossy") · `cty` [types](https://github.com/zclconf/go-cty/blob/main/docs/types.md)
+- Version facts: [[version-facts]], [[tf115-ot112-features]], [[conditional-branch-evaluation]] (the B7 verification record: ternary evaluation, short-circuit versions, function count, sensitivity propagation, tested against 1.15.6 / OpenTofu 1.12.4; plus why only tuple and object have literals, tested against 1.15.8 with the HCL spec, the `cty` docs, and the Terraform source)
 - 🧪 Lab: [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)

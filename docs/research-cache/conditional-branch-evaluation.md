@@ -1,6 +1,6 @@
 # B7 expressions — verified facts
 
-Last verified: **2026-07-15** against **Terraform 1.15.6** and **OpenTofu 1.12.4** (empirical: `terraform console`/`plan` and `tofu console`).
+Last verified: **2026-07-15** against **Terraform 1.15.6** and **OpenTofu 1.12.4** (empirical: `terraform console`/`plan` and `tofu console`). Extended **2026-07-17** with the tuple/object-literal mechanism, verified on **Terraform 1.15.8** against the HCL spec, the `cty` docs, and the local `terraform` source — that section stamps its own versions; the rows above were **not** re-run on 1.15.8.
 
 !!! note "Scope has outgrown the filename"
     This file started as the ternary branch-evaluation investigation (below) and grew into the verification record for the whole **B7 / Ch 7** chapter. The slug stays `conditional-branch-evaluation` so existing `[[conditional-branch-evaluation]]` links keep resolving.
@@ -83,3 +83,147 @@ Same session, same method (`terraform console` / `plan` on **Terraform 1.15.6**,
 | `.tftpl` is required | **False — convention only** | Terraform renders any extension (verified with `.txt`). The docs recommend `.tftpl` so editors highlight it. |
 
 **Console is the verification tool.** `templatefile()` renders in `terraform console`, and multi-line results print as a `<<EOT` heredoc — which makes whitespace visible, so `~` strip markers can be checked without an apply. The `.tftpl` is re-read per call (no console restart); config changes still need one.
+
+## Why only tuple and object have literals (2026-07-17, TF 1.15.8)
+
+Second pass (row 74 above) established **that** there is no list/set/map literal. This pass establishes **why**, because the fact alone is five behaviors to memorize and the mechanism is one rule. Verified against the HCL spec, the `cty` docs, and the local `terraform` checkout at `c07e79c1c8` (`C:\opt\learn\terraform\repos\terraform`).
+
+### The rule is specified, in as many words
+
+HCL's native-syntax spec, §Collection Values:
+
+> "Only tuple and object values can be directly constructed via native syntax."
+
+> "Tuple and object values can in turn be converted to list, set and map values with other operations, which behaves as defined by the syntax-agnostic HCL information model."
+
+So this is a **language-spec guarantee**, not a Terraform quirk or an accident of the parser. It holds for OpenTofu identically — both consume the same `hcl/v2` (TF go.mod: `github.com/hashicorp/hcl/v2 v2.24.0`).
+
+### The two families are defined by the spec, verbatim
+
+The collection/structural split is **HCL's own**, not a docs convention or a teaching device. Both are defined in the information model (`spec.md`, §Structural Types / §Collection Types, lines 262-300 as of 2026-07-17):
+
+| | Definition (verbatim) | Kinds |
+|---|---|---|
+| **Structural** | "types that are constructed by combining other types. Each distinct combination of other types is itself a distinct type" | object ("constructed of a set of named attributes, each of which has a type"), tuple ("constructed of a sequence of elements, each of which has a type") |
+| **Collection** | "types that combine together an arbitrary number of values of some other single type" | list ("ordered sequences of values of their element type"), map ("values of their element type accessed via string keys"), set ("unordered sets of distinct values of their element type") |
+
+The spec also fixes **type identity**, which is the root of the `==` pitfall (row: `var.list == []`):
+
+> "Two collection types are identical if they are of the same kind and have the same element type."
+
+> "Two structural types are identical if they are of the same kind and have attributes or elements with identical types."
+
+Consequences worth teaching: `list(string)` / `list(number)` / `set(string)` are three unrelated types ("'list of string' is a distinct type from 'set of string'"), and a **tuple's arity is part of its type**, not a property of the value — which is why `convert(["a",15,true], tuple([string,number]))` fails with *"tuple required"*.
+
+### The mechanism — unification, and why a literal can't do it
+
+`cty`'s `convert` docs state the causal step outright:
+
+> "The conversions from structural types to collection types rely on type unification to identify a single element type for the final collection, and so conversion is possible only if unification is possible."
+
+> "Unification is instead concerned with finding a single type that several other types can be converted to, without any specific preference as to what the final type is."
+
+That is the whole answer. A **collection** type is, per `cty`'s type docs, "parameterized with a single _element type_". A **structural** type instead gives each position or key "their own type" (tuple = "a fixed number of values that may have _different_ types"; object = "a number of values of arbitrary types").
+
+A literal's text supplies exactly the per-position/per-key types and the exact arity. That **is** a structural schema — a transcription, nothing inferred. A collection additionally needs a single element type that the syntax never states, and unification is what invents it. Unification needs a target to unify *toward*, which exists only at a `type =` constraint, a provider schema, or an explicit `to*` call. Hence: literals produce structural types because those are the only ones fully determined by the text.
+
+**"Has a literal" and "is structural" are therefore the same predicate, not two facts that happen to line up.**
+
+### The Terraform source corroborates it twice
+
+`internal/lang/functions.go:275-280` — the complete `to*` set:
+
+```go
+"tostring":         funcs.MakeToFunc(cty.String),
+"tonumber":         funcs.MakeToFunc(cty.Number),
+"tobool":           funcs.MakeToFunc(cty.Bool),
+"toset":            funcs.MakeToFunc(cty.Set(cty.DynamicPseudoType)),
+"tolist":           funcs.MakeToFunc(cty.List(cty.DynamicPseudoType)),
+"tomap":            funcs.MakeToFunc(cty.Map(cty.DynamicPseudoType)),
+```
+
+1. **No `totuple`, no `toobject`** — verified absent from `internal/` entirely. The two structural types are exactly the two needing no converter, because the literal already produced them. Every other type has one.
+2. The three collection converters are the three built on `cty.DynamicPseudoType`, which `internal/lang/funcs/conversion.go:25-29` documents as:
+
+    > "you can pass `cty.List(cty.DynamicPseudoType)` to mean "list of any single type", which will then cause cty to attempt to unify all of the element types when given a tuple."
+
+    Tuple in → unify → collection out, in the source's own words. `tostring`/`tonumber`/`tobool` take concrete types and need no unification, which is why only the collection three are written this way.
+
+The `FriendlyNameForConstraint()` of those `DynamicPseudoType` constraints is what surfaces in the error observed in console:
+
+```
+> tomap({ name = ["a"], age = 12 })
+Invalid value for "v" parameter: cannot convert object to map of any single
+type.
+```
+
+"of any single type" is literally the unification requirement failing — no type is both a tuple and a number.
+
+### Precision — where the loss actually is
+
+An earlier phrasing of mine ("collection types carry strictly less information") is **too strong at the value level**. Correct statement:
+
+| Level | Always discarded going structural → collection? |
+|---|---|
+| **Type** | **Yes.** Per-position/per-key typing and the fixed arity are gone. `tuple([string,string])` → `list(string)` loses "exactly two". |
+| **Value** | **No.** `cty` unification "prefer[s] lossless conversions over potentially-lossy ones". Elements already sharing a type pass through untouched. |
+
+Value loss occurs only when unification must reach for a common type (`tolist(["a", 15])` → `["a", "15"]`, verified), or on conversion **to a set**, which the `cty` matrix marks **"safe+lossy"** unconditionally because ordering and duplicates are discarded by definition.
+
+### Console evidence for the split (TF 1.15.8)
+
+```
+> type({ name = "John", age = 52 })
+object({
+    age: number,
+    name: string,
+})
+> type(tomap({ name = "John", age = 52 }))
+map(string)
+```
+
+The object **transcribes** (`52` stays a `number`); the map **unifies** (`52` → `"52"`). Same input, and the lossy step is the conversion, never the literal. Attribute order in the `type()` output is display-only — objects are unordered.
+
+### What is NOT documented
+
+**No stated rationale exists.** HCL's syntax-agnostic information model (`spec.md`) defines both families and their conversion rules and never explains *why* construction favors structural; it defers construction to the per-syntax specs. So the **mechanism** above is verified from three independent sources, while **design intent** is unstated anywhere. Don't write the chapter as though HashiCorp explained their motive — the mechanism is sufficient and is the documented architecture.
+
+### `for_each` accepts map, **object**, or set of strings (2026-07-17, TF 1.15.8)
+
+Row 76 above recorded "map or set **of strings**", taken from the error message. Running the cases shows the error message and HashiCorp's docs are both **incomplete**: an **object** is accepted too, and never mentioned by either.
+
+The check is a direct type-kind whitelist with **no conversion attempted** (`internal/terraform/eval_for_each.go:361`):
+
+```go
+case !(ty.IsMapType() || ty.IsSetType() || ty.IsObjectType()):
+```
+
+The `set(string)` restriction is a *separate* branch (`:389`, `if ty.ElementType() != cty.String`) reached only for sets. So "of strings" binds to the set alone; maps and objects may hold any value type, because only keys become instance addresses.
+
+Verified with `terraform_data` + `terraform plan` on 1.15.8:
+
+| `for_each = ...` | Actual type | Result |
+|---|---|---|
+| `toset(["p","q"])` | `set(string)` | **accepted**, 2 instances |
+| `{ a = "1", b = "2" }` | **object** | **accepted**, 2 instances |
+| `{ a = 1, b = "x" }` | object, mixed values | **accepted** — value types are irrelevant |
+| `{ a = { port = 80 } }` | object, nested object value | **accepted** |
+| `tomap({ a = 1, b = 2 })` | `map(string)` | **accepted** |
+| `var.names` declared `list(string)` | `list(string)` | **rejected** — *"must be a map, or set of strings, and you have provided a value of type list of string"* |
+| `["p","q"]` (bare literal) | `tuple([string,string])` | **rejected** — *"...you have provided a value of type tuple."* |
+| `toset([1,2])` | `set(number)` | **rejected** — *"supports maps and sets of strings, but you have provided a set containing type number."* |
+
+**Teaching consequence.** Since braces build an *object*, not a map, `for_each = { a = "1" }` works with no `tomap()`. A reader told only "for_each takes a map" would wrongly conclude it needs converting. HashiCorp's [for_each page](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) says "a map or a set of strings" and states that lists/tuples are not implicitly converted to sets (paraphrased, not re-verified against raw bytes). **OpenTofu's docs are correct** and already captured in [[ot-provider-for-each]]: "must be a **map**, **object**, or **set of strings**."
+
+!!! warning "A wrong theory I nearly wrote down"
+    I first hypothesised that `for_each` rejects tuples because tuple→set is marked **safe+lossy** in the `cty` chart while object→map is **safe**, i.e. that Terraform refuses implicit *lossy* conversions here. **That is wrong.** The source performs no conversion at all — it is a flat whitelist of three type kinds. The lossy/safe distinction is real in `cty` but plays no part in this check. Read the source before explaining a behavior by a mechanism that merely *predicts* it.
+
+### Method note — every quote above was checked against raw bytes
+
+Each quotation in this section was **first obtained via a summarizing fetch, then re-verified against the raw file** (`curl` the `raw.githubusercontent.com` URL, `grep -F` the exact string). This mattered:
+
+- All quotes survived the check verbatim. But the summarizer had also produced *plausible-sounding* prose around them, and there is no way to tell a summarizer's paraphrase from its quotation after the fact. **Never record a quotation taken from a summarized fetch.** Re-pull the raw file.
+- **Trap: these specs hard-wrap at ~76 characters.** A naive `grep "full sentence"` on the raw file returns nothing and looks exactly like a failed verification. Normalize first (`tr '\n' ' ' | tr -s ' '`) before matching, or you will "disprove" a quote that is in fact verbatim. This produced a false negative on two quotes here before the method was corrected.
+- On Windows, `curl` to `raw.githubusercontent.com` fails with `schannel: ... CRYPT_E_NO_REVOCATION_CHECK`. `--ssl-no-revoke` works around it. (Unrelated to the Norton/loopback issue that breaks provider plugin mTLS.)
+
+Sources: [hclsyntax/spec.md](https://github.com/hashicorp/hcl/blob/main/hclsyntax/spec.md) (l.279 for the literal rule) · [hcl spec.md](https://github.com/hashicorp/hcl/blob/main/spec.md) (information model, l.262-300 for the family definitions) · [go-cty convert.md](https://github.com/zclconf/go-cty/blob/main/docs/convert.md) (l.79-101 unification, conversion charts) · [go-cty types.md](https://github.com/zclconf/go-cty/blob/main/docs/types.md) · local `terraform` @ `c07e79c1c8`. Feeds [[tf-expr-types]] and [[tf-expr-type-constraints]]; the constraint-side half is Ch 12 (I3).
