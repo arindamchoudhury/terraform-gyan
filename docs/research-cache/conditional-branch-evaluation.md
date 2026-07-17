@@ -218,6 +218,34 @@ Verified with `terraform_data` + `terraform plan` on 1.15.8:
 !!! warning "A wrong theory I nearly wrote down"
     I first hypothesised that `for_each` rejects tuples because tuple→set is marked **safe+lossy** in the `cty` chart while object→map is **safe**, i.e. that Terraform refuses implicit *lossy* conversions here. **That is wrong.** The source performs no conversion at all — it is a flat whitelist of three type kinds. The lossy/safe distinction is real in `cty` but plays no part in this check. Read the source before explaining a behavior by a mechanism that merely *predicts* it.
 
+### `convert()` — Terraform-only, but the capability isn't (2026-07-17)
+
+The row above records `convert()` as Terraform-only. **True, and incomplete**: the *function* is missing from OpenTofu, not the behavior. `convert()` is an inline shortcut for the machinery every `type =` constraint already runs.
+
+Verified on **OpenTofu 1.12.4** — a typed module input performs the identical object-schema coercion, extra attributes discarded:
+
+```hcl
+# mod/main.tf
+variable "person" {
+  type = object({ name = string })
+}
+output "person" { value = var.person }
+
+# root: person = { name = "John", age = 52 }
+# → result = { "name" = "John" }      age dropped, same as convert()
+```
+
+| | Terraform 1.15.8 | OpenTofu 1.12.4 |
+|---|---|---|
+| `convert(v, type)` inline | yes | **no** — `Error: Invalid reference` |
+| `type` on an `output` block | yes | **no** — *"An argument named \"type\" is not expected here."* |
+| `type` on a `variable` | yes | yes — does the same coercion |
+| `tostring`/`tonumber`/`tobool`/`tolist`/`toset`/`tomap` | yes | yes |
+
+So the real gap is **arbitrary object/tuple schemas applied inline**, with no declared boundary. Primitives and collections are covered in both tools by the fixed casters. In OpenTofu the boundary must be a **variable** (root or module input), since typed outputs don't exist there either.
+
+[opentofu#2630](https://github.com/opentofu/opentofu/issues/2630) verified via the GitHub API (raw JSON, not a summarized fetch — cf. the fabricated `#2084` row above): title *"General-purpose `convert` function for converting values to conform to specific type constraints"*, **state open**, created **2025-03-25**. Its motivating case is coercing `jsondecode`/`yamldecode` output, which is exactly the no-boundary situation.
+
 ### Method note — every quote above was checked against raw bytes
 
 Each quotation in this section was **first obtained via a summarizing fetch, then re-verified against the raw file** (`curl` the `raw.githubusercontent.com` URL, `grep -F` the exact string). This mattered:

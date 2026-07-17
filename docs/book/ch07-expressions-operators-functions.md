@@ -323,8 +323,19 @@ Error: Invalid function argument
 Invalid value for "value" parameter: attribute "age" is required.
 ```
 
-!!! info "OpenTofu — no `convert()`"
-    The two blocks above use `convert(value, type)`, added in **Terraform 1.15** and **not present in OpenTofu** as of 1.12 ([open request](https://github.com/opentofu/opentofu/issues/2630)). The *behavior* they demonstrate is identical in both tools; only this way of demonstrating it inline is Terraform-only. In OpenTofu, observe the same rules by declaring a typed variable and passing a value.
+!!! info "OpenTofu — no `convert()`, but the behavior is still reachable"
+    The two blocks above use `convert(value, type)`, added in **Terraform 1.15** and absent from OpenTofu as of 1.12.4 ([open request #2630](https://github.com/opentofu/opentofu/issues/2630), filed March 2025). What's missing is the *function*, not the capability. `convert()` is an inline shortcut for the machinery that every `type =` constraint already runs, so declaring the constraint at a boundary does the identical job:
+
+    ```hcl
+    # child module — OpenTofu 1.12.4
+    variable "person" {
+      type = object({ name = string })
+    }
+    ```
+
+    Hand that `{ name = "John", age = 52 }` and it returns `{ name = "John" }`. Same discard, same rules, no function needed.
+
+    What OpenTofu can't do is apply an arbitrary schema **inline**, mid-expression, with no declared boundary. That is exactly what #2630 asks for, and its motivating case is coercing `jsondecode`/`yamldecode` output. Typed outputs are no help either, since `type` on an `output` is also Terraform 1.15+ and OpenTofu rejects it. For primitives and collections the fixed casters (`tostring`, `tonumber`, `tolist`, `toset`, `tomap`) cover the same ground in both tools, so the gap is specifically **object and tuple schemas**.
 
 !!! note "Constraint form — `object({ name = string })`"
     Written `object({ <KEY> = <TYPE>, ... })`. Ch 12 covers the schema rules and **`optional(type, default)`**, which is how an object attribute becomes genuinely optional instead of merely defaulting to `null`.
