@@ -307,7 +307,22 @@ For resources the structural path is **unconditional** — `internal/terraform/e
 | `count = 2` | `output "x" { type = string, ... }` | **`list(object({...}))`** |
 | `for_each` | `output "x" { type = string, ... }` | **`map(object({...}))`** |
 
-So **`type` on an output (TF 1.15+) changes the type your callers receive**, not just the docs. That's the concrete reason behind "prefer typing the outputs of any module others consume" (Ch 6). OpenTofu has no typed outputs, so module references there stay structural.
+So `type` on an output (TF 1.15+) does change the type callers receive. OpenTofu has no typed outputs, so module references there stay structural.
+
+!!! warning "But this is a curiosity, not a reason — I oversold it, then caught it"
+    I wrote this up as "the concrete payoff behind *prefer typing your module outputs*" and pushed it into B6/I5/E3, including the claim that "a caller who wants to `[*]`-splat or pass your module's instances into something expecting a collection feels the difference." **Tested, and false.** Auto-conversion absorbs the whole thing:
+
+    ```
+    > module.c[*].name                # untyped outputs -> tuple
+    [ "n", "n" ]                      # splat works anyway
+    > tolist(module.c)                # converts fine
+    ```
+
+    …and passing `module.c` (a tuple) into a child module's `variable { type = list(object({ name = string })) }` **applies successfully**. A caller cannot tell.
+
+    So the real value of typed outputs is what Ch 6 said all along: a checked, self-documenting interface — "improves matching across validation, plan, and apply". The list/map shape is a *consequence* of the uniformity guarantee, not a benefit stacked on top. Gain is exactness and clearer errors, not capability.
+
+    **The lesson is sharper than the fact.** I marked B6 🔄 "Ch 6 undersells output `type`" and set out to fix the chapter — the chapter was right and modest, and *I* was the one overselling. Finding a real mechanism (`GetModule` genuinely does branch) is not the same as finding it *matters*; measure the consequence before promoting the cause. The revisit that was supposed to fix Ch 6 ended up reverting my own edits to the path.
 
 !!! warning "Two method failures worth remembering"
     1. **Generalising from `terraform_data`.** It is the only provider-free resource, and it is *atypical*: `input`/`output`/`triggers_replace` are `dynamic`. Conclusions drawn from it about schema-driven behavior may not transfer to a normal provider resource. Here the resource answer held (the code path is unconditional), but only checking the source proved that rather than luck.

@@ -464,7 +464,9 @@ Those are structural types, and that is worth a moment, because you will read ot
     map(object({ untyped: string }))
     ```
 
-    Tuple becomes **list**, object becomes **map**. Resources have no equivalent switch because a provider's dynamic-typed attributes can always diverge per instance, but a module's interface is yours to declare. That is the concrete payoff behind Ch 6's "prefer typing the outputs of any module others consume": it isn't only documentation, it changes the type your callers actually receive.
+    Tuple becomes **list**, object becomes **map**. Resources have no equivalent switch because a provider's dynamic-typed attributes can always diverge per instance, but a module's interface is yours to declare.
+
+    Resist reading that as a reason to type your outputs. Type them for the reason Ch 6 gives — a checked, self-documenting interface. The shape change is a *consequence* of that guarantee, not a benefit on top of it, and callers almost never feel it: a tuple splats, converts, and satisfies a `list(object(...))` constraint exactly as a list does. What you gain is exactness and better errors. It earns its place here because it shows the type system deciding something on your behalf, and because it explains why the condition is "are the outputs fully typed" rather than something arbitrary.
 
 !!! note "A resource **type** isn't a value you can traverse"
     An instance is an object, but the dotted path is not object access all the way up. The prefix is not a real object: you cannot swap dot notation for bracket notation on the fixed parts of the path, and you cannot iterate a **resource type** to reach every block of that type. There is no reflection over resource types in HCL, and splat does not rescue it — the bare type name isn't a value at all:
