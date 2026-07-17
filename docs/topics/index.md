@@ -23,4 +23,5 @@ Topics to write once a second source covers them:
 - **expressions-functions** — currently from: TID Ch4 §4.2–4.7 (operators, standard-library + provider-defined functions, string templates, regex, type conversion, `try`/`can`). Feeds B7.
 - **count-for_each** — currently from: TID Ch4 §4.8 (`count`/`for_each`, plan-time-known limitation, reindex footgun) + [[tf-meta-arguments]] (`count` vs `for_each` reference). Two sources — promotable; feeds I1.
 - **dynamic-blocks** — currently from: TID Ch4 §4.10 (`dynamic`/`content`, label-named iterator, `[]`-vs-`["placeholder"]` toggle). Feeds I3.
+- **secrets-and-state** — currently from: [[tf-manage-sensitive-data]] (hide-vs-omit-vs-both, version matrix, write-only args) + [[infisical-terraform-secrets]] (the `grep`-proven state leak, secrets-manager workflow, CI OIDC, module coordinate-passing, dynamic secrets vs rotation, anti-pattern table). Two sources — promotable; feeds A6/I6.
 - **for-expression-splat** — currently from: TID Ch4 §4.9 (list/object `for`, `=>`, `if` filter, `...` grouping, splat `[*]`). Feeds B7/I3.
