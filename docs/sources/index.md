@@ -83,3 +83,11 @@ Vendor blog — Terraform mechanics are checkable, product comparisons are marke
 | Title | Type | Added | Tags | URL |
 |---|---|---|---|---|
 | [A Guide to Terraform Secrets Management](infisical-blog/infisical-terraform-secrets.md) | blog | 2026-07-17 | secrets, state, ephemeral, write-only, oidc, dynamic-secrets, rotation, sops | [url](https://infisical.com/blog/terraform-secrets-management) |
+
+## 6. Tools
+
+Tools that sit next to Terraform rather than inside it. See the [course overview](tools/index.md).
+
+| Title | Type | Added | Tags | URL |
+|---|---|---|---|---|
+| [pyinfra](tools/pyinfra.md) | repository | 2026-07-17 | config-management, ansible-alternative, provisioners, terraform-output, inventory, a1 | [url](https://github.com/pyinfra-dev/pyinfra) |
