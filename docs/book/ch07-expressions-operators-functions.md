@@ -388,19 +388,10 @@ Terraform exposes a fixed set of named values. Each is an expression on its own 
 
 A resource reference's *shape* depends on its meta-arguments. With neither `count` nor `for_each` it's a single **object**. With `count` it's a **tuple** of instance objects (`aws_instance.web[0].id`). With `for_each` it's an **object** keyed by your `for_each` keys, each attribute an instance object (`aws_instance.web["a"].id`).
 
-!!! info "The docs say “list” and “map” here — and why it's structural"
-    HashiCorp's references page describes a `count` resource as a **list** and a `for_each` resource as a **map**. Ask Terraform and you get the structural types:
+Those are structural types, and that is worth a moment, because you will read otherwise. HashiCorp's [references page](https://developer.hashicorp.com/terraform/language/expressions/references) describes the same two shapes as collections: with `count`, "the reference's value is a *list* of objects representing its instances"; with `for_each`, "a *map* of objects". Ask Terraform and you get `tuple` and `object`. Both descriptions are usable, because the docs [say plainly](https://developer.hashicorp.com/terraform/language/expressions/types) that they use list/tuple and map/object interchangeably wherever the distinction doesn't matter, and for indexing and splat it doesn't. This chapter names the real type because §2 spent its length on the difference.
 
-    ```
-    > type(terraform_data.counted)     # count = 2
-    tuple([ object({...}), object({...}) ])
-    > type(terraform_data.keyed)       # for_each = toset(["x","y"])
-    object({ x: object({...}), y: object({...}) })
-    ```
-
-    Both descriptions are usable, because the docs [state outright](https://developer.hashicorp.com/terraform/language/expressions/types) that they use list/tuple and map/object interchangeably where the distinction doesn't matter. Indexing and splat behave the same either way.
-
-    **Why structural, though?** Because §2's rule applies: a collection needs *one* element type, and instances of one block are not guaranteed to share one. Give `for_each` a map of mixed values and the instances genuinely diverge:
+!!! note "Why the container is structural — §2's rule, applied to instances"
+    A collection needs **one** element type, and instances of a single block aren't guaranteed to share one. Hand `for_each` a map of mixed values and they genuinely diverge:
 
     ```
     > type(terraform_data.mixed)       # for_each = { a = "str", b = 5 }
@@ -410,7 +401,9 @@ A resource reference's *shape* depends on its meta-arguments. With neither `coun
     })
     ```
 
-    No `map(...)` can hold those two, because they are different object types. Structural is the only shape that survives it, so resources use it unconditionally. None of this touches the instance-level story: the *elements* are objects, which is why `[0]` and `["a"]` hand you one back.
+    Instance `a` and instance `b` are **different object types**, so no `map(...)` could hold both. Structural is the only shape that survives that, which is why resources take it unconditionally rather than only when the instances happen to differ.
+
+    None of it disturbs the instance-level story: the *elements* are still objects, which is exactly why `[0]` and `["a"]` hand you one back.
 
 !!! tip "Modules are the exception, and it's a reason to type your outputs"
     A **module** call with `count`/`for_each` gets the same treatment only when Terraform can't pin the types down. If every output the module declares is fully typed, it can use the collection type instead — and `type` on an `output` is exactly the knob (Terraform **1.15+**, Ch 6). The same module, before and after adding `type = string` to its one output:
