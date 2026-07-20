@@ -91,7 +91,14 @@ Modules follow the same two cases against their own record in `.terraform/module
 
 Modules add two cases providers have no equivalent for. A changed `source` string re-resolves, which is how a swapped `ref=` on a Git source takes effect. And *no record at all* — a fresh clone, or CI with an empty `.terraform/` — selects the newest matching version silently, because there is no committed file to consult.
 
-That last difference is what makes the module upgrade hard to govern. A provider upgrade rewrites the committed `.terraform.lock.hcl`, so it lands in the diff and a reviewer sees it. A module upgrade rewrites uncommitted `modules.json`, so it leaves no trace in version control and `-lockfile=readonly` has nothing to check. Exact version constraints are your only control.
+That last difference is what makes the module upgrade hard to govern. A provider upgrade rewrites the committed `.terraform.lock.hcl`, so it lands in the diff and a reviewer sees it. A module upgrade rewrites uncommitted `modules.json`, so it leaves no trace in version control and `-lockfile=readonly` has nothing to check.
+
+Terraform gives you no built-in substitute, so you rebuild the property in three layers. Pin exactly in the configuration: `version = "6.6.1"` for a registry module, and for a Git source a full commit SHA in `ref=` rather than a tag, since a tag can be force-moved out from under your pin. Enforce that pinning in CI with a linter — tflint's `terraform_module_version` rule takes an `exact = true` option that rejects every constraint operator except `=`, and `terraform_module_pinned_source` catches unpinned Git sources. Then add Dependabot or Renovate so the pins still move: each upgrade arrives as a pull request carrying a version diff.
+
+That third layer is the one that actually closes the gap. Exact pins alone are a ratchet, safe but frozen. Exact pins plus an update bot give a module change the same reviewable diff the lock file hands providers for free.
+
+!!! warning "Don't commit `modules.json` to fake a module lock file"
+    The manifest's `Dir` field is repo-relative, so force-adding it past `.gitignore` looks like it would work. It won't hold. The file is an undocumented internal snapshot that `init` rewrites whenever it re-resolves, and there is no `-lockfile=readonly` equivalent to make a CI run fail instead. Pin in the configuration, where the constraint is a reviewable part of the code.
 
 ### Checksums: trust on first use
 
