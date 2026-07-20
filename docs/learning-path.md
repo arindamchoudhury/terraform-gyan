@@ -407,6 +407,17 @@ You are ready to advance when you can:
 !!! note "📌 `terraform modules` (TF 1.10)"
     **`terraform modules`** (TF 1.10+) prints every module declared in the config — key, source, and version — for the whole tree. Use it to audit what you depend on and to drive policy on module consumption. (See [[feature-history]].)
 
+!!! note "📌 Governing module versions — no lock file to lean on"
+    `.terraform.lock.hcl` records **providers only**. Module selections live in uncommitted `.terraform/modules/modules.json`, so a fresh clone or a clean CI runner re-resolves the constraint and can land on a version nobody tested. `terraform init -lockfile=readonly` has nothing to check. Ch3 states the hazard; the controls belong here, in three layers.
+
+    1. **Pin exactly.** `version = "6.6.1"` for registry modules. For Git sources a full commit SHA in `ref=`, not a tag — a tag can be force-moved out from under the pin.
+    2. **Enforce the pin in CI.** tflint's [`terraform_module_version`](https://github.com/terraform-linters/tflint-ruleset-terraform/blob/main/docs/rules/terraform_module_version.md) takes `exact = true` (default `false`) to reject every operator but `=`; `terraform_module_pinned_source` catches unpinned Git sources. Overlaps **A5 — Policy as Code**, where OPA/Conftest and Sentinel do the same job.
+    3. **Keep the pins moving.** [Dependabot](https://docs.github.com/en/code-security/dependabot/ecosystems-supported-by-dependabot/supported-ecosystems-and-repositories) (registry modules, public Git, private registries, OpenTofu `.tofu`) or [Renovate](https://docs.renovatebot.com/modules/manager/terraform/) (registry, `GitTags`, `GithubTags`, plus lock-file maintenance) turn each upgrade into a reviewable PR. This is the layer that rebuilds what the lock file gives providers for free. Wiring it into pipelines is **A3 — Terraform in CI/CD**.
+
+    ⚠️ **Open question to resolve when writing this topic:** layers 1 and 3 pull against each other for Git sources. Renovate resolves *tags*, so a SHA-pinned `ref=` likely can't be auto-bumped. Registry modules get both properties; Git sources may force a choice. Confirm the actual Dependabot/Renovate behavior against a SHA-pinned `ref=` before writing it up.
+
+    Don't try to commit `modules.json` as a substitute. `Dir` is repo-relative so it looks portable, but it's an undocumented internal snapshot that `init` rewrites, with no readonly enforcement.
+
 !!! example "🧪 Lab (KL)"
     [Lab 06 — making code dynamic & reusable](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_06_making_code_dynamic_and_reusable) (reusable-module section).
 
