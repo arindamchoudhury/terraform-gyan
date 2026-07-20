@@ -263,7 +263,30 @@ variable "names" {
     # [1.5, 2.5, 10.25]
     ```
 
-    Negative numbers are where it genuinely breaks. The minus sign is just another character, so `"-000000002"` sorts before `"-000000005"` and the negatives come back in reverse. Sorting their absolute values and calling `reverse()` fixes that, and a mixed-sign list needs the two halves sorted separately and concatenated. Both are expressible in pure HCL. Neither is something you want to find in a config six months from now.
+    Negative numbers are where it genuinely breaks. The minus sign is just another character, so `"-000000002"` sorts before `"-000000005"` and the negatives come back in reverse. Sorting their absolute values and calling `reverse()` undoes that:
+
+    ```hcl
+    [for s in reverse(sort([for n in [-5, -2, -30] : format("%09d", -n)])) : -tonumber(s)]
+    # [-30, -5, -2]
+    ```
+
+    A mixed-sign list needs the two halves separated, sorted under their own rules, and concatenated back:
+
+    ```hcl
+    locals {
+      nums = [-5, 2, -30, 10, 3]
+      neg  = [for n in local.nums : n if n < 0]
+      pos  = [for n in local.nums : n if n >= 0]
+
+      sorted = concat(
+        [for s in reverse(sort([for n in local.neg : format("%09d", -n)])) : -tonumber(s)],
+        [for s in sort([for n in local.pos : format("%09d", n)]) : tonumber(s)],
+      )
+      # [-30, -5, 2, 3, 10]
+    }
+    ```
+
+    Both work. Neither is something you want to find in a config six months from now.
 
     That is the signal to stop. Either compute the order outside Terraform and pass it in as an already-sorted variable, or use a provider-defined function (Terraform 1.8+, OpenTofu 1.7+) where a provider ships a real numeric sort. The function buys correctness for every element type at the cost of a provider dependency for one sort.
 
