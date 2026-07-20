@@ -84,6 +84,15 @@ When you *want* a newer allowed version, a plain `init` won't give it to you —
 - **Locked version still satisfies the constraint, you want the newest allowed** → `terraform init -upgrade`. It ignores the lock, re-resolves to the newest permitted version, and rewrites the lock file.
 - **Locked version now violates the constraint** (you bumped `~> 5.0` to `~> 6.0`) → a plain `init` is forced to re-select and rewrites the lock on its own.
 
+Modules follow the same two cases against their own record in `.terraform/modules/modules.json`:
+
+- **Recorded version still satisfies the constraint** → `terraform init -upgrade` re-resolves it. So does `terraform get -update`, which upgrades modules only and leaves providers alone.
+- **Recorded version now violates the constraint** → a plain `init` re-selects on its own.
+
+Modules add two cases providers have no equivalent for. A changed `source` string re-resolves, which is how a swapped `ref=` on a Git source takes effect. And *no record at all* — a fresh clone, or CI with an empty `.terraform/` — selects the newest matching version silently, because there is no committed file to consult.
+
+That last difference is what makes the module upgrade hard to govern. A provider upgrade rewrites the committed `.terraform.lock.hcl`, so it lands in the diff and a reviewer sees it. A module upgrade rewrites uncommitted `modules.json`, so it leaves no trace in version control and `-lockfile=readonly` has nothing to check. Exact version constraints are your only control.
+
 ### Checksums: trust on first use
 
 The lock file's `hashes` list is what makes an install tamper-evident. Every package `init` installs must match **at least one** checksum already recorded for that version; otherwise `init` refuses it:
