@@ -70,7 +70,7 @@ Auto-formatters (`terraform fmt`) rewrite `//` into `#`, since `//` is not idiom
 ## Character Encoding and Line Endings
 
 - Files **must be UTF-8**. Delimiters are ASCII, but non-ASCII is accepted in identifiers, comments, and string values.
-- Accepts Unix (LF) **or** Windows (CRLF) line endings. Unix LF is idiomatic; auto-formatters convert CRLF → LF.
+- Accepts Unix (LF) **or** Windows (CRLF) line endings. Unix LF is idiomatic; the page says automatic formatting tools "**may**" transform CRLF → LF. (Checked: `terraform fmt` 1.15.8 leaves CRLF alone.)
 
 ---
 Related: [[provider-requirements]] — a concrete top-level `terraform`/`required_providers` block using this syntax. [[tf-aws-create]] — a real `resource "aws_instance"` block with two labels in action. Feeds learning-path **B4 — HCL language basics** (this page is B4's reference #1).

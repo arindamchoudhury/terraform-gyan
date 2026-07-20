@@ -386,6 +386,7 @@ HCL has an opinionated style. It's advisory — ignoring it won't break a plan �
 - **Order inside a block:** meta-arguments (`count`/`for_each`) first, then normal arguments, then subblocks, then meta-argument blocks (`lifecycle`) last.
 - **Comments** use `#`. The `//` and `/* */` forms work (HCL backward-compatibility) but aren't idiomatic — `fmt` rewrites `//` to `#`.
 - **Naming:** a descriptive noun with underscores, and **don't repeat the resource type** in the name — the address already carries it. `resource "aws_instance" "web"`, not `"web_aws_instance"`.
+- **Encoding:** files must be **UTF-8**. The delimiters (`{`, `=`, quotes) are ASCII, but identifiers, comments, and string values may hold any Unicode. Both Unix (LF) and Windows (CRLF) line endings parse, but LF is idiomatic, and the docs note that formatting tools *may* rewrite CRLF to LF. `terraform fmt` itself does not (verified on 1.15.8) — so if you author on Windows, set `core.autocrlf` in Git rather than expecting `fmt` to normalize for you.
 
 ```hcl
 resource "aws_instance" "web" {
@@ -401,6 +402,8 @@ resource "aws_instance" "web" {
 ```
 
 Run `terraform fmt` before every commit (a Git pre-commit hook is ideal) and `terraform validate` to catch structural errors — a stray `=`, a missing brace, a wrong type. One caveat: **`fmt` formats, it does not reorder your arguments** — the ordering convention above is on you.
+
+Terraform ships no linter. `fmt` handles layout and `validate` handles structure, but neither enforces organizational rules ("every resource carries an `Owner` tag", "no hard-coded AMI ids"). For that, teams add a third-party static analyzer such as **TFLint** to the pre-commit hook or CI alongside the two built-ins.
 
 !!! tip "Files that shouldn't be committed"
     Commit all `.tf` code, the `.terraform.lock.hcl`, a `.gitignore`, and a `README.md`. **Never** commit `terraform.tfstate` (it holds secrets in plaintext), the `.terraform/` directory, saved plan files, or any `.tfvars` containing secrets. A wrong `.gitignore` here leaks credentials — Chapter 9 (state) returns to why.
@@ -546,7 +549,7 @@ An empty plan. Terraform merged every `.tf`, rebuilt the same graph from the sam
 ## References
 
 - [Configuration Syntax (HCDocs)](../sources/terraform-docs/tf-config-syntax.md) — arguments/blocks, labels, identifiers, comments, encoding
-- [Style Guide (HCDocs)](../sources/terraform-docs/tf-style-guide.md) — formatting, naming, file layout, `.gitignore`, ordering
+- [Style Guide (HCDocs)](../sources/terraform-docs/tf-style-guide.md) — formatting, naming, file layout, `.gitignore`, ordering, linting
 - [Provider Requirements (HCDocs)](../sources/terraform-docs/provider-requirements.md) — the `terraform`/`required_providers` block
 - TID Ch2 — Terraform HCL components: [book reading notes](../books/tid/chapters/02-hcl-components.md) (block anatomy, the block-type catalog, arguments/subblocks/attributes, order-is-a-DAG)
 - TID Ch3 — Terraform variables and modules: [book reading notes](../books/tid/chapters/03-variables-modules.md) (the type system, the three "variables", argument vs. parameter)
