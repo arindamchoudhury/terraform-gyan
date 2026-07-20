@@ -96,30 +96,36 @@ There is a governance consequence. A provider upgrade rewrites the committed `.t
 The lock file has been a black box so far. Here is what `init` actually writes, for one provider:
 
 ```hcl
-provider "registry.terraform.io/hashicorp/azurerm" {
-  version     = "2.30.0"
-  constraints = "~> 2.12"
+provider "registry.terraform.io/hashicorp/random" {
+  version     = "3.9.0"
+  constraints = "~> 3.6"
   hashes = [
-    "h1:FJwsuowaG5CIdZ0WQyFZH9r6kIJeRKts9+GcRsTz1+Y=",
-    "h1:c/ntSXrDYM1mUir2KufijYebPcwKqS9CRGd3duDSGfY=",
-    "h1:yre4Ph76g9H84MbuhZ2z5MuldjSA4FsrX6538O7PCcY=",
-    "zh:04f0a50bb2ba92f3bea6f0a9e549ace5a4c13ef0cbb6975494cac0ef7d4acb43",
-    "zh:2082e12548ebcdd6fd73580e83f626ed4ed13f8cdfd51205d8696ffe54f30734",
-    ...
+    "h1:q/uaUTBdKgAmZESrwsoeDQff9uUA/cI/N5ZKNgVwa9c=",
+    "zh:161ad0bd9a75768c82f53fb6e7172a9d8be2d4889b012645a34795031aaf1bf1",
+    "zh:19dc9a5b17729725ccfc4f45b0500af0ee5bc6b6b160c7adb8f2bf617d2c80ea",
+    "zh:269eda8fe42daa7974d5a34d166c3ba9defe80cde86c01e4dadcfdf2e1f05e5f",
+    "zh:373f7c65566f8f2cc7f45d698654feb9d988996957e1266a69ca00c52d6d16d0",
+    # … nine more zh: entries
   ]
 }
 ```
 
 `version` is the selection `init` made. `constraints` records what the configuration asked for. Then `hashes`, where the thing to notice is that a *single* version carries *many* checksums.
 
-Two things multiply them. A provider ships a separate package per platform. There is one for `linux_amd64`, one for `darwin_arm64`, one for `windows_amd64`, and so on, and each hashes differently. On top of that Terraform is midway through a migration between two hashing schemes, which is what the `zh:` and `h1:` prefixes distinguish. That migration is covered below; for now read them as two ways of fingerprinting the same package.
+The count comes from platforms. A provider ships a separate package for each one, meaning `linux_amd64`, `darwin_arm64`, `windows_amd64` and the rest, and every package has its own hash. Fourteen entries here for a provider published on thirteen platforms.
+
+The prefixes are a second axis. Terraform is midway through a migration between two hashing schemes, and a fresh install records a `zh:` for every published platform but an `h1:` only for the platform `init` actually ran on. That is why the list above is thirteen `zh:` and a single `h1:`. The migration is covered below; for now read both prefixes as ways of fingerprinting a package.
 
 So the list is not one fingerprint for the provider. It is the **set of packages Terraform will accept** as legitimate for that version, which gives the verification rule: every package `init` installs must match **at least one** entry in its version's set. Your download matches your platform's hash, and the entries for other platforms are what let one committed lock file satisfy a teammate on a different OS. When a package matches nothing, `init` refuses:
 
 ```
-Error while installing hashicorp/azurerm v2.1.0: the current package for
-registry.terraform.io/hashicorp/azurerm 2.1.0 doesn't match any of the
-checksums previously recorded in the dependency lock file.
+Error: Failed to install provider
+
+Error while installing hashicorp/random v3.9.0: the current package for
+registry.terraform.io/hashicorp/random 3.9.0 doesn't match any of the
+checksums previously recorded in the dependency lock file; for more
+information:
+https://developer.hashicorp.com/terraform/language/files/dependency-lock#checksum-verification
 ```
 
 That is a **trust-on-first-use** model, and the name is the whole security story. Terraform does not know whether a provider is trustworthy. It knows whether *today's* package matches what you accepted the *first* time. So the verification you owe happens once, when the provider first enters the lock file. That means checking the signing key fingerprint `init` prints, reading who published it, and whatever else your compliance regime demands. After that Terraform enforces your decision for you.
