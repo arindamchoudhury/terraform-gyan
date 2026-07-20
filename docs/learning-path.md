@@ -410,13 +410,11 @@ You are ready to advance when you can:
 !!! note "📌 Governing module versions — no lock file to lean on"
     `.terraform.lock.hcl` records **providers only**. Module selections live in uncommitted `.terraform/modules/modules.json`, so a fresh clone or a clean CI runner re-resolves the constraint and can land on a version nobody tested. `terraform init -lockfile=readonly` has nothing to check. Ch3 states the hazard; the controls belong here, in three layers.
 
-    1. **Pin exactly.** `version = "6.6.1"` for registry modules. For Git sources a full commit SHA in `ref=`, not a tag — a tag can be force-moved out from under the pin.
-    2. **Enforce the pin in CI.** tflint's [`terraform_module_version`](https://github.com/terraform-linters/tflint-ruleset-terraform/blob/main/docs/rules/terraform_module_version.md) takes `exact = true` (default `false`) to reject every operator but `=`; `terraform_module_pinned_source` catches unpinned Git sources. Overlaps **A5 — Policy as Code**, where OPA/Conftest and Sentinel do the same job.
-    3. **Keep the pins moving.** [Dependabot](https://docs.github.com/en/code-security/dependabot/ecosystems-supported-by-dependabot/supported-ecosystems-and-repositories) (registry modules, public Git, private registries, OpenTofu `.tofu`) or [Renovate](https://docs.renovatebot.com/modules/manager/terraform/) (registry, `GitTags`, `GithubTags`, plus lock-file maintenance) turn each upgrade into a reviewable PR. This is the layer that rebuilds what the lock file gives providers for free. Wiring it into pipelines is **A3 — Terraform in CI/CD**.
-
-    ⚠️ **Open question to resolve when writing this topic:** layers 1 and 3 pull against each other for Git sources. Renovate resolves *tags*, so a SHA-pinned `ref=` likely can't be auto-bumped. Registry modules get both properties; Git sources may force a choice. Confirm the actual Dependabot/Renovate behavior against a SHA-pinned `ref=` before writing it up.
+    The in-scope control here is the **exact pin**: `version = "6.6.1"` for registry modules, and for Git sources a full commit SHA in `ref=` rather than a tag, since a tag can be force-moved out from under the pin. Enforcing that pin is **A5**; keeping pinned versions current is **A3**.
 
     Don't try to commit `modules.json` as a substitute. `Dir` is repo-relative so it looks portable, but it's an undocumented internal snapshot that `init` rewrites, with no readonly enforcement.
+
+    ⚠️ **Open question, spans I4 and A3:** exact pinning and bot-driven updates may pull against each other for Git sources. Renovate resolves *tags*, so a SHA-pinned `ref=` likely can't be auto-bumped. Registry modules get both properties; Git sources may force a choice between an immutable pin and automated updates. Confirm actual Dependabot/Renovate behavior against a SHA-pinned `ref=` before writing either topic up.
 
 !!! example "🧪 Lab (KL)"
     [Lab 06 — making code dynamic & reusable](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_06_making_code_dynamic_and_reusable) (reusable-module section).
@@ -690,6 +688,9 @@ You are ready to advance when you can:
 2. **Interactive — build a pipeline** (~2 hrs) — a GitHub Actions (or GitLab CI) workflow that runs `fmt`/`validate`/`plan` on PR and `apply` on merge.
 3. **Book chapter — TUR Ch 10** (~1.5 hrs) — production CI/CD patterns and approval gates.
 
+!!! note "📌 Automated dependency updates (Dependabot / Renovate)"
+    A pipeline gates *changes you make*. It does nothing about dependencies going stale, and exact pins turn into a frozen ratchet without something to move them. **[Dependabot](https://docs.github.com/en/code-security/dependabot/ecosystems-supported-by-dependabot/supported-ecosystems-and-repositories)** covers registry modules, publicly reachable Git repos, and private registries, plus OpenTofu `.tofu` files and `terragrunt.hcl`. **[Renovate](https://docs.renovatebot.com/modules/manager/terraform/)** covers registry modules, `GitTags`/`GithubTags` sources, `required_providers`, `required_version`, and maintains `.terraform.lock.hcl` itself. Either turns an upgrade into a PR carrying a version diff, which is what gives **module** upgrades the reviewable surface the lock file already gives providers (see I4). Renovate gotcha: it can't tell whether you want the Terraform or OpenTofu registry and defaults to `registry.terraform.io` — configure it explicitly on an OpenTofu project.
+
 !!! note "📌 Machine-readable plan/apply output"
     For machine-readable plan/apply output, `-json` replaces stdout entirely (you lose the human view). **OpenTofu 1.12**'s `-json-into=FILENAME` writes the JSON to a file while keeping the normal UI on stdout — so CI can parse the JSON *and* a human can read the log. OpenTofu-only. (See [[tf115-ot112-features]].)
 
@@ -740,6 +741,9 @@ You are ready to advance when you can:
 
 !!! note "📌 Static analysis (SAST) layer"
     Sentinel/OPA evaluate the **plan** (what Terraform *will do*). A second, complementary layer is **static analysis (SAST)** that scans the *HCL source* for insecure defaults *before* a plan — public S3 buckets, `0.0.0.0/0` ingress, unencrypted volumes — against a built-in rule library. The common tools: **[Checkov](https://www.checkov.io/)** (Prisma/Bridgecrew, largest policy set, also does terraform_plan JSON), **[Trivy](https://trivy.dev/)** (Aqua — absorbed the now-archived **tfsec**; use Trivy for new work), and **[KICS](https://kics.io/)** (Checkmarx, multi-IaC). Run one on every PR next to `fmt`/`validate`; they need no cloud creds and no state, so they're the cheapest guardrail you can add.
+
+!!! note "📌 tflint — the correctness linter next to the security scanners"
+    The SAST tools above hunt insecure defaults. **[tflint](https://github.com/terraform-linters/tflint)** is the complementary correctness/style linter: deprecated syntax, invalid provider arguments, unpinned dependencies. Two of its [terraform ruleset](https://github.com/terraform-linters/tflint-ruleset-terraform/blob/main/docs/rules/README.md) rules enforce the module pinning that I4 recommends but Terraform itself cannot check, because there is no module lock file. [`terraform_module_version`](https://github.com/terraform-linters/tflint-ruleset-terraform/blob/main/docs/rules/terraform_module_version.md) requires registry modules to carry a version, and takes `exact = true` (default `false`) to reject every constraint operator except `=`. `terraform_module_pinned_source` catches Git and Mercurial sources with no pin at all. Both are cheap PR-time checks needing no creds and no state, so they belong in the same pipeline stage as Checkov/Trivy.
 
 !!! note "📌 Cost governance (Infracost)"
     **Cost governance** — [Infracost](https://www.infracost.io/) estimates the **$ delta** of a plan (it reads `terraform plan -json` against cloud price APIs) and posts it as a PR comment, so reviewers see cost impact before merge. It's the open, CI-native counterpart to HCP Terraform's built-in cost estimation (A4). Pair it with a policy (`infracost` has its own policy/threshold gating) to block a PR that blows a budget.
