@@ -4,10 +4,10 @@
 
 By the end of this chapter you can:
 
-- Run the four-command loop — `init`, `plan`, `apply`, `destroy` — and say what each one reads and writes.
+- Run the four-command loop of `init`, `plan`, `apply` and `destroy`, and say what each one reads and writes.
 - Read a `terraform plan` and predict, before you apply, what every `+` / `~` / `-/+` / `-` line will do.
 - Save a plan with `-out` and apply that exact artifact, so review and execution can't drift apart.
-- Tear infrastructure down two ways — remove one resource from config, or destroy the whole workspace — and know which blast radius each has.
+- Tear infrastructure down two ways, by removing one resource from config or by destroying the whole workspace, and know which blast radius each has.
 - Reach for the everyday utilities (`fmt`, `validate`, `show`, `output`, `graph`) and the escape hatches (`-replace`, `-refresh-only`, `-target`) at the right moment.
 
 ## The loop is the whole job
@@ -200,7 +200,7 @@ Plan: 1 to add, 0 to change, 0 to destroy.
 ```
 
 !!! note "Three planning modes, one engine"
-    Everything above is the **default** mode: reconcile infrastructure to config. There are two others, and both appear later in this chapter. **Destroy** mode (`plan -destroy`, or the `terraform destroy` alias) plans the removal of everything in the configuration. **Refresh-only** mode (`plan -refresh-only`) updates state from reality and proposes no infrastructure change at all. Same mechanics each time — build the graph, walk it, diff — only the target end state differs. And **every mode begins with a refresh**, which is why refresh-only is the niche one: the other two already did it.
+    Everything above is the **default** mode: reconcile infrastructure to config. There are two others, and both appear later in this chapter. **Destroy** mode (`plan -destroy`, or the `terraform destroy` alias) plans the removal of everything in the configuration. **Refresh-only** mode (`plan -refresh-only`) updates state from reality and proposes no infrastructure change at all. The mechanics are the same each time. Terraform builds the graph, walks it, and diffs; only the target end state differs. And **every mode begins with a refresh**, which is why refresh-only is the niche one: the other two already did it.
 
 Two things to read here. The `Plan:` summary line is your headline — *add / change / destroy* counts you can sanity-check at a glance. And `(known after apply)` marks attributes AWS won't assign until the resource actually exists (an instance's ARN, its public IP). Terraform can't show you a value it doesn't have yet, so it names it as pending rather than guessing.
 
@@ -318,7 +318,7 @@ So in the VPC move above, Terraform ran: destroy the old instance, create the VP
 
 `destroy` walks the same graph in **reverse**. Dependents die before their dependencies: route-table associations first, then subnets and the internet gateway, and the VPC last. It is the mirror image of creation order, for the same reason — you can't delete a VPC while subnets still live inside it.
 
-The graph is *acyclic* by requirement, not by convention. If your references form a loop — A reads an attribute of B, which reads C, which reads A — there is no valid order, and Terraform refuses to plan at all:
+The graph is *acyclic* by requirement, not by convention. Suppose your references form a loop, where A reads an attribute of B, which reads C, which reads A. There is no valid order, so Terraform refuses to plan at all:
 
 ```
 Error: Cycle: aws_security_group.app, aws_security_group.db
@@ -588,7 +588,7 @@ You've now produced all four symbols and both teardown paths against a real API 
 - **`terraform destroy` against a workspace holding production.** It deletes everything, no questions beyond one `yes`. Guard irreplaceable resources with `prevent_destroy`; never destroy a workspace you haven't just inspected.
 - **Routine `-target`.** It plans against a partial view and hides drift. It's a recovery tool. If it's part of your normal workflow, split the config instead.
 - **Cross-platform lock mismatch.** A lock file whose provider was first installed from a *mirror* records only the installing platform's checksums, so macOS breaks Linux CI. Pre-seed with `terraform providers lock -platform=…`, or use OpenTofu 1.12+.
-- **Assuming the lock file pins modules.** It pins providers only. The module manifest that holds a version steady lives in uncommitted `.terraform/`, so a fresh clone or CI runner re-resolves to the newest matching version. Pin with an exact constraint or a Git `ref`.
+- **Assuming the lock file pins modules.** It pins providers only. The module manifest that holds a version steady lives in uncommitted `.terraform/`, so a fresh clone or CI runner re-resolves to the newest matching version. Pin with an exact version constraint.
 - **Forgetting to re-`init` after adding a module or provider.** `plan` will tell you the working directory is out of date. Re-run `init`.
 
 ## Exercises
