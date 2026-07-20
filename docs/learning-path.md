@@ -694,7 +694,23 @@ You are ready to advance when you can:
 !!! note "📌 Machine-readable plan/apply output"
     For machine-readable plan/apply output, `-json` replaces stdout entirely (you lose the human view). **OpenTofu 1.12**'s `-json-into=FILENAME` writes the JSON to a file while keeping the normal UI on stdout — so CI can parse the JSON *and* a human can read the log. OpenTofu-only. (See [[tf115-ot112-features]].)
 
-**Milestone:** You can build a pipeline that posts a plan on pull requests and applies a saved plan on merge, with remote state and locking.
+!!! danger "📌 The saved plan is a secret, and it expires by itself"
+    B3 teaches `plan -out=FILE` → `apply FILE`. Two disciplines belong to the pipeline that carries it.
+
+    **Never commit a plan file.** [HCDocs](https://developer.hashicorp.com/terraform/cli/commands/plan) is explicit: "If your plan includes any sort of sensitive data, even if obscured in Terraform's terminal output, it will be saved in cleartext in the plan file." It also embeds a full prior-state snapshot and every input variable value. Move it between jobs as a **CI artifact** with short retention (`upload-artifact`/`download-artifact`, GitLab `artifacts:`), restrict who can download it, and never let it reach VCS. Same hazard class as state, so pair with **A6**.
+
+    **Staleness is enforced for you.** The plan records the prior state's `lineage` and `serial`. `apply FILE` compares both against current state before doing anything and refuses on mismatch: *"Saved plan is stale — the state was changed by another operation after the plan was created"*, or *"Saved plan does not match the given state"* for a different lineage. Any apply landing in the gap invalidates the pending plan. Verified in `repos/terraform` at `internal/backend/local/backend_local.go:319-331`; the check dates to **v1.1.0**, so it holds everywhere you'll run. Consequence for pipeline design: a long approval window doesn't risk a wrong apply, it just guarantees a re-plan. Combine with state locking so two applies can't interleave. HCP Terraform handles this server-side with its own refusal reasons.
+
+!!! note "📌 Making a local plan and a CI plan agree"
+    Byte-identical output is the wrong goal — rendering depends on terminal width and TTY detection, and CI has no TTY. Two plans taken at different moments also *should* differ if reality drifted. What you actually want is the same **actions**.
+
+    Compare structurally with `terraform show -json tfplan`. Per the [JSON format spec](https://developer.hashicorp.com/terraform/internals/json-format), `resource_changes[].change.actions` is a closed set — `["no-op"]`, `["create"]`, `["read"]`, `["update"]`, `["delete","create"]`, `["create","delete"]`, `["delete"]` — with `replace_paths` naming what forced a replacement. Project to `{address, actions}`, sort, hash, compare. Never dump that JSON into a build log: `before`/`after` hold real values, and `before_sensitive`/`after_sensitive` only *mark* sensitivity rather than redacting it.
+
+    Then pin what causes illegitimate divergence. CLI version (`required_version` plus an exact version in the runner). Provider versions (committed lock file plus `init -lockfile=readonly`, B3). The lock file carrying the runner's platform hashes (`providers lock -platform=…`, B3). Module versions, which nothing locks (I4). Same backend and workspace (I6). Variable inputs, watching for a gitignored `*.auto.tfvars` or a stray `TF_VAR_*` in your shell. Cloud identity, since `AWS_PROFILE`/`AWS_REGION` differences mean CI is reading a different account altogether. And configuration that is nondeterministic by construction: `timestamp()`, `uuid()`, and `most_recent = true` data-source lookups will differ between any two runs no matter what you pin.
+
+    When the goal is "what I reviewed is what runs", stop comparing: plan once in CI, review that artifact, apply that file. Chase local↔CI equality only to debug why CI sees something you don't, and the answer is nearly always state or credentials.
+
+**Milestone:** You can build a pipeline that posts a plan on pull requests and applies a saved plan on merge, with remote state and locking — passing the plan as a restricted CI artifact rather than committing it, and explaining what makes `apply FILE` refuse a stale one.
 
 ---
 
@@ -777,6 +793,9 @@ You are ready to advance when you can:
 
 !!! warning "📌 `sensitive` leaks through `terraform output -json` / `-raw`"
     `sensitive` redacts values in normal CLI logs and the HCP UI, but the redaction is **narrower than it looks**. It redacts on plan/apply/destroy and on `terraform output` (all). It does **not** redact when you query **by name** (`terraform output db_password` → plaintext), with `-json`, or with `-raw`, nor when a child module's output is used in the root — the flags feed automation, so they bypass redaction by design. Combined with the fact that `sensitive` values are stored in state/plan as **plain text** anyway, this is why `sensitive` alone is *hiding*, not *protecting*. Use `ephemeral` (+ write-only args) to keep a secret out of state entirely. (See [[tf-manage-sensitive-data]]; the full redaction matrix is in [[tut-outputs]].)
+
+!!! warning "📌 A saved plan file is as sensitive as state"
+    State gets all the attention, but `terraform plan -out=FILE` produces a second plaintext artifact with the same problem. [HCDocs](https://developer.hashicorp.com/terraform/cli/commands/plan) puts it plainly: "If your plan includes any sort of sensitive data, even if obscured in Terraform's terminal output, it will be saved in cleartext in the plan file." It carries a full prior-state snapshot and every input variable value, so `sensitive` does nothing for it — the same *hiding not protecting* gap as the redaction warning above. `terraform show -json` on that file exposes the lot, with `before_sensitive`/`after_sensitive` merely *marking* which values are secret. Never commit one, never paste one into a build log. The pipeline handling is in **A3**; the durable fix is the same as for state, which is `ephemeral` and write-only arguments so the value never enters plan or state at all.
 
 !!! danger "📌 `terraform_remote_state` is a state-exfiltration path"
     Granting a config the ability to read another workspace's **outputs** via `terraform_remote_state` necessarily grants it read access to that workspace's **entire state snapshot** — outputs and state live in one object, and anything that can fetch the outputs can fetch the object by direct network request. Secrets in that state are plaintext.
