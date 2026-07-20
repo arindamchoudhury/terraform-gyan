@@ -88,6 +88,16 @@ mv ~/Downloads/terraform /usr/local/bin/      # or:  mv ~/Downloads/tofu /usr/lo
 
 On Windows, run `path` and move `terraform.exe` / `tofu.exe` into one of the listed dirs.
 
+Both projects are Go programs, so a third route exists when no pre-compiled binary matches your platform: build it yourself.
+
+```shell
+git clone https://github.com/hashicorp/terraform      # or .../opentofu/opentofu
+cd terraform
+go install                                            # binary lands in $GOPATH/bin
+```
+
+This is the escape hatch for an unusual OS/arch, not a normal install path — you get whatever `main` currently is, not a released version.
+
 ### Verify and enable completion
 
 ```shell
@@ -281,6 +291,9 @@ So `hashicorp/aws` expands to `registry.terraform.io/hashicorp/aws`. The key on 
 !!! info "OpenTofu — default provider registry"
     The same shorthand `hashicorp/aws` resolves from a **different host** under OpenTofu: `registry.opentofu.org`, not `registry.terraform.io`. The short address is identical, so configs port unchanged; write the full `registry.terraform.io/hashicorp/aws` only if you must pin HashiCorp's registry specifically. Version constraints and the lock file behave the same in both tools.
 
+!!! note "Why some old modules have no `source` at all"
+    Terraform v0.12.26–v0.13 **accepted but ignored** the `source` argument, and v0.12 couldn't auto-install third-party providers at all. Modules written to work on both eras therefore omit `source` entirely for `hashicorp`-namespace providers and rely on inference. You'll still meet this in long-lived repos. It isn't a style choice — it's a fossil, and there's no reason to write new code that way.
+
 !!! note "Provider inference — convenient, discouraged"
     If you omit `required_providers` entirely, Terraform will *guess*: it assumes the resource prefix is the local name and the namespace is `hashicorp`, so `aws_instance` → `hashicorp/aws`, `random_id` → `hashicorp/random`. It works, but you lose the ability to pin a version — and an untested provider upgrade can silently break you. Always declare providers explicitly.
 
@@ -292,19 +305,68 @@ So `hashicorp/aws` expands to `registry.terraform.io/hashicorp/aws`. The key on 
     - **Not 1:1.** One vendor can ship several providers (Azure: `azurerm`/`azuread`/`azapi`; AWS: `aws` + `awscc`), and some providers wrap **no vendor at all** — the utility providers `random`, `null`, `time`, `tls`, `terraform_data`. That's why the address carries an explicit namespace: `hashicorp/aws` and a community `someorg/aws` could both exist.
     - **Independent versioning.** A provider is its own artifact with its own release cadence and registry namespace. **Provider version ≠ vendor API version** — the AWS provider is on major 6 while AWS-the-service has no "v6." Which is precisely what the next section pins.
 
+### Providers that don't come from the public registry
+
+Two cases sit outside the `hashicorp/aws`-from-the-registry default, and both explain why the address has an optional hostname at all.
+
+**The built-in provider.** Terraform ships exactly one provider inside the binary, addressed `terraform.io/builtin/terraform`. It backs the **`terraform_remote_state`** data source (Chapter 15's subject — reading one workspace's outputs from another). You never declare it in `required_providers`; it's simply there. The only time you see the address is in an error message.
+
+!!! warning "`terraform.io/builtin/terraform` is not `hashicorp/terraform`"
+    There is an old registry provider named `hashicorp/terraform`. It is a **different, long-obsolete thing** and is incompatible with modern Terraform. If a stale config or an error message points you at it, that's a bug to fix, not a provider to install.
+
+**In-house providers.** If your org wraps an internal platform in its own provider, you don't publish it to the public registry. Two distribution routes:
+
+1. **A private registry** — anything implementing the provider registry protocol. You reference it by putting its hostname in the source address, which is exactly what the optional hostname is for:
+
+    ```hcl
+    terraform {
+      required_providers {
+        mycloud = {
+          source  = "terraform.example.com/examplecorp/ourcloud"
+          version = ">= 1.0"
+        }
+      }
+    }
+    ```
+
+2. **A filesystem or network mirror** — drop the plugin binaries into a local mirror directory laid out by address, and `init` finds them with no registry call at all:
+
+    ```
+    terraform.example.com/examplecorp/ourcloud/1.0.0/linux_amd64/terraform-provider-ourcloud
+    ```
+
+    The same mechanism serves air-gapped environments, where even public providers must come from a mirror rather than the internet.
+
 ### The version constraint
 
-`version = "~> 6.0"` is a constraint, not an exact pin. The operators:
+`version = "~> 6.0"` is a constraint, not an exact pin. A constraint string is one or more **conditions** — an operator plus a version number — separated by commas, and a version qualifies only if it satisfies **every** condition:
 
 | Constraint | Meaning |
 |---|---|
 | `>= 6.0` | at least 6.0, no upper bound |
+| `> 6.0` / `<= 6.53.0` / `< 7.0` | the other three comparisons |
+| `>= 6.0.0, < 7.0.0` | an explicit range — two conditions, comma-separated |
 | `~> 6.0` | major 6, any minor ≥ 0 (`>= 6.0, < 7.0`) — blocks the next major |
 | `~> 6.53.0` | pessimistic on patch: allows `6.53.x` but **not** `6.54.0` |
-| `= 6.53.0` | exactly this version |
+| `!= 6.52.0` | everything *except* this version — for dodging one known-bad release |
+| `= 6.53.0` (or bare `6.53.0`) | exactly this version; **cannot** be combined with other conditions |
 | (omitted) | any version — **not recommended** |
 
+`~>` is the **pessimistic** operator: only the right-most component you wrote may increment. That's the whole rule, and it explains both rows — `~> 6.0` lets the minor move, `~> 6.53.0` lets only the patch move.
+
 `~> 6.0` is the common root-module choice: it accepts safe minor/patch updates within major 6 but blocks major 7, where breaking changes live. (Provider **6** is current — 6.0 went GA in April 2026, latest `6.54.0` as of 2026-07-08. HashiCorp's own AWS tutorial still shows `~> 5.92`; that works but is a major behind. New projects pin `~> 6.0`.)
+
+!!! warning "Pre-release versions are invisible to every operator except `=`"
+    A pre-release carries a dash suffix: `6.55.0-beta1`. Terraform will **never** match one on `>`, `>=`, `<`, `<=`, or `~>` — so `~> 6.0` silently skips right past `6.55.0-beta1` and picks the newest stable. That's the sane default, but it means you cannot get a beta by loosening a range. The only way to select one is to name it exactly:
+
+    ```hcl
+    version = "= 6.55.0-beta1"
+    ```
+
+    The same rule applies to `required_version` and to module versions. If you're wondering why a published beta "isn't being found," this is why.
+
+!!! note "What happens when no version qualifies"
+    Terraform checks constraints for itself, its providers, and its modules before doing anything. For providers and modules it takes the **newest already-installed** version that qualifies, and downloads the newest qualifying version only if none is installed. If it can't obtain an acceptable version — or is itself the wrong version — it refuses to run **any** `plan`, `apply`, or `state` operation. There's no partial-run mode; dependency resolution is a gate.
 
 !!! note "Two different pinning disciplines: the CLI floor vs. the provider pin"
     `required_version` and provider `version` look similar but want **opposite** styles.
@@ -315,6 +377,17 @@ So `hashicorp/aws` expands to `registry.terraform.io/hashicorp/aws`. The key on 
     | provider `version` | a **bounded recent major**: `~> 6.0` | provider majors carry breaking changes; block an untested newer major |
 
     `required_version = ">= 1.2"` is honest here because this config uses only basic blocks (`terraform`, `provider`, `data`, `resource`), all present since Terraform 1.0. Writing `>= 1.15` would be *wrong* — it locks out everyone on 1.2–1.14 for no benefit, since nothing needs a 1.15 feature. Only raise the floor when you actually use something newer (dynamic module sources, output `type`, `convert()`). Over-pinning bites hardest with **modules**: a module declaring `>= 1.15` can't be consumed by a team on 1.14 even if it needs nothing from 1.15.
+
+There is a *third* pinning discipline, and it's the one most people meet late and painfully: **where** the constraint is written matters as much as what it says. A root module and a reusable child module want opposite styles for the same provider.
+
+| Module kind | Style | Why |
+|---|---|---|
+| **Root module** (where you run `apply`) | bounded: `~> 6.0` — a lower **and** upper bound | you own the deployment; pin the range you actually tested |
+| **Reusable child module** (consumed by others) | minimum only: `>= 6.0` | you don't know your callers' needs; an upper bound forces every one of them to upgrade in lockstep |
+
+The reason the two differ is how Terraform combines them. **Every constraint on a provider — from the root module and from every child module in the tree — is treated as equal, and the selected version must satisfy all of them simultaneously.** They intersect. So a child module that pins `~> 5.0` and a root that pins `~> 6.0` produce an empty intersection and Terraform simply refuses to run. The child module gains nothing from its upper bound and has broken every caller on major 6.
+
+This is the same diamond-dependency problem libraries hit in every ecosystem, and it has the same fix: **applications pin, libraries permit.**
 
 !!! note "Coming from Python? Why not just pin `= 6.53.0`"
     Because you already *are* pinning exactly — in a different file. Terraform splits the two jobs Python bundles differently:
@@ -363,6 +436,9 @@ Terraform has been successfully initialized!
 ```
 
 `init` resolves the constraint against the registry, downloads the chosen provider into `.terraform/`, and writes `.terraform.lock.hcl` recording the exact version plus checksums. From then on, plan and apply use the version **in the lock file**, not the newest the constraint allows — that's the whole point of the lock file. Commit it.
+
+!!! note "Committing the lock file matters more once you're on HCP Terraform"
+    Locally, `.terraform/` persists between runs, so `init` is a one-off. HCP Terraform and Terraform Enterprise install providers **on every run** in a fresh environment. When a lock file is present in the repo they install the locked versions; when it isn't, every run re-resolves and you get whatever is newest that day. Committing the lock file is what makes a remote run reproducible at all. (Chapter 21 covers HCP Terraform.)
 
 ```mermaid
 flowchart LR
@@ -511,6 +587,14 @@ data.aws_ami.ubuntu
 aws_instance.app_server
 ```
 
+Two entries, and the first one is worth a second look. `data.aws_ami.ubuntu` **manages nothing** — it's a read-only lookup — yet Terraform tracks it in state anyway. State is a record of everything Terraform *knows*, not only of what it *owns*: a plan is computed from three inputs at once — the last-known state, the current config, and fresh reads from the providers — and the data source's recorded result is part of that picture. (Chapter 9 is the full treatment.)
+
+`terraform state list` prints addresses only. For the full record, including every attribute the provider filled in:
+
+```shell
+terraform show
+```
+
 That's the milestone met: a fresh directory, `init`-ed, with one real resource provisioned from scratch.
 
 ## 🧪 Lab: your first resource on LocalStack
@@ -614,6 +698,8 @@ tflocal destroy
 - **Hard-coding credentials in a `provider` block.** They end up in Git and state. Use the environment/credential chain or a variable.
 - **Omitting the version constraint.** Without one, `init` grabs whatever's newest, and a breaking major can slip in on the next `init -upgrade`. Always pin `~> MAJOR.0` in a root module.
 - **`required_version` set too high.** A floor of `>= 1.15` on a config that needs nothing from 1.15 locks out teammates for no reason. Set the floor at the oldest feature you actually use.
+- **An upper bound in a reusable module.** `~> 6.0` inside a child module intersects with every caller's constraint and can make the module uninstallable. Child modules specify a minimum only.
+- **Expecting a range to pick up a pre-release.** `~> 6.0` will never select `6.55.0-beta1`. Name it exactly with `=` or you won't get it.
 - **Cross-platform lock mismatch.** A macOS-generated lock file breaks Linux CI. Pre-seed hashes with `terraform providers lock -platform=…`, or use OpenTofu 1.12+.
 
 ## Exercises
@@ -628,7 +714,8 @@ tflocal destroy
 - Terraform is a single binary; install via a package manager (`hashicorp/tap` on macOS to dodge the BSL v1.5.7 freeze) or by hand, then verify with `terraform version`.
 - A project is a directory of `.tf` files — filenames are for humans. Convention: `terraform.tf`, `main.tf`, `variables.tf`, `outputs.tf`.
 - **Declare** providers with `required_providers` (source address + version constraint); **configure** them with a `provider` block (auth + scoping, root-module only). Two jobs, two blocks.
-- Pin the **provider** to a bounded recent major (`~> 6.0`); set the **CLI** floor honestly (`>= 1.2`) — opposite disciplines.
+- Pin the **provider** to a bounded recent major (`~> 6.0`); set the **CLI** floor honestly (`>= 1.2`) — opposite disciplines. A third split cuts across both: **root modules bound, reusable modules set a minimum only**, because all constraints in the tree intersect.
+- Constraints are comma-separated conditions over `= != > >= < <= ~>`; `~>` lets only the right-most component increment, and **no operator but `=` ever matches a pre-release**.
 - `init` installs the provider into `.terraform/` and writes `.terraform.lock.hcl`. **Commit the lock file; ignore `.terraform/`, `*.tfstate`, and `*.tfvars`.** Pre-seed cross-platform hashes for teams.
 - The first-project loop is `fmt` → `validate` → `init` → `apply` → inspect state — one resource created from scratch, with the plan review as the safety gate.
 
@@ -641,6 +728,7 @@ tflocal destroy
 - [Install Terraform (AWS Get Started)](../sources/terraform-tutorials/tf-install-cli.md)
 - [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md)
 - [Provider Requirements](../sources/terraform-docs/provider-requirements.md)
+- [Version Constraints](../sources/terraform-docs/tf-expr-version-constraints.md) (operators, comma-separated conditions, pre-releases, root-vs-module discipline)
 - [TID Ch 2 — Terraform HCL components](../books/tid/chapters/02-hcl-components.md) §2.3–2.4 (settings block, declare/configure providers)
 - Topic page: [Providers](../topics/providers.md)
 - [Version & Certification Facts](../research-cache/version-facts.md) (current CLI/provider versions, BSL/package-manager freeze)
