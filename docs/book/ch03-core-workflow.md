@@ -535,10 +535,22 @@ tflocal plan
 ```
   # aws_s3_bucket.lab will be updated in-place
   ~ resource "aws_s3_bucket" "lab" {
-      ~ tags = { + "Env" = "lab" }
+        id                          = "workflow-lab-bucket"
+      ~ tags                        = {
+          + "Env" = "lab"
+        }
+      ~ tags_all                    = {
+          + "Env" = "lab"
+        }
+        # (14 unchanged attributes hidden)
+
+        # (4 unchanged blocks hidden)
     }
+
 Plan: 0 to add, 1 to change, 0 to destroy.
 ```
+
+`tags_all` changes alongside `tags` because it is the computed union of your tags and any `default_tags` set on the provider. With no provider defaults the two are identical. The `unchanged attributes hidden` lines are Terraform keeping the diff readable; everything it doesn't mention is staying put.
 
 **`-/+` replace.** Now change the `bucket` name. A bucket can't be renamed in place — the name is a **forced-new** attribute — so the same-looking edit flips to a destroy-then-create:
 
@@ -552,10 +564,21 @@ resource "aws_s3_bucket" "lab" {
 ```
   # aws_s3_bucket.lab must be replaced
 -/+ resource "aws_s3_bucket" "lab" {
-      ~ bucket = "workflow-lab-bucket" -> "workflow-lab-bucket-renamed" # forces replacement
+      ~ arn                         = "arn:aws:s3:::workflow-lab-bucket" -> (known after apply)
+      ~ bucket                      = "workflow-lab-bucket" -> "workflow-lab-bucket-renamed" # forces replacement
+      ~ bucket_domain_name          = "workflow-lab-bucket.s3.amazonaws.com" -> (known after apply)
+      ~ id                          = "workflow-lab-bucket" -> (known after apply)
+        tags                        = {
+            "Env" = "lab"
+        }
+      # ... more attributes flipping to (known after apply) ...
+        # (3 unchanged attributes hidden)
     }
+
 Plan: 1 to add, 0 to change, 1 to destroy.
 ```
+
+Only `bucket` carries `# forces replacement`. Everything else flipping to `(known after apply)` is a consequence: the replacement bucket is a new object, so its ARN, domain name and ID are all unknown until it exists. `tags` has no marker at all because it isn't changing.
 
 That `1 to destroy` in the summary is the whole lesson of the chapter, made concrete and harmless: an "edit" that is really a rebuild. On a bucket holding objects, the replacement would drop them — which is why you read the plan. Apply it, then experiment with `-replace`:
 
@@ -572,6 +595,10 @@ tflocal destroy
 
 ```
 Plan: 0 to add, 0 to change, 1 to destroy.
+
+aws_s3_bucket.lab: Destroying... [id=workflow-lab-bucket-renamed]
+aws_s3_bucket.lab: Destruction complete after 0s
+
 Destroy complete! Resources: 1 destroyed.
 ```
 
