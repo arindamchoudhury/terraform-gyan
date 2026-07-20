@@ -230,7 +230,37 @@ variable "names" {
     ])
     ```
 
-    That came out sorted. Nothing promises it will stay that way for numbers, so sort explicitly when the order matters.
+    That came out sorted. Nothing promises it will stay that way for numbers.
+
+    `sort()` is not the fix. It takes a `list(string)`, so numbers are converted before they are compared and you get a lexicographical order over their string forms:
+
+    ```
+    > sort(toset([10, 6, 4, 5]))
+    tolist([
+      "10",
+      "4",
+      "5",
+      "6",
+    ])
+    ```
+
+    `"10"` sorts before `"4"`, and the numbers come back as strings.
+
+!!! tip "Getting numeric order anyway"
+    The cleanest answer is to not create the problem. Lists preserve order, so keep the values in a list and only convert to a set at the point something demands one, such as `for_each` or a `set`-typed module input.
+
+    When you are handed a set of numbers and genuinely need them in numeric order, pad each one to a fixed width first. Equal-width digit strings compare lexicographically the same way the numbers compare, so `sort()` gives the right answer and `tonumber()` undoes the padding:
+
+    ```hcl
+    [for s in sort([for n in toset([10, 6, 4, 5, 100]) : format("%09d", n)]) : tonumber(s)]
+    # [4, 5, 6, 10, 100]
+    ```
+
+    The padding width has to exceed your largest value, and the trick only holds for non-negative integers. Negative numbers sort backwards because the minus sign is just another character, and floats break on the decimal point.
+
+    The third option is a provider-defined function (Terraform 1.8+, OpenTofu 1.7+), where a provider ships a real numeric sort. That buys correctness for every element type at the cost of a provider dependency for one sort.
+
+    For `for_each` none of this matters. Keys are strings and set order does not affect resource addresses. Numeric order only earns the effort when you index the result or feed it somewhere that is itself ordered.
 
 The `set*` functions (`setunion`, `setsubtract`, `setintersection`, `setproduct`) return sets too. `distinct()` is the one that looks like it should and doesn't. It returns a **list**.
 
