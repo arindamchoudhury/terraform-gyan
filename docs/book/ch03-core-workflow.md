@@ -93,12 +93,12 @@ There is a governance consequence. A provider upgrade rewrites the committed `.t
 
 ### Checksums: trust on first use
 
-The lock file has been a black box so far. Here is what `init` actually writes, for one provider:
+The lock file has been a black box so far. Pin `hashicorp/random` to an exact `3.9.0` in `required_providers`, run `init`, and this is what lands:
 
 ```hcl
 provider "registry.terraform.io/hashicorp/random" {
   version     = "3.9.0"
-  constraints = "~> 3.6"
+  constraints = "3.9.0"
   hashes = [
     "h1:q/uaUTBdKgAmZESrwsoeDQff9uUA/cI/N5ZKNgVwa9c=",
     "zh:161ad0bd9a75768c82f53fb6e7172a9d8be2d4889b012645a34795031aaf1bf1",
@@ -110,7 +110,7 @@ provider "registry.terraform.io/hashicorp/random" {
 }
 ```
 
-`version` is the selection `init` made. `constraints` records what the configuration asked for. Then `hashes`, where the thing to notice is that a *single* version carries *many* checksums.
+`version` is the selection `init` made and `constraints` records what the configuration asked for. They match here only because the pin was exact; under a range like `~> 3.6` the constraint would still read `~> 3.6` while `version` showed whichever release `init` picked. Then `hashes`, where the thing to notice is that a *single* version carries *many* checksums.
 
 The count comes from platforms. A provider ships a separate package for each one, meaning `linux_amd64`, `darwin_arm64`, `windows_amd64` and the rest, and every package has its own hash. Fourteen entries here for a provider published on thirteen platforms.
 
