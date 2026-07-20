@@ -72,25 +72,59 @@ Terraform has been successfully initialized!
 
 Notice the provider was **reused from the lock file**, not re-resolved. That is the lock file doing its job: once `init` has chosen a version, every later `init`, `plan`, and `apply` uses that exact version until you deliberately upgrade.
 
-!!! note "The dependency lock file is a checksum record, not just a version pin"
-    `.terraform.lock.hcl` stores each provider's resolved version *and* its checksums. The checksums are what make an install tamper-evident: if the registry ever served a different binary for the same version, `init` would refuse it. By default, though, `init` records hashes only for **your** platform. A lock file generated on macOS then breaks a teammate's Linux CI with an *inconsistent dependency lock file* error. Pre-seed every platform your team uses:
+!!! warning "The lock file locks **providers only** — never module versions"
+    A configuration has two kinds of external dependency, and `.terraform.lock.hcl` records exactly one of them. Module version selections are **not** locked. When `init` installs a module it selects the newest version matching the constraint, and records that choice in `.terraform/modules/modules.json` — which is *not* committed. Within your working directory that manifest holds the version steady, so re-running `init` reuses it. But a teammate's fresh clone, or a CI runner with an empty `.terraform/`, resolves the constraint from scratch and can land on a newer module than you ever tested. Nothing in version control pins it. For a registry module the fix is an **exact version constraint** (`version = "6.6.1"`); for a Git source, pin a tag or commit in `ref=`.
 
-    ```shell
-    terraform providers lock \
-      -platform=linux_amd64 \
-      -platform=darwin_arm64 \
-      -platform=windows_amd64
-    ```
+    Three things also make `init` discard the recorded module and re-resolve: `-upgrade`, a changed `source`, or a recorded version that no longer satisfies the constraint.
 
-    Commit the lock file. In CI, add `terraform init -lockfile=readonly` so a run *fails* rather than silently rewriting the lock you committed.
-
-!!! info "OpenTofu — cross-platform checksums, automatically"
-    `tofu init` records the **full cross-platform hash set** on its own (OpenTofu 1.12), so the `providers lock -platform=…` step above is Terraform-specific. The lock file is still named `.terraform.lock.hcl` and is byte-compatible, so a mixed team can share one. This removes the single most common `init` footgun for teams on mixed operating systems.
+Commit the lock file — dependency changes then go through code review like configuration changes. In CI, add `terraform init -lockfile=readonly` so a run *fails* rather than silently rewriting the lock you committed.
 
 When you *want* a newer allowed version, a plain `init` won't give it to you — it honors the lock. The two upgrade cases:
 
 - **Locked version still satisfies the constraint, you want the newest allowed** → `terraform init -upgrade`. It ignores the lock, re-resolves to the newest permitted version, and rewrites the lock file.
 - **Locked version now violates the constraint** (you bumped `~> 5.0` to `~> 6.0`) → a plain `init` is forced to re-select and rewrites the lock on its own.
+
+### Checksums: trust on first use
+
+The lock file's `hashes` list is what makes an install tamper-evident. Every package `init` installs must match **at least one** checksum already recorded for that version; otherwise `init` refuses it:
+
+```
+Error while installing hashicorp/azurerm v2.1.0: the current package for
+registry.terraform.io/hashicorp/azurerm 2.1.0 doesn't match any of the
+checksums previously recorded in the dependency lock file.
+```
+
+That is a **trust-on-first-use** model, and the name is the whole security story. Terraform does not know whether a provider is trustworthy. It knows whether *today's* package matches what you accepted the *first* time. So the verification you owe — checking the signing key fingerprint `init` prints, reading the publisher, whatever your compliance regime demands — happens once, when the provider first enters the lock file. After that Terraform enforces your decision for you.
+
+Where the package comes from on that first install decides whether the lock file is portable:
+
+- **From an origin registry with signed checksums** — Terraform treats every signed checksum as valid once one matches, so it records hashes for **your platform and every other published platform** at once. The lock file works everywhere.
+- **From a filesystem or network mirror** — Terraform can only verify the platform it is actually running on, so it records only that platform's hashes. **The configuration is now unusable on any other platform.** A macOS-generated lock file then breaks a teammate's Linux CI with an *inconsistent dependency lock file* error.
+
+Pre-seed every platform your team uses, which downloads and verifies the official packages for each:
+
+```shell
+terraform providers lock \
+  -platform=linux_amd64 \
+  -platform=darwin_arm64 \
+  -platform=windows_amd64
+```
+
+!!! info "OpenTofu — cross-platform checksums, automatically"
+    `tofu init` records the **full cross-platform hash set** on its own (OpenTofu 1.12), so the `providers lock -platform=…` step above is Terraform-specific. The gate is that `init` must reach the origin registry directly, which is the default — point `provider_installation` at a mirror and the per-platform behavior above returns. The lock file is still named `.terraform.lock.hcl` and is byte-compatible, so a mixed team can share one. This removes the single most common `init` footgun for teams on mixed operating systems.
+
+### Reading a lock-file diff
+
+`init` rewrites this file on its own, so it shows up in code review constantly. Four diffs, four meanings:
+
+| Diff | What happened |
+|---|---|
+| A whole new `provider` block | You added a provider requirement (directly, or via a module that has one). Review the version and the signing key. |
+| `version` changed, all `hashes` replaced | An upgrade. Each version ships its own packages, so the entire hash set turns over. |
+| Only new `hashes` lines, nothing else | Not an upgrade — Terraform is migrating hashing schemes. Safe. |
+| A `provider` block deleted | The provider is gone from **both** config and state. Re-adding it later is treated as brand new: no guarantee of the same version, and no checksum continuity. |
+
+The third row is the one that confuses people, and the prefixes explain it. `zh:` ("zip hash") is the legacy scheme — a SHA256 of the official `.zip` package indexed by the registry protocol. `h1:` ("hash scheme 1") is the current one, computed from the package **contents**, which is why it works for an unpacked mirror directory or a recompressed zip while `zh:` does not. Both coexist because the registry protocol still serves `zh:`, so a first install is mostly `zh:` entries, and Terraform opportunistically adds the matching `h1:` each time it installs the provider on a new platform. Running `providers lock -platform=…` records both schemes for every listed platform up front, which stops the drip.
 
 ## `terraform plan` — compute the diff
 
@@ -130,6 +164,9 @@ data.aws_ami.ubuntu: Read complete after 1s [id=ami-0026a04369a3093cc]
 
 Plan: 1 to add, 0 to change, 0 to destroy.
 ```
+
+!!! note "Three planning modes, one engine"
+    Everything above is the **default** mode: reconcile infrastructure to config. There are two others, and both appear later in this chapter. **Destroy** mode (`plan -destroy`, or the `terraform destroy` alias) plans the removal of everything in the configuration. **Refresh-only** mode (`plan -refresh-only`) updates state from reality and proposes no infrastructure change at all. Same mechanics each time — build the graph, walk it, diff — only the target end state differs. And **every mode begins with a refresh**, which is why refresh-only is the niche one: the other two already did it.
 
 Two things to read here. The `Plan:` summary line is your headline — *add / change / destroy* counts you can sanity-check at a glance. And `(known after apply)` marks attributes AWS won't assign until the resource actually exists (an instance's ARN, its public IP). Terraform can't show you a value it doesn't have yet, so it names it as pending rather than guessing.
 
@@ -247,6 +284,17 @@ So in the VPC move above, Terraform ran: destroy the old instance, create the VP
 
 `destroy` walks the same graph in **reverse**. Dependents die before their dependencies: route-table associations first, then subnets and the internet gateway, and the VPC last. It is the mirror image of creation order, for the same reason — you can't delete a VPC while subnets still live inside it.
 
+The graph is *acyclic* by requirement, not by convention. If your references form a loop — A reads an attribute of B, which reads C, which reads A — there is no valid order, and Terraform refuses to plan at all:
+
+```
+Error: Cycle: aws_security_group.app, aws_security_group.db
+```
+
+The error names every node in the loop, which is usually enough to find it. The fix is to break one edge. Most accidental cycles come from two resources that merely need to *share a value*, wired to each other's attributes to get it; route that value through a `variable` or `locals` instead and the edge disappears without changing behavior. Cycles are rare, and a persistent one usually means the architecture wants simplifying rather than a clever workaround.
+
+!!! info "Cycle errors become readable — 1.16, not yet released"
+    The comma-joined single line above is what 1.15 prints, and it is hard to read on a large config where the loop runs to a dozen nodes. A change already merged for **1.16** (unreleased as of this writing; it ships in the 1.16 alphas) renders each node on its own line, reverses the order so it reads in reference order rather than graph-traversal order, and picks a consistent starting node so repeated runs print the same thing. Same error, same fix — just legible.
+
 !!! note "Prefer implicit dependencies to `depends_on`"
     Because a reference creates the dependency, most ordering is automatic and correct. The explicit `depends_on` meta-argument (I1) is a fallback for the rare case where a dependency is real but *invisible* to Terraform — an IAM policy that must exist before an app can use a bucket, with no attribute linking them. Reach for it only when there's no attribute to reference. An over-used `depends_on` serializes work the graph could have parallelized.
 
@@ -344,6 +392,7 @@ The four-verb loop is the core, but a fluent operator leans on a handful of supp
 | `terraform output` | Print output values from state. `-json` for scripts; `terraform output -raw name` for a single bare value. |
 | `terraform graph` | Emit the dependency graph in Graphviz DOT format (pipe to `dot -Tsvg` to see it). |
 | `terraform state list` | List every resource address Terraform tracks — your fastest "what's in here?" check. |
+| `terraform get` | Download the config's modules only, without the rest of `init`. Already-downloaded modules are reused and not even checked for updates unless you pass `-update`. |
 | `terraform providers` | Show the providers the config requires (and `providers lock` / `mirror` / `schema` subcommands). |
 | `terraform version` | Show the CLI version and whether a newer one is available. |
 
@@ -504,7 +553,8 @@ You've now produced all four symbols and both teardown paths against a real API 
 - **`-auto-approve` in an interactive shell.** It removes the one moment that catches an accidental destroy. Keep it in non-interactive CI, paired with a saved-plan review.
 - **`terraform destroy` against a workspace holding production.** It deletes everything, no questions beyond one `yes`. Guard irreplaceable resources with `prevent_destroy`; never destroy a workspace you haven't just inspected.
 - **Routine `-target`.** It plans against a partial view and hides drift. It's a recovery tool. If it's part of your normal workflow, split the config instead.
-- **Cross-platform lock mismatch.** A macOS-generated `.terraform.lock.hcl` breaks Linux CI. Pre-seed with `terraform providers lock -platform=…`, or use OpenTofu 1.12+.
+- **Cross-platform lock mismatch.** A lock file whose provider was first installed from a *mirror* records only the installing platform's checksums, so macOS breaks Linux CI. Pre-seed with `terraform providers lock -platform=…`, or use OpenTofu 1.12+.
+- **Assuming the lock file pins modules.** It pins providers only. The module manifest that holds a version steady lives in uncommitted `.terraform/`, so a fresh clone or CI runner re-resolves to the newest matching version. Pin with an exact constraint or a Git `ref`.
 - **Forgetting to re-`init` after adding a module or provider.** `plan` will tell you the working directory is out of date. Re-run `init`.
 
 ## Exercises
@@ -517,10 +567,11 @@ You've now produced all four symbols and both teardown paths against a real API 
 ## Summary
 
 - Everything is a rotation of four verbs: **`init`** (prepare the directory, install providers/modules, write the lock file), **`plan`** (compute the diff, change nothing), **`apply`** (execute the diff, write state), **`destroy`** (tear down).
-- `plan` diffs three inputs: prior state, your config, and a fresh refresh of reality. `plan` and `apply` refresh in memory before diffing, so drift is detected.
+- `.terraform.lock.hcl` locks **providers only** — module versions are held only by the uncommitted `.terraform/modules` manifest, so pin them in the config. Its checksums are **trust-on-first-use**: verify once at first install, and Terraform enforces that decision afterwards. A first install from a mirror records only your platform's hashes — pre-seed with `providers lock -platform=…` (unnecessary on OpenTofu 1.12+). New `h1:` lines in a diff are scheme migration, not an upgrade.
+- `plan` diffs three inputs: prior state, your config, and a fresh refresh of reality. `plan` and `apply` refresh in memory before diffing, so drift is detected. Three planning modes share the engine: default, destroy, and refresh-only — each begins with a refresh.
 - **Read the plan.** Four symbols: `+` create, `~` update in-place, `-/+` destroy-then-create (a forced-new attribute changed), `-` destroy. The `-/+` is the one that hides inside an "edit" — check the summary counts and the `must be replaced` header.
 - Save a plan with `plan -out=FILE` and `apply FILE` to guarantee that what you reviewed is exactly what runs. This is the CI/CD backbone.
-- You declare *what*; the **dependency graph** (built from references) decides *when* — create in dependency order, destroy in reverse, parallel where possible. Prefer implicit references to `depends_on`.
+- You declare *what*; the **dependency graph** (built from references) decides *when* — create in dependency order, destroy in reverse, parallel where possible. Prefer implicit references to `depends_on`. The graph must be acyclic; a `Cycle:` error names the loop, and the fix is to route a shared value through a variable or local.
 - Two teardown blast radii: remove one resource from config + `apply` (surgical), or `terraform destroy` (the whole workspace, irreversible). Guard precious resources with `prevent_destroy`.
 - Force one deliberate rebuild with `apply -replace=ADDR` (supersedes deprecated `taint`). Reconcile drift into state with `apply -refresh-only`. Use `-target` only to dig out of a mistake.
 - Run `fmt` and `validate` reflexively; lean on `show`, `output`, `state list`, and `graph` to inspect without touching infrastructure.
@@ -535,6 +586,8 @@ You've now produced all four symbols and both teardown paths against a real API 
 - [Manage infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-manage.md) — plan symbols `~` / `-/+`, the `-out` warning, dependency-graph ordering
 - [Destroy infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-destroy.md) — the two teardown paths, `-` symbol, reverse-dependency order
 - [Terraform CLI Overview (command index)](../sources/terraform-docs/tf-cli-commands.md) — the full command surface, `-chdir`, tab-completion
+- [Dependency Lock File](../sources/terraform-docs/tf-dependency-lock.md) — providers-only locking, trust-on-first-use, `zh:`/`h1:` schemes, the four lock-file diffs
+- [TID Ch 5 — The Terraform plan](../books/tid/chapters/05-terraform-plan.md) — the DAG, planning modes, cycles and cascading replacements
 - [The `-exclude` flag (OpenTofu)](../sources/opentofu-docs/ot-exclude-flag.md) — negative targeting
 - Topic page: [Core workflow](../topics/core-workflow.md)
 - [Version & Certification Facts](../research-cache/version-facts.md)

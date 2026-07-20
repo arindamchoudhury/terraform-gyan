@@ -24,6 +24,9 @@ Version constraints say which versions are *potentially compatible*. After Terra
 
 > ⚠️ **Only providers are locked.** The lock file does **not** record module version selections. Terraform always selects the newest available module version matching the constraint. To pin a module, use an **exact version constraint**.
 
+!!! note "Nuance: \"always selects the newest\" describes *installation*, not every `init`"
+    Verified against the Terraform source (`repos/terraform`, `internal/initwd/module_install.go:207-223`, `main` @ `c07e79c1c8`). Once installed, a module is recorded in `.terraform/modules/modules.json` and **reused** by later `init` runs. Terraform re-resolves only when `-upgrade` is passed, the `source` address changed, or the recorded version no longer satisfies the constraint. `terraform get` is the same: already-downloaded modules "will not be redownloaded or checked for updates unless the `-update` flag is specified". The docs' sentence is about which version gets picked *when* a selection happens — not a claim that every `init` re-resolves. The practical hazard is unchanged and is really about *portability*: that manifest lives in uncommitted `.terraform/`, so a fresh clone or a clean CI runner selects independently of yours.
+
 ## Lock file location
 
 - Belongs to the **configuration as a whole**, not to each module. Terraform creates it in — and expects to find it in — the **current working directory**, which is the root module's directory.
