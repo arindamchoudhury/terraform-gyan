@@ -410,11 +410,21 @@ You are ready to advance when you can:
 !!! note "📌 Governing module versions — no lock file to lean on"
     `.terraform.lock.hcl` records **providers only**. Module selections live in uncommitted `.terraform/modules/modules.json`, so a fresh clone or a clean CI runner re-resolves the constraint and can land on a version nobody tested. `terraform init -lockfile=readonly` has nothing to check. Ch3 states the hazard; the controls belong here, in three layers.
 
-    The in-scope control here is the **exact pin**: `version = "6.6.1"` for registry modules, and for Git sources a full commit SHA in `ref=` rather than a tag, since a tag can be force-moved out from under the pin. Enforcing that pin is **A5**; keeping pinned versions current is **A3**.
+    The in-scope control here is the **exact pin**: `version = "6.6.1"` for a registry module. Enforcing that pin is **A5**; keeping pinned versions current is **A3**.
 
     Don't try to commit `modules.json` as a substitute. `Dir` is repo-relative so it looks portable, but it's an undocumented internal snapshot that `init` rewrites, with no readonly enforcement.
 
-    ⚠️ **Open question, spans I4 and A3:** exact pinning and bot-driven updates may pull against each other for Git sources. Renovate resolves *tags*, so a SHA-pinned `ref=` likely can't be auto-bumped. Registry modules get both properties; Git sources may force a choice between an immutable pin and automated updates. Confirm actual Dependabot/Renovate behavior against a SHA-pinned `ref=` before writing either topic up.
+!!! warning "📌 Git module sources: immutable pin *or* automated updates, not both"
+    A registry module gets both properties at once — `version = "6.6.1"` is exact, and both update bots understand it. A **Git** source forces a real choice, and this is the reason to prefer registry sources where you have one.
+
+    **`ref=<tag>`** is what the bots can move, but a Git tag is mutable: whoever controls the source repo can force-move `v1.2.0` to different code and your "pin" follows it silently. Mitigate by trusting the publisher, or by requiring tag-protection rules on the source repo.
+
+    **`ref=<full commit SHA>`** cannot be moved by anyone, which is the supply-chain-safe answer and mirrors the advice to SHA-pin GitHub Actions. The cost is that **no update bot will move it for you**, confirmed on both:
+
+    - **Renovate** — not supported natively. The maintainer's reason in [discussion #31006](https://github.com/renovatebot/renovate/discussions/31006) is architectural: Renovate's HCL parser returns an AST with comments stripped, so it has nowhere to keep the version↔SHA annotation its Docker/Actions digest pinning relies on. Open request, no timeline. Worse, a global `pinDigests: true` *breaks* on Git-sourced Terraform modules ([#14790](https://github.com/renovatebot/renovate/issues/14790)); set `"terraform": { "pinDigests": false }`. A custom regex manager is the community workaround.
+    - **Dependabot** — same gap, tracked at [#10787](https://github.com/dependabot/dependabot-core/issues/10787) (SHA-pinned source reports "no update needed" even when newer commits exist) and [#10926](https://github.com/dependabot/dependabot-core/issues/10926). It considers semantic versions and skips SHA refs.
+
+    **How to choose.** Third-party module you don't control: SHA-pin and accept manual upgrades, because the mutable-tag risk is a real supply-chain exposure. Module in your own org with protected tags: pin the tag and keep the automation, since you control whether the tag can move. Either way this is a deliberate trade, not an oversight — verified 2026-07-20.
 
 !!! example "🧪 Lab (KL)"
     [Lab 06 — making code dynamic & reusable](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_06_making_code_dynamic_and_reusable) (reusable-module section).
@@ -690,6 +700,8 @@ You are ready to advance when you can:
 
 !!! note "📌 Automated dependency updates (Dependabot / Renovate)"
     A pipeline gates *changes you make*. It does nothing about dependencies going stale, and exact pins turn into a frozen ratchet without something to move them. **[Dependabot](https://docs.github.com/en/code-security/dependabot/ecosystems-supported-by-dependabot/supported-ecosystems-and-repositories)** covers registry modules, publicly reachable Git repos, and private registries, plus OpenTofu `.tofu` files and `terragrunt.hcl`. **[Renovate](https://docs.renovatebot.com/modules/manager/terraform/)** covers registry modules, `GitTags`/`GithubTags` sources, `required_providers`, `required_version`, and maintains `.terraform.lock.hcl` itself. Either turns an upgrade into a PR carrying a version diff, which is what gives **module** upgrades the reviewable surface the lock file already gives providers (see I4). Renovate gotcha: it can't tell whether you want the Terraform or OpenTofu registry and defaults to `registry.terraform.io` — configure it explicitly on an OpenTofu project.
+
+    **Neither bot updates a SHA-pinned Git module source.** Renovate can't (its HCL parser drops the comments a digest annotation would need) and Dependabot skips non-semver refs. So a module SHA-pinned for supply-chain safety is one this note cannot keep current, and it needs a manual review cadence instead. The trade-off and the per-case choice are in **I4**; Renovate users should also set `"terraform": { "pinDigests": false }` so a global digest-pinning rule doesn't error on Git sources.
 
 !!! note "📌 Machine-readable plan/apply output"
     For machine-readable plan/apply output, `-json` replaces stdout entirely (you lose the human view). **OpenTofu 1.12**'s `-json-into=FILENAME` writes the JSON to a file while keeping the normal UI on stdout — so CI can parse the JSON *and* a human can read the log. OpenTofu-only. (See [[tf115-ot112-features]].)
