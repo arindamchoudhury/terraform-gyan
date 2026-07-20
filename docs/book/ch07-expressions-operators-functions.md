@@ -249,16 +249,23 @@ variable "names" {
 !!! tip "Getting numeric order anyway"
     The cleanest answer is to not create the problem. Lists preserve order, so keep the values in a list and only convert to a set at the point something demands one, such as `for_each` or a `set`-typed module input.
 
-    When you are handed a set of numbers and genuinely need them in numeric order, pad each one to a fixed width first. Equal-width digit strings compare lexicographically the same way the numbers compare, so `sort()` gives the right answer and `tonumber()` undoes the padding:
+    When you are handed a set of numbers and genuinely need them in numeric order, pad each one to a fixed width first. `format("%09d", n)` turns `4` into `"000000004"` and `100` into `"000000100"`. Equal-width digit strings compare lexicographically the same way the numbers compare, so `sort()` gives the right answer and `tonumber()` strips the padding back off:
 
     ```hcl
     [for s in sort([for n in toset([10, 6, 4, 5, 100]) : format("%09d", n)]) : tonumber(s)]
     # [4, 5, 6, 10, 100]
     ```
 
-    The padding width has to exceed your largest value, and the trick only holds for non-negative integers. Negative numbers sort backwards because the minus sign is just another character, and floats break on the decimal point.
+    The padding width has to exceed your largest value. Everything else about the trick is a question of keeping the columns aligned. Floats work if you pin the precision as well as the width, because then the decimal point lands in the same column on every value:
 
-    The third option is a provider-defined function (Terraform 1.8+, OpenTofu 1.7+), where a provider ships a real numeric sort. That buys correctness for every element type at the cost of a provider dependency for one sort.
+    ```hcl
+    [for s in sort([for n in [1.5, 10.25, 2.5] : format("%012.4f", n)]) : tonumber(s)]
+    # [1.5, 2.5, 10.25]
+    ```
+
+    Negative numbers are where it genuinely breaks. The minus sign is just another character, so `"-000000002"` sorts before `"-000000005"` and the negatives come back in reverse. Sorting their absolute values and calling `reverse()` fixes that, and a mixed-sign list needs the two halves sorted separately and concatenated. Both are expressible in pure HCL. Neither is something you want to find in a config six months from now.
+
+    That is the signal to stop. Either compute the order outside Terraform and pass it in as an already-sorted variable, or use a provider-defined function (Terraform 1.8+, OpenTofu 1.7+) where a provider ships a real numeric sort. The function buys correctness for every element type at the cost of a provider dependency for one sort.
 
     For `for_each` none of this matters. Keys are strings and set order does not affect resource addresses. Numeric order only earns the effort when you index the result or feed it somewhere that is itself ordered.
 
