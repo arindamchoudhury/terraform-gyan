@@ -451,6 +451,32 @@ Terraform exposes a fixed set of named values. Each is an expression on its own 
 | `path.module` / `path.root` / `path.cwd` | filesystem paths |
 | `terraform.workspace` | the current CLI workspace name |
 | `count.index`, `each.key` / `each.value`, `self` | block-local values inside `count`/`for_each`/provisioners |
+| `terraform.applying` | bool, `false` while planning and `true` while applying (TF 1.10) |
+
+!!! note "`terraform.applying` — the one reference you can't print"
+    Added in Terraform **1.10**, `terraform.applying` is `false` while Terraform is planning and `true` while it is applying. It exists so a config can behave differently between the two phases, most usefully to skip fetching a secret during a plan that doesn't need one.
+
+    Proving it is awkward, because the value is **ephemeral**: it must never reach state, so Terraform refuses to let it flow anywhere persistent. Sending it to an ordinary output is rejected outright, and marking that output `ephemeral = true` only moves the complaint:
+
+    ```
+    Error: Ephemeral value not allowed
+    Error: Ephemeral outputs are not allowed in context of a root module
+    ```
+
+    A `precondition` is somewhere it *may* go, so it doubles as the demonstration. Assert it is false and the plan succeeds while the apply fails:
+
+    ```hcl
+    resource "terraform_data" "probe" {
+      lifecycle {
+        precondition {
+          condition     = !terraform.applying
+          error_message = "terraform.applying was true here"
+        }
+      }
+    }
+    ```
+
+    Ephemeral values in general are the secrets topic. Where they may be used, and the `ephemeral` resources and write-only arguments built on them, belong to **A6**.
 
 A resource reference's *shape* depends on its meta-arguments. With neither `count` nor `for_each` it's a single **object**. With `count` it's a **tuple** of instance objects (`aws_instance.web[0].id`). With `for_each` it's an **object** keyed by your `for_each` keys, each attribute an instance object (`aws_instance.web["a"].id`).
 
@@ -785,7 +811,7 @@ Terraform 1.15.6 ships **119** built-in functions — you learn the *skill* of f
 | Category | Representative functions |
 |---|---|
 | Numeric | [`min`](https://developer.hashicorp.com/terraform/language/functions/min) [`max`](https://developer.hashicorp.com/terraform/language/functions/max) [`abs`](https://developer.hashicorp.com/terraform/language/functions/abs) [`ceil`](https://developer.hashicorp.com/terraform/language/functions/ceil) [`floor`](https://developer.hashicorp.com/terraform/language/functions/floor) [`pow`](https://developer.hashicorp.com/terraform/language/functions/pow) [`parseint`](https://developer.hashicorp.com/terraform/language/functions/parseint) [`signum`](https://developer.hashicorp.com/terraform/language/functions/signum) |
-| String | [`format`](https://developer.hashicorp.com/terraform/language/functions/format) [`join`](https://developer.hashicorp.com/terraform/language/functions/join) [`split`](https://developer.hashicorp.com/terraform/language/functions/split) [`replace`](https://developer.hashicorp.com/terraform/language/functions/replace) [`substr`](https://developer.hashicorp.com/terraform/language/functions/substr) [`lower`](https://developer.hashicorp.com/terraform/language/functions/lower)/[`upper`](https://developer.hashicorp.com/terraform/language/functions/upper)/[`title`](https://developer.hashicorp.com/terraform/language/functions/title) [`trimspace`](https://developer.hashicorp.com/terraform/language/functions/trimspace) [`startswith`](https://developer.hashicorp.com/terraform/language/functions/startswith)/[`endswith`](https://developer.hashicorp.com/terraform/language/functions/endswith) [`regex`](https://developer.hashicorp.com/terraform/language/functions/regex)/[`regexall`](https://developer.hashicorp.com/terraform/language/functions/regexall) |
+| String | [`format`](https://developer.hashicorp.com/terraform/language/functions/format) [`join`](https://developer.hashicorp.com/terraform/language/functions/join) [`split`](https://developer.hashicorp.com/terraform/language/functions/split) [`replace`](https://developer.hashicorp.com/terraform/language/functions/replace) [`substr`](https://developer.hashicorp.com/terraform/language/functions/substr) [`lower`](https://developer.hashicorp.com/terraform/language/functions/lower)/[`upper`](https://developer.hashicorp.com/terraform/language/functions/upper)/[`title`](https://developer.hashicorp.com/terraform/language/functions/title) [`trimspace`](https://developer.hashicorp.com/terraform/language/functions/trimspace) [`startswith`](https://developer.hashicorp.com/terraform/language/functions/startswith)/[`endswith`](https://developer.hashicorp.com/terraform/language/functions/endswith)/[`strcontains`](https://developer.hashicorp.com/terraform/language/functions/strcontains) [`regex`](https://developer.hashicorp.com/terraform/language/functions/regex)/[`regexall`](https://developer.hashicorp.com/terraform/language/functions/regexall) |
 | Collection | [`merge`](https://developer.hashicorp.com/terraform/language/functions/merge) [`lookup`](https://developer.hashicorp.com/terraform/language/functions/lookup) [`coalesce`](https://developer.hashicorp.com/terraform/language/functions/coalesce) [`concat`](https://developer.hashicorp.com/terraform/language/functions/concat) [`flatten`](https://developer.hashicorp.com/terraform/language/functions/flatten) [`keys`](https://developer.hashicorp.com/terraform/language/functions/keys)/[`values`](https://developer.hashicorp.com/terraform/language/functions/values) [`contains`](https://developer.hashicorp.com/terraform/language/functions/contains) [`distinct`](https://developer.hashicorp.com/terraform/language/functions/distinct) [`length`](https://developer.hashicorp.com/terraform/language/functions/length) [`toset`](https://developer.hashicorp.com/terraform/language/functions/toset) [`setproduct`](https://developer.hashicorp.com/terraform/language/functions/setproduct) [`zipmap`](https://developer.hashicorp.com/terraform/language/functions/zipmap) [`slice`](https://developer.hashicorp.com/terraform/language/functions/slice) [`sort`](https://developer.hashicorp.com/terraform/language/functions/sort) [`alltrue`](https://developer.hashicorp.com/terraform/language/functions/alltrue)/[`anytrue`](https://developer.hashicorp.com/terraform/language/functions/anytrue) [`one`](https://developer.hashicorp.com/terraform/language/functions/one) |
 | Encoding | [`jsonencode`](https://developer.hashicorp.com/terraform/language/functions/jsonencode)/[`jsondecode`](https://developer.hashicorp.com/terraform/language/functions/jsondecode) [`yamlencode`](https://developer.hashicorp.com/terraform/language/functions/yamlencode)/[`yamldecode`](https://developer.hashicorp.com/terraform/language/functions/yamldecode) [`csvdecode`](https://developer.hashicorp.com/terraform/language/functions/csvdecode) [`base64encode`](https://developer.hashicorp.com/terraform/language/functions/base64encode)/[`base64decode`](https://developer.hashicorp.com/terraform/language/functions/base64decode) [`urlencode`](https://developer.hashicorp.com/terraform/language/functions/urlencode) |
 | Filesystem | [`file`](https://developer.hashicorp.com/terraform/language/functions/file) [`fileexists`](https://developer.hashicorp.com/terraform/language/functions/fileexists) [`fileset`](https://developer.hashicorp.com/terraform/language/functions/fileset) [`templatefile`](https://developer.hashicorp.com/terraform/language/functions/templatefile) [`abspath`](https://developer.hashicorp.com/terraform/language/functions/abspath) [`dirname`](https://developer.hashicorp.com/terraform/language/functions/dirname)/[`basename`](https://developer.hashicorp.com/terraform/language/functions/basename) |
