@@ -49,7 +49,13 @@ Every value has a type, and the type decides where the value is legal and how it
 - **Structural** types hold a **fixed schema**, where each position or key carries its own type: `tuple`, `object`.
 
 !!! info "These families are HCL's own definitions, not a teaching device"
-    HCL's specification defines both, and Terraform inherits them wholesale. A **collection type** combines *"an arbitrary number of values of some other single type"*, in three kinds: list (ordered), map (accessed by string keys), set (unordered, distinct). A **structural type** is *"constructed by combining other types"*, in two kinds: an object is a set of named attributes each having its own type, and a tuple a sequence of elements each having its own type.
+    HCL's specification defines both, and Terraform inherits them wholesale.
+
+    A **collection type** combines *"an arbitrary number of values of some other single type"*, in three kinds: list (ordered), map (accessed by string keys), set (unordered, distinct).
+
+    A **structural type** is *"constructed by combining other types"*, in two kinds: an object is a set of named attributes each having its own type, and a tuple a sequence of elements each having its own type.
+
+    The word *other* is doing real work: it names two layers, and the identity rule below has to compare both.
 
     The spec also fixes what makes two types **identical**, which is what the `==` pitfall at the end of this section turns on. Two collection types are identical when they share a kind and an element type. Two structural types are identical when they share a kind and their attributes or elements have identical types one-for-one.
 
@@ -57,11 +63,11 @@ Every value has a type, and the type decides where the value is legal and how it
 
 | Type | Family | Ordered? | Keys | Element types |
 |---|---|---|---|---|
-| `list` | collection | yes (index from 0) | integer index | one type, any length |
 | `tuple` | structural | yes (index from 0) | integer index | per-position, fixed length |
+| `list` | collection | yes (index from 0) | integer index | one type, any length |
 | `set` | collection | no | none | one type, no duplicates |
-| `map` | collection | no | string labels | one type, any size |
 | `object` | structural | no | string labels | per-key, fixed schema |
+| `map` | collection | no | string labels | one type, any size |
 
 !!! note "Only two of the five have a literal"
     HCL gives you exactly two ways to write a complex value: brackets and braces. **Brackets always build a `tuple`. Braces always build an `object`.** There is no list literal, no set literal, and no map literal anywhere in the language. Those three types only ever arrive by conversion (`tolist`, `toset`, `tomap`), from a declared `type` constraint, or out of a provider's own schema. Every subsection below follows from that one fact.
@@ -72,6 +78,36 @@ Every value has a type, and the type decides where the value is legal and how it
     So "has a literal" and "is structural" aren't two facts that happen to line up. They're the same property. Which is also why there is no `totuple()` or `toobject()` function: the three `to*` collection converters exist precisely because those are the three types you can't write down.
 
 The five subsections that follow each cover the **value** side: what actually produces the type, how it behaves, and where it bites. The **constraint** side (writing `type = ...` to restrict a module input) is Ch 12; each subsection signposts its constraint form so you can connect the two halves.
+
+### `tuple` — ordered, per-position types
+
+What brackets actually build. Each position gets its own type, and the **length is part of the type**:
+
+```
+> type(["a", 15, true])
+tuple([
+    string,
+    number,
+    bool,
+])
+```
+
+This is the mirror image of a `list`, which the next subsection covers. A list says "any number of one type"; a tuple says "exactly three elements, and here is the type of each." Nothing unifies, so a tuple is the one complex type that holds mixed values as-is.
+
+Mostly you can ignore the distinction, because a tuple **auto-converts to a list** wherever one is expected. `join("-", ["p", "q"])` and `length(["p", "q"])` just work, and `tolist()` is rarely needed.
+
+The exception is `==`, which never converts. Declare a variable and the trap is easy to see:
+
+```hcl
+variable "list" {
+  type = list(string)
+}
+```
+
+`var.list == []` is now **always** `false`. The left side is a `list(string)`, the right side is a `tuple([])`, and by the identity rule above those are simply different types. The sting is that it stays `false` even when the variable really is empty, which is the one case you wrote the comparison for. That pitfall gets its own treatment under **Type conversion** at the end of this section.
+
+!!! note "Constraint form — `tuple([string, number])`"
+    Written `tuple([<TYPE>, <TYPE>, ...])`. A value matches only if it has **exactly** that many elements, each convertible to the type at its position. Ch 12 has the schema rules.
 
 ### `list` — ordered, one element type
 
@@ -105,36 +141,6 @@ Index with square brackets. Note the `tolist()` here is doing real work, not dec
 
 !!! note "Constraint form — `list(string)`"
     Written `list(<TYPE>)`. Bare `list` means `list(any)`, a backwards-compatibility shorthand; prefer the full form. Ch 12 covers the constructor syntax and why `any` is almost always the wrong answer.
-
-### `tuple` — ordered, per-position types
-
-What brackets actually build. Each position gets its own type, and the **length is part of the type**:
-
-```
-> type(["a", 15, true])
-tuple([
-    string,
-    number,
-    bool,
-])
-```
-
-This is the mirror image of a list. A list says "any number of one type"; a tuple says "exactly three elements, and here is the type of each." Nothing unifies, so a tuple is the one complex type that holds mixed values as-is.
-
-Mostly you can ignore the distinction, because a tuple **auto-converts to a list** wherever one is expected. `join("-", ["p", "q"])` and `length(["p", "q"])` just work, and `tolist()` is rarely needed.
-
-The exception is `==`, which never converts. Declare a variable and the trap is easy to see:
-
-```hcl
-variable "list" {
-  type = list(string)
-}
-```
-
-`var.list == []` is now **always** `false`. The left side is a `list(string)`, the right side is a `tuple([])`, and by the identity rule above those are simply different types. The sting is that it stays `false` even when the variable really is empty, which is the one case you wrote the comparison for. That pitfall gets its own treatment under **Type conversion** at the end of this section.
-
-!!! note "Constraint form — `tuple([string, number])`"
-    Written `tuple([<TYPE>, <TYPE>, ...])`. A value matches only if it has **exactly** that many elements, each convertible to the type at its position. Ch 12 has the schema rules.
 
 ### `set` — unordered, unique, no index
 
@@ -231,56 +237,6 @@ The `set*` functions (`setunion`, `setsubtract`, `setintersection`, `setproduct`
 !!! note "Constraint form — `set(string)`"
     Written `set(<TYPE>)`. The type `for_each` wants is specifically `set(string)`. Ch 12 covers the conversion rules in full.
 
-### `map` — string keys, one value type
-
-Values identified by string labels, unordered, all sharing **one** value type. Braces build an object rather than a map, so a map arrives by conversion, by a `type = map(string)` constraint, or from a `for_each` resource:
-
-```
-> type(tomap({ name = "John", age = 52 }))
-map(string)
-```
-
-`52` became `"52"`. This is the same single-type unification a list does, and for the same reason. When no single value type fits, the conversion fails outright:
-
-```
-> tomap({ name = ["a"], age = 12 })
-
-Error: Invalid function argument
-
-Invalid value for "v" parameter: cannot convert object to map of any single
-type.
-```
-
-**Key syntax.** Strictly these are the *brace literal's* rules, so they produce an object that then converts, and they apply just as much to the next subsection. They're here because `tags` is where you actually type them. Keys must be strings. Write them unquoted when they're valid identifiers, quoted otherwise (leading digits, spaces, special characters). Both `=` and `:` are valid delimiters, so `{ foo = "bar" }` and `{ "foo": "bar" }` are the same value, and Terraform normalizes on the way out:
-
-```
-> { "foo": "bar" }
-{
-  "foo" = "bar"
-}
-```
-
-!!! tip "Prefer `=` over `:`"
-    `terraform fmt` vertically aligns equals signs but ignores colons entirely. The colon form is legal, just unformatted.
-
-To use a non-literal expression as a key, wrap it in parentheses, otherwise it's read as a bare identifier:
-
-```hcl
-tags = {
-  (var.business_unit_tag_name) = "SRE"
-}
-```
-
-Access with brackets, which is also the right choice whenever keys are user-supplied rather than known:
-
-```
-> tomap({ name = "John" })["name"]
-"John"
-```
-
-!!! note "Constraint form — `map(string)`"
-    Written `map(<TYPE>)`. Bare `map` means `map(any)`. Ch 12 covers the constructors.
-
 ### `object` — string keys, per-key types
 
 What braces actually build. Each attribute carries its own type:
@@ -293,7 +249,7 @@ object({
 })
 ```
 
-Compare that to `tomap()` on the same value: the map flattened `52` into `"52"`, the object kept it a `number`. That is the collection-versus-structural split in one example. The type output lists attributes alphabetically, which is a display convenience; an object has no ordering.
+Run `tomap()` on that same value and `52` comes back as `"52"`; the object kept it a `number`. That is the collection-versus-structural split in one example. The type output lists attributes alphabetically, which is a display convenience; an object has no ordering.
 
 Objects are everywhere in Terraform whether you notice or not. **Every resource and data source *instance* is an object**, which is why `aws_instance.web.id` works: `aws_instance.web` is an object with an `id` attribute. Say *instance* rather than *reference*, because the meta-arguments change the shape around it, and the bare type name `aws_instance` is not a value at all. §3 has both.
 
@@ -339,6 +295,56 @@ Invalid value for "value" parameter: attribute "age" is required.
 
 !!! note "Constraint form — `object({ name = string })`"
     Written `object({ <KEY> = <TYPE>, ... })`. Ch 12 covers the schema rules and **`optional(type, default)`**, which is how an object attribute becomes genuinely optional instead of merely defaulting to `null`.
+
+### `map` — string keys, one value type
+
+Values identified by string labels, unordered, all sharing **one** value type. Braces build an object rather than a map, so a map arrives by conversion, by a `type = map(string)` constraint, or from a `for_each` resource:
+
+```
+> type(tomap({ name = "John", age = 52 }))
+map(string)
+```
+
+`52` became `"52"`. This is the same single-type unification a list does, and for the same reason. When no single value type fits, the conversion fails outright:
+
+```
+> tomap({ name = ["a"], age = 12 })
+
+Error: Invalid function argument
+
+Invalid value for "v" parameter: cannot convert object to map of any single
+type.
+```
+
+**Key syntax.** Strictly these are the *brace literal's* rules, so they produce an object that then converts, and they apply just as much to `object` above. They're here because `tags` is where you actually type them. Keys must be strings. Write them unquoted when they're valid identifiers, quoted otherwise (leading digits, spaces, special characters). Both `=` and `:` are valid delimiters, so `{ foo = "bar" }` and `{ "foo": "bar" }` are the same value, and Terraform normalizes on the way out:
+
+```
+> { "foo": "bar" }
+{
+  "foo" = "bar"
+}
+```
+
+!!! tip "Prefer `=` over `:`"
+    `terraform fmt` vertically aligns equals signs but ignores colons entirely. The colon form is legal, just unformatted.
+
+To use a non-literal expression as a key, wrap it in parentheses, otherwise it's read as a bare identifier:
+
+```hcl
+tags = {
+  (var.business_unit_tag_name) = "SRE"
+}
+```
+
+Access with brackets, which is also the right choice whenever keys are user-supplied rather than known:
+
+```
+> tomap({ name = "John" })["name"]
+"John"
+```
+
+!!! note "Constraint form — `map(string)`"
+    Written `map(<TYPE>)`. Bare `map` means `map(any)`. Ch 12 covers the constructors.
 
 ### `null` — the typeless value
 
