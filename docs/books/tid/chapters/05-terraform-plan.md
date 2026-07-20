@@ -80,6 +80,9 @@ The resource graph has **three** node types:
 
 This is Terraform's internal view — you won't think about it daily, but it makes debugging (§5.7) far easier.
 
+!!! warning "🔄 Doesn't match the current implementation (verified 2026-07-20)"
+    Recorded above as the book states it. Checked against the Terraform source (`repos/terraform`, `main` @ `c07e79c1c8`), the three-type model does not hold: the plan graph also has variable, local, output, check, action, policy, and module expansion/close nodes; the `count > 1` "Resource Meta" node corresponds to `nodeExpandPlannableResource`, which exists for **every** resource and isn't cosmetic; and modules **are** nodes (`nodeExpandModule`). The **Provider Configuration** row holds up. Details and source citations in [[dependency-graph]].
+
 ### 5.2.2 The `terraform graph` command
 
 `terraform graph` emits the graph as a **GraphViz `.dot` file** on stdout. Pair it with the open-source **`dot`** CLI (from [graphviz.org](https://graphviz.org/download/)) to render an image:
@@ -409,7 +412,7 @@ State management (and preventing these) is the whole of Ch6.
 ## Summary
 
 - Terraform models infrastructure — and each plan — as a **directed acyclic graph**; state is a snapshot of it.
-- The resource graph has three node types (Resource, Provider Configuration, Resource Meta); **modules are not nodes**.
+- The resource graph has three node types (Resource, Provider Configuration, Resource Meta); **modules are not nodes**. (🔄 Contradicted by the current source — see the correction under §5.2.1.)
 - **`terraform graph`** (+ GraphViz `dot`) visualizes configs and plans; `-type=apply` needs a saved plan.
 - **`terraform plan`** computes changes in three modes (default / destroy / refresh-only); read symbols `+ - ~ -/+` and the bottom-up ordering.
 - **`-replace`** supersedes deprecated `taint`; `-target` is an antipattern for exceptional cases only.

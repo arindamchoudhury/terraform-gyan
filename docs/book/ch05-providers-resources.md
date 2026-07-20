@@ -132,6 +132,19 @@ The two are genuinely independent. You can declare a provider without a `provide
 !!! warning "Define `provider` blocks in the root module only"
     Child modules receive their provider configuration from their parent — they must not carry their own `provider` blocks. A child module still declares its own `required_providers` (the *configuration* inherits, but the `source`/`version` requirements do not). The full mechanics of passing providers into modules belong to I8; for now, keep every `provider` block in your root module.
 
+!!! info "OpenTofu — a `provider` block can take `for_each`"
+    When you need several configurations of one provider (say one per region), Terraform's only answer is `alias`: you hand-write one `provider` block per configuration and point each resource at one with the `provider` meta-argument. OpenTofu 1.9 added a second answer. An aliased `provider` block may take `for_each`, generating one provider *instance* per element of a map, and a resource selects one with `provider = aws.by_region[each.key]`.
+
+    ```hcl
+    provider "aws" {
+      alias    = "by_region"
+      for_each = var.aws_regions   # must resolve statically
+      region   = each.key
+    }
+    ```
+
+    Only aliased configurations qualify; the default configuration must stay single-instance so OpenTofu can select it automatically. There is no Terraform equivalent, so a configuration using this will not plan on Terraform. Full treatment is in E3, including the removal gotcha: a provider instance must outlive its resource instances by at least one plan/apply round, so a resource's `for_each` must produce a *subset* of the provider's. Match them exactly and OpenTofu warns that "subsequent removal of elements from this collection would cause a planning error." Terraform's `alias` mechanics are I8.
+
 ### Reading a source address
 
 The `source` is the provider's global address. Its full form is:
@@ -201,7 +214,7 @@ resource "random_id" "suffix" {
 ```
 
 !!! note "It installs even if you forget to declare it — but pin it anyway"
-    The block above has no `required_providers` entry, yet `terraform init` still downloads `random` (it is a real provider, not the one built-in). Terraform maps the `random_` prefix to the local name `random`, finds it undeclared, and assumes the default address `hashicorp/random` — the same prefix-to-local-name resolution from §5.4, and here it works because you didn't rename anything and the default namespace is `hashicorp`. So a bare utility resource inits and applies. What you give up by omitting the declaration is the **version constraint**: Terraform installs whatever is newest, so a future major release can shift behavior under you. Declare it to pin the constraint:
+    The block above has no `required_providers` entry, yet `terraform init` still downloads `random` (it is a real provider, not the one built-in). Terraform maps the `random_` prefix to the local name `random`, finds it undeclared, and assumes the default address `hashicorp/random` — the same prefix-to-local-name resolution from "Every resource type is named after its provider" above, and here it works because you didn't rename anything and the default namespace is `hashicorp`. So a bare utility resource inits and applies. What you give up by omitting the declaration is the **version constraint**: Terraform installs whatever is newest, so a future major release can shift behavior under you. Declare it to pin the constraint:
 
     ```hcl
     terraform {
@@ -292,6 +305,54 @@ A small set of arguments are defined by Terraform **core**, work on any resource
 
     But it is **provider-defined**. A `timeouts` block is part of a specific resource type's schema, so it exists only where that resource's author implemented it, and which operations are configurable varies by type. The tell is right there: real meta-arguments are **universal** (every resource type accepts them) and have a **fixed, core-defined shape**. `timeouts` has neither. Don't assume a resource has it; check the provider docs.
 
+### Reading the Registry page for a resource type
+
+All three steps send you to the same place: because the provider owns the schema, its Registry page is the reference you actually write from. Resource pages follow a standard structure, and four parts of it carry the working detail:
+
+| Section | What it gives you |
+|---|---|
+| **Description** | What vendor object the resource maps to |
+| **Example Usage** | A working block to start from |
+| **Argument Reference** | Every argument, marked required or optional, with its **type** |
+| **Attribute Reference** | Everything the resource exports, including computed values |
+
+Most pages carry a couple more, typically **Timeouts** (the child block from the previous section, present only where the author implemented it) and **Import**.
+
+The Argument Reference is the one people skim, and it is the one that decides how you write the block. It gives each argument's *type*, not just its name, and two consequences of that type are worth seeing on a real resource.
+
+**Some arguments are nested blocks.** An `aws_instance`'s root volume is not an argument with `=`; the docs call `root_block_device` a "configuration block," and it is a child block the provider defines:
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-a1b2c3d4"
+  instance_type = "t2.micro"
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+    encrypted   = true
+  }
+
+  metadata_options {
+    http_tokens = "required"    # require IMDSv2
+  }
+}
+```
+
+This is Chapter 4's argument-vs-subblock rule on a real resource: no `=`, and some (like `ebs_block_device`) repeat, so a second volume is a second block. Nothing about these is special to Terraform core. They are ordinary provider schema, unlike the `timeouts` block above, and most non-trivial resource types have some.
+
+**Some arguments are lists, even when you have one value.** The `aws_instance` Argument Reference gives `vpc_security_group_ids` as a "List of security group IDs," so a single reference still goes inside brackets:
+
+```hcl
+resource "aws_instance" "web" {
+  ami                    = "ami-a1b2c3d4"
+  instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.web_sg.id]   # a list, per the docs
+}
+```
+
+Drop the brackets and the failure is a type mismatch, not a missing resource. The dependency edge is unaffected either way: a reference inside a list is still a reference, so the instance still waits for the security group.
+
 ### What `apply` does to a resource
 
 When you run `terraform apply`, Terraform reconciles config, real infrastructure, and state, and performs exactly these operations per resource:
@@ -336,6 +397,15 @@ flowchart TD
 2. **`depends_on`.** An edge you assert by hand, for a real-world dependency that leaves no trace in the configuration.
 
 There is no third input. Terraform does not read provider docs, does not know a NAT gateway needs an internet gateway, and does not inspect the cloud to discover ordering. **The graph is built from your references and nothing else.**
+
+!!! note "Not every node is a resource"
+    Resources are not the only things in the graph. Terraform's plan graph also carries nodes for input variables, locals, outputs, checks, and module calls — and, most relevant here, for **provider configurations**. The transformer that adds those provider edges states its purpose plainly in the source: it creates "edges from provider to provider user so that the providers will get initialized first."
+
+    That is Part 1 resurfacing in Part 3. A provider is not just where arguments come from; it is a node your resources depend on, configured before anything it manages is touched. It is also an edge you never wrote, which is why the rendered graph has more in it than your references alone suggest.
+
+    Resources get **two tiers** of node. A resource block first becomes an *expansion* node, which settles how many instances `count` or `for_each` produce; each resulting instance then gets its own node. So `count = 3` is one decision followed by three separately schedulable instances. Data sources are resource nodes too (B8).
+
+    **Module calls are nodes as well, but they do not serialize your resources.** Everything declared inside a module depends on that module's expansion node, so the instance count is settled first. Past that, Terraform works a flat resource graph: a resource in module B can be created before one in module A whenever the resource-level edges allow it. Module nesting is not an ordering boundary (I4).
 
 ### An attribute reference *is* the edge — a worked chain
 
@@ -391,7 +461,7 @@ resource "aws_s3_bucket" "logs" {
 Because the graph has only those two inputs, a dependency Terraform cannot see **does not exist** — it isn't "missing," there is simply nothing there.
 
 !!! danger "No tool will warn you about a forgotten `depends_on`"
-    Not `plan`, not `validate`, not the provider, not `tflint`. Terraform has no signal that an edge is absent. A resource with a forgotten hidden dependency looks identical to one that genuinely has none. The failure surfaces only at apply time — as a race that passes locally and fails in CI, a provider API error that doesn't mention ordering, or a "success" that isn't (the classic: an EC2 instance comes up before the IAM policy its software needs, so the box runs but can't reach S3). Teardown walks the same graph in reverse, so the missing edge bites again on destroy.
+    Not `plan`, not `validate`, not the provider, not `tflint`. Terraform has no signal that an edge is absent. A resource with a forgotten hidden dependency looks identical to one that genuinely has none. The failure surfaces only at apply time — as a race that passes locally and fails in CI, a provider API error that doesn't mention ordering, or a "success" that isn't (the classic: an EC2 instance comes up before the IAM policy its software needs, so the box runs but can't reach S3). The edges recorded in state came from your references too, so an edge you never wrote is missing there as well, and the bug bites again on teardown.
 
 !!! tip "You can't detect a missing edge, but you can surface one"
     No tool *discovers* an absent edge, because there is nothing in the config to analyze against. But two habits catch them. **Render the graph** with `terraform graph` (next section) to *confirm* a suspicion: check whether two resources you think are wrongly parallel actually share an edge. **Test from clean state** to run the real parallel graph and expose the race an incremental local apply hides: `terraform test`, or a destroy-and-reapply from an empty state. What does *not* help is `-parallelism=1`, which can make a racy config pass by luck without imposing the order you actually need — false confidence, not a fix.
@@ -417,6 +487,14 @@ terraform graph | dot -Tpng > graph.png  # render with Graphviz
 ```
 
 One caveat: implicit and explicit edges render **identically** — the graph won't tell you which edges you asserted by hand. Use `graph` to *confirm* a suspicion (pick two resources you think are wrongly parallel and check for an edge between them), never to *discover* one. The full command reference — the `-type=plan`/`-type=apply` variants, `-draw-cycles` for cycle detection — is deferred to I1.
+
+There is a second copy of the graph, and it matters when the configuration is gone. `terraform graph` renders what your configuration implies *right now*. **State** holds what was actually applied: each resource instance records the dependencies Terraform used. That copy exists for destroy. When you delete a resource from your configuration, there is no longer a config to derive its ordering from, so Terraform falls back to the edges recorded in state to destroy things in the right order. Read them with:
+
+```shell
+terraform show -json | jq '.values.root_module.resources[] | {address, depends_on}'
+```
+
+Two things about that output. The recorded edges are **transitive**: a resource depending on B, which depends on A, records both A and B, not just B. And the field has two names, so don't grep for the wrong one — the raw state file calls it `dependencies` while `terraform show -json` calls it `depends_on`. When the two copies disagree (you deleted a reference but haven't applied yet), state still holds the edges that ordered the last apply. State's own mechanics are B9.
 
 ---
 
@@ -529,6 +607,7 @@ tflocal destroy
 ## Common pitfalls
 
 - **Guessing an argument name.** Each resource type has its own provider-defined schema. Read the Registry docs or run `terraform providers schema -json`; `validate` catches a wrong name before apply.
+- **Reading an argument's name but not its type.** A list-typed argument needs brackets even for one value (`vpc_security_group_ids = [aws_security_group.web_sg.id]`), and a nested block like `root_block_device` takes no `=` at all. The Argument Reference states the type; the error you get otherwise is a type mismatch that says nothing about the resource you meant to reference.
 - **Leaving a provider unpinned.** No `version` constraint means `init` grabs the newest provider, possibly a breaking major. Pin the major (`~> 6.0`) and commit the lock file.
 - **Hard-coding credentials in a `provider` block.** It's a `.tf` file; it gets committed. Use env vars, a profile, or short-lived role credentials.
 - **Adding `depends_on` when a reference already exists.** If A reads any attribute of B, the edge is already there — a redundant `depends_on` only makes the plan more conservative. Only assert `depends_on` for a *hidden* dependency with no attribute to reference.
@@ -550,7 +629,8 @@ tflocal destroy
 - **Declare** a provider in `required_providers` (`source` + `version`); **configure** it in a separate `provider` block (region, credentials). The declare half is identical across providers; the configure half is vendor-shaped — read the specific provider's Registry page.
 - A **source address** is `[host/]namespace/type`; the namespace is the trust signal, refined by the Registry **tier badge** (Official → Partner Premier → Partner → Community → Archived).
 - A **resource block** is address (type + name) + provider-specific arguments + Terraform meta-arguments (`count`, `for_each`, `depends_on`, `provider`, `lifecycle`). **Arguments** are inputs you set; **attributes** are values the resource exports, some `(known after apply)`.
-- Terraform builds a **DAG** from exactly two inputs: **attribute references** (implicit, preferred) and **`depends_on`** (explicit, last resort). Block/file order is irrelevant; the references decide the apply and destroy order, and independent nodes run in parallel.
+- A resource type's **Registry page** has four parts, and the **Argument Reference** carries each argument's *type*. That type decides the syntax: nested blocks (`root_block_device`) take no `=`, list arguments take brackets even for a single value.
+- Terraform builds a **DAG** from exactly two inputs: **attribute references** (implicit, preferred) and **`depends_on`** (explicit, last resort). Block/file order is irrelevant; the references decide the apply and destroy order, and independent nodes run in parallel. The graph holds more than resources — **provider configuration** nodes are why a provider is ready before anything it manages — and module calls never serialize resources across module boundaries. State keeps a copy of those edges so a resource deleted from the config can still be destroyed in the right order.
 - **Nothing warns you about a missing edge** — a forgotten `depends_on` surfaces only as a race, an API error, or a silent semantic failure at apply time. Prefer implicit references; they produce better plans and can't be forgotten.
 
 ---
@@ -567,6 +647,7 @@ tflocal destroy
 - [Provider Requirements (HCDocs)](../sources/terraform-docs/provider-requirements.md) — `required_providers`, source addresses, version constraints, built-in provider
 - [AWS Provider (Registry)](../sources/terraform-registry/aws-provider.md) · [Google Cloud Provider (Registry)](../sources/terraform-registry/google-provider.md) — the two concrete argument sets and auth models
 - [Create infrastructure — AWS Get Started (HCDocs)](../sources/terraform-tutorials/tf-aws-create.md) — the resource-address / implicit-reference walkthrough on a real `aws_instance`
+- [Define infrastructure with resources (HCDocs tutorial)](../sources/terraform-tutorials/tut-resource.md) — the arguments/attributes/meta-arguments taxonomy, the Registry page's four sections, and the `aws_security_group` nested blocks + `vpc_security_group_ids` list
 - [Providers (topic page)](../topics/providers.md) · [The dependency graph (topic page)](../topics/dependency-graph.md) — cross-source synthesis
 - [Provider `for_each` — OpenTofu (docs)](../sources/opentofu-docs/ot-provider-for-each.md) — the multi-instance divergence
 - [Version & Certification Facts](../research-cache/version-facts.md)
