@@ -337,9 +337,6 @@ Error: Cycle: aws_security_group.app, aws_security_group.db
 
 The error names every node in the loop, which is usually enough to find it. The fix is to break one edge. Most accidental cycles come from two resources that merely need to *share a value*, wired to each other's attributes to get it; route that value through a `variable` or `locals` instead and the edge disappears without changing behavior. Cycles are rare, and a persistent one usually means the architecture wants simplifying rather than a clever workaround.
 
-!!! info "Cycle errors become readable — 1.16, not yet released"
-    The comma-joined single line above is what 1.15 prints, and it is hard to read on a large config where the loop runs to a dozen nodes. A change already merged for **1.16** (unreleased as of this writing; it ships in the 1.16 alphas) renders each node on its own line, reverses the order so it reads in reference order rather than graph-traversal order, and picks a consistent starting node so repeated runs print the same thing. Same error, same fix — just legible.
-
 !!! note "Prefer implicit dependencies to `depends_on`"
     Because a reference creates the dependency, most ordering is automatic and correct. The explicit `depends_on` meta-argument (I1) is a fallback for the rare case where a dependency is real but *invisible* to Terraform — an IAM policy that must exist before an app can use a bucket, with no attribute linking them. Reach for it only when there's no attribute to reference. An over-used `depends_on` serializes work the graph could have parallelized.
 

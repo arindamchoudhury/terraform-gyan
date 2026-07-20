@@ -75,7 +75,10 @@ line. Each minor release is additive.
     **`on_failure` modes** (`halt`/`taint`/`continue`) plus a `caller` symbol and
     before/after-destroy action events; **`workspace list -json`**; JSON output
     for `terraform state show`; `contains()` can now test for `null`; Linux
-    s390x builds. Confirm against the release notes once 1.16.0 GAs.
+    s390x builds. Also **readable cycle errors**: the `Error: Cycle:` message
+    becomes one node per line, ordered by reference rather than graph traversal,
+    from a consistent starting node — same error and same fix, just legible on a
+    loop spanning many nodes. Confirm against the release notes once 1.16.0 GAs.
 
 ---
 
