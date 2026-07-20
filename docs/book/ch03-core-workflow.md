@@ -89,9 +89,7 @@ Modules follow the same two cases against their own record in `.terraform/module
 - **Recorded version still satisfies the constraint** → `terraform init -upgrade` re-resolves it. So does `terraform get -update`, which upgrades modules only and leaves providers alone.
 - **Recorded version now violates the constraint** → a plain `init` re-selects on its own.
 
-Modules add a case providers have no equivalent for: *no record at all*. A fresh clone, or CI with an empty `.terraform/`, selects the newest matching version silently, because there is no committed file to consult.
-
-That last difference is what makes the module upgrade hard to govern. A provider upgrade rewrites the committed `.terraform.lock.hcl`, so it lands in the diff and a reviewer sees it. A module upgrade rewrites uncommitted `modules.json`, so it leaves no trace in version control and `-lockfile=readonly` has nothing to check. Pin the constraint exactly and the drift can't happen in the first place. Keeping those pins current without giving up the pin is a module-consumption problem rather than a workflow one, and it belongs with the rest of module sourcing.
+There is a governance consequence. A provider upgrade rewrites the committed `.terraform.lock.hcl`, so it lands in the diff and a reviewer sees it; `-lockfile=readonly` makes CI fail if it changes unexpectedly. A module upgrade rewrites uncommitted `modules.json`, so it leaves no trace in version control and there is nothing for `-lockfile=readonly` to check. That is why the exact constraint above matters more than it looks: it is the only part of a module's version selection that lives in code.
 
 ### Checksums: trust on first use
 
