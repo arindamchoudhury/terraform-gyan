@@ -93,7 +93,28 @@ There is a governance consequence. A provider upgrade rewrites the committed `.t
 
 ### Checksums: trust on first use
 
-The lock file's `hashes` list is what makes an install tamper-evident. Every package `init` installs must match **at least one** checksum already recorded for that version; otherwise `init` refuses it:
+The lock file has been a black box so far. Here is what `init` actually writes, for one provider:
+
+```hcl
+provider "registry.terraform.io/hashicorp/azurerm" {
+  version     = "2.30.0"
+  constraints = "~> 2.12"
+  hashes = [
+    "h1:FJwsuowaG5CIdZ0WQyFZH9r6kIJeRKts9+GcRsTz1+Y=",
+    "h1:c/ntSXrDYM1mUir2KufijYebPcwKqS9CRGd3duDSGfY=",
+    "h1:yre4Ph76g9H84MbuhZ2z5MuldjSA4FsrX6538O7PCcY=",
+    "zh:04f0a50bb2ba92f3bea6f0a9e549ace5a4c13ef0cbb6975494cac0ef7d4acb43",
+    "zh:2082e12548ebcdd6fd73580e83f626ed4ed13f8cdfd51205d8696ffe54f30734",
+    ...
+  ]
+}
+```
+
+`version` is the selection `init` made. `constraints` records what the configuration asked for. Then `hashes`, where the thing to notice is that a *single* version carries *many* checksums.
+
+Two things multiply them. A provider ships a separate package per platform. There is one for `linux_amd64`, one for `darwin_arm64`, one for `windows_amd64`, and so on, and each hashes differently. On top of that Terraform is midway through a migration between two hashing schemes, which is what the `zh:` and `h1:` prefixes distinguish. That migration is covered below; for now read them as two ways of fingerprinting the same package.
+
+So the list is not one fingerprint for the provider. It is the **set of packages Terraform will accept** as legitimate for that version, which gives the verification rule: every package `init` installs must match **at least one** entry in its version's set. Your download matches your platform's hash, and the entries for other platforms are what let one committed lock file satisfy a teammate on a different OS. When a package matches nothing, `init` refuses:
 
 ```
 Error while installing hashicorp/azurerm v2.1.0: the current package for
@@ -101,7 +122,7 @@ registry.terraform.io/hashicorp/azurerm 2.1.0 doesn't match any of the
 checksums previously recorded in the dependency lock file.
 ```
 
-That is a **trust-on-first-use** model, and the name is the whole security story. Terraform does not know whether a provider is trustworthy. It knows whether *today's* package matches what you accepted the *first* time. So the verification you owe — checking the signing key fingerprint `init` prints, reading the publisher, whatever your compliance regime demands — happens once, when the provider first enters the lock file. After that Terraform enforces your decision for you.
+That is a **trust-on-first-use** model, and the name is the whole security story. Terraform does not know whether a provider is trustworthy. It knows whether *today's* package matches what you accepted the *first* time. So the verification you owe happens once, when the provider first enters the lock file. That means checking the signing key fingerprint `init` prints, reading who published it, and whatever else your compliance regime demands. After that Terraform enforces your decision for you.
 
 Where the package comes from on that first install decides whether the lock file is portable:
 
