@@ -190,10 +190,16 @@ data.aws_ami.ubuntu: Read complete after 1s [id=ami-0026a04369a3093cc]
 
   # aws_instance.app_server will be created
   + resource "aws_instance" "app_server" {
-      + ami           = "ami-0026a04369a3093cc"
-      + instance_type = "t2.micro"
-      + tags          = { + "Name" = "learn-terraform" }
-      # ... many attributes (known after apply) ...
+      + ami                                  = "ami-0026a04369a3093cc"
+      + arn                                  = (known after apply)
+      + instance_type                        = "t2.micro"
+      + tags                                 = {
+          + "Name" = "learn-terraform"
+        }
+      + tags_all                             = {
+          + "Name" = "learn-terraform"
+        }
+      # ... many more attributes (known after apply) ...
     }
 
 Plan: 1 to add, 0 to change, 0 to destroy.
@@ -275,11 +281,16 @@ The dangerous one is `-/+`. It hides inside what looks like an edit. Change an E
 ```
   # aws_instance.app_server will be updated in-place
   ~ resource "aws_instance" "app_server" {
-        id                = "i-0c636e158c30e48f9"
-      ~ instance_type     = "t2.micro" -> "t2.large"
-      ~ public_dns        = "ec2-34-216-...amazonaws.com" -> (known after apply)
-      ~ public_ip         = "34.216.162.36" -> (known after apply)
+        id                           = "i-0c636e158c30e48f9"
+      ~ instance_type                = "t2.micro" -> "t2.large"
+      ~ public_dns                   = "ec2-34-216-...amazonaws.com" -> (known after apply)
+      ~ public_ip                    = "34.216.162.36" -> (known after apply)
+        tags                         = {
+            "Name" = "learn-terraform"
+        }
         # (36 unchanged attributes hidden)
+
+        # (8 unchanged blocks hidden)
     }
 
 Plan: 0 to add, 1 to change, 0 to destroy.
@@ -298,7 +309,7 @@ Resource actions are indicated with the following symbols:
 -/+ resource "aws_instance" "app_server" {
       ~ arn                         = "arn:aws:ec2:...i-0c63..." -> (known after apply)
       ~ availability_zone           = "us-west-2b" -> (known after apply)
-      ~ subnet_id                   = "" -> (known after apply) # forces replacement
+      ~ subnet_id                   = "subnet-0a1b2c3d" -> (known after apply) # forces replacement
       ...
     }
 
