@@ -75,7 +75,7 @@ chmod +x install-opentofu.sh
 RHEL/CentOS/Amazon Linux/Fedora: Terraform via HashiCorp's `yum`/`dnf` repo (`yum install terraform`); OpenTofu via the same script with `--install-method rpm`, its rpm repo, or a **Snap** (`snap install opentofu`). See [OpenTofu install docs](https://opentofu.org/docs/intro/install/) for every method.
 
 !!! warning "The BSL wrinkle: some package managers freeze Terraform at v1.5.7"
-    HashiCorp's 2023 relicense to the BSL (Chapter 1) had a side-effect: several community package managers stopped shipping Terraform past **v1.5.7**, the last MPL release — plain Homebrew's `terraform` formula among them. That is why the macOS command uses **`hashicorp/tap`** (HashiCorp's own, current at 1.15.7). If `terraform version` reports 1.5.7 after a plain `brew install terraform`, this is why. **OpenTofu (MPL 2.0) has no such restriction** — every channel tracks the latest release (1.12.3).
+    HashiCorp's 2023 relicense to the BSL (Chapter 1) had a side-effect: several community package managers stopped shipping Terraform past **v1.5.7**, the last MPL release — plain Homebrew's `terraform` formula among them. That is why the macOS command uses **`hashicorp/tap`** (HashiCorp's own, current at 1.15.8). If `terraform version` reports 1.5.7 after a plain `brew install terraform`, this is why. **OpenTofu (MPL 2.0) has no such restriction** — every channel tracks the latest release (1.12.4).
 
 ### Manual install
 
@@ -91,8 +91,8 @@ On Windows, run `path` and move `terraform.exe` / `tofu.exe` into one of the lis
 ### Verify and enable completion
 
 ```shell
-terraform version      # e.g. 1.15.7
-tofu version           # e.g. 1.12.3     (whichever you installed)
+terraform version      # e.g. 1.15.8
+tofu version           # e.g. 1.12.4     (whichever you installed)
 ```
 
 `-help` lists the subcommands; append it to any subcommand for its flags (`terraform plan -help` / `tofu plan -help`). Enable tab completion once, then restart your shell:

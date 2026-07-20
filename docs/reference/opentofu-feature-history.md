@@ -13,7 +13,7 @@ arrived later) are marked. Companion to the
     provider ecosystem compatible with Terraform, so everything in the
     [foundational core and pre-1.6 timeline](feature-history.md) applies to
     OpenTofu too. This page covers what OpenTofu added **after** the fork.
-    Current stable: **1.12.3** (1.12.0 released 2026-05-14).
+    Current stable: **1.12.4** (1.12.0 released 2026-05-14).
 
 ---
 

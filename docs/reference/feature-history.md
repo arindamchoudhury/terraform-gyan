@@ -6,8 +6,8 @@ replaced**. Where a feature is OpenTofu-only (or reached OpenTofu at a different
 version), that is called out explicitly.
 
 !!! note "Version context"
-    Current stable at time of writing: **Terraform 1.15.7** (1.15.0 released
-    2026-04-29) and **OpenTofu 1.12.3** (1.12.0 released 2026-05-14). OpenTofu
+    Current stable at time of writing: **Terraform 1.15.8** (1.15.0 released
+    2026-04-29) and **OpenTofu 1.12.4** (1.12.0 released 2026-05-14). OpenTofu
     forked from Terraform 1.5.x in 2023 after the MPL→BSL relicense, so the two
     tools share everything up to 1.5 and diverge after. See
     [Version & Certification Facts](../research-cache/version-facts.md) and the

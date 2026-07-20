@@ -1,6 +1,6 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Current stable versions:** Terraform CLI **1.15.7** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.3** (1.12.0 released 2026-05-14, MPL 2.0)
+> **Current stable versions:** Terraform CLI **1.15.8** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.4** (1.12.0 released 2026-05-14, MPL 2.0)
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
 > **How to read this page.** Topics are the primary unit. Each topic has a "How to learn it" section that

@@ -2,14 +2,14 @@
 
 Verified facts captured during research. Refreshed by Phase 4 review passes.
 
-_Last verified: 2026-07-04._
+_Last verified: 2026-07-20._
 
 ## Tooling versions
 
 | Tool | Current stable | License | Notes |
 |------|----------------|---------|-------|
-| Terraform CLI | **1.15.7** (1.15.0 released 2026-04-29) | BSL 1.1 (source-available) | CLI free to provision your own infra under BSL |
-| OpenTofu | **1.12.3** (1.12.0 released 2026-05-14) | MPL 2.0 (open source) | Forked from Terraform 1.5.x; Linux Foundation project |
+| Terraform CLI | **1.15.8** (2026-07-08; 1.15.0 released 2026-04-29) | BSL 1.1 (source-available) | CLI free to provision your own infra under BSL |
+| OpenTofu | **1.12.4** (2026-07-13; 1.12.0 released 2026-05-14) | MPL 2.0 (open source) | Forked from Terraform 1.5.x; Linux Foundation project |
 
 **Terraform ↔ OpenTofu divergence.** OpenTofu forked at Terraform 1.5.x and shipped features Terraform's
 open-source CLI lacked: **state encryption**, **provider `for_each`**, **early variable/`.tfvars` evaluation**,
@@ -49,7 +49,7 @@ HCP Terraform's legacy free managed plan ended 2026-03-31; the replacement free 
 - HashiCorp Developer — Certifications / Infrastructure Automation
 - HashiCorp Developer — Terraform Associate 004 study path
 - HashiCorp Developer — Terraform Authoring & Operations Pro exam content list
-- OpenTofu release notes (1.12, 2026-05-14) via InfoQ; current patch 1.12.3
-- Terraform CLI changelog / release notes (1.15 released 2026-04-29; current patch 1.15.7) — see InfoQ "Terraform 1.15 Closes Gap to OpenTofu"
+- OpenTofu release notes (1.12, 2026-05-14) via InfoQ; current patch **1.12.4** (2026-07-13), confirmed via the GitHub releases API 2026-07-20
+- Terraform CLI changelog / release notes (1.15 released 2026-04-29; current patch **1.15.8**, 2026-07-08) — confirmed via `api.releases.hashicorp.com/v1/releases/terraform/latest` 2026-07-20 (`is_prerelease: false`, state `supported`). Also see InfoQ "Terraform 1.15 Closes Gap to OpenTofu"
 - HashiCorp blog — "Terraform ecosystem passes 3,000 providers with over 250 partners"
 - Third-party OpenTofu-vs-Terraform comparisons (Encore, Scalr, devops-daily, rack2cloud), checked 2026-07-03
