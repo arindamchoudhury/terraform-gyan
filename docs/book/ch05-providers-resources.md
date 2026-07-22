@@ -228,32 +228,28 @@ The credential models also differ. The AWS provider resolves credentials in a de
 
 ### Utility providers and the one built-in
 
-Not every provider wraps a cloud. **Utility providers** — `random`, `null`, `time`, `tls` — compute values or model actions without touching any remote API. Their resources are **local-only**: applying one computes a value and stores it in state; destroying one just drops it from state. No cloud object is ever created. They belong in `required_providers` like any other provider — though, as the note below shows, Terraform will auto-install `random` from its prefix even if you forget, so the snippet leaves it out for now. Configuring them is usually nothing, because there is no connection to set up. `random` takes no arguments at all, so its `provider` block is empty, and you normally omit it: the empty default configuration from earlier, in the flesh.
+Not every provider wraps a cloud. **Utility providers** — `random`, `null`, `time`, `tls` — compute values or model actions without touching any remote API. Their resources are **local-only**: applying one computes a value and stores it in state; destroying one just drops it from state. No cloud object is ever created. They belong in `required_providers` like any other provider, shown below. Configuring them is usually nothing, because there is no connection to set up. `random` takes no arguments at all, so its `provider` block is empty, and you normally omit it: the empty default configuration from earlier, in the flesh.
 
 ```hcl
-provider "random" {}              # optional and empty — no region, no creds, nothing to configure
+terraform {
+  required_providers {
+    random = {                    # DECLARE — same as any provider
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+}
 
-resource "random_id" "suffix" {
+provider "random" {}              # CONFIGURE — optional and empty: no region, no creds, nothing to set
+
+resource "random_id" "suffix" {   # USE
   byte_length = 4
 }
 # random_id.suffix.hex → a computed attribute, e.g. "a1b2c3d4"
 ```
 
-!!! note "It installs even if you forget to declare it — but pin it anyway"
-    The block above has no `required_providers` entry, yet `terraform init` still downloads `random` (it is a real provider, not the one built-in). Terraform maps the `random_` prefix to the local name `random`, finds it undeclared, and assumes the default address `hashicorp/random` — the same prefix-to-local-name resolution from "Every resource type is named after its provider" above, and here it works because you didn't rename anything and the default namespace is `hashicorp`. So a bare utility resource inits and applies. What you give up by omitting the declaration is the **version constraint**: Terraform installs whatever is newest, so a future major release can shift behavior under you. Declare it to pin the constraint:
-
-    ```hcl
-    terraform {
-      required_providers {
-        random = {
-          source  = "hashicorp/random"
-          version = "~> 3.0"
-        }
-      }
-    }
-    ```
-
-    The `.terraform.lock.hcl` records the exact resolved version either way; only the declaration lets you *control* which versions are allowed.
+!!! note "You could omit the declaration — but pin it anyway"
+    Delete that `required_providers` block and `terraform init` still downloads `random` (it is a real provider, not one built into core). Terraform maps the `random_` prefix to the local name `random`, finds it undeclared, and assumes the default address `hashicorp/random` — the same prefix-to-local-name resolution from "Every resource type is named after its provider" above, and here it works because you didn't rename anything and the default namespace is `hashicorp`. So a bare utility resource inits and applies with no `terraform` block at all. What you give up by omitting the declaration is the **version constraint**: Terraform installs whatever is newest, so a future major release can shift behavior under you. That is why the snippet keeps the declaration — it pins `~> 3.0`. The `.terraform.lock.hcl` records the exact resolved version either way; only the declaration lets you *control* which versions are allowed.
 
 There is exactly **one** resource type built into Terraform core itself, needing no provider: `terraform_data`. It implements the standard resource lifecycle but takes no action — the modern replacement for the old `null_resource` pattern (full treatment in A1). The built-in provider (`terraform.io/builtin/terraform`) also backs the `terraform_remote_state` data source (B9/I6).
 
