@@ -682,6 +682,9 @@ You are ready to advance when you can:
 !!! note "📌 `expect_failures` in `run` blocks"
     A `run` block can assert a config *should* fail: **`expect_failures = [...]`** lists the checkable objects (a variable `validation`, `precondition`, etc.) you expect to error — the test passes when they do. Essential for testing your validation logic, not just the happy path.
 
+!!! note "📌 The `self` object in conditions"
+    A **`postcondition`** validates a resource *after* it's created, so it needs to read that resource's own applied attributes. **`self`** is the resource object the enclosing `lifecycle` block sits in: `self.id`, `self.architecture`, etc. Terraform provides `self` precisely because the resource can't reference itself by its normal address (`aws_instance.app.id` inside `aws_instance.app` would be circular). Legal only where that self-reference makes sense — `precondition`/`postcondition`, and `connection`/`provisioner` blocks. A `precondition` runs *before* apply, so `self` there is limited to values already known at plan time. (See [[tf-conditionals]].)
+
 **Milestone:** You can write a `.tftest.hcl` suite that provisions a module, asserts on its outputs, and tears down — plus a `precondition` that fails a bad plan early. Stretch: a Terratest case that deploys the module and verifies real behavior via the resource's own API.
 
 ---
