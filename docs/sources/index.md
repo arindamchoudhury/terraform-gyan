@@ -46,6 +46,7 @@ Log of all captured sources, organised by course.
 | [Version Constraints](terraform-docs/tf-expr-version-constraints.md) | documentation | 2026-07-15 | version-constraints, required_version, provider-requirements, module-versions, pessimistic-operator, pre-release | [url](https://developer.hashicorp.com/terraform/language/expressions/version-constraints) |
 | [Built-in Functions (catalogue)](terraform-docs/tf-functions.md) | documentation | 2026-07-15 | functions, built-in-functions, provider-defined-functions, terraform-console, stacks, function-catalogue | [url](https://developer.hashicorp.com/terraform/language/functions) |
 | [Query infrastructure data (data sources)](terraform-docs/tf-data-sources.md) | documentation | 2026-07-22 | data-sources, data-block, plan-vs-apply, dependencies, custom-conditions, meta-arguments | [url](https://developer.hashicorp.com/terraform/language/data-sources) |
+| [`data` block reference](terraform-docs/tf-block-data.md) | documentation | 2026-07-22 | data-sources, data-block, meta-arguments, count, for_each, depends_on, lifecycle, precondition, postcondition | [url](https://developer.hashicorp.com/terraform/language/block/data) |
 
 ## 2. OpenTofu Docs
 

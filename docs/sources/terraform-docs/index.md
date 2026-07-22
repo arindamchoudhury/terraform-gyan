@@ -50,3 +50,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Version Constraints | 2026-07-15 | [tf-expr-version-constraints](tf-expr-version-constraints.md) |
 | Built-in Functions (catalogue) | 2026-07-15 | [tf-functions](tf-functions.md) |
 | Query infrastructure data (data sources) | 2026-07-22 | [tf-data-sources](tf-data-sources.md) |
+| `data` block reference | 2026-07-22 | [tf-block-data](tf-block-data.md) |

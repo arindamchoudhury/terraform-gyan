@@ -57,6 +57,7 @@ nav = [
                 ]},
                 { "Data sources" = [
                     { "Query infrastructure data" = "sources/terraform-docs/tf-data-sources.md" },
+                    { "data block reference" = "sources/terraform-docs/tf-block-data.md" },
                 ]},
                 { "Variables" = [
                     { "Use variables" = "sources/terraform-docs/tf-input-variables.md" },
