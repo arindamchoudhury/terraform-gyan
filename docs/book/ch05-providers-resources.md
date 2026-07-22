@@ -421,9 +421,9 @@ flowchart TD
 There is no third input. Terraform does not read provider docs, does not know a NAT gateway needs an internet gateway, and does not inspect the cloud to discover ordering. **The graph is built from your references and nothing else.**
 
 !!! note "Not every node is a resource"
-    Resources are not the only things in the graph. Terraform's plan graph also carries nodes for input variables, locals, outputs, checks, and module calls — and, most relevant here, for **provider configurations**. The transformer that adds those provider edges states its purpose plainly in the source: it creates "edges from provider to provider user so that the providers will get initialized first."
+    Resources are not the only things in the graph. Terraform's plan graph also carries nodes for input variables, locals, outputs, checks, and module calls — and, most relevant here, for **provider configurations**. The transformer that adds those provider edges states its purpose in the source: it creates "edges from provider to provider user so that the providers will get initialized first." A *provider user* is any node that uses the provider — your resources. The edge runs provider → resource, so the provider's configuration is set up before anything that depends on it.
 
-    That is Part 1 resurfacing in Part 3. A provider is not just where arguments come from; it is a node your resources depend on, configured before anything it manages is touched. It is also an edge you never wrote, which is why the rendered graph has more in it than your references alone suggest.
+    That is Part 1 resurfacing in Part 3: a provider is not just where arguments come from, it is a graph node — and an edge you never wrote, which is why the rendered graph has more in it than your references alone suggest.
 
     Resources get **two tiers** of node. A resource block first becomes an *expansion* node, which settles how many instances `count` or `for_each` produce; each resulting instance then gets its own node. So `count = 3` is one decision followed by three separately schedulable instances. Data sources are resource nodes too (B8).
 
