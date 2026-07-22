@@ -358,7 +358,7 @@ data "aws_iam_policy_document" "read_legacy" {
 
 # --- the one managed resource: consumes all of the above ---
 resource "aws_iam_policy" "read_legacy" {
-  name   = "read-legacy-${data.aws_region.current.name}"
+  name   = "read-legacy-${data.aws_region.current.region}"
   policy = data.aws_iam_policy_document.read_legacy.json
 
   tags = {
@@ -384,6 +384,9 @@ tflocal apply -auto-approve
 ```
 
 In the plan you'll see the data sources resolve to real values (the bucket ARN, your account ID, the region) *before* the single `aws_iam_policy.read_legacy` shows as `+ create` — proof the reads happened at refresh time, not apply. Verify:
+
+!!! note "📌 `aws_region`: use `.region`, not `.name`"
+    In AWS provider **6.x** the `aws_region` data source's `name` (and `id`) attributes are **deprecated** in favour of **`region`**. Older tutorials still show `.name`; on a v6 provider that prints `name is deprecated. Use region instead.` on every plan. This lab uses `data.aws_region.current.region`. Attribute deprecations like this are provider-version-specific, so let the provider docs (not older blog posts) be the source of truth.
 
 ```shell
 tflocal output resolved_bucket_arn          # the ARN of the bucket we never managed
@@ -413,7 +416,7 @@ At the `>` prompt, evaluate the data references directly:
 > data.aws_caller_identity.current.account_id
 "000000000000"
 
-> data.aws_region.current.name
+> data.aws_region.current.region
 "us-east-1"
 ```
 
