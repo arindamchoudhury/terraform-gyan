@@ -65,7 +65,7 @@ resource "aws_instance" "example" {
   root_block_device {               # subblock — no '=', repeatable
     volume_size = 20
   }
-  ebs_block_device { ... }          # ...another block of the same family
+  ebs_block_device { ... }          # ...another subblock of the same family
 }
 ```
 
@@ -148,16 +148,16 @@ The type plus labels combine into a **reference string** — the unique address 
 | `resource` | `aws_instance` | `hello_world` | `aws_instance.hello_world` |
 | `data` | `aws_ami` | `ubuntu` | `data.aws_ami.ubuntu` |
 | `variable` | `instance_type` | — | `var.instance_type` |
-| `output` | (read from outside) | — | `module.<name>.<output>` |
+| `output` | `web_server_ip` | — | `module.<name>.web_server_ip` |
 | `locals` | — | — | `local.<name>` |
 
 !!! note "The `output` block *declares*; where it lives decides how it's read"
-    An `output "…" {}` block always does one job — it **declares** a value that leaves its module. It is *not* a way to reference an output; `module.<name>.<output>` is. Two sides of one wire: the block is `return x`, the `module.…` read is `y = f()`. And the read path depends on *where* the output sits:
+    An `output "out_name" {}` block always does one job — it **declares** a value that leaves its module. It is *not* a way to reference an output; `module.<name>.out_name` is. Two sides of one wire: the block is `return out_name`, the `module.…` read is `y = f()`. And the read path depends on *where* the output sits:
 
     | Output declared in… | How it's read |
     |---|---|
-    | a **child module** (called via `module "<name>" {}`) | the parent reads `module.<name>.<output>` |
-    | the **root module** | surfaces on the CLI after `apply` and via `terraform output <name>`; other configs read it through `terraform_remote_state` — **never** through `module.` |
+    | a **child module** (called via `module "<name>" {}`) | the parent reads `module.<name>.out_name` |
+    | the **root module** | surfaces on the CLI after `apply` and via `terraform output out_name`; other configs read it through `terraform_remote_state` — **never** through `module.` |
 
     So a root-level `output "web_server_ip" { value = aws_instance.web.public_ip }` is not read as `module.web_server_ip.…` at all; that syntax only applies to outputs of a *child* module you called. Same keyword, different consumer — pick by which module the block lives in.
 
@@ -181,7 +181,7 @@ resource "aws_instance" "web" {
 }
 ```
 
-…you have told Terraform "the instance needs the subnet lookup first" without writing a single ordering instruction. It reads the reference, adds the edge, and orders the work itself — building independent things in parallel and dependent things in sequence. Chapter 3 showed this in action; here is the language reason it works. You describe *what* you want and how things connect; the graph decides *when*.
+You have told Terraform "the instance needs the subnet lookup first" without writing a single ordering instruction. It reads the reference, adds the edge, and orders the work itself — building independent things in parallel and dependent things in sequence. Chapter 3 showed this in action; here is the language reason it works. You describe *what* you want and how things connect; the graph decides *when*.
 
 This is why the same three files can be one `main.tf` or split across five files with no change in behavior. Filenames are for humans. Terraform reads **every `.tf` file in the directory** and treats them as one merged configuration.
 

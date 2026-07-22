@@ -323,7 +323,7 @@ Same intent — "put the instance in the VPC" — but a completely different bla
 
 ## Dependency ordering — you declare *what*, the graph decides *when*
 
-You never write out an *explicit* sequence — no "do this, then that." But you do tell Terraform the order, implicitly, through your references. When one resource reads another's attribute — `subnet_id = module.vpc.private_subnets[0]` — that reference *is* an implicit dependency, and it *is* you specifying order. Terraform derives the sequence from those references rather than from a script you wrote by hand. Terraform builds a **dependency graph** at plan time and, on apply, walks it: create or update in dependency order, and **in parallel wherever the graph allows** (default up to 10 concurrent operations).
+You never write out an *explicit* sequence — no "do this, then that." But you do tell Terraform the order, implicitly, through your references. When one resource reads another's attribute — `subnet_id = module.vpc.private_subnets[0]` — that reference *is* an implicit dependency, and it *is* you specifying order. Terraform derives the sequence from those references. Terraform builds a **dependency graph** at plan time and, on apply, walks it: create or update in dependency order, and **in parallel wherever the graph allows** (default up to 10 concurrent operations).
 
 So in the VPC move above, Terraform ran: destroy the old instance, create the VPC and its subnets/routes/gateways, then create the new instance last — because the instance depends on the subnet, which depends on the VPC. You wrote none of that as an explicit sequence. Your references encoded it.
 
