@@ -79,7 +79,7 @@ provider "aws" {                 # second config, tagged with an alias
 }
 ```
 
-Even now the prefix isn't ambiguous. Both blocks are the `aws` provider, but exactly one is the **default** — the block *without* an `alias`. Terraform reads the `aws_instance` prefix and routes the resource to that default config. This is why the type name usually *is* enough and you almost never spell out the provider. What the prefix *can't* do is reach the aliased config: it always lands on the default. To send a resource to the non-default one, name it with the `provider` meta-argument:
+Both blocks are the `aws` provider, but exactly one is the **default** — the block *without* an `alias`. Terraform reads the `aws_instance` prefix and routes the resource to that default config. This is why the type name usually *is* enough and you almost never spell out the provider. What the prefix *can't* do is reach the aliased config: it always lands on the default. To send a resource to the non-default one, name it with the `provider` meta-argument:
 
 ```hcl
 resource "aws_instance" "web" {
