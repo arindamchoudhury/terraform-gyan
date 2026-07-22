@@ -408,14 +408,15 @@ Notice the destroy removes the IAM policy but leaves `legacy-data-bucket` untouc
 
 ### Explore a data block interactively with `tflocal console`
 
-You don't have to run a full `apply` to see what a data source returns. `terraform console` — invoked as `tflocal console` so it hits the emulator — opens a REPL that evaluates any expression against your configuration and current state. It's the fastest way to discover *which attributes a data source actually exposes* before you wire them into a resource.
+You don't have to run `apply` to see what a data source returns. `terraform console` — invoked as `tflocal console` so it hits the emulator — opens a REPL that evaluates any expression against your configuration. It's the fastest way to discover *which attributes a data source actually exposes* before you wire them into a resource.
 
-Re-apply the lab config first (the console reads values from state, so the data sources must have been resolved at least once), then open the REPL:
+One subtlety decides whether the data sources resolve. By default `terraform console` evaluates against the **current state**, so a data source that has never been read yet shows as unknown. Pass **`-plan`** and the console runs a refresh first — exactly like `terraform plan`, reading every data source — then evaluates against the *planned* state. That resolves the reads **without creating anything** (the IAM policy is still only planned, never applied):
 
 ```shell
-tflocal apply -auto-approve    # populate state so the reads are resolved
-tflocal console                # opens the interactive prompt
+tflocal console -plan    # refresh + read the data sources, create nothing
 ```
+
+No prior `apply` needed — the `-plan` refresh is what populates the values. (A plain `tflocal console` also works once the data sources are already in state from an earlier plan or apply.)
 
 At the `>` prompt, evaluate the data references directly:
 
@@ -453,7 +454,7 @@ This is how you answer "what fields can I read off this thing?" without hunting 
 "{\"Statement\":[{\"Action\":[\"s3:GetObject\",\"s3:ListBucket\"], … }"
 ```
 
-Type `exit` (or Ctrl-D) to leave. Two things to keep in mind: the console is **read-only** — it evaluates expressions and never changes state or infrastructure — and a data source only resolves in the console if it was already read into state (or its arguments are all known without a refresh). A data block whose arguments depend on an unbuilt resource shows as unknown here, the same deferral rule you saw at plan time.
+Type `exit` (or Ctrl-D) to leave. Two things to keep in mind: the console is **read-only** — even `-plan` only *computes* a plan, it never applies one, so nothing you type changes state or infrastructure — and the same **deferral rule** from plan time still holds. A data block whose arguments depend on a resource being built in this plan can't be read yet, so it shows as unknown in the console just as it would in `terraform plan`.
 
 !!! warning "Emulation is not AWS"
     A green `apply` here proves your **HCL, data-source wiring, and workflow** are correct — not that the config behaves identically on real AWS. The emulator mocks the S3/STS/IAM API surface, not every semantic (real IAM evaluation, cross-account ARNs, bucket-name global uniqueness). Validate any load-bearing config against real free-tier AWS before trusting it. In particular, the `aws_ami`/EC2 examples earlier in the chapter are **mocked** on the emulator — read them, but exercise them on real AWS, not here.
