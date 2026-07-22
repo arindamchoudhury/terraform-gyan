@@ -228,7 +228,7 @@ The credential models also differ. The AWS provider resolves credentials in a de
 
 ### Utility providers and the one built-in
 
-Not every provider wraps a cloud. **Utility providers** — `random`, `null`, `time`, `tls` — compute values or model actions without touching any remote API. Their resources are **local-only**: applying one computes a value and stores it in state; destroying one just drops it from state. No cloud object is ever created. They belong in `required_providers` like any other provider, shown below. Configuring them is usually nothing, because there is no connection to set up. `random` takes no arguments at all, so its `provider` block is empty, and you normally omit it: the empty default configuration from earlier, in the flesh.
+Not every provider wraps a cloud. **Utility providers** — `random`, `null`, `time`, `tls` — compute values or model actions without touching any remote API. Their resources are **local-only**: applying one computes a value and stores it in state; destroying one just drops it from state. No cloud object is ever created. They belong in `required_providers` like any other provider, shown below. There's usually nothing to put in the `provider` block, because there's no connection to set up. `random` takes no arguments at all, so its `provider` block is empty, and you normally omit it: the empty default configuration from earlier, in the flesh.
 
 ```hcl
 terraform {
