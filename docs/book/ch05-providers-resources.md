@@ -67,9 +67,7 @@ There are thousands of providers in the Registry. Most wrap an infrastructure pl
 
 Look at any resource type: `aws_instance`, `google_compute_instance`, `random_id`. The prefix before the first underscore is the provider's **local name**. `aws_instance` implies the `aws` provider; `google_storage_bucket` implies `google`. That is how Terraform knows which plugin owns a resource type — it reads the prefix.
 
-This is why you almost never spell out which provider a resource uses. Terraform infers it from the type name and routes the resource to the default (unaliased) config for that provider.
-
-You override that inference only when one provider has **more than one configuration** — set up with `alias`. The usual reason is two regions or two accounts: a `provider "aws"` block for `us-east-1` and a second, aliased one for `eu-west-1`. Both are the `aws` provider, so the `aws_instance` prefix can't tell them apart — you point a resource at the non-default config with the `provider` meta-argument:
+One provider can have **more than one configuration**. You set up the extras with `alias`. The usual reason is two regions or two accounts: a default `provider "aws"` block for `us-east-1` and a second, aliased one for `eu-west-1`.
 
 ```hcl
 provider "aws" {                 # default config
@@ -79,7 +77,11 @@ provider "aws" {                 # second config, tagged with an alias
   alias  = "eu"
   region = "eu-west-1"
 }
+```
 
+Now the prefix alone is ambiguous: both blocks are the `aws` provider, so `aws_instance` can't say which config to use. This is why the type name usually *is* enough and you almost never spell out the provider — Terraform infers it from the prefix and routes the resource to the **default (unaliased)** config. Aliases are the exception. To send a resource to the non-default config, name it with the `provider` meta-argument:
+
+```hcl
 resource "aws_instance" "web" {
   provider      = aws.eu         # route THIS resource to the eu config
   instance_type = "t3.micro"
@@ -87,7 +89,7 @@ resource "aws_instance" "web" {
 }
 ```
 
-Drop the `provider = aws.eu` line and the instance lands in `us-east-1`, the default. This is the one case where the prefix isn't enough — covered in depth in I8.
+Drop the `provider = aws.eu` line and the instance falls back to `us-east-1`, the default. This is the one case where the prefix isn't enough — covered in depth in I8.
 
 ### Declare, then configure — two blocks, two jobs
 
