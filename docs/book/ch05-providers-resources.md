@@ -67,7 +67,27 @@ There are thousands of providers in the Registry. Most wrap an infrastructure pl
 
 Look at any resource type: `aws_instance`, `google_compute_instance`, `random_id`. The prefix before the first underscore is the provider's **local name**. `aws_instance` implies the `aws` provider; `google_storage_bucket` implies `google`. That is how Terraform knows which plugin owns a resource type — it reads the prefix.
 
-This is why you almost never spell out which provider a resource uses. Terraform infers it from the type name. You only override that inference (with the `provider` meta-argument) when you have several configurations of the same provider — covered in depth in I8.
+This is why you almost never spell out which provider a resource uses. Terraform infers it from the type name and routes the resource to the default (unaliased) config for that provider.
+
+You override that inference only when one provider has **more than one configuration** — set up with `alias`. The usual reason is two regions or two accounts: a `provider "aws"` block for `us-east-1` and a second, aliased one for `eu-west-1`. Both are the `aws` provider, so the `aws_instance` prefix can't tell them apart — you point a resource at the non-default config with the `provider` meta-argument:
+
+```hcl
+provider "aws" {                 # default config
+  region = "us-east-1"
+}
+provider "aws" {                 # second config, tagged with an alias
+  alias  = "eu"
+  region = "eu-west-1"
+}
+
+resource "aws_instance" "web" {
+  provider      = aws.eu         # route THIS resource to the eu config
+  instance_type = "t3.micro"
+  # ...
+}
+```
+
+Drop the `provider = aws.eu` line and the instance lands in `us-east-1`, the default. This is the one case where the prefix isn't enough — covered in depth in I8.
 
 ### Declare, then configure — two blocks, two jobs
 
