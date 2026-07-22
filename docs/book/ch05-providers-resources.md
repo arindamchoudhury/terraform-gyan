@@ -515,7 +515,7 @@ One caveat: implicit and explicit edges render **identically** — the graph won
 
     - **Render to SVG instead of PNG.** `terraform graph | dot -Tsvg > graph.svg` produces a zoomable, searchable image, which starts to matter once the graph is large.
     - **Skip the Graphviz install.** Paste the DOT output into an online renderer such as [edotor.net](https://edotor.net).
-    - **Prune the noise with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) reads your state or HCL and emits a graph of only the resources that matter, dropping the provider and meta nodes. It auto-detects the input, so either source works: `inframap generate main.tf | dot -Tsvg > graph.svg`, or point it at a state file with `inframap generate terraform.tfstate`.
+    - **Prune the noise with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) reads your state or HCL and emits a graph of only the resources that matter, dropping the provider and meta nodes: `inframap generate main.tf | dot -Tsvg > graph.svg`. It reads a state file too — see *the second copy of the graph* below.
 
     Interactive browser-based viewers exist, but the well-known ones are unmaintained (Rover's last release was 2022), so verify a tool is current before relying on it.
 
@@ -526,6 +526,8 @@ terraform show -json | jq '.values.root_module.resources[] | {address, depends_o
 ```
 
 Two things about that output. The recorded edges are **transitive**: a resource depending on B, which depends on A, records both A and B, not just B. And the field has two names, so don't grep for the wrong one — the raw state file calls it `dependencies` while `terraform show -json` calls it `depends_on`. When the two copies disagree (you deleted a reference but haven't applied yet), state still holds the edges that ordered the last apply. State's own mechanics are B9.
+
+To see those state edges as a picture instead of JSON, point InfraMap at the state file: `inframap generate terraform.tfstate | dot -Tsvg > graph.svg`. It renders the applied graph straight from state, so you get the destroy-ordering view even when the configuration is already gone.
 
 ---
 
