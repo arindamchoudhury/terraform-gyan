@@ -510,6 +510,15 @@ terraform graph | dot -Tpng > graph.png  # render with Graphviz
 
 One caveat: implicit and explicit edges render **identically** — the graph won't tell you which edges you asserted by hand. Use `graph` to *confirm* a suspicion (pick two resources you think are wrongly parallel and check for an edge between them), never to *discover* one. The full command reference — the `-type=plan`/`-type=apply` variants, `-draw-cycles` for cycle detection — is deferred to I1.
 
+!!! tip "Rendering the graph more readably"
+    The raw DOT output is noisy: it carries provider, root, and meta nodes alongside your resources. A few ways to a cleaner or more usable picture:
+
+    - **Render to SVG instead of PNG.** `terraform graph | dot -Tsvg > graph.svg` produces a zoomable, searchable image, which starts to matter once the graph is large.
+    - **Skip the Graphviz install.** Paste the DOT output into an online renderer such as [edotor.net](https://edotor.net).
+    - **Prune the noise with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) reads your state or HCL and emits a graph of only the resources that matter, dropping the provider and meta nodes: `inframap generate main.tf | dot -Tsvg > graph.svg`.
+
+    Interactive browser-based viewers exist, but the well-known ones are unmaintained (Rover's last release was 2022), so verify a tool is current before relying on it.
+
 There is a second copy of the graph, and it matters when the configuration is gone. `terraform graph` renders what your configuration implies *right now*. **State** holds what was actually applied: each resource instance records the dependencies Terraform used. That copy exists for destroy. When you delete a resource from your configuration, there is no longer a config to derive its ordering from, so Terraform falls back to the edges recorded in state to destroy things in the right order. Read them with:
 
 ```shell
