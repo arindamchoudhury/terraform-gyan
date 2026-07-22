@@ -118,6 +118,10 @@ provider "aws" {
 - `required_providers` (inside the `terraform` block) tells Terraform **what to install and from where**. Each entry maps a local name (`aws`) to a `source` address and a `version` constraint.
 - The `provider "aws"` block **configures the connection** — region, credentials, and any provider-wide settings.
 
+Declaring and configuring are separable, not just split by style. You can declare a provider in `required_providers` and write no `provider` block at all — Terraform then runs the plugin with an **empty default configuration**: every argument at its default, with region and credentials usually coming from environment variables. Utility providers like `random` and `null` need nothing more, and even `aws` often runs this way in CI where `AWS_REGION` and credentials live in the environment.
+
+When you *do* write a `provider` block, its arguments belong to the provider, not to core. `region`, `profile`, `assume_role` — core has never heard of them; they come from the `aws` provider's own schema, exactly like a resource's arguments. Core defines the block's *shape*; the provider defines what goes inside.
+
 The word `aws` is doing more work than it looks. It shows up three times — as the `required_providers` key, as the `provider` block label, and as the prefix of every `aws_*` resource type — and all three are the same **local name**. That shared name is the wiring. The `provider` block label *must* equal the `required_providers` key: `provider "aws"` configures the entry whose key is `aws`, and nothing else. A resource's type prefix is then matched against that same key to find which provider configures it.
 
 !!! warning "Rename the local name and your resources stop finding it"
@@ -148,8 +152,6 @@ The word `aws` is doing more work than it looks. It shows up three times — as 
     ```
 
     This is why the local name almost always matches the provider's preferred name. You only diverge when two providers would otherwise collide on one local name, and then a `provider` meta-argument on every affected resource is mandatory. The full mechanics live in I8.
-
-The two are genuinely independent. You can declare a provider without a `provider` block (Terraform assumes an empty default configuration), and the `provider` block's arguments are entirely defined by the provider, not by Terraform core.
 
 !!! warning "Define `provider` blocks in the root module only"
     Child modules receive their provider configuration from their parent — they must not carry their own `provider` blocks. A child module still declares its own `required_providers` (the *configuration* inherits, but the `source`/`version` requirements do not). The full mechanics of passing providers into modules belong to I8; for now, keep every `provider` block in your root module.
