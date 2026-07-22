@@ -127,6 +127,7 @@ nav = [
             { "Configuration Language" = [
                 { "1. Define resources" = "sources/terraform-tutorials/tut-resource.md" },
                 { "2. Customize with variables" = "sources/terraform-tutorials/tut-variables.md" },
+                { "3. Query data sources" = "sources/terraform-tutorials/tut-data-sources.md" },
                 { "4. Simplify with locals" = "sources/terraform-tutorials/tut-locals.md" },
                 { "5. Output data" = "sources/terraform-tutorials/tut-outputs.md" },
             ]},
