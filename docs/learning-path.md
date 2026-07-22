@@ -1004,6 +1004,15 @@ You are ready to advance when you can:
 !!! warning "The graph shows what Terraform knows, not what's true"
     `terraform graph` renders every edge Terraform built — and a **missing hidden dependency has no edge**, so it looks identical to a resource with no dependencies. Use the graph to *confirm* a suspected ordering bug, never to *discover* one. When a plan passes locally and races in CI, suspect a missing `depends_on` (I1) before you suspect `-parallelism`. (See [[dependency-graph]].)
 
+!!! tip "Cleaning up the noisy `terraform graph` output"
+    The raw DOT carries provider, root, and `(expand)` nodes on top of your resources, so a real config's graph is hard to read. Three easier-to-read options:
+
+    - **SVG over PNG.** `terraform graph | dot -Tsvg > graph.svg` is zoomable and searchable.
+    - **Online renderer.** Paste the DOT into [edotor.net](https://edotor.net); no Graphviz install needed.
+    - **Prune with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) (v0.8.1, actively maintained as of mid-2026) reads state or HCL and emits only the resources that matter, dropping provider and meta nodes: `inframap generate main.tf | dot -Tsvg > graph.svg`.
+
+    Interactive browser viewers (Rover, Blast Radius) exist, but the well-known ones are unmaintained (Rover's last release was 2022), so check that a tool is current before relying on it. (See [[tf-cmd-graph]].)
+
 !!! note "📌 Global provider plugin cache"
     A shared **global provider plugin cache** (`TF_PLUGIN_CACHE_DIR` / `plugin_cache_dir`) avoids re-downloading providers per project. It historically wasn't safe for concurrent `init`s; **OpenTofu 1.10** added filesystem **cache locking** (flock/LockFileEx) so parallel CI jobs can share one cache without corruption. (See [[opentofu-feature-history]].)
 
