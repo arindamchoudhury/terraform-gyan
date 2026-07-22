@@ -20,6 +20,7 @@ nav = [
         { "5. Providers & resources" = "book/ch05-providers-resources.md" },
         { "6. Input variables, outputs & locals" = "book/ch06-input-variables-outputs-locals.md" },
         { "7. Expressions, operators & functions" = "book/ch07-expressions-operators-functions.md" },
+        { "8. Data sources" = "book/ch08-data-sources.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },
