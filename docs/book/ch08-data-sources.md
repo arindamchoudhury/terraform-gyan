@@ -388,6 +388,16 @@ In the plan you'll see the data sources resolve to real values (the bucket ARN, 
 !!! note "📌 `aws_region`: use `.region`, not `.name`"
     In AWS provider **6.x** the `aws_region` data source's `name` (and `id`) attributes are **deprecated** in favour of **`region`**. Older tutorials still show `.name`; on a v6 provider that prints `name is deprecated. Use region instead.` on every plan. This lab uses `data.aws_region.current.region`. Attribute deprecations like this are provider-version-specific, so let the provider docs (not older blog posts) be the source of truth.
 
+The `Changes to Outputs` block at the end of the plan is the clearest proof of the refresh-time read. Look at the two outputs side by side:
+
+```text
+Changes to Outputs:
+  + policy_arn          = (known after apply)
+  + resolved_bucket_arn = "arn:aws:s3:::legacy-data-bucket"
+```
+
+`resolved_bucket_arn` already shows its **literal value** — it comes from `data.aws_s3_bucket.legacy.arn`, which was resolved during refresh, so Terraform knows it *now*, at plan time. `policy_arn` shows **`(known after apply)`** — it comes from `aws_iam_policy.read_legacy.arn`, a managed resource that doesn't exist yet, so its ARN can't be known until apply creates it. Same block, two outputs, and the difference between them is exactly the difference between reading (data source, resolved early) and creating (resource, resolved late).
+
 ```shell
 tflocal output resolved_bucket_arn          # the ARN of the bucket we never managed
 awslocal iam list-policies --scope Local     # our new policy exists
