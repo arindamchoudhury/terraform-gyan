@@ -62,10 +62,17 @@ Inside a body you find two things that look similar but behave oppositely: **arg
 resource "aws_instance" "example" {
   instance_type = "t3.micro"        # argument — has '=', appears once
 
-  root_block_device {               # subblock — no '=', repeatable
+  root_block_device {               # subblock — no '=', the boot disk
     volume_size = 20
   }
-  ebs_block_device { ... }          # ...another subblock of the same family
+  ebs_block_device {                # a different storage subblock (extra disk)
+    device_name = "/dev/sdb"
+    volume_size = 100
+  }
+  ebs_block_device {                # ...and repeatable: a second one of the same type
+    device_name = "/dev/sdc"
+    volume_size = 200
+  }
 }
 ```
 
