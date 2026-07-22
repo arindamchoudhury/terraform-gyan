@@ -97,7 +97,7 @@ resource "google_compute_firewall" "example" {
 ```
 
 !!! warning "The confusing case: an object-valued argument vs. a subblock"
-    An argument whose *value* is an object looks almost like a subblock — both have `{ … }`. The `=` still decides:
+    Every `{ … }` so far has been a block body — a container. But braces can also be a *value*: an argument can hold an object (a map). That argument then looks almost like a subblock — both wear `{ … }`. The `=` still decides:
 
     ```hcl
     tags = { Name = "web", Env = "prod" }   # argument: has '=', appears once, is a value
