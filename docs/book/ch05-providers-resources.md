@@ -65,7 +65,7 @@ There are thousands of providers in the Registry. Most wrap an infrastructure pl
 
 ### Every resource type is named after its provider
 
-Look at any resource type: `aws_instance`, `google_compute_instance`, `random_id`. The prefix before the first underscore is the provider's **local name**. `aws_instance` implies the `aws` provider; `google_storage_bucket` implies `google`. That is how Terraform knows which plugin owns a resource type — it reads the prefix.
+Look at any resource type: `aws_instance`, `google_compute_instance`, `random_id`. The prefix before the first underscore is the provider's **local name**. `aws_instance` implies the `aws` provider; `google_storage_bucket` implies `google`. That is how Terraform knows which provider a resource type belongs to — it reads the prefix as the local name, then `required_providers` maps that name to the actual plugin.
 
 One provider can have **more than one configuration**. You set up the extras with `alias`. The usual reason is two regions or two accounts: a default `provider "aws"` block for `us-east-1` and a second, aliased one for `eu-west-1`.
 
