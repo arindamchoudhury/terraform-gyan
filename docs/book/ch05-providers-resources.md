@@ -5,7 +5,7 @@
 By the end of this chapter you can:
 
 - Explain the **provider plugin model** — how `resource "aws_instance"` in your HCL becomes a real API call, and why Terraform's core engine knows nothing about AWS.
-- Read a **source address** (`hashicorp/aws`) as a `[host/]namespace/type` triple, and read the Registry **tier badge** as a trust signal.
+- Read a **source address** (`hashicorp/aws`) as a `[host/]namespace/type` address, host optional, and read the Registry **tier badge** as a trust signal.
 - Navigate a provider's Registry docs and tell a resource's **arguments** (inputs you set) from its **attributes** (values it computes and exports).
 - Name every part of a **resource block** — the address, provider-specific arguments, the meta-argument map, and the `timeouts` child block — and know which come from the provider and which from Terraform core.
 - Chain three resources so that each reads the previous one's attributes, and **predict the apply order** from those references alone — no `depends_on`.
@@ -515,7 +515,7 @@ One caveat: implicit and explicit edges render **identically** — the graph won
 
     - **Render to SVG instead of PNG.** `terraform graph | dot -Tsvg > graph.svg` produces a zoomable, searchable image, which starts to matter once the graph is large.
     - **Skip the Graphviz install.** Paste the DOT output into an online renderer such as [edotor.net](https://edotor.net).
-    - **Prune the noise with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) reads your state or HCL and emits a graph of only the resources that matter, dropping the provider and meta nodes: `inframap generate main.tf | dot -Tsvg > graph.svg`. It reads a state file too — see *the second copy of the graph* below.
+    - **Prune the noise with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) reads your state or HCL and emits a graph of only the resources that matter, dropping the provider and meta nodes: `inframap generate main.tf | dot -Tsvg > graph.svg`. It reads a state file too.
 
     Interactive browser-based viewers exist, but the well-known ones are unmaintained (Rover's last release was 2022), so verify a tool is current before relying on it.
 
