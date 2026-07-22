@@ -393,6 +393,55 @@ tflocal destroy -auto-approve                # removes only the policy; the buck
 
 Notice the destroy removes the IAM policy but leaves `legacy-data-bucket` untouched — Terraform never managed it, only read it. Clean up the bucket yourself if you like: `awslocal s3 rb s3://legacy-data-bucket`.
 
+### Explore a data block interactively with `tflocal console`
+
+You don't have to run a full `apply` to see what a data source returns. `terraform console` — invoked as `tflocal console` so it hits the emulator — opens a REPL that evaluates any expression against your configuration and current state. It's the fastest way to discover *which attributes a data source actually exposes* before you wire them into a resource.
+
+Re-apply the lab config first (the console reads values from state, so the data sources must have been resolved at least once), then open the REPL:
+
+```shell
+tflocal apply -auto-approve    # populate state so the reads are resolved
+tflocal console                # opens the interactive prompt
+```
+
+At the `>` prompt, evaluate the data references directly:
+
+```hcl
+> data.aws_s3_bucket.legacy.arn
+"arn:aws:s3:::legacy-data-bucket"
+
+> data.aws_caller_identity.current.account_id
+"000000000000"
+
+> data.aws_region.current.name
+"us-east-1"
+```
+
+To see the **whole object** a data source returns — every attribute, not just the one you remembered — evaluate it without a trailing attribute:
+
+```hcl
+> data.aws_s3_bucket.legacy
+{
+  "arn"    = "arn:aws:s3:::legacy-data-bucket"
+  "bucket" = "legacy-data-bucket"
+  "id"     = "legacy-data-bucket"
+  "region" = "us-east-1"
+  # …the full attribute set the provider exposes
+}
+```
+
+This is how you answer "what fields can I read off this thing?" without hunting through provider docs. You can also try out expressions before committing them to a `.tf` file — string interpolation, functions, the collection operators from Chapter 7:
+
+```hcl
+> "${data.aws_s3_bucket.legacy.arn}/*"
+"arn:aws:s3:::legacy-data-bucket/*"
+
+> data.aws_iam_policy_document.read_legacy.json
+"{\"Statement\":[{\"Action\":[\"s3:GetObject\",\"s3:ListBucket\"], … }"
+```
+
+Type `exit` (or Ctrl-D) to leave. Two things to keep in mind: the console is **read-only** — it evaluates expressions and never changes state or infrastructure — and a data source only resolves in the console if it was already read into state (or its arguments are all known without a refresh). A data block whose arguments depend on an unbuilt resource shows as unknown here, the same deferral rule you saw at plan time.
+
 !!! warning "Emulation is not AWS"
     A green `apply` here proves your **HCL, data-source wiring, and workflow** are correct — not that the config behaves identically on real AWS. The emulator mocks the S3/STS/IAM API surface, not every semantic (real IAM evaluation, cross-account ARNs, bucket-name global uniqueness). Validate any load-bearing config against real free-tier AWS before trusting it. In particular, the `aws_ami`/EC2 examples earlier in the chapter are **mocked** on the emulator — read them, but exercise them on real AWS, not here.
 
