@@ -54,7 +54,7 @@ data "<TYPE>" "<NAME>" {
 }
 ```
 
-- **`<TYPE>`** — the data source type, defined by a provider (`aws_ami`, `aws_vpc`, `azurerm_resource_group`). Which types exist depends entirely on which providers you've installed; the provider docs are the source of truth for every argument and attribute. Terraform itself contributes exactly one built-in type, `terraform_remote_state` (§8).
+- **`<TYPE>`** — the data source type, defined by a provider (`aws_ami`, `aws_vpc`, `azurerm_resource_group`). Which types exist depends entirely on which providers you've installed; the provider docs are the source of truth for every argument and attribute. Terraform itself contributes exactly one built-in type, `terraform_remote_state` (§7).
 - **`<NAME>`** — a local label you choose. The `<TYPE>` + `<NAME>` pair must be unique, and it's how you refer back to the result.
 
 You reference the fetched data with the `data.` prefix:
