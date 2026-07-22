@@ -1009,7 +1009,7 @@ You are ready to advance when you can:
 
     - **SVG over PNG.** `terraform graph | dot -Tsvg > graph.svg` is zoomable and searchable.
     - **Online renderer.** Paste the DOT into [edotor.net](https://edotor.net); no Graphviz install needed.
-    - **Prune with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) (v0.8.1, actively maintained as of mid-2026) reads state or HCL and emits only the resources that matter, dropping provider and meta nodes: `inframap generate main.tf | dot -Tsvg > graph.svg`.
+    - **Prune with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) (v0.8.1, actively maintained as of mid-2026) reads state or HCL and emits only the resources that matter, dropping provider and meta nodes. It auto-detects the input: `inframap generate main.tf | dot -Tsvg > graph.svg`, or a state file with `inframap generate terraform.tfstate`. Force it with `--hcl`/`--tfstate` if detection guesses wrong.
 
     Interactive browser viewers (Rover, Blast Radius) exist, but the well-known ones are unmaintained (Rover's last release was 2022), so check that a tool is current before relying on it. (See [[tf-cmd-graph]].)
 

@@ -515,7 +515,7 @@ One caveat: implicit and explicit edges render **identically** — the graph won
 
     - **Render to SVG instead of PNG.** `terraform graph | dot -Tsvg > graph.svg` produces a zoomable, searchable image, which starts to matter once the graph is large.
     - **Skip the Graphviz install.** Paste the DOT output into an online renderer such as [edotor.net](https://edotor.net).
-    - **Prune the noise with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) reads your state or HCL and emits a graph of only the resources that matter, dropping the provider and meta nodes: `inframap generate main.tf | dot -Tsvg > graph.svg`.
+    - **Prune the noise with InfraMap.** [`cycloidio/inframap`](https://github.com/cycloidio/inframap) reads your state or HCL and emits a graph of only the resources that matter, dropping the provider and meta nodes. It auto-detects the input, so either source works: `inframap generate main.tf | dot -Tsvg > graph.svg`, or point it at a state file with `inframap generate terraform.tfstate`.
 
     Interactive browser-based viewers exist, but the well-known ones are unmaintained (Rover's last release was 2022), so verify a tool is current before relying on it.
 
