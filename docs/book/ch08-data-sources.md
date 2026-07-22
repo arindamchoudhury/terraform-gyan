@@ -95,7 +95,7 @@ The `filter` blocks are a repeatable sub-block specific to the AWS provider — 
 
 ## 3. Chaining lookups: data feeds data feeds resource
 
-Data sources compose. To find the default subnet you first need the default VPC's ID, so one lookup feeds the next, and the last feeds your managed resource. This *cascade* — "to look up A you need B, and B needs C" — is the everyday shape of real configurations:
+Data sources **compose**: the result of one becomes an input to the next, the way `f(g(x))` feeds `g`'s output into `f`. Each lookup does one narrow job, and you snap them together into whatever chain the problem needs. To find the default subnet, you first need the default VPC's ID — so the VPC lookup feeds the subnet lookup, and the subnet feeds your managed resource. This *cascade*, where looking up A requires B and B requires C, is the everyday shape of real configurations:
 
 ```hcl
 data "aws_vpc" "default" {
