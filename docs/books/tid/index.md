@@ -9,7 +9,7 @@
 | ✅ done | 3. Terraform variables and modules | [Modules](../../topics/modules.md) |
 | ✅ done | 4. Expressions and iterations | — (backlog: expressions-functions, count-for_each, dynamic-blocks) |
 | ✅ done | 5. The Terraform plan | [The dependency graph](../../topics/dependency-graph.md), [Core workflow](../../topics/core-workflow.md) |
-| ⬜ todo | 6. State management | — |
+| ✅ done | 6. State management | — (backlog: state-management, secrets-and-state) |
 | ⬜ todo | 7. Code quality and continuous integration | — |
 | ⬜ todo | 8. Continuous delivery and deployment | — |
 | ⬜ todo | 9. Testing and refactoring | — |

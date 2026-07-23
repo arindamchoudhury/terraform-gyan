@@ -16,9 +16,9 @@ Cross-source notes synthesizing multiple sources on the same topic.
 
 Topics to write once a second source covers them:
 
-- **state** — currently from: [[terraform-intro]] + TID Ch2 §2.3.1 (backend/`cloud` blocks); full treatment is TID Ch6
+- **state** — currently from: [[terraform-intro]] + TID Ch2 §2.3.1 (backend/`cloud` blocks) + **TID Ch6** (full treatment: purpose of state, tfstate JSON, backends/workspaces/migration, `moved`/`removed`, drift, `terraform_remote_state`, state-only providers). Promotable once TUR's state chapters land — feeds B9/I6/I7.
 - **hcl-block-syntax** — currently from: TID Ch2 §2.2 (blocks/labels/arguments/subblocks/attributes/ordering/style) + [[tf-config-syntax]] (HCDocs "Configuration Syntax": arguments vs blocks, identifiers, comments, encoding). Two sources now — promotable; feeds B2/B4.
-- **refactoring** — currently from: TID Ch2 §2.9 only (`import`/`moved`/`removed`); full treatment is TID Ch9.
+- **refactoring** — currently from: TID Ch2 §2.9 + **TID Ch6 §6.5** (`moved`/`removed` blocks, `state rm`/`replace-provider`, hand-edit last-resort); full treatment is TID Ch9.
 - **opentofu-divergence** — currently from: [[ot-provider-for-each]], [[ot-early-eval-backend]], [[ot-exclude-flag]], [[ot-dynamic-prevent-destroy]] (enough sources to promote to a topic page once TID's OpenTofu sections are captured — feeds E3)
 - **expressions-functions** — currently from: TID Ch4 §4.2–4.7 (operators, standard-library + provider-defined functions, string templates, regex, type conversion, `try`/`can`). Feeds B7.
 - **count-for_each** — currently from: TID Ch4 §4.8 (`count`/`for_each`, plan-time-known limitation, reindex footgun) + [[tf-meta-arguments]] (`count` vs `for_each` reference). Two sources — promotable; feeds I1.
