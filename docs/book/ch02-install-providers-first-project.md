@@ -493,7 +493,7 @@ resource "aws_instance" "app_server" {
 
 The `ami` argument references `data.aws_ami.ubuntu.id`. That reference is doing real work: it's an **implicit dependency**, telling Terraform to read the AMI *before* creating the instance. You never write "look up the AMI first" — the reference is the ordering. (B5 goes deep on resources and the dependency graph; B8 on data sources.)
 
-!!! warning "\"Free-tier eligible\" changed in July 2025 — check before you apply"
+!!! warning "“Free-tier eligible” changed in July 2025 — check before you apply"
     AWS overhauled its Free Tier on **15 July 2025**. Accounts created *before* that date keep the classic 12-month allowance (750 hrs/month of `t2.micro`/`t3.micro`). Accounts created *after* it get a **credit-based Free Plan** instead — $100 automatically, up to $200 total, expiring after ~6 months or when the credits run out — with no perpetual per-service free hours. So `t2.micro` is still the cheap default, but it is no longer blanket "free-tier eligible" for a brand-new account. The 🧪 Lab below sidesteps this entirely by running against a **local emulator** (no account, no bill); use that for practice and reserve real AWS for when you specifically need fidelity.
 
 The `aws_ami` lookup above is the canonical teaching example — it shows `filter`, `owners`, and `most_recent` in one place. But it carries two sharp edges worth naming, because both bite in production.

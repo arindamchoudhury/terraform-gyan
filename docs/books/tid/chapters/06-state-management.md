@@ -63,7 +63,7 @@ Mitigations help but don't eliminate the risk: pull secrets from a manager like 
 
 State must be reachable to run Terraform at all. If your state store is down, you **cannot deploy** — a productivity drag on a normal day, a genuine emergency when you need to ship a fix fast.
 
-!!! note "Availability is measured in \"nines\""
+!!! note "Availability is measured in “nines”"
     99.99% uptime = "four nines" (< ~4 min 30 s downtime/month); 99.999% = "five nines". The author treats state storage as **critical infrastructure** and wants at least four nines, backed by a vendor **SLA** with financial penalties. Avoid vendors that won't commit to an SLA or aren't transparent about outages. (`https://uptime.is/` converts percentages to real time.)
 
 ---
