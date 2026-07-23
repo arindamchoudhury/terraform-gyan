@@ -133,6 +133,9 @@ Use `-type` to pick the mode: `plan` (default, simplified), `plan-refresh-only`,
     !!! note "PowerShell: don't use the unquoted `-flag=value` form"
         On PowerShell, `terraform graph -plan=create.tfplan` (the `=` form HashiCorp's docs show) gets **split** — `create.tfplan` arrives as a bare positional and Terraform errors with **`Too many command line arguments … Did you mean to use -chdir?`**. Use the **space** form above (`-plan create.tfplan`), or quote the whole flag (`"-plan=create.tfplan"`). bash/zsh accept every form; only PowerShell needs this.
 
+!!! note "Arrow direction: `A → B` means \"A depends on B\""
+    `terraform graph` points each arrow from the **dependent** to the **thing it needs**, so creation runs *against* the arrows — **bottom-up**. In the rendered graph `[root] root` is the **sink** at the top (runs last), and the sources with no dependencies (the `tls` provider node, `var.domains`) sit at the **bottom** and run first. The unambiguous tell is `tls_private_key.child_key → var.domains`: the key depends on the variable, not the reverse, so the arrowhead sits on the dependency. That one edge fixes the direction for the whole graph. To read it in build order instead (sources on top, arrows pointing up), render bottom-to-top: `terraform graph -plan create.tfplan | dot -Grankdir=BT -Tpng > graph.png` — purely cosmetic, the dependencies are identical.
+
 - 📌 **Version note (book claim):** before **Terraform v1.7.0** the apply-mode graph produced much noisier output; v1.7.0+ is cleaner. Both are still diagrams *of the plan* — `apply` mode just shows how Terraform will execute it.
 
 Beyond debugging (spotting non-obvious dependencies, finding circular deps), the rendered graph is a quick **architecture diagram** to share with other teams. Full treatment of `terraform graph` is in learning-path **E5** ([[tf-cmd-graph]]).
