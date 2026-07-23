@@ -152,6 +152,38 @@ There is **no module node**. Modules organise *code*, not the runtime graph — 
 
 > ⚠️ **Pitfall** — if module B "depends on" module A, a resource in B can still be created **before** a resource in A, as long as the resource-level dependencies allow it. Module boundaries don't serialize execution.
 
+### 5.2.4 InfraMap — a cleaner graph
+
+!!! note "(mine) — not in the book"
+    `terraform graph` is faithful but noisy. [InfraMap](https://github.com/cycloidio/inframap) (cycloidio) redraws the *same* dependencies as a **human-readable architecture diagram**: it strips Terraform's internal scaffolding and keeps only the resources. Pipe it to `dot` exactly like `terraform graph`.
+
+```bash
+inframap generate . | dot -Tpng > inframap.png     # reads the HCL in the current dir
+```
+
+![InfraMap diagram of the TLS dev-CA: only the five resource nodes — child_certificate at the top depending on child_request, ca_cert, and ca_key; child_request on child_key; ca_cert on ca_key. No provider, variable, root, or expand nodes.](../assets/ch05-tls-ca-inframap.png)
+
+The same module, five nodes instead of the ~15 in the §5.2.2 apply graph:
+
+| | `terraform graph` (§5.2.2) | InfraMap |
+|---|---|---|
+| Purpose | faithful **execution DAG** | readable **architecture diagram** |
+| Provider / `var.domains` / `[root]` / close nodes | shown | **pruned** |
+| `for_each` resource | expand node + one box **per instance** | **one node** per resource block |
+| Nodes here | ~15 | **5** |
+| Arrow meaning | dependent → dependency | **same** |
+
+What's identical is the **dependency direction** and the resource-to-resource edges — InfraMap just removes the plumbing. So it's the tool to reach for when you want to *show* the architecture, and `terraform graph` when you want to *debug* execution.
+
+!!! info "HCL vs. state input"
+    `inframap generate .` reads the **HCL**, so `for_each` isn't evaluated — one node per resource *block*. Point it at **state** for the expanded, per-domain view: `terraform show -json > tfstate.json` then `inframap generate --tfstate tfstate.json`.
+
+!!! warning "InfraMap's pruning is cloud-specific"
+    Its signature move — collapsing IAM roles, security groups, routing, etc. into edges — is implemented **per provider (AWS/GCP/Azure)**. The `tls` provider has no special handling, so here you get a plain resource graph, not the fancy pruning. On real cloud infra the gap from `terraform graph` is far larger.
+
+!!! note "Install on Windows"
+    No winget/scoop/choco package. The last prebuilt Windows binary is **v0.8.0** (v0.8.1 ships source only) — download it from the [releases page](https://github.com/cycloidio/inframap/releases), or build the latest with `go install github.com/cycloidio/inframap@latest`, or run the `cycloidio/inframap` Docker image.
+
 ---
 
 ## 5.3 Plan
