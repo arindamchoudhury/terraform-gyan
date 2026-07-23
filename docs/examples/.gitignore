@@ -1,0 +1,13 @@
+# Generated artifacts from running the example configs — recreate with
+# `terraform graph` / `inframap` + `dot`. Only the .tf sources and the
+# lock file are tracked.
+
+# Rendered graphs
+*.png
+*.svg
+*.dot
+
+# Plan and state dumps — state dumps hold plaintext secrets
+# (root .gitignore already covers *.tfstate); catch the loose ones here.
+*.tfplan
+*.json
