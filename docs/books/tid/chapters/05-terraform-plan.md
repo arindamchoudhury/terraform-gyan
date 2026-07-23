@@ -84,9 +84,10 @@ variable "domains" {
 
 Every resource has an edge to the `tls` **provider** node, so no resource is edge-free. But looking only at **resource-to-resource** references, exactly two reference no *other resource*: `ca_key` (only a constant `algorithm`) and `child_key` (its inputs are the `var.domains` variable, via `for_each`, plus a constant — a variable, not a resource). The other three each reference another resource's attribute. No cycles → a valid DAG.
 
-> 💭 (mine): the key edges are the **attribute references** (`tls_private_key.ca_key.private_key_pem` etc.). Same rule as Ch4's [[dependency-graph]] — referencing an attribute *is* the dependency; nothing else declares it.
->
-> Don't call `ca_key`/`child_key` "roots": in the actual `terraform graph`, `root` is the single **sink** node every leaf connects up to, and these two are the opposite end (sources). They aren't even symmetric — `child_key` carries an extra `var.domains` edge from its `for_each` that `ca_key` doesn't. The only thing they share is referencing no *resource*.
+!!! note "(mine)"
+    the key edges are the **attribute references** (`tls_private_key.ca_key.private_key_pem` etc.). Same rule as Ch4's [[dependency-graph]] — referencing an attribute *is* the dependency; nothing else declares it.
+
+    Don't call `ca_key`/`child_key` "roots": in the actual `terraform graph`, `root` is the single **sink** node every leaf connects up to, and these two are the opposite end (sources). They aren't even symmetric — `child_key` carries an extra `var.domains` edge from its `for_each` that `ca_key` doesn't. The only thing they share is referencing no *resource*.
 
 ---
 
@@ -150,7 +151,8 @@ Beyond debugging (spotting non-obvious dependencies, finding circular deps), the
 
 There is **no module node**. Modules organise *code*, not the runtime graph — Terraform flattens module boundaries and adds only the underlying resources. Counterintuitive consequence:
 
-> ⚠️ **Pitfall** — if module B "depends on" module A, a resource in B can still be created **before** a resource in A, as long as the resource-level dependencies allow it. Module boundaries don't serialize execution.
+!!! warning "Pitfall — module ordering"
+    if module B "depends on" module A, a resource in B can still be created **before** a resource in A, as long as the resource-level dependencies allow it. Module boundaries don't serialize execution.
 
 ### 5.2.4 InfraMap — a cleaner graph
 
@@ -257,7 +259,8 @@ terraform plan -replace 'tls_private_key.child_key["charilie.example.com"]'
 
 `-target` restricts the plan to specific resources (plus anything they depend on) and nothing else.
 
-> ⚠️ **Antipattern warning (author is emphatic):** resource targeting is for **exceptional** cases only — mainly recovering from a state that Terraform can't otherwise plan (e.g. someone changed a resource manually). A module that *requires* `-target` to work is a design smell. Terraform sometimes suggests `-target` in error messages; treat that as a sign of a deeper problem, not a fix. Batching a slow change with `-target` usually means the project is too large and should be split (Ch9).
+!!! warning "Antipattern — resource targeting (author is emphatic)"
+    resource targeting is for **exceptional** cases only — mainly recovering from a state that Terraform can't otherwise plan (e.g. someone changed a resource manually). A module that *requires* `-target` to work is a design smell. Terraform sometimes suggests `-target` in error messages; treat that as a sign of a deeper problem, not a fix. Batching a slow change with `-target` usually means the project is too large and should be split (Ch9).
 
 !!! info "OpenTofu — the `-exclude` flag (OpenTofu 1.9)"
     OpenTofu added a **`-exclude`** flag (OpenTofu **1.9**) — the inverse of `-target`: plan/apply *everything except* the named addresses. Terraform has **no `-exclude`** as of 1.14 (only the new `terraform query` / list-resources feature landed there). `-target` and `-exclude` are mutually exclusive. Portable code should avoid depending on either. (See [[version-facts]], [[feature-coverage-matrix]].)
@@ -266,7 +269,8 @@ terraform plan -replace 'tls_private_key.child_key["charilie.example.com"]'
 
 Skips the refresh phase — the opposite of `-refresh-only`.
 
-> 🚨 **Danger** — the plan then runs on possibly-stale state, so expect failed applies. The only semi-defensible use is a dev environment where *you* are the sole actor — and even then automation could change things underneath you.
+!!! danger "Runs on stale state"
+    the plan then runs on possibly-stale state, so expect failed applies. The only semi-defensible use is a dev environment where *you* are the sole actor — and even then automation could change things underneath you.
 
 ### `terraform refresh` command (deprecated)
 
@@ -336,7 +340,8 @@ When a variable is set multiple ways, Terraform takes the **first match** from h
 5. **Environment variables** (`TF_VAR_*`)
 6. Otherwise: the variable's **default**, else **prompt** (or **error** if `-input=false`)
 
-> 💡 **Tip** — pick one method (e.g. always variable files) and stick to it. Most "why won't my change take effect?" confusion is a higher-precedence source silently overriding you. Matches the [[tf-input-variables]] precedence table from B6.
+!!! tip "Pick one method and stick to it"
+    pick one method (e.g. always variable files) and stick to it. Most "why won't my change take effect?" confusion is a higher-precedence source silently overriding you. Matches the [[tf-input-variables]] precedence table from B6.
 
 ### A note on secrets and inputs
 
@@ -447,7 +452,8 @@ Because everything's a graph, a change to one resource can ripple downstream —
 
 The mirror image: infra that depends on other infra with **no code link** (no attribute passed between them), so Terraform may create things in the wrong order. Sometimes harmless (microservices that retry until peers are up); sometimes fatal (a NAT Gateway that can't launch before its Internet Gateway). **Fix:** declare the edge explicitly with **`depends_on`**.
 
-> 💭 (mine): this is the exact *opposite* advice to cascading changes — one section says "fewer dependencies," this says "add an explicit one." That's the perennial balancing act: simpler is easier to reason about, but real systems need the edges Terraform can't infer. Ties directly to the "nothing warns you about a missing `depends_on`" danger in learning-path I1 ([[dependency-graph]]).
+!!! note "(mine)"
+    this is the exact *opposite* advice to cascading changes — one section says "fewer dependencies," this says "add an explicit one." That's the perennial balancing act: simpler is easier to reason about, but real systems need the edges Terraform can't infer. Ties directly to the "nothing warns you about a missing `depends_on`" danger in learning-path I1 ([[dependency-graph]]).
 
 ### Always-detected changes (eternal drift)
 
