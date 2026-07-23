@@ -81,8 +81,8 @@ The resource graph has **three** node types:
 
 This is Terraform's internal view — you won't think about it daily, but it makes debugging (§5.7) far easier.
 
-!!! warning "🔄 Doesn't match the current implementation (verified 2026-07-20)"
-    Recorded above as the book states it. Checked against the Terraform source (`repos/terraform`, `main` @ `c07e79c1c8`), the three-type model does not hold: the plan graph also has variable, local, output, check, action, policy, and module expansion/close nodes; the `count > 1` "Resource Meta" node corresponds to `nodeExpandPlannableResource`, which exists for **every** resource and isn't cosmetic; and modules **are** nodes (`nodeExpandModule`). The **Provider Configuration** row holds up. Details and source citations in [[dependency-graph]].
+!!! warning "🔄 Doesn't match the current implementation (verified 2026-07-20, against Terraform **v1.15.8**)"
+    Recorded above as the book states it. Checked against the Terraform source at tag `v1.15.8` (`repos/terraform`), the three-type model does not hold: the plan graph also has variable, local, output, check, action, and module expansion/close nodes; the `count > 1` "Resource Meta" node corresponds to `nodeExpandPlannableResource`, which exists for **every** resource and isn't cosmetic; and modules **are** nodes (`nodeExpandModule`). The **Provider Configuration** row holds up. Details and source citations in [[dependency-graph]].
 
 ### 5.2.2 The `terraform graph` command
 

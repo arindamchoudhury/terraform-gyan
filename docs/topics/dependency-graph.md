@@ -132,13 +132,13 @@ TID Ch5 is the book's dedicated DAG chapter and fills in two things this page's 
 - **Modules are *not* nodes.** Terraform flattens module boundaries into the flat resource graph, so a resource in module B can be created before one in module A if the resource-level edges allow it — module nesting does **not** serialize execution.
 
 !!! warning "🔄 Both bullets above are wrong against the current source (checked 2026-07-20)"
-    Verified against the Terraform repo at `C:\opt\learn\terraform\repos\terraform` (`main`, commit `c07e79c1c8`, 2026-07-10). TID's model is a teaching simplification, not the implementation:
+    Verified against the Terraform repo at `C:\opt\learn\terraform\repos\terraform` at tag **`v1.15.8`** (the release this book targets — checked 2026-07-20; earlier drafts of this box read `main`, which carries newer nodes like policy evaluation that 1.15.8 does not have). TID's model is a teaching simplification, not the implementation:
 
-    - **There are far more than three node types.** `graph_builder_plan.go` runs transformers that add nodes for root and module **variables**, **locals**, **outputs**, **checks**, **actions**, **policy evaluation**, module **expansion** and **close**, provider **close**, and several resource flavors (expand, instance, destroy, orphan, deposed, import, forget). See `internal/terraform/node_*.go`.
+    - **There are far more than three node types.** `graph_builder_plan.go` runs transformers that add nodes for root and module **variables**, **locals**, **outputs**, **checks**, **actions**, module **expansion** and **close**, provider **close**, and several resource flavors (expand, instance, destroy, orphan, deposed, import, forget). See `internal/terraform/node_*.go`.
     - **"Resource Meta" is not cosmetic and is not `count`-only.** The modern equivalent is `nodeExpandPlannableResource` (`node_resource_plan.go:24`), created for **every** managed resource, not just `count > 1`. It does real work — deciding the expansion — and each instance then gets its own node.
     - **Modules *are* nodes.** `nodeExpandModule` (`node_module_expand.go`) plus `nodeCloseModule`, added by `ModuleExpansionTransformer`. Its own comment: the transformer "ensures that any nodes representing objects declared within a module are dependent on the expansion node so that they will be visited only after the module expansion has been decided."
 
-    What survives is the **consequence**, not the structure: module boundaries still don't serialize resources across modules, because ordering past expansion comes from the flat resource-level edges. The provider-edge claim also holds — `transform_provider.go:166` creates "edges from provider to provider user so that the providers will get initialized first."
+    What survives is the **consequence**, not the structure: module boundaries still don't serialize resources across modules, because ordering past expansion comes from the flat resource-level edges. The provider-edge claim also holds — `transform_provider.go:101` creates "edges from provider to provider user so that the providers will get initialized first."
 
     Book Ch5's node-types box is written from this verification, not from TID.
 
