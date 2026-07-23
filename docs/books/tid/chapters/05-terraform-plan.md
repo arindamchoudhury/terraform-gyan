@@ -175,8 +175,21 @@ The same module, five nodes instead of the ~15 in the §5.2.2 apply graph:
 
 What's identical is the **dependency direction** and the resource-to-resource edges — InfraMap just removes the plumbing. So it's the tool to reach for when you want to *show* the architecture, and `terraform graph` when you want to *debug* execution.
 
-!!! info "HCL vs. state input"
-    `inframap generate .` reads the **HCL**, so `for_each` isn't evaluated — one node per resource *block*. Point it at **state** for the expanded, per-domain view: `terraform show -json > tfstate.json` then `inframap generate --tfstate tfstate.json`.
+**Feeding it state instead of HCL.** `inframap generate .` reads the **HCL**, so `for_each` isn't evaluated — one node per resource *block* (the diagram above). You can instead feed **post-apply state**, but it must be a **raw** state file — *not* `terraform show -json`, which emits the state *representation* (`format_version` 1.x) that InfraMap rejects with `invalid Terraform State version, we only support version 3 and 4`. Pull the real v4 state:
+
+```bash
+terraform state pull > state.json                                    # raw v4 state
+inframap generate --tfstate state.json | dot -Tpng > inframap-state.png
+```
+
+For this module the state view is **worse, not richer**:
+
+![InfraMap state view of the TLS dev-CA: only two nodes — ca_cert depending on ca_key. The entire for_each child chain is absent.](../assets/ch05-tls-ca-inframap-state.png)
+
+Everything is in state — all three domain instances of `child_key`, `child_request`, and `child_certificate` — yet InfraMap draws only `ca_cert → ca_key`. State records each dependency as a **bare address** (`tls_private_key.child_key`), but the instances are **index-keyed** nodes (`child_key["alice.example.com"]`, …). InfraMap's `--tfstate` parser doesn't reconcile the two, so those edges don't resolve; `--clean` (on by default) then prunes the now-disconnected keyed instances, leaving only the non-`for_each` singletons `ca_key`/`ca_cert`.
+
+!!! warning "InfraMap + `for_each`/`count` in state mode"
+    With keyed resources, trust the **HCL** view (`inframap generate .`) — InfraMap's `--tfstate` parser drops index-keyed instances here. State mode is fine for modules whose resources are plain singletons.
 
 !!! warning "InfraMap's pruning is cloud-specific"
     Its signature move — collapsing IAM roles, security groups, routing, etc. into edges — is implemented **per provider (AWS/GCP/Azure)**. The `tls` provider has no special handling, so here you get a plain resource graph, not the fancy pruning. On real cloud infra the gap from `terraform graph` is far larger.
