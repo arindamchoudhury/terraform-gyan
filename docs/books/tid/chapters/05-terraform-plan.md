@@ -28,7 +28,7 @@ So Terraform's model is specifically a **directed *acyclic* graph**: ordered dep
 The chapter's worked module (Listing 5.1) builds a throwaway **certificate authority** with the `tls` provider — handy when you need certs during development instead of Let's Encrypt / AWS ACM. Every resource in it forms a DAG:
 
 ```hcl
-resource "tls_private_key" "ca_key" {          # the only resource with no deps
+resource "tls_private_key" "ca_key" {          # a root: no resource deps
   algorithm = "ED25519"
 }
 
@@ -38,7 +38,8 @@ resource "tls_self_signed_cert" "ca_cert" {    # depends on ca_key
   # subject { ... }, validity_period_hours = 24, allowed_uses = [...]
 }
 
-resource "tls_private_key" "child_key" {       # one per domain
+resource "tls_private_key" "child_key" {       # also a root — for_each on a var, no resource deps
+                                               # one per domain
   for_each  = var.domains                       # set(string) of domains
   algorithm = "ECDSA"
 }
@@ -58,7 +59,7 @@ resource "tls_locally_signed_cert" "child_certificate" {  # signed by the CA
 }
 ```
 
-Every resource depends on the `tls` provider; every one except `ca_key` depends on another resource; no cycles → a valid DAG.
+Every resource depends on the `tls` provider. Two are **roots** with no resource edges — `ca_key` and `child_key` (its `for_each` reads `var.domains`, a variable, not a resource). The rest each reference another resource's attribute. No cycles → a valid DAG.
 
 > 💭 (mine): the key edges are the **attribute references** (`tls_private_key.ca_key.private_key_pem` etc.). Same rule as Ch4's [[dependency-graph]] — referencing an attribute *is* the dependency; nothing else declares it.
 
