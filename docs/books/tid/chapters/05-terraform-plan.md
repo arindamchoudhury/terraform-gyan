@@ -35,7 +35,14 @@ resource "tls_private_key" "ca_key" {          # references no other resource (e
 resource "tls_self_signed_cert" "ca_cert" {    # depends on ca_key
   private_key_pem   = tls_private_key.ca_key.private_key_pem
   is_ca_certificate = true
-  # subject { ... }, validity_period_hours = 24, allowed_uses = [...]
+
+  subject {
+    common_name  = "dev-ca.example.com"
+    organization = "Dev CA"
+  }
+
+  validity_period_hours = 24
+  allowed_uses          = ["cert_signing", "crl_signing", "digital_signature"]
 }
 
 resource "tls_private_key" "child_key" {       # references no other resource either — one per domain
@@ -47,7 +54,10 @@ resource "tls_private_key" "child_key" {       # references no other resource ei
 resource "tls_cert_request" "child_request" {  # CSR per domain, depends on child_key
   for_each        = var.domains
   private_key_pem = tls_private_key.child_key[each.value].private_key_pem
-  # subject { ... }
+
+  subject {
+    common_name = each.value
+  }
 }
 
 resource "tls_locally_signed_cert" "child_certificate" {  # signed by the CA
@@ -55,9 +65,22 @@ resource "tls_locally_signed_cert" "child_certificate" {  # signed by the CA
   cert_request_pem   = tls_cert_request.child_request[each.value].cert_request_pem
   ca_private_key_pem = tls_private_key.ca_key.private_key_pem
   ca_cert_pem        = tls_self_signed_cert.ca_cert.cert_pem
-  # validity_period_hours = 12, allowed_uses = [...]
+
+  validity_period_hours = 12
+  allowed_uses          = ["digital_signature", "key_encipherment", "server_auth"]
 }
 ```
+
+The `var.domains` these resources fan out over is a `set(string)`:
+
+```hcl
+variable "domains" {
+  type    = set(string)
+  default = ["alice.example.com", "bob.example.com", "charlie.example.com"]
+}
+```
+
+> 📁 Runnable version (fills in `terraform.tf`, passes `terraform validate` on Terraform 1.15.8 / tls 4.3.0): [`docs/examples/TID/chapter5`](../../../examples/TID/chapter5/main.tf).
 
 Every resource has an edge to the `tls` **provider** node, so no resource is edge-free. But looking only at **resource-to-resource** references, exactly two reference no *other resource*: `ca_key` (only a constant `algorithm`) and `child_key` (its inputs are the `var.domains` variable, via `for_each`, plus a constant — a variable, not a resource). The other three each reference another resource's attribute. No cycles → a valid DAG.
 
