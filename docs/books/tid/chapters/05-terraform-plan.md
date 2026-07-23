@@ -125,8 +125,13 @@ Use `-type` to pick the mode: `plan` (default, simplified), `plan-refresh-only`,
 
     ```bash
     terraform plan -out create.tfplan
-    terraform graph -type=apply -plan=create.tfplan | dot -Tpng > graph.png
+    terraform graph -plan create.tfplan | dot -Tpng > graph.png
     ```
+
+    `-plan` already **implies `-type=apply`**, so no separate `-type` is needed (the book writes both; it's redundant).
+
+    !!! note "PowerShell: don't use the unquoted `-flag=value` form"
+        On PowerShell, `terraform graph -plan=create.tfplan` (the `=` form HashiCorp's docs show) gets **split** — `create.tfplan` arrives as a bare positional and Terraform errors with **`Too many command line arguments … Did you mean to use -chdir?`**. Use the **space** form above (`-plan create.tfplan`), or quote the whole flag (`"-plan=create.tfplan"`). bash/zsh accept every form; only PowerShell needs this.
 
 - 📌 **Version note (book claim):** before **Terraform v1.7.0** the apply-mode graph produced much noisier output; v1.7.0+ is cleaner. Both are still diagrams *of the plan* — `apply` mode just shows how Terraform will execute it.
 
