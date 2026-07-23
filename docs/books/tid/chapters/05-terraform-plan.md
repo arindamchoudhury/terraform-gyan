@@ -133,6 +133,12 @@ Use `-type` to pick the mode: `plan` (default, simplified), `plan-refresh-only`,
     !!! note "PowerShell: don't use the unquoted `-flag=value` form"
         On PowerShell, `terraform graph -plan=create.tfplan` (the `=` form HashiCorp's docs show) gets **split** — `create.tfplan` arrives as a bare positional and Terraform errors with **`Too many command line arguments … Did you mean to use -chdir?`**. Use the **space** form above (`-plan create.tfplan`), or quote the whole flag (`"-plan=create.tfplan"`). bash/zsh accept every form; only PowerShell needs this.
 
+The apply graph for the §5.1.2 TLS dev-CA (three domains) renders like this:
+
+![Apply-mode dependency graph of the TLS dev-CA module: `[root] root` at the top feeds the provider-close node, then the child_certificate / child_request / child_key chain and the ca_cert / ca_key chain, down to the `tls` provider and `var.domains` sources at the bottom.](../assets/ch05-tls-ca-apply-graph.png)
+
+Each `for_each` resource shows as an **expand** node feeding its three **instance** nodes (one per domain); `ca_key`/`ca_cert` have no `for_each` yet still get an expand node — the "Resource Meta" point from §5.2.1's correction, visible here.
+
 !!! note "Arrow direction: `A → B` means \"A depends on B\""
     `terraform graph` points each arrow from the **dependent** to the **thing it needs**, so creation runs *against* the arrows — **bottom-up**. In the rendered graph `[root] root` is the **sink** at the top (runs last), and the sources with no dependencies (the `tls` provider node, `var.domains`) sit at the **bottom** and run first. The unambiguous tell is `tls_private_key.child_key → var.domains`: the key depends on the variable, not the reverse, so the arrowhead sits on the dependency. That one edge fixes the direction for the whole graph. To read it in build order instead (sources on top, arrows pointing up), render bottom-to-top: `terraform graph -plan create.tfplan | dot -Grankdir=BT -Tpng > graph.png` — purely cosmetic, the dependencies are identical.
 
