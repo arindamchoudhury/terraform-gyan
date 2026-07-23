@@ -178,9 +178,12 @@ What's identical is the **dependency direction** and the resource-to-resource ed
 **Feeding it state instead of HCL.** `inframap generate .` reads the **HCL**, so `for_each` isn't evaluated — one node per resource *block* (the diagram above). You can instead feed **post-apply state**, but it must be a **raw** state file — *not* `terraform show -json`, which emits the state *representation* (`format_version` 1.x) that InfraMap rejects with `invalid Terraform State version, we only support version 3 and 4`. Pull the real v4 state:
 
 ```bash
-terraform state pull > state.json                                    # raw v4 state
-inframap generate --tfstate state.json | dot -Tpng > inframap-state.png
+terraform state pull > pulled.tfstate                                # raw v4 state
+inframap generate --tfstate pulled.tfstate | dot -Tpng > inframap-state.png
 ```
+
+!!! danger "State holds the private keys"
+    A `tls_private_key` writes its **private key into state in plaintext** — so `pulled.tfstate` (and the working `terraform.tfstate`) contain real secrets. The `.tfstate` extension is gitignored by this repo's `.gitignore`; never rename the dump to `.json` or anything outside that pattern, and never commit it.
 
 For this module the state view is **worse, not richer**:
 
