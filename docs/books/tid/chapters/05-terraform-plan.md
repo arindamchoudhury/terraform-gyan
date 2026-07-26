@@ -463,6 +463,55 @@ resource "null_resource" "alpha" {
 
 Cycles are rare in practice; when they appear, it usually signals architecture that needs simplifying.
 
+!!! note "(mine) — not in the book: cycles you actually hit"
+    The `null_resource` demo is a *constructed* cycle, which is why its fix has to lift the value out. Real cycles have a different shape: **one resource node is doing two jobs**, and the fix is to split the node — no behavior traded away. Three that show up in real AWS configs:
+
+**1. Mutually-referencing security groups.** App must reach the DB; DB must reach the app. Written with **inline** rule blocks, each SG's node carries both its own identity and a reference to the other:
+
+```hcl
+resource "aws_security_group" "app" {
+  ingress { security_groups = [aws_security_group.db.id] }   # app ← db
+}
+resource "aws_security_group" "db" {
+  ingress { security_groups = [aws_security_group.app.id] }  # db ← app  → Cycle
+}
+```
+
+Splitting the rules into their own resources removes the edge between the SGs. Both rules depend on both groups, and the groups depend on nothing:
+
+```hcl
+resource "aws_security_group" "app" {}
+resource "aws_security_group" "db" {}
+
+resource "aws_vpc_security_group_ingress_rule" "db_from_app" {
+  security_group_id            = aws_security_group.db.id
+  referenced_security_group_id = aws_security_group.app.id
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+}
+
+resource "aws_vpc_security_group_ingress_rule" "app_from_db" {
+  security_group_id            = aws_security_group.app.id
+  referenced_security_group_id = aws_security_group.db.id
+  ip_protocol                  = "tcp"
+  from_port                    = 8080
+  to_port                      = 8080
+}
+```
+
+`app ⇄ db` becomes a diamond. This is also the provider's own guidance for unrelated reasons: the AWS docs call one-rule-per-resource the current best practice, and warn that mixing inline blocks with `aws_vpc_security_group_ingress_rule` causes "rule conflicts, perpetual differences, and result in rules being overwritten."
+
+**2. Instance and Elastic IP.** `aws_eip.instance` points at the instance, while the instance's `user_data` interpolates `aws_eip.public_ip` to self-configure. Same fix: move the association into `aws_eip_association` (`allocation_id` + `instance_id`), a third node that depends on both.
+
+**3. IAM role and KMS key.** The key policy grants the role, and the role's policy grants the key ARN. Here nothing can be split, so break the edge by *constructing* one ARN as a string instead of reading the attribute:
+
+```hcl
+role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.role_name}"
+```
+
+The reference survives; the graph edge doesn't. Same trick as deriving `count` from a variable rather than a resource attribute (§5.7 “Calculated values and iterations”).
+
 ### Cascading changes
 
 Because everything's a graph, a change to one resource can ripple downstream — and some changes replace (destroy + re-create) rather than update in place. In Listing 5.12, flipping the CA key algorithm `ECDSA → ED25519` re-creates the CA key, the CA cert, and **every** child cert: `Plan: 5 to add, 0 to change, 5 to destroy.` Three mitigations:
