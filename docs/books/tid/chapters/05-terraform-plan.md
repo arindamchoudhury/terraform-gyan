@@ -458,6 +458,9 @@ resource "null_resource" "alpha" {
 # bravo, charlie: same pattern — no more cycle
 ```
 
+!!! note "(mine)"
+    5.11 is not an equivalent rewrite of 5.10 — it swaps the trigger source. In 5.10 the trigger is another resource's `id`, so a replacement propagates **automatically** inside Terraform at apply time. In 5.11 the trigger is an input string, so Terraform propagates **nothing**; the three resources rebuild together only because something outside (you, or CI passing a git SHA) changes `var.build_id`. What was wanted was never a cascade but a *simultaneous* rebuild, and cascade-in-a-loop is unimplementable in a DAG by definition — so nothing working was traded away. General rule: “these must move together” has to be driven from **above** the resources (variable, local, `terraform_data`'s `triggers_replace`), never peer-to-peer. Peer-to-peer coupling is either a chain with a head or a cycle.
+
 Cycles are rare in practice; when they appear, it usually signals architecture that needs simplifying.
 
 ### Cascading changes
