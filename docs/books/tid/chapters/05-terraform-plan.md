@@ -417,14 +417,34 @@ Most of these stem from the resource graph — powerful, but with sharp edges.
 
 ### Circular dependencies
 
-A cycle (A → B → C → A) is illegal in a DAG; Terraform errors immediately. Demonstrated with the **`null_resource`** (a NOOP resource from the `null` provider, useful for testing) whose `triggers` reference each other:
+A cycle (A → B → C → A) is illegal in a DAG; Terraform errors immediately. Demonstrated with the **`null_resource`** (a NOOP resource from the `null` provider, useful for testing) whose `triggers` reference each other. `triggers` is an object of arbitrary values; if it changes, the resource is re-created — so pointing each one at the next resource's `id` wires alpha → charlie → bravo → alpha (Listing 5.10):
+
+```hcl
+resource "null_resource" "alpha" {
+  triggers = {
+    rebuild = null_resource.charlie.id   # alpha depends on charlie
+  }
+}
+
+resource "null_resource" "bravo" {
+  triggers = {
+    rebuild = null_resource.alpha.id     # bravo depends on alpha
+  }
+}
+
+resource "null_resource" "charlie" {
+  triggers = {
+    rebuild = null_resource.bravo.id     # charlie depends on bravo → cycle
+  }
+}
+```
 
 ```
 $ terraform plan
 Error: Cycle: null_resource.alpha, null_resource.bravo, null_resource.charlie
 ```
 
-The error **names every resource in the cycle** — enough to start debugging. **Fix:** break one edge. Often two resources merely *share a value*; route it through a **variable or local** instead of a resource attribute:
+The error **names every resource in the cycle** — enough to start debugging. **Fix (Listing 5.11):** break one edge. Often two resources merely *share a value*; route it through a **variable or local** instead of a resource attribute:
 
 ```hcl
 variable "build_id" {        # a single input drives the rebuild...
