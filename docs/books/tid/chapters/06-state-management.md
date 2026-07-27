@@ -118,7 +118,7 @@ output "password" {
 | --- | --- |
 | `version` | Version of the **state data-structure format** itself (currently `4`). Lets newer Terraform read and upgrade older state. |
 | `terraform_version` | The Terraform version that **last wrote** the state. Mostly informational. |
-| `serial` | Integer bumped **+1 on every change** to the project's state. Use it to find the newest of several backups. |
+| `serial` | Integer bumped **+1 on every persisted snapshot whose content differs from the previous one** — per *write*, not per apply (see below). Use it to find the newest of several backups. |
 | `lineage` | A **UUID** created the first time `init` builds a state, **never changes** for the project. Detects "wrong state for this project". |
 | `resources` | List of objects for every managed **resource and data source**. |
 | `outputs` | The **root-level module's** outputs (enables `terraform show` and `terraform_remote_state`). |
@@ -145,6 +145,29 @@ output "password" {
 !!! info "`sensitive_attributes` is effectively dead"
     The book's JSON shows an empty `sensitive_attributes: []` with a margin note that the field "does not appear to be used anymore" — sensitivity now lives in the providers' schemas, not this state field.
 
+!!! question "Why does the very first apply leave `serial` at 2, not 1?"
+    Because `serial` counts state **writes**, and a single apply writes more than once. Applying the listing above produces a `serial` of 2:
+
+    ```
+    writeResourceInstanceState  module.my_password.random_password.new_password
+    state has changed since last snapshot, so incrementing serial to 1
+    vertex "module.my_password.output.password (expand)": starting visit
+    state has changed since last snapshot, so incrementing serial to 2
+    ```
+
+    The first write happens **mid-graph**, the moment `random_password` finishes creating. Terraform's local-backend `StateHook.PostStateUpdate` calls `WriteState` on every state update during the walk, so a crash partway through an apply still leaves already-created resources recorded. That snapshot lands before the output vertex is visited, so it holds the resource but no `outputs`. The second write is the final snapshot after the graph walk closes, now including the root output.
+
+    The counter starts at **0** (`statemgr.NewStateFile` leaves `Serial` at its zero value), and the increment is guarded by a content comparison — `StatesMarshalEqual` against the previously read snapshot — so an identical snapshot writes without bumping.
+
+    Consequences worth remembering:
+
+    - On a local backend, a **first apply** lands at roughly *number of managed resources + 1*. A fresh directory with three `random_password` resources ends at `serial` 4.
+    - Data sources do **not** contribute a bump of their own.
+    - A **no-op apply** leaves `serial` untouched, because the marshalled state is unchanged.
+    - Therefore `serial` is a reliable *ordering* key for "which backup is newest", but it is **not** a count of applies, and gaps in it mean nothing.
+
+    Verified on Terraform 1.15.8 against the matching source tag.
+
 ### 6.3.2 State versions
 
 Two different "versions" ride along with state, and they mean different things:
@@ -157,7 +180,7 @@ Two different "versions" ride along with state, and they mean different things:
 Both describe *this specific instance* of state:
 
 - **`lineage`** (UUID) is a **safety mechanism** — the odds of two environments sharing a UUID are practically zero, so backends compare it to refuse overwriting *project A's* state with *project B's*.
-- **`serial`** (integer) increments on every save. Backends that version state, or a restore-from-backup flow, use it to identify the **latest** version; cloud-block backends use it to refuse overwriting a newer state with an older one.
+- **`serial`** (integer) increments on every save whose content actually differs, so it counts *writes* rather than applies (§6.3.1). Backends that version state, or a restore-from-backup flow, use it to identify the **latest** version; cloud-block backends use it to refuse overwriting a newer state with an older one.
 
 ### 6.3.4 Resources, outputs, and checks
 
@@ -680,7 +703,7 @@ resource "aws_instance" "myinstance" {
 
 - Terraform is **stateful** to link code to real objects reliably, keep the engine (and provider dev) simpler, and keep the plan loop fast — at the cost of storing and protecting state.
 - Judge a state store on **resiliency, security, availability**; treat it as critical infra with tested backups and an SLA.
-- State is **JSON**: `version` (format) vs `terraform_version` (writer), `serial` (bumped per change), `lineage` (immutable UUID guard), plus `resources`/`outputs`/`check_results`. **Sensitive values sit in it in plaintext** — only root outputs are stored, and marking `sensitive` only hides display.
+- State is **JSON**: `version` (format) vs `terraform_version` (writer), `serial` (bumped per differing write, not per apply), `lineage` (immutable UUID guard), plus `resources`/`outputs`/`check_results`. **Sensitive values sit in it in plaintext** — only root outputs are stored, and marking `sensitive` only hides display.
 - **Backends** are built-in; the `local` one is dev-only. Pick by existing tech; use **partial config** + `-backend-config`; migrate with `-migrate-state`. **S3 now locks natively (`use_lockfile`, TF/OpenTofu 1.10) — DynamoDB locking is deprecated.**
 - **CLI workspaces** share everything but state and expose `terraform.workspace` at plan time; **`cloud`-block workspaces are unrelated HCP environments** — don't conflate them.
 - Change state safely with **`moved`** (1.1) / **`removed`** (1.7) blocks first, `terraform state` commands second, hand-editing never (and if you must: backup, validate, diff, bump `serial`).
