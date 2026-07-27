@@ -168,7 +168,7 @@ $ terraform show          # full state dump
 
 - The data source is tracked in state too, even though it's not a managed resource.
 - Plans are computed by comparing three things: last-known state, current config, and fresh data from providers.
-- State can hold **sensitive data in plaintext** (passwords, keys) — store it securely, restrict access. Local by default; remote state via HCP Terraform (or another backend) is the team-scale answer (see B9, I6, and the [[workspaces]] cache for the CLI-vs-HCP distinction).
+- State can hold **sensitive data in plaintext** (passwords, keys) — store it securely, restrict access. Local by default; remote state via HCP Terraform (or another backend) is the team-scale answer (see B9, I6, and [[workspaces]] for the CLI-vs-HCP distinction, with the raw verified facts in [[workspaces-facts]]).
 
 ## Interactive lab
 
