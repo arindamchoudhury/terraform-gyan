@@ -161,13 +161,15 @@ output "password" {
 
     On the listing above the whole apply finishes in under a second, so both writes land ~20 ms apart and the "mid-graph" part is easy to miss. Adding a deliberately slow resource separates them. With a `random_password` plus a `time_sleep` of 60 s that depends on it, the writes fall either side of the sleep:
 
-    | Clock | Event | `serial` |
+    | Clock | Event | `serial` **on disk after this write** |
     | --- | --- | --- |
     | 12:05:09 | `random_password` created, snapshot written | 1 |
     | 12:06:09.353 | `time_sleep` completes, snapshot written | 2 |
     | 12:06:09.362 | graph walk closes, final snapshot | 3 |
 
-    The counter starts at **0** (`statemgr.NewStateFile` leaves `Serial` at its zero value), and the increment is guarded by a content comparison — `StatesMarshalEqual` against the previously read snapshot — so an identical snapshot writes without bumping.
+    **Serial 0 never reaches disk.** `statemgr.NewStateFile` does leave `Serial` at its zero value, but that is an in-memory starting point: `WriteState` increments *before* serializing, and on a fresh state the guard always fires because there is no previously read snapshot to compare against. So the first snapshot ever persisted is `serial` **1**, and the three writes above land on 1, 2, 3 rather than 0, 1, 2. Even a configuration with no resources at all — a lone `output` block — produces a state file at `serial` 1.
+
+    The increment is guarded by a content comparison, `StatesMarshalEqual` against the previously read snapshot, so a write whose content is identical does not bump.
 
     Consequences worth remembering:
 
