@@ -167,6 +167,8 @@ output "password" {
     | 12:06:09.353 | `time_sleep` completes, snapshot written | 2 |
     | 12:06:09.362 | graph walk closes, final snapshot | 3 |
 
+    The last two rows are always milliseconds apart, whatever the configuration: once the final resource is done there is nothing left but closing the providers and the root module. The two writes are still distinct — in the trace the `serial` 2 bump happens *inside* `time_sleep.wait`'s vertex visit (before its `visit complete`), while the `serial` 3 bump happens after `vertex "root": visit complete` and is followed immediately by the unlock. That adjacency is why the two writes in the original listing look like a single event.
+
     **Serial 0 never reaches disk.** `statemgr.NewStateFile` does leave `Serial` at its zero value, but that is an in-memory starting point: `WriteState` increments *before* serializing, and on a fresh state the guard always fires because there is no previously read snapshot to compare against. So the first snapshot ever persisted is `serial` **1**, and the three writes above land on 1, 2, 3 rather than 0, 1, 2. Even a configuration with no resources at all — a lone `output` block — produces a state file at `serial` 1.
 
     The increment is guarded by a content comparison, `StatesMarshalEqual` against the previously read snapshot, so a write whose content is identical does not bump.
