@@ -435,6 +435,26 @@ No credentials appear in either block. Run **`terraform login <hostname>`** once
 
     `tags` has also broadened since the book: it now accepts "either a map of strings as key-value tags or a list of single-value, key-only tags", the latter being the legacy form the book shows. If no workspace matches the tags you give, the CLI offers to create one.
 
+!!! warning "Changing `tags` later: adds are pushed to HCP, removals are not"
+    Editing the tag list afterwards is an ordinary config change, but three things about it are worth knowing.
+
+    **It forces a re-initialization.** The `cloud` block is backend configuration, so any edit to it stops the next command with `HCP Terraform or Terraform Enterprise initialization required`, giving the reason `HCP Terraform configuration block has changed`. Unlike an ordinary backend change, the remedy is a **plain `terraform init`** with no `-reconfigure` or `-migrate-state`; the message explains the purpose as discovering "any changes to the available workspaces".
+
+    **Adding a tag writes it into HCP.** When Terraform connects to a workspace it compares each tag in the config against the tags already on that workspace, and if any is missing it calls the API to add it. The configuration therefore pushes new tags onto the workspace it is linked to.
+
+    **Removing a tag does not remove it from the workspace.** This is the asymmetry to remember. The backend only ever *adds*; there is no removal path in it at all. The comparison walks the tags in your configuration asking "is this one present?", so a tag you delete from the HCL is simply never consulted again, and it stays on the workspace in HCP until you delete it through the UI or API.
+
+    | Edit | Workspace's tags in HCP | Which workspaces match |
+    | --- | --- | --- |
+    | Add a tag to config | Tag is added to the linked workspace | Narrows the set |
+    | Remove a tag from config | **Unchanged — the stale tag persists** | Widens the set |
+
+    So a removal changes *selection* but leaves *data* behind. If you drop a tag because it was wrong, clean it up in HCP separately.
+
+    Switching between the `name` and `tags` strategies is likewise a `cloud` block change and needs the same re-init. Key-value tags additionally require a Terraform Enterprise version that supports tag bindings; older ones fail with `your version of Terraform Enterprise does not support key-value tags`, and you fall back to the key-only form.
+
+    Read from the Terraform 1.15.8 source rather than the docs, which do not cover changing tags after setup. The add-and-never-remove behaviour is taken from the API calls the backend makes, not from an observed run against a live organization.
+
 !!! info "OpenTofu — `cloud` block defaults differ"
     With HashiCorp Terraform, `organization`/`hostname` default to `app.terraform.io` (Terraform Cloud). **OpenTofu specifies no default vendor**, so you must set `hostname`/`organization` explicitly. HCL is otherwise identical.
 
