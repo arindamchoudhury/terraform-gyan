@@ -149,13 +149,23 @@ output "password" {
     Because `serial` counts state **writes**, and a single apply writes more than once. Applying the listing above produces a `serial` of 2:
 
     ```
-    writeResourceInstanceState  module.my_password.random_password.new_password
-    state has changed since last snapshot, so incrementing serial to 1
-    vertex "module.my_password.output.password (expand)": starting visit
-    state has changed since last snapshot, so incrementing serial to 2
+    # TF_LOG=trace, abridged: timestamps, log prefixes and intervening lines removed
+    NodeAbstractResourceInstance.writeResourceInstanceState: writing state object
+      for module.my_password.random_password.new_password
+    statemgr.Filesystem: state has changed since last snapshot, so incrementing serial to 1
+    statemgr.Filesystem: writing snapshot at terraform.tfstate
+    statemgr.Filesystem: state has changed since last snapshot, so incrementing serial to 2
     ```
 
-    The first write happens **mid-graph**, the moment `random_password` finishes creating. Terraform's local-backend `StateHook.PostStateUpdate` calls `WriteState` on every state update during the walk, so a crash partway through an apply still leaves already-created resources recorded. That snapshot lands before the output vertex is visited, so it holds the resource but no `outputs`. The second write is the final snapshot after the graph walk closes, now including the root output.
+    The first write happens **mid-graph**, the moment `random_password` finishes creating. Terraform's local-backend `StateHook.PostStateUpdate` calls `WriteState` on every state update during the walk, so a crash partway through an apply still leaves already-created resources recorded. The second write is the final snapshot taken after the graph walk closes.
+
+    On the listing above the whole apply finishes in under a second, so both writes land ~20 ms apart and the "mid-graph" part is easy to miss. Adding a deliberately slow resource separates them. With a `random_password` plus a `time_sleep` of 60 s that depends on it, the writes fall either side of the sleep:
+
+    | Clock | Event | `serial` |
+    | --- | --- | --- |
+    | 12:05:09 | `random_password` created, snapshot written | 1 |
+    | 12:06:09.353 | `time_sleep` completes, snapshot written | 2 |
+    | 12:06:09.362 | graph walk closes, final snapshot | 3 |
 
     The counter starts at **0** (`statemgr.NewStateFile` leaves `Serial` at its zero value), and the increment is guarded by a content comparison — `StatesMarshalEqual` against the previously read snapshot — so an identical snapshot writes without bumping.
 
@@ -165,8 +175,12 @@ output "password" {
     - Data sources do **not** contribute a bump of their own.
     - A **no-op apply** leaves `serial` untouched, because the marshalled state is unchanged.
     - Therefore `serial` is a reliable *ordering* key for "which backup is newest", but it is **not** a count of applies, and gaps in it mean nothing.
+    - **Interrupting an apply writes more snapshots, not fewer.** `StateHook.Stopping` persists on the way out so a subsequent hard kill costs you less recovery work. Killing the `time_sleep` run mid-sleep left `serial` at 3 with one resource recorded.
 
     Verified on Terraform 1.15.8 against the matching source tag.
+
+!!! warning "You can't read `terraform.tfstate` while an apply is running (Windows)"
+    Terraform holds the state file open for the duration of the run, so any attempt to read it mid-apply fails with `PermissionError: [Errno 13] Permission denied`. Only the file's *metadata* is visible, which is enough to watch the size change as snapshots are written but not to inspect their contents. To see what an intermediate snapshot actually holds, read the `TF_LOG=trace` output instead, or interrupt the run — bearing in mind that interrupting adds a snapshot of its own.
 
 ### 6.3.2 State versions
 
