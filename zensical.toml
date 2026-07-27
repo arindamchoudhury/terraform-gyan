@@ -30,6 +30,7 @@ nav = [
         { "Modules" = "topics/modules.md" },
         { "Meta-arguments & lifecycle" = "topics/meta-arguments-lifecycle.md" },
         { "The dependency graph" = "topics/dependency-graph.md" },
+        { "Workspaces" = "topics/workspaces.md" },
     ]},
     { "Notes" = [
         { "All Notes" = "sources/index.md" },

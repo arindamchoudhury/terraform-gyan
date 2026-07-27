@@ -6,7 +6,7 @@
 >
 > 📌 **Notes adapted where version-bound.** Book written 2025 (examples show state `version: 4`, `terraform_version: 1.5.4`); current stable is Terraform CLI **1.15.8** / OpenTofu **1.12.4** — see [[version-facts]]. Biggest correction: the book's Table 6.1 still says the **S3 backend requires DynamoDB for locking** — as of **Terraform 1.10 / OpenTofu 1.10** the S3 backend locks natively with `use_lockfile = true`, and DynamoDB-based locking is **deprecated** (see §6.4.1). Block version-gates are flagged inline (`moved` 1.1, `removed` 1.7, `terraform_data` 1.4, `import` block 1.5). Conceptual content — why state exists, the JSON structure, drift, remote state — is unchanged.
 
-> 🔗 **See also:** owns learning-path **B9** (state fundamentals) and **I6**/**I7** (remote state, backends, state ops); touches **A6** (secrets in state), **I2** (`ignore_changes`, `replace_triggered_by`), **A1** (`terraform_data`/provisioners). Builds on Ch5's [[dependency-graph]] and [[core-workflow]]; the `import` block it defers to is Ch8. Topic pages: [[state-management]] (backlog), [[secrets-and-state]] (backlog).
+> 🔗 **See also:** owns learning-path **B9** (state fundamentals) and **I6**/**I7** (remote state, backends, state ops); touches **A6** (secrets in state), **I2** (`ignore_changes`, `replace_triggered_by`), **A1** (`terraform_data`/provisioners). Builds on Ch5's [[dependency-graph]] and [[core-workflow]]; the `import` block it defers to is Ch8. Topic pages: [[workspaces]], plus [[state-management]] (backlog) and [[secrets-and-state]] (backlog).
 
 ---
 

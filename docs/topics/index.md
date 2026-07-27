@@ -11,6 +11,7 @@ Cross-source notes synthesizing multiple sources on the same topic.
 - [Modules](modules.md) — [[terraform-intro]], TID Ch2 §2.8 + Ch3, [[tf-aws-manage]]
 - [Meta-arguments and `lifecycle`](meta-arguments-lifecycle.md) — [[tf-meta-arguments]], TID Ch2 §2.7, [[tf-configure-resource]], [[ot-dynamic-prevent-destroy]], [[tf-style-guide]]
 - [The dependency graph](dependency-graph.md) — [[tf-cmd-graph]], [[tf-meta-depends-on]], TID Ch2 §2.2.5 + §2.7.3, [[tf-configure-resource]]; includes locally verified experiments
+- [Workspaces](workspaces.md) — TID Ch6 §6.4.5 + §6.4.7, HCDocs "Workspaces" + "HCP Terraform workspaces", Terraform 1.15.8 source; the CLI-vs-HCP distinction, pending A4/A7
 
 ## Backlog
 

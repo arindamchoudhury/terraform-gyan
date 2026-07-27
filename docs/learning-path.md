@@ -741,6 +741,9 @@ You are ready to advance when you can:
 2. **Reference — [HCDocs "HCP Terraform"](https://developer.hashicorp.com/terraform/cloud-docs) [workspaces](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) + [run workflow](https://developer.hashicorp.com/terraform/cloud-docs/run/remote-operations)** (~40 min) — workspace settings, variable sets, and the run lifecycle. Also know the platform extras: **cost estimation** (shows $ delta on a plan for supported providers), **run triggers** (one workspace's apply queues another's run), and run notifications. A **`.terraformignore`** file controls which files are excluded from the config upload on remote runs. To reach infra on a private network, HCP runs through self-hosted **agents** (the agent pool executes runs inside your network).
 3. **Book chapter — TID Ch on HCP / TUR Ch 10** (~1 hr) — where managed platform fits vs self-hosted CI.
 
+!!! note "📌 Already captured — [[workspaces]]"
+    The `cloud` block half of HCP workspaces is written up in [[workspaces]] and [TID Ch6 §6.4.5](books/tid/chapters/06-state-management.md): `tags` versus `name` selection, `project`, what an HCP workspace owns beyond state, and the asymmetry when you edit `tags` later (adds are pushed to HCP, removals are not). A4 adds the platform side — workspace settings, variable sets, and the run lifecycle.
+
 !!! note "📌 HCP free tier cap"
     HCP free tier caps at **500 managed resources** (legacy free plan ended 2026-03-31).
 
@@ -832,6 +835,9 @@ You are ready to advance when you can:
 1. **Book chapter — TUR Ch 3 (§ "Isolation via Workspaces" p94 / "Isolation via File Layout" p100) + Ch 7 "Working with Multiple Providers"** (~2 hrs) — file-layout vs workspace tradeoffs (the definitive treatment), then Ch 7 for the multi-account/multi-region half of this topic (§ "Working with Multiple AWS Accounts" p238).
 2. **Reference — [HCDocs "Workspaces" (CLI)](https://developer.hashicorp.com/terraform/language/state/workspaces) vs [HCP workspaces](https://developer.hashicorp.com/terraform/cloud-docs/workspaces)** (~30 min) — understand why CLI workspaces are *not* environment isolation. In automation, **`TF_WORKSPACE`** selects the workspace non-interactively (instead of `terraform workspace select`).
 3. **Interactive — restructure** (~1.5 hrs) — lay out one module consumed by isolated dev/prod stacks with separate state.
+
+!!! note "📌 Already captured — [[workspaces]]"
+    The two meanings of "workspace" are already written up in [[workspaces]], from TID Ch6 §6.4.5 + §6.4.7 and the official docs: the CLI-vs-HCP comparison table, where each backend stores per-workspace state, `terraform.workspace` at plan time, and the documented limit that workspaces "are not appropriate for system decomposition or deployments requiring separate credentials and access controls." What remains for A7 is the *decision* — TUR Ch3's file-layout-versus-workspace tradeoff — and the multi-account half from TUR Ch7.
 
 !!! note "📌 DRY across environments → Terragrunt (E4)"
     A7 covers isolation with **native Terraform** primitives — the scope the Pro exam tests. The DRY tooling that removes the copy-paste between per-env directories is **Terragrunt** (third-party, Gruntwork), deep-dived in **E4 — Large-scale state & repo architecture** below. Reach for it once you have many states and teams, not for a single dev/prod split.
