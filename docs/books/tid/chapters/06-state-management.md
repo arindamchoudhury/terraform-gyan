@@ -198,11 +198,26 @@ output "password" {
 
     - On a local backend, a **first apply** lands at roughly *number of managed resources + 1*. A fresh directory with three `random_password` resources ends at `serial` 4.
     - Data sources do **not** contribute a bump of their own.
-    - A **no-op apply** leaves `serial` untouched, because the marshalled state is unchanged.
+    - A **no-op apply** leaves `serial` untouched *only if nothing in state changed*. "No changes" in the plan is not the same condition: the plan reports on **managed resources**, while the bump is decided by comparing the whole marshalled state, data sources included. Listing 6.1 fails this test — see below.
     - Therefore `serial` is a reliable *ordering* key for "which backup is newest", but it is **not** a count of applies, and gaps in it mean nothing.
     - **Interrupting an apply writes more snapshots, not fewer.** `StateHook.Stopping` persists on the way out so a subsequent hard kill costs you less recovery work. Killing a two-resource apply partway through still left `serial` at 3, with only one resource recorded.
 
     Verified on Terraform 1.15.8 against the matching source tag.
+
+!!! danger "Listing 6.1's `serial` climbs on every apply, even when nothing changes"
+    Re-run `terraform apply` on the listing and the plan says `No changes. Your infrastructure matches the configuration.` — yet `serial` goes 2 → 3, then 3 → 4, and so on. The cause is the book's `null_data_source`:
+
+    ```
+    resources[0].instances[0].attributes.random   '2682869028730623324' -> '8863143599457183341'
+    serial                                        2 -> 3
+    ```
+
+    That is the *entire* diff between the two snapshots. `null_data_source` exposes a `random` attribute, documented as "A random value. This is primarily for testing and has little practical use." Data sources are re-read on every plan, so it returns a fresh number each run, the marshalled state genuinely differs, and `StatesMarshalEqual` reports a change.
+
+    Two lessons worth separating:
+
+    - **"No changes" and "state unchanged" are different conditions.** The plan summary counts managed resources; the `serial` guard compares the whole state document, data sources included. A data source with a volatile attribute drives the counter on its own.
+    - **This is a property of the listing, not of Terraform.** The same experiment on a configuration of three `random_password` resources and no data source re-applies at a steady `serial` 4. Drop the `null_data_source` and the churn stops.
 
 !!! warning "You can't read `terraform.tfstate` while an apply is running (Windows)"
     Terraform holds the state file open for the duration of the run, so any attempt to read it mid-apply fails with `PermissionError: [Errno 13] Permission denied`. Only the file's *metadata* is visible, which is enough to watch the size change as snapshots are written but not to inspect their contents. To see what an intermediate snapshot actually holds, read the `TF_LOG=trace` output instead, or interrupt the run — bearing in mind that interrupting adds a snapshot of its own.
