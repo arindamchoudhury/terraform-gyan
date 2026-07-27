@@ -396,21 +396,44 @@ Every backend except `local` needs auth, and each does it differently. Three gen
 
 ### 6.4.5 Cloud block
 
-The `cloud` block is a special kind of backend. Where normal backends give Terraform access to a storage system, the cloud backend defines a **standard other services implement** — so third parties can integrate without patching Terraform. Beyond state storage it can **override `plan` and `apply` to run remotely** (but not `import` or the `state` commands), enabling **CLI-driven runs** on a third-party system while you develop locally against a shared, central config.
+The `cloud` block is a special kind of backend. Where normal backends give Terraform access to a storage system, the cloud backend defines a **standard other services implement** — so third parties can integrate without patching Terraform. In that respect it resembles the **HTTP backend**, which likewise lets developers build their own REST-based backend. The `cloud` block goes further than storage, though: it **overrides `plan` and `apply` to run remotely** (but not `import` or the `state` commands), enabling **CLI-driven runs** on a third-party system while you develop locally against a shared, central config. You also get to test code in the same system you deploy from. The book returns to this in its CI/CD chapter.
+
+Two things must be configured: which cloud service to connect to, and **how Terraform should pick up your workspaces**. The second is done with either `tags` or `name`, and the choice determines what the `terraform workspace` command can do.
+
+**With `tags`**, Terraform links the working directory to every workspace in the organization carrying matching tags, and `terraform workspace` switches between them. This is the option that opens up the workspace features, and it earns its keep when you manage a lot of infrastructure from one Terraform project.
 
 ```hcl
 terraform {
   cloud {
     organization = "acme-org"
-    hostname     = "app.terraform.io"   # or e.g. acme.scalr.io
+    hostname     = "app.terraform.io"   # required on OpenTofu; defaults here on Terraform
     workspaces {
-      tags = ["acme_application", "development"]  # tags → terraform workspace can switch
+      tags = ["acme_application", "development"]
     }
   }
 }
 ```
 
-Use `name` instead of `tags` to lock to a **single** workspace (disables `terraform workspace`). No credentials in the block — run **`terraform login <hostname>`** once; it saves a token to disk that Terraform reads automatically. HashiCorp's Terraform Cloud was the first `cloud`-block vendor; Scalr, Env0, and others adopted it too.
+**With `name`**, you lock the configuration to one specific workspace, and `terraform workspace` stops functioning entirely. The book's second example also makes the point that the `cloud` block is not HashiCorp-only, by pointing at Scalr:
+
+```hcl
+terraform {
+  cloud {
+    organization = "acme-org"
+    hostname     = "acme.scalr.io"
+    workspaces {
+      name = "acme_development_workspace"
+    }
+  }
+}
+```
+
+No credentials appear in either block. Run **`terraform login <hostname>`** once, against the same hostname the `cloud` block names. It sends you through the vendor's login flow and saves an authentication token to disk, which Terraform reads automatically on later runs. HashiCorp's Terraform Cloud was the first `cloud`-block vendor; Scalr, Env0, and others adopted it too.
+
+!!! info "Current docs add a third argument the book doesn't show"
+    `name` and `tags` are **mutually exclusive** — "If you configure the `name`, you cannot use the `tags` configuration." A third argument, **`project`**, names an existing HCP Terraform project and works *alongside* either one, narrowing the scope to workspaces inside that project rather than the whole organization. The book's Listing 6.13 is captioned "cloud block with named project" but only sets `name`, so don't read a `project` argument into it.
+
+    `tags` has also broadened since the book: it now accepts "either a map of strings as key-value tags or a list of single-value, key-only tags", the latter being the legacy form the book shows. If no workspace matches the tags you give, the CLI offers to create one.
 
 !!! info "OpenTofu — `cloud` block defaults differ"
     With HashiCorp Terraform, `organization`/`hostname` default to `app.terraform.io` (Terraform Cloud). **OpenTofu specifies no default vendor**, so you must set `hostname`/`organization` explicitly. HCL is otherwise identical.
