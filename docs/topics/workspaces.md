@@ -18,6 +18,34 @@
 
 The critical asymmetry: CLI workspaces give you a second state file, *not* a second environment. Everything a real dev/prod split needs to differ — credentials, permissions, blast radius — stays shared.
 
+## Why CLI workspaces are not environment isolation
+
+"Isolation" means a mistake in one environment cannot reach another. A CLI workspace separates exactly one thing, the state file, and leaves every other channel between environments wide open.
+
+| What a dev/prod split needs to differ | CLI workspaces | Directory-per-env, or HCP workspaces |
+| --- | --- | --- |
+| Configuration and module versions | **Shared.** One set of `.tf` files. You cannot run prod on last month's module while dev tries the new one | Separate — each env pins its own versions |
+| Cloud credentials | **Shared.** Whatever is in your shell when you type `apply` | Separate provider config or workspace credentials |
+| Backend and storage location | **Shared.** All workspace states live in one bucket under one prefix | Separate bucket, prefix, or workspace |
+| Who can read the state | **Shared.** Anyone who can read one workspace's state can read every workspace's state, prod secrets included | Per-environment IAM or RBAC |
+| Which environment you are about to touch | **A local file.** `.terraform/environment` inside the gitignored data dir, or `TF_WORKSPACE` | Which directory you are in, or which HCP workspace the `cloud` block names |
+
+That last row is the one that bites. The selected workspace is not part of your configuration. It is a scrap of local state that never appears in a diff, a pull request, or a code review, so the *only* thing standing between a routine change and an unintended production apply is whether the last `terraform workspace select` you ran happened to be the right one:
+
+```bash
+terraform workspace select prod
+terraform apply    # same code, same credentials, same bucket as dev
+```
+
+Nothing in the configuration marks that run as production. Forget the `select` and Terraform silently targets whichever workspace was chosen last — possibly in a different terminal session, possibly days ago.
+
+Using `terraform.workspace` in a lookup map does not fix this. It is a runtime branch inside one shared configuration, so prod's values sit in the same file as dev's, are edited under the same review, and are applied with the same credentials. A branch is not a boundary.
+
+!!! danger "The documented limit"
+    HCDocs states it directly: **"Workspaces are not appropriate for system decomposition or deployments requiring separate credentials and access controls."** Note that this is about *credentials and access controls*, not about state layout. Separate state was never the hard part.
+
+**What CLI workspaces are genuinely good for:** several short-lived copies of the same thing, at the same risk level, under the same credentials. Per-developer sandboxes in a shared dev account, a stack per feature branch, a scratch copy for testing a refactor. The moment the copies need different permissions, they have outgrown the mechanism.
+
 ## CLI workspaces
 
 Terraform always has a workspace named **`default`**, which cannot be deleted. Commands (TID §6.4.7):
@@ -46,8 +74,8 @@ locals {
 
 **In automation**, set **`TF_WORKSPACE`** to select a workspace non-interactively rather than calling `terraform workspace select`.
 
-!!! danger "The documented limit of CLI workspaces"
-    HCDocs states it directly: "Workspaces are not appropriate for system decomposition or deployments requiring separate credentials and access controls." A workspace switch does not change who you are authenticating as, so nothing prevents a `terraform apply` in the `staging` workspace from reaching production infrastructure with production credentials. For genuine isolation the alternatives are directory-per-environment layouts or HCP workspaces — the comparison the learning path defers to **A7**.
+!!! note "Selection is sticky and invisible"
+    `terraform workspace select` writes the chosen name to **`.terraform/environment`** (`DefaultWorkspaceFile` in the local backend), inside the gitignored data directory. It persists across commands and terminal sessions until something changes it, and `TF_WORKSPACE` overrides it when set. This is the mechanism behind the isolation limits above: the environment you are targeting lives outside your configuration entirely.
 
 ## HCP Terraform workspaces
 
