@@ -1,6 +1,6 @@
 # Workspaces
 
-> **Sources:** Hafner, *Terraform in Depth* Ch6 §6.4.5 (`cloud` block) + §6.4.7 (CLI workspaces) · HCDocs ["Workspaces"](https://developer.hashicorp.com/terraform/language/state/workspaces) · HCDocs ["HCP Terraform workspaces"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) · Terraform 1.15.8 source
+> **Sources:** Hafner, *Terraform in Depth* Ch6 §6.4.5 (`cloud` block) + §6.4.7 (CLI workspaces) · HCDocs ["Workspaces"](https://developer.hashicorp.com/terraform/language/state/workspaces) · HCDocs ["HCP Terraform workspaces"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) · Terraform 1.15.8 source · [Terragrunt docs](https://docs.terragrunt.com/features/units) ("Units", "AWS authentication") · [Atlantis](https://www.runatlantis.io/)
 
 ## In one paragraph
 
@@ -99,6 +99,30 @@ Beyond state, an HCP workspace owns its variables and variable sets, its credent
 
 !!! warning "Editing `tags` later is not symmetric"
     Adding a tag to the `cloud` block pushes that tag onto the linked workspace in HCP. Removing one does **not** remove it from the workspace — the backend only ever adds. Either edit requires a plain `terraform init` to re-discover the available workspaces. Full detail and provenance in [TID Ch6 §6.4.5](../books/tid/chapters/06-state-management.md).
+
+## The open-source picture
+
+HCP Terraform and Terraform Enterprise are proprietary, so an HCP workspace has no single open-source equivalent. But it is really two things bolted together, and each half has its own open answer. Splitting them makes the question answerable:
+
+| Half of an HCP workspace | Open equivalent |
+| --- | --- |
+| **Isolation** — own state, own inputs, own credentials, own blast radius | **Terragrunt**, or a hand-rolled directory-per-env layout |
+| **Platform** — pull-request runs, approvals, remote execution, audit trail, policy gates, cost estimation | **Atlantis**, or your ordinary CI system |
+
+**Terragrunt covers the isolation half properly.** Its unit is "a directory containing a `terragrunt.hcl` file… the smallest deployable entity in Terragrunt", and units are "designed to be contained, and can be operated on independently of other units." Each unit carries its own state backend configuration and its own `inputs`, so per-environment values are real configuration rather than a `terraform.workspace` branch. Crucially it also supports a per-unit **`iam_role`**:
+
+```hcl
+iam_role = "arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME"
+```
+
+That is the piece CLI workspaces can never offer — different environments assuming different cloud identities — and it is what makes Terragrunt genuine isolation rather than just tidier directories. It removes the copy-paste that makes a hand-rolled directory-per-env layout painful, while keeping each environment's state, inputs, and credentials separate.
+
+**What Terragrunt does not replace** is the platform half. There is no user model or RBAC, no run history or audit UI, no remote execution (runs happen wherever you invoke them), no policy enforcement or cost estimation, no managed drift detection. For pull-request-driven runs with approvals, the open option is **Atlantis** — self-hosted, so credentials stay with you, and it lets developers open Terraform pull requests without holding cloud credentials directly.
+
+So the accurate framing is not "there is no open equivalent". It is that HCP sells one product where the open ecosystem gives you two tools, and you assemble them yourself.
+
+!!! note "Where this sits in the learning path"
+    Terragrunt is deep-dived in **E4 — Large-scale state & repo architecture**, not in A7. A7 deliberately stays on native Terraform primitives, because that is the scope the Pro exam tests. Reach for Terragrunt once you have many states and teams, not for a single dev/prod split. Terragrunt **1.0** (2026-03-30) was the first release with a backwards-compatibility commitment, and renamed `run-all` to `run --all`; it works over both Terraform and OpenTofu.
 
 ## When to read which
 
