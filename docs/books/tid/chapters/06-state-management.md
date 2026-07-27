@@ -107,6 +107,11 @@ output "password" {
 }
 ```
 
+!!! warning "Running the listing on 1.15 raises two warnings the book doesn't show"
+    The book's module also declares an empty `data "null_data_source" "values" {}` so the state shows what a data source looks like. On Terraform 1.15 that emits a **deprecation warning**: the `null_data_source` was historically used to build intermediate values, and locals or the `terraform_data` resource type do the job from 1.4 onward. It still applies and still lands in state, so the listing works as written.
+
+    The `check` block also warns at plan time: `Check block assertion known after apply`. `random_password.new_password.result` isn't known until the resource is created, so the condition can't be evaluated during the plan. The assertion runs after apply and its outcome is what `check_results` records.
+
 `terraform init && terraform apply` writes `terraform.tfstate`. The top level has these fields:
 
 | Field | Meaning |
@@ -118,6 +123,21 @@ output "password" {
 | `resources` | List of objects for every managed **resource and data source**. |
 | `outputs` | The **root-level module's** outputs (enables `terraform show` and `terraform_remote_state`). |
 | `check_results` | Results of `check` blocks saved from the run (book covers checks in its Ch10). |
+
+`check_results` is keyed by the check's **config address**, and each entry carries both a config-level status and a per-object status. A passing run of the listing writes:
+
+```json
+"check_results": [
+  {
+    "object_kind": "check",
+    "config_addr": "module.my_password.check.password_strength",
+    "status": "pass",
+    "objects": [
+      { "object_addr": "module.my_password.check.password_strength", "status": "pass" }
+    ]
+  }
+]
+```
 
 !!! note "Sensitive data lands in state in plaintext"
     In the example JSON, the `random_password` `result` appears verbatim inside the resource attributes *and* again in the root `outputs` (with `"sensitive": true`). Marking an output `sensitive` only stops Terraform **displaying** it — it does **not** encrypt or omit it from the file. This is the whole reason §6.2.2 matters. (OpenTofu adds opt-in **state encryption**; Terraform's OSS CLI still has none as of 1.15.)
@@ -569,6 +589,9 @@ resource "random_pet" "suffix" { length = 2 }               # result in .id (!)
 
 !!! danger "`random_password` still lands in state in plaintext"
     Sensitive ≠ encrypted (§6.3.1). If you generate real credentials with `random_password`, be extra careful who can read the state.
+
+!!! tip "`random_password` reports `[id=none]`"
+    Where `random_pet` puts its result in `.id`, `random_password` deliberately does not — resource IDs are echoed in plan/apply output and logs. Apply prints `Creation complete after 0s [id=none]` and the state stores the literal string `"none"`. The provider documents `id` as "A static value used internally by Terraform, this should not be referenced in configurations", so read the value from `.result` only. The state also carries a `bcrypt_hash` attribute, a bcrypt hash of the generated string (of its first 72 bytes if longer).
 
 ### 6.8.2 Time provider
 
