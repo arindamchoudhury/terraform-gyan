@@ -119,7 +119,7 @@ output "password" {
 | `version` | Version of the **state data-structure format** itself (currently `4`). Lets newer Terraform read and upgrade older state. |
 | `terraform_version` | The Terraform version that **last wrote** the state. Mostly informational. |
 | `serial` | Integer bumped **+1 on every persisted snapshot whose content differs from the previous one** — per *write*, not per apply (see below). Use it to find the newest of several backups. |
-| `lineage` | A **UUID** created the first time `init` builds a state, **never changes** for the project. Detects "wrong state for this project". |
+| `lineage` | A UUID-shaped random ID created the first time a snapshot is **written** at a location (not by `init`), **never changes** afterwards. Detects "wrong state for this project", though only at import/migration time (§6.3.3). |
 | `resources` | List of objects for every managed **resource and data source**. |
 | `outputs` | The **root-level module's** outputs (enables `terraform show` and `terraform_remote_state`). |
 | `check_results` | Results of `check` blocks saved from the run (book covers checks in its Ch10). |
@@ -193,8 +193,46 @@ Two different "versions" ride along with state, and they mean different things:
 
 Both describe *this specific instance* of state:
 
-- **`lineage`** (UUID) is a **safety mechanism** — the odds of two environments sharing a UUID are practically zero, so backends compare it to refuse overwriting *project A's* state with *project B's*.
+- **`lineage`** (UUID) is a **safety mechanism** — the odds of two environments sharing a UUID are practically zero, so backends compare it to refuse overwriting *project A's* state with *project B's*. The comparison is narrower than that framing suggests; see below.
 - **`serial`** (integer) increments on every save whose content actually differs, so it counts *writes* rather than applies (§6.3.1). Backends that version state, or a restore-from-backup flow, use it to identify the **latest** version; cloud-block backends use it to refuse overwriting a newer state with an older one.
+
+#### How the lineage is generated
+
+`statemgr.NewLineage` is the whole of it: it asks `hashicorp/go-uuid` for a UUID, which reads **16 bytes from `crypto/rand`** and formats them as `%x-%x-%x-%x-%x`.
+
+No version or variant bits are set, so despite the familiar shape these are **not RFC 4122 v4 UUIDs** — they are 128 random bits wearing UUID punctuation. You can see it in any state file: a v4 UUID has `4` as the first nibble of the third group and one of `8/9/a/b` as the first nibble of the fourth. A lineage of `682e4b6c-222f-9c4f-452d-4234e738e3b3` has `9` and `4` there, satisfying neither rule. Uniqueness rests entirely on the 128 bits of CSPRNG output, not on any structure.
+
+The value is minted **once**, when a state is first written at a given location. The local backend gets it from `NewStateFile()`; remote backends generate one in `PersistState` when they find no existing snapshot (`if s.lineage == ""`). Afterwards it is copied forward verbatim on every write, and only `serial` changes.
+
+#### How the comparison actually happens
+
+Everything funnels through one comparator, `SnapshotMeta.Compare`, which is a plain string comparison — no hashing, no chain of custody:
+
+```go
+case m.Lineage == "" || existing.Lineage == "":  return SnapshotLegacy    // '?'
+case m.Lineage != existing.Lineage:              return SnapshotUnrelated // '!'
+case m.Serial > existing.Serial:                 return SnapshotNewer     // '>'
+case m.Serial < existing.Serial:                 return SnapshotOlder     // '<'
+default:                                         return SnapshotEqual     // '='
+```
+
+Lineage answers "same project?", and serial then answers "which one is newer?". `CheckValidImport` builds on that: it accepts `Newer` and `Legacy`, accepts `Equal` only when the two states marshal identically, and rejects `Unrelated` with `cannot import state with lineage %q over unrelated state with lineage %q`.
+
+!!! warning "A normal apply never compares lineage"
+    This is the part the field description hides. Reading state and writing it back carries the lineage forward without ever checking it, so nothing in a routine `plan`/`apply` cycle consults the field. The comparison only runs where two **independently obtained** snapshots meet:
+
+    | Trigger | Where | Bypass |
+    | --- | --- | --- |
+    | `terraform state push`, backend migration | `WriteStateForMigration` → `CheckValidImport` | `-force` skips the check entirely |
+    | Applying a **saved plan** | local backend, "Saved plan does not match the given state" | none |
+    | Writing a planned state update | `WritePlannedStateUpdate`, "planned state update is from an unrelated state lineage" | none |
+    | Remote/cloud persist | `PersistState` compares the lineage and serial captured at read time, to detect a concurrent write | none |
+
+    Two further escape hatches: an **empty existing state is always overwritable** regardless of lineage, and a **missing** lineage on either side yields `SnapshotLegacy`, which is also allowed (the pre-0.9 compatibility path).
+
+    So the guard is narrower than "backends compare lineage to refuse overwriting another project's state" implies. Nothing stops two configurations pointing at the same state file during normal operation. What the check catches is importing a *foreign snapshot over an existing one*, and `-force` disables even that.
+
+    Verified against the Terraform 1.15.8 source.
 
 ### 6.3.4 Resources, outputs, and checks
 
@@ -717,7 +755,7 @@ resource "aws_instance" "myinstance" {
 
 - Terraform is **stateful** to link code to real objects reliably, keep the engine (and provider dev) simpler, and keep the plan loop fast — at the cost of storing and protecting state.
 - Judge a state store on **resiliency, security, availability**; treat it as critical infra with tested backups and an SLA.
-- State is **JSON**: `version` (format) vs `terraform_version` (writer), `serial` (bumped per differing write, not per apply), `lineage` (immutable UUID guard), plus `resources`/`outputs`/`check_results`. **Sensitive values sit in it in plaintext** — only root outputs are stored, and marking `sensitive` only hides display.
+- State is **JSON**: `version` (format) vs `terraform_version` (writer), `serial` (bumped per differing write, not per apply), `lineage` (immutable random ID, checked only on import/migration/saved-plan), plus `resources`/`outputs`/`check_results`. **Sensitive values sit in it in plaintext** — only root outputs are stored, and marking `sensitive` only hides display.
 - **Backends** are built-in; the `local` one is dev-only. Pick by existing tech; use **partial config** + `-backend-config`; migrate with `-migrate-state`. **S3 now locks natively (`use_lockfile`, TF/OpenTofu 1.10) — DynamoDB locking is deprecated.**
 - **CLI workspaces** share everything but state and expose `terraform.workspace` at plan time; **`cloud`-block workspaces are unrelated HCP environments** — don't conflate them.
 - Change state safely with **`moved`** (1.1) / **`removed`** (1.7) blocks first, `terraform state` commands second, hand-editing never (and if you must: backup, validate, diff, bump `serial`).
