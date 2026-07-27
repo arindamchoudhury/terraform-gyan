@@ -146,7 +146,14 @@ output "password" {
     The book's JSON shows an empty `sensitive_attributes: []` with a margin note that the field "does not appear to be used anymore" — sensitivity now lives in the providers' schemas, not this state field.
 
 !!! question "Why does the very first apply leave `serial` at 2, not 1?"
-    Because `serial` counts state **writes**, and a single apply writes more than once. Applying the listing above produces a `serial` of 2:
+    Because `serial` counts state **writes**, and a single apply writes more than once.
+
+    **In Listing 6.1 itself**, there is one managed resource, so the apply writes twice and the file ends at `serial` 2. The data source contributes nothing:
+
+    | Write | Trigger | `serial` on disk after it |
+    | --- | --- | --- |
+    | 1 | `random_password.new_password` created, mid-graph | 1 |
+    | 2 | graph walk closes, final snapshot | 2 |
 
     ```
     # TF_LOG=trace, abridged: timestamps, log prefixes and intervening lines removed
@@ -159,17 +166,31 @@ output "password" {
 
     The first write happens **mid-graph**, the moment `random_password` finishes creating. Terraform's local-backend `StateHook.PostStateUpdate` calls `WriteState` on every state update during the walk, so a crash partway through an apply still leaves already-created resources recorded. The second write is the final snapshot taken after the graph walk closes.
 
-    On the listing above the whole apply finishes in under a second, so both writes land ~20 ms apart and the "mid-graph" part is easy to miss. Adding a deliberately slow resource separates them. With a `random_password` plus a `time_sleep` of 60 s that depends on it, the writes fall either side of the sleep:
+    ??? example "Side experiment: separating the two writes in time (not part of the book)"
+        Listing 6.1 finishes in under a second, so its two writes land ~20 ms apart and the mid-graph one is easy to miss. To see them clearly you need a slow resource, which means stepping outside the book's example. This throwaway configuration adds a 60-second `time_sleep` that depends on the password:
 
-    | Clock | Event | `serial` **on disk after this write** |
-    | --- | --- | --- |
-    | 12:05:09 | `random_password` created, snapshot written | 1 |
-    | 12:06:09.353 | `time_sleep` completes, snapshot written | 2 |
-    | 12:06:09.362 | graph walk closes, final snapshot | 3 |
+        ```hcl
+        resource "random_password" "a" {
+          length = 12
+        }
 
-    The last two rows are always milliseconds apart, whatever the configuration: once the final resource is done there is nothing left but closing the providers and the root module. The two writes are still distinct — in the trace the `serial` 2 bump happens *inside* `time_sleep.wait`'s vertex visit (before its `visit complete`), while the `serial` 3 bump happens after `vertex "root": visit complete` and is followed immediately by the unlock. That adjacency is why the two writes in the original listing look like a single event.
+        resource "time_sleep" "wait" {
+          depends_on      = [random_password.a]
+          create_duration = "60s"
+        }
+        ```
 
-    **Serial 0 never reaches disk.** `statemgr.NewStateFile` does leave `Serial` at its zero value, but that is an in-memory starting point: `WriteState` increments *before* serializing, and on a fresh state the guard always fires because there is no previously read snapshot to compare against. So the first snapshot ever persisted is `serial` **1**, and the three writes above land on 1, 2, 3 rather than 0, 1, 2. Even a configuration with no resources at all — a lone `output` block — produces a state file at `serial` 1.
+        Two managed resources, so **three** writes and a final `serial` of 3 — one more than Listing 6.1 produces. The sleep spreads them across a minute:
+
+        | Clock | Event | `serial` on disk after it |
+        | --- | --- | --- |
+        | 12:05:09 | `random_password` created, snapshot written | 1 |
+        | 12:06:09.353 | `time_sleep` completes, snapshot written | 2 |
+        | 12:06:09.362 | graph walk closes, final snapshot | 3 |
+
+        The last two rows are always milliseconds apart, whatever the configuration: once the final resource is done there is nothing left but closing the providers and the root module. They are still distinct writes — in the trace the `serial` 2 bump happens *inside* `time_sleep.wait`'s vertex visit, before its `visit complete`, while the `serial` 3 bump happens after `vertex "root": visit complete` and is followed immediately by the unlock. That adjacency is exactly why Listing 6.1's two writes look like a single event.
+
+    **Serial 0 never reaches disk.** `statemgr.NewStateFile` does leave `Serial` at its zero value, but that is an in-memory starting point: `WriteState` increments *before* serializing, and on a fresh state the guard always fires because there is no previously read snapshot to compare against. So the first snapshot ever persisted is `serial` **1**, and Listing 6.1's two writes land on 1 and 2 rather than 0 and 1. Even a configuration with no resources at all — a lone `output` block — produces a state file at `serial` 1.
 
     The increment is guarded by a content comparison, `StatesMarshalEqual` against the previously read snapshot, so a write whose content is identical does not bump.
 
@@ -179,7 +200,7 @@ output "password" {
     - Data sources do **not** contribute a bump of their own.
     - A **no-op apply** leaves `serial` untouched, because the marshalled state is unchanged.
     - Therefore `serial` is a reliable *ordering* key for "which backup is newest", but it is **not** a count of applies, and gaps in it mean nothing.
-    - **Interrupting an apply writes more snapshots, not fewer.** `StateHook.Stopping` persists on the way out so a subsequent hard kill costs you less recovery work. Killing the `time_sleep` run mid-sleep left `serial` at 3 with one resource recorded.
+    - **Interrupting an apply writes more snapshots, not fewer.** `StateHook.Stopping` persists on the way out so a subsequent hard kill costs you less recovery work. Killing a two-resource apply partway through still left `serial` at 3, with only one resource recorded.
 
     Verified on Terraform 1.15.8 against the matching source tag.
 
