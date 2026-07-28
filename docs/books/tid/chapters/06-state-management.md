@@ -546,6 +546,18 @@ removed {
 }
 ```
 
+!!! note "Why the `moved` direction looks backwards"
+    The config above declares `random_password.main`, and the `moved` block then moves `my_password` *into* it. That reads inverted at first glance, but it's the only correct direction.
+
+    A `moved` block migrates **state** to match **config**. Config is the truth; the block is the instruction that tells state how to catch up.
+
+    - **`to`** must be an address that **exists in your current config**. Here that's `random_password.main`, the resource you just declared.
+    - **`from`** must be an address that is **gone from config** but still present in state from the last apply. Here that's the old name, `random_password.my_password`.
+
+    Flip them and you break it. `from = main, to = my_password` renames the state entry to an address nothing declares, so Terraform plans a destroy of `my_password` plus a create of `main`. That's the destroy/recreate you used the block to avoid.
+
+    The `removed` block follows the same convention: its `from` is likewise an address no longer in config.
+
 `moved` works for **modules** too, so you can pull a resource out of the root into a child module without recreating it:
 
 ```hcl
