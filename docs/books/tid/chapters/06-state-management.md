@@ -558,6 +558,45 @@ removed {
 
     The `removed` block follows the same convention: its `from` is likewise an address no longer in config.
 
+#### The listing is one commit in a migration
+
+That config is a **transitional state**, not a resting one. It only makes sense against what came before it and what replaces it. Both blocks are instructions aimed at a *specific* stale state, and once that state has caught up they have nothing left to do.
+
+**Before** — what was written and applied previously. State holds `random_password.my_password` and `aws_s3_bucket.bucket`:
+
+```hcl
+resource "random_password" "my_password" {
+  length = 12
+}
+
+resource "aws_s3_bucket" "bucket" {
+  bucket = "my-bucket"
+}
+```
+
+**The migration commit** — listing 6.15. You **rename the label in place** on the password resource and **delete** the bucket block outright, then add the two migration blocks describing what you did. Apply this. The state entry is renamed to `main`, the bucket entry is dropped, and the real bucket is left alone.
+
+**After** — once that apply has landed everywhere the config runs, delete both blocks. This is the new resting config:
+
+```hcl
+resource "random_password" "main" {
+  length = 12
+}
+```
+
+!!! warning "Never keep the old resource block alongside the `moved` block"
+    A tempting misreading is that you declare *both* resources during the transition, with `moved` linking them. That isn't a migration, and Terraform rejects it. Both blocks require their `from` address to be **absent from config**, and validation fails before any plan is produced:
+
+    ```
+    Moved object still exists: This statement declares a move from test.single,
+    but that resource is still declared at ....tf:27,1.
+
+    Change your configuration so that this resource will be declared as
+    test.other instead.
+    ```
+
+    There is no stage where the old and new addresses coexist. The rename *is* the edit to the existing block's label.
+
 `moved` works for **modules** too, so you can pull a resource out of the root into a child module without recreating it:
 
 ```hcl
@@ -570,18 +609,18 @@ moved {
 !!! tip "`moved` is essential for shared modules"
     Because it applies automatically in every environment consuming the module, a module author can refactor internals freely without forcing painful upgrades on users.
 
-!!! question "When can you delete the blocks again?"
-    Both blocks are no-ops once they've done their job, so they're safe to leave in place indefinitely. Deleting them is also fine, but only after every state they apply to has actually been applied.
+!!! question "When exactly is it safe to reach the “after” config?"
+    Both blocks are no-ops once they've done their job, so leaving them in place forever is harmless. Deleting them is fine too, but only once **every state the config runs against** has actually applied the migration commit. That timing differs by block and by how widely the config is used.
 
-    **`removed`** — delete it in the commit *after* the apply that dropped the entry. Deleting the block and the resource in the same change leaves an address that is simply absent from config with no instruction attached, and Terraform plans a real destroy.
+    **`removed`** — its deletion belongs in a **later commit than the apply**. Put the block's removal in the same change that deletes the resource and you have simply erased an address from config with no instruction attached, which is the ordinary signal to destroy the real infrastructure.
 
-    **`moved`** — the block is a no-op only once no state anywhere still holds the `from` address. That gives three cases:
+    **`moved`** — a no-op only once no state anywhere still holds the `from` address. Three cases:
 
-    - Root module with a single state, apply already done. Delete freely.
-    - One config across several workspaces or environments. Every one of them must have applied. Delete early and the workspace that hasn't yet sees an old address that nothing declares, so it plans destroy plus create.
-    - A shared module other people consume. Keep the block. Consumers upgrade and apply on their own schedule, and you have no way to know when the last one has. Drop it only at a major version bump, and say so in the changelog.
+    - Root module, single state, apply already done. Delete freely.
+    - One config across several workspaces or environments. All of them must have applied. Delete early and the workspace that hasn't yet sees an old address nothing declares, so it plans destroy plus create.
+    - A shared module other people consume. Keep the block. Consumers upgrade and apply on their own schedule, and you cannot know when the last one has. Drop it only at a major version bump, and say so in the changelog.
 
-    Before deleting, `terraform state list` in each state that could still be stale and confirm the old address is gone.
+    Before deleting, run `terraform state list` against each state that could still be stale and confirm the old address is gone.
 
 ### 6.5.3 CLI-driven changes
 
