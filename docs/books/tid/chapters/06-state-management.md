@@ -570,6 +570,19 @@ moved {
 !!! tip "`moved` is essential for shared modules"
     Because it applies automatically in every environment consuming the module, a module author can refactor internals freely without forcing painful upgrades on users.
 
+!!! question "When can you delete the blocks again?"
+    Both blocks are no-ops once they've done their job, so they're safe to leave in place indefinitely. Deleting them is also fine, but only after every state they apply to has actually been applied.
+
+    **`removed`** — delete it in the commit *after* the apply that dropped the entry. Deleting the block and the resource in the same change leaves an address that is simply absent from config with no instruction attached, and Terraform plans a real destroy.
+
+    **`moved`** — the block is a no-op only once no state anywhere still holds the `from` address. That gives three cases:
+
+    - Root module with a single state, apply already done. Delete freely.
+    - One config across several workspaces or environments. Every one of them must have applied. Delete early and the workspace that hasn't yet sees an old address that nothing declares, so it plans destroy plus create.
+    - A shared module other people consume. Keep the block. Consumers upgrade and apply on their own schedule, and you have no way to know when the last one has. Drop it only at a major version bump, and say so in the changelog.
+
+    Before deleting, `terraform state list` in each state that could still be stale and confirm the old address is gone.
+
 ### 6.5.3 CLI-driven changes
 
 The **second-best** way — better than hand-editing, for the few things code can't express.
