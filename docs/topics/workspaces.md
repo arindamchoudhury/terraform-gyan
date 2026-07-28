@@ -1,6 +1,6 @@
 # Workspaces
 
-> **Sources:** Hafner, *Terraform in Depth* Ch6 §6.4.5 (`cloud` block) + §6.4.7 (CLI workspaces) · HCDocs ["Workspaces"](https://developer.hashicorp.com/terraform/language/state/workspaces) · HCDocs ["HCP Terraform workspaces"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) · Terraform 1.15.8 source · [Terragrunt docs](https://docs.terragrunt.com/features/units) ("Units", "AWS authentication") · [Atlantis](https://www.runatlantis.io/)
+> **Sources:** Hafner, *Terraform in Depth* Ch6 §6.4.5 (`cloud` block) + §6.4.7 (CLI workspaces) · HCDocs ["Workspaces"](https://developer.hashicorp.com/terraform/language/state/workspaces) · HCDocs ["Managing Workspaces"](https://developer.hashicorp.com/terraform/cli/workspaces) · HCDocs ["HCP Terraform workspaces"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) · Terraform 1.15.8 source · [Terragrunt docs](https://docs.terragrunt.com/features/units) ("Units", "AWS authentication") · [Atlantis](https://www.runatlantis.io/)
 
 ## In one paragraph
 
@@ -16,7 +16,34 @@
 | Configured by | Nothing; just `terraform workspace new` | `cloud` block's `workspaces` sub-block (`tags` or `name`) |
 | Suitable for env isolation | **No** | Yes |
 
-The critical asymmetry: CLI workspaces give you a second state file, *not* a second environment. Everything a real dev/prod split needs to differ — credentials, permissions, blast radius — stays shared.
+The critical asymmetry: CLI workspaces give you a second state file, *not* a second environment. Everything a real dev/prod split needs to differ stays shared: credentials, permissions, blast radius.
+
+## What CLI workspaces buy you
+
+Start from the constraint, because it explains why more than one state file is needed at all. A state file is the map from configuration addresses to real remote objects, and an address is unique within it. One state can therefore hold exactly one `aws_instance.web`. If you want two live copies of a configuration, you need two states. That is not a design choice, it is arithmetic.
+
+So the real question is how you obtain the second state. Without workspaces there are two ways, and both cost something:
+
+- **Re-point the backend.** Run `terraform init -reconfigure -backend-config=…` with a different state key every time you switch. Only one instance is reachable at a time, and the switch is a manual step nothing verifies.
+- **Copy the directory.** Now the same code exists twice and has to be kept in sync by hand.
+
+Workspaces are the third way, and HCDocs states the benefit in one line: workspaces let you **"deploy multiple distinct instances of that configuration without configuring a new backend or changing authentication credentials."** What that buys, concretely:
+
+| Benefit | Why it follows |
+| --- | --- |
+| **No second setup** | Workspaces "let you create different sets of infrastructure with the same working copy of your configuration and the same plugin and module caches" (HCDocs). No extra `init`, no re-downloaded providers, no duplicated `.tf` |
+| **Copies cannot drift** | There is only one configuration, so every instance is identical by construction. Directory-per-env has to achieve this with discipline; workspaces get it for free |
+| **Independent locking** | Each workspace has its own state file, and the lock is taken on that file, so two workspaces can plan and apply at the same time. A single shared state serialises everyone behind one lock |
+| **Contained state operations** | "When you run `terraform plan` in a new workspace, Terraform does not access existing resources in other workspaces" (HCDocs). A `destroy` in a sandbox workspace cannot reach the copy next door |
+| **Creation is free** | `terraform workspace new` allocates a state slot. Nothing is provisioned, nothing is configured, nothing needs an admin |
+| **The instance has a name in config** | `terraform.workspace` is known at plan time, so it can uniquify globally-unique names such as S3 buckets, and drive `count` or `for_each` |
+
+The canonical use HCDocs gives is testing: **"A common use for multiple workspaces is to create a parallel, distinct copy of a set of infrastructure to test a set of changes before modifying production infrastructure."** In practice that generalises to a per-developer sandbox in a shared dev account, a stack per feature branch or pull request that is destroyed on merge, and the parallel fixtures an integration test harness spins up.
+
+Read the benefit list and the isolation limits together and they describe one mechanism, not two. Workspaces make instances of a configuration cheap precisely *because* everything except state is shared. The share is the feature and the ceiling at the same time.
+
+!!! note "Two different questions about multiple state files"
+    "Why more than one state per configuration" is answered above: parallel instances of the same thing. "Why split one system across several states" is a different question, answered by blast radius, apply time, and team ownership, and workspaces are the wrong tool for it. HCDocs is blunt that workspaces are not for **system decomposition**. That second question belongs to **E4 — Large-scale state & repo architecture**.
 
 ## Why CLI workspaces are not environment isolation
 
@@ -44,7 +71,7 @@ Using `terraform.workspace` in a lookup map does not fix this. It is a runtime b
 !!! danger "The documented limit"
     HCDocs states it directly: **"Workspaces are not appropriate for system decomposition or deployments requiring separate credentials and access controls."** Note that this is about *credentials and access controls*, not about state layout. Separate state was never the hard part.
 
-**What CLI workspaces are genuinely good for:** several short-lived copies of the same thing, at the same risk level, under the same credentials. Per-developer sandboxes in a shared dev account, a stack per feature branch, a scratch copy for testing a refactor. The moment the copies need different permissions, they have outgrown the mechanism.
+Which leaves the boundary from the section above: several short-lived copies of the same thing, at the same risk level, under the same credentials. The moment the copies need different permissions, they have outgrown the mechanism.
 
 ## CLI workspaces
 
@@ -138,4 +165,4 @@ Both learning-path topics that own this subject are unstarted, so this page is c
 - **A4 — HCP Terraform / Terraform Cloud** will add workspace settings, variable sets, the run lifecycle, and health assessments.
 - **A7 — Multi-environment & multi-account patterns** will add the decisive comparison, from TUR Ch3 §"Isolation via Workspaces" (p94) against §"Isolation via File Layout" (p100), plus the multi-account half from TUR Ch7.
 
-Related: [[core-workflow]], and [[state-management]] once that backlog topic is written.
+Related: [[core-workflow]], [[workspaces-facts]] for the raw verified research, and the **state** topic once it graduates from the [topics backlog](index.md).

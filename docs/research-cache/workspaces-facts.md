@@ -28,6 +28,15 @@ This is HashiCorp's own guidance plus broad 2026 community consensus:
 
 Short-lived, throwaway copies of a stack: a workspace per PR / feature branch / preview, destroyed on merge.
 
+Verified HCDocs wording on the benefit side (re-checked 2026-07-28):
+
+- Purpose, from "Workspaces": workspaces let you "deploy multiple distinct instances of that configuration without configuring a new backend or changing authentication credentials."
+- Mechanics, from "Managing Workspaces": they "let you create different sets of infrastructure with the same working copy of your configuration and the same plugin and module caches."
+- Canonical use case, same page: "A common use for multiple workspaces is to create a parallel, distinct copy of a set of infrastructure to test a set of changes before modifying production infrastructure."
+- Separation guarantee, from "Workspaces": "When you run `terraform plan` in a new workspace, Terraform does not access existing resources in other workspaces. These resources still physically exist, but you must switch workspaces to manage them."
+
+Neither page discusses locking. The per-workspace lock follows from the state layout: the local backend gives each workspace its own file under `terraform.tfstate.d/<name>/`, and `statemgr.Filesystem.Lock` locks the state file it writes, so two workspaces do not contend. The topic page [[workspaces]] frames this as the mechanism being cheap *because* everything but state is shared.
+
 ### Recommended pattern for long-lived environments
 
 Directory-per-environment (each env its own folder, its own backend/state), or HCP Terraform workspaces with per-workspace RBAC. This is the subject of learning-path topic **A7 — Multi-environment & multi-account patterns**.
