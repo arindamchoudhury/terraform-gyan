@@ -52,3 +52,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Query infrastructure data (data sources) | 2026-07-22 | [tf-data-sources](tf-data-sources.md) |
 | `data` block reference | 2026-07-22 | [tf-block-data](tf-block-data.md) |
 | State (overview) | 2026-07-29 | [tf-state](tf-state.md) |
+| Purpose of Terraform State | 2026-07-29 | [tf-state-purpose](tf-state-purpose.md) |

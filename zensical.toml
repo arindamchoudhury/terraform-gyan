@@ -95,6 +95,7 @@ nav = [
                 ]},
                 { "State" = [
                     { "Overview" = "sources/terraform-docs/tf-state.md" },
+                    { "Purpose" = "sources/terraform-docs/tf-state-purpose.md" },
                     { "removed block reference" = "sources/terraform-docs/tf-block-removed.md" },
                 ]},
                 { "Reference" = [
