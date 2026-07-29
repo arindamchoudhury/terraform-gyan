@@ -893,6 +893,11 @@ resource "aws_instance" "myinstance" {
 
 - **Host provisioners** (book Ch8) — same role `null_resource` used to play.
 
+!!! note "What `replace_triggered_by` will actually accept"
+    Each element of the list must resolve to **exactly one** resource or resource-instance reference. The only extra symbols allowed alongside it are `count.index` and `each.key`. Everything else is rejected at parse time with `Only resources, count.index, and each.key may be used in replace_triggered_by.` Zero resource references gives `Missing resource reference in replace_triggered_by expression.`, and two or more gives `Multiple resource references in replace_triggered_by expression.`
+
+    A second limit the book doesn't mention: the referenced resource must be declared in the **same module**. Terraform resolves the reference against the current module's own config and planned changes, so `module.network.something` is not usable, and an out-of-module address fails with `Reference to undeclared resource`. If the trigger lives in another module, thread the value out as an output and land it in a local `terraform_data` on the consuming side.
+
 !!! note "You'll still meet `null_resource` in the wild"
     `terraform_data` covers essentially everything `null_resource` does, but it's newer — the `null` provider was still installed **9M+ times in the first week of 2025**. Both work; new code should prefer `terraform_data`. See [[tf-terraform-data]].
 
