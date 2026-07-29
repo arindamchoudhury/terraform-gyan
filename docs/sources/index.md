@@ -49,6 +49,7 @@ Log of all captured sources, organised by course.
 | [`data` block reference](terraform-docs/tf-block-data.md) | documentation | 2026-07-22 | data-sources, data-block, meta-arguments, count, for_each, depends_on, lifecycle, precondition, postcondition | [url](https://developer.hashicorp.com/terraform/language/block/data) |
 | [State (overview)](terraform-docs/tf-state.md) | documentation | 2026-07-29 | state, tfstate, backends, state-locking, terraform-state-cli, json-output, import | [url](https://developer.hashicorp.com/terraform/language/state) |
 | [Purpose of Terraform State](terraform-docs/tf-state-purpose.md) | documentation | 2026-07-29 | state, tfstate, dependencies, destroy-ordering, refresh, performance, state-locking, import | [url](https://developer.hashicorp.com/terraform/language/state/purpose) |
+| [State Storage and Locking](terraform-docs/tf-state-backends.md) | documentation | 2026-07-29 | state, backends, state-locking, state-pull, state-push, lineage, serial, sensitive-data | [url](https://developer.hashicorp.com/terraform/language/state/backends) |
 
 ## 2. OpenTofu Docs
 
