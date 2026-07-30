@@ -95,6 +95,7 @@ nav = [
                 ]},
                 { "Backends" = [
                     { "Configure a backend" = "sources/terraform-docs/tf-backend-configure.md" },
+                    { "local" = "sources/terraform-docs/tf-backend-local.md" },
                 ]},
                 { "State" = [
                     { "Overview" = "sources/terraform-docs/tf-state.md" },

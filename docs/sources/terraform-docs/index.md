@@ -59,3 +59,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | State Locking (`-lock`, `force-unlock`) | 2026-07-30 | [tf-state-locking](tf-state-locking.md) |
 | Workspaces (CLI workspaces, `terraform.workspace`) | 2026-07-30 | [tf-state-workspaces](tf-state-workspaces.md) |
 | Backend block configuration overview | 2026-07-30 | [tf-backend-configure](tf-backend-configure.md) |
+| `local` backend (`path`, `workspace_dir`, legacy `-state` flags) | 2026-07-30 | [tf-backend-local](tf-backend-local.md) |
