@@ -63,3 +63,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Remote State (delegation, locking, HCP run queue) | 2026-07-30 | [tf-state-remote](tf-state-remote.md) |
 | `terraform refresh` command (deprecated) | 2026-07-30 | [tf-cmd-refresh](tf-cmd-refresh.md) |
 | Inspect Infrastructure Commands Overview | 2026-07-30 | [tf-cli-inspect](tf-cli-inspect.md) |
+| `terraform output` command (sensitive redaction verified) | 2026-07-30 | [tf-cmd-output](tf-cmd-output.md) |

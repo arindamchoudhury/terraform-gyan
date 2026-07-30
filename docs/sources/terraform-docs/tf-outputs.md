@@ -60,7 +60,7 @@ resource "aws_cloudwatch_alarm" "web_health" {
 
 ## Sensitive outputs
 
-Mark `sensitive = true` to redact from CLI output — `terraform output <name>` then shows `<sensitive>`:
+Mark `sensitive = true` to redact the value from the **aggregate** CLI listing:
 
 ```hcl
 output "database_password" {
@@ -69,6 +69,18 @@ output "database_password" {
   sensitive   = true
 }
 ```
+
+!!! danger "This page's redaction claim is false — verified on v1.15.8"
+    The source says "Trying to access a sensitive output value directly in the CLI displays a redacted message instead of the actual value", with `terraform output database_password` → `database_password = <sensitive>`.
+
+    **It does not.** Querying by name prints the value in the clear. Only the no-argument listing redacts:
+
+    | Command | Output |
+    |---|---|
+    | `terraform output` | `password = <sensitive>` |
+    | `terraform output password` | `"notasecurepassword"` |
+
+    The CLI command reference states the opposite of this page and is the correct one: "Terraform does not redact sensitive values when you specify the output by name." [[tut-outputs]] recorded the same from the tutorial. Full transcript in [[tf-cmd-output]].
 
 Same two caveats as sensitive variables (see [[tf-manage-sensitive-data]]): the value is **still stored in state**, and **`terraform output -json` / `-raw` print it in plain text**. Adding `ephemeral` omits the output from state/plan files — at the cost of restrictions on what you can assign it. (An `ephemeral` output is allowed **only in child modules, not the root** — per [[tf-manage-sensitive-data]].)
 
