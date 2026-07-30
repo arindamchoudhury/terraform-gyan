@@ -153,5 +153,70 @@ Three behaviors worth knowing before you answer the prompts:
 
 The `-migrate-state` and `-reconfigure` flags that automate these answers are in [[06-state-management]] §6.4.6; this page describes the interactive path only.
 
+## Verified against a local AWS emulator
+
+Run on **Terraform v1.15.8** against **Floci 1.5.33** on `:4566` (the book's lab emulator), with the `s3` backend and a `terraform_data` resource so no provider plugin is involved.
+
+**The working backend block.** `endpoints` is an **attribute, not a block** — `endpoints { s3 = … }` fails with *"Blocks of type `endpoints` are not expected here. Did you mean to define argument `endpoints`?"*
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket = "tf-state-lab"
+    key    = "lab/terraform.tfstate"
+    region = "us-east-1"
+
+    access_key = "test"
+    secret_key = "test"
+
+    endpoints = {
+      s3 = "http://localhost:4566"
+    }
+
+    use_path_style              = true
+    use_lockfile                = true
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+  }
+}
+```
+
+`terraform apply` wrote `lab/terraform.tfstate` into the bucket, and no `terraform.tfstate` appeared on local disk.
+
+**The leak is exactly as documented, in both files.** `.terraform/terraform.tfstate` after init contains the *entire* resolved backend config as JSON, credentials included:
+
+```json
+"backend": { "type": "s3", "config": {
+  "access_key": "test", "bucket": "tf-state-lab",
+  "endpoints": { "s3": "http://localhost:4566", ... },
+  "secret_key": "test", "use_lockfile": true, ... } }
+```
+
+A saved plan file is a zip of `tfplan`, `tfstate`, `tfstate-prev`, `tfconfig/`, `.terraform.lock.hcl`. The `tfplan` entry is msgpack, and the backend config sits inside it — the bytes around the key read `…access_key⸱test⸱acl⸱…bucket⸱tf-state-lab…`, with `http://localhost:4566` and `secret_key` alongside. So "plan files capture the information in `.terraform/terraform.tfstate`" means the credentials travel with the plan artifact.
+
+**The named-value ban is enforced at parse time**, before any backend work:
+
+```
+Error: Variables not allowed
+  on main.tf line 8, in terraform:
+   8:     bucket = var.state_bucket
+Variables may not be used here.
+```
+
+!!! warning "The page overstates what a partial block needs"
+    Its file method says "The partial configuration must have a backend block containing keys set to empty values", and its example writes `bucket = ""`, `key = ""`, and so on. **Not required.** A completely empty block took the whole configuration from a `.tfbackend` file:
+
+    ```hcl
+    terraform { backend "s3" {} }
+    ```
+
+    ```shell
+    terraform init -backend-config="./config.s3.tfbackend"
+    ```
+
+    Init succeeded and the apply wrote `partial/terraform.tfstate` to the bucket. The empty-keys form is one valid style, not a requirement — which matches the page's *own* later statement that the minimum is "an empty backend configuration… to specify the backend type."
+
 ---
 Related: [[tf-state-backends]] — the State-section counterpart; a backend's two responsibilities and the `state pull`/`state push` guards. · [[06-state-management]] — TID Ch6 for `-migrate-state`/`-reconfigure`, the backend catalogue, and the `cloud` block. · [[ot-early-eval-backend]] — OpenTofu lifts the named-values ban this page states. · [[infisical-terraform-secrets]] — the leak path this page documents at the source. · [[tf-state-workspaces]] — which backends can hold more than one state to migrate.

@@ -51,5 +51,45 @@ The guard rail is the lock ID.
 
 Calling it a **nonce** is the useful detail. The ID is not a name you can look up and reuse — it identifies one specific lock acquisition. So you cannot force-unlock blind, and an ID from an older failure will not release the current lock.
 
+## Verified against a local AWS emulator
+
+**Terraform v1.15.8**, `s3` backend with `use_lockfile = true`, against **Floci 1.5.33** on `:4566`. Setup and the full backend block are in [[tf-backend-configure]]. A `local-exec` provisioner held the apply open for 30 seconds so the lock could be observed from outside.
+
+**The lock is a real object, and it is transient.** Polling the bucket during the apply:
+
+```
+lab/terraform.tfstate    lab/terraform.tfstate.tflock
+lab/terraform.tfstate    lab/terraform.tfstate.tflock
+lab/terraform.tfstate                                   # apply finished
+```
+
+So S3-native locking is a sibling object named `<state key>.tflock`, created for the duration of the operation and deleted after. No DynamoDB table involved.
+
+**A second command during the apply fails, exactly as the page describes.** It first printed the slow-acquisition status message this page mentions, then stopped:
+
+```
+Acquiring state lock. This may take a few moments...
+
+Error: Error acquiring the state lock
+
+Error message: operation error S3: PutObject, https response error StatusCode: 412,
+api error PreconditionFailed: At least one of the pre-conditions you specified did not hold
+Lock Info:
+  ID:        76be00ae-65dc-d086-f994-ef1ca2487028
+  Path:      tf-state-lab/lab/terraform.tfstate
+  Operation: OperationTypeApply
+  Who:       ARINDAM\arind@arindam
+  Version:   1.15.8
+  Created:   2026-07-30 09:05:40.678421 +0000 UTC
+```
+
+Three things this pins down that the page only asserts.
+
+- **Failure really is fatal** — the command exited, it did not proceed unlocked.
+- **The lock ID is handed to you at exactly the moment you might need `force-unlock`**, which is what makes the nonce requirement workable rather than obstructive. The block also names the holder, the operation, and when it started, which is the evidence you need before deciding a lock is stale.
+- **The mechanism for `use_lockfile` is an S3 conditional write.** The underlying failure is `PutObject` → **412 PreconditionFailed**: the second writer's if-none-match precondition fails because the `.tflock` object already exists. That is the whole lock, and it is why no separate locking service is needed.
+
+`-lock-timeout=3s` was set on the failing command, so the error came after a retry window rather than immediately.
+
 ---
-Related: [[tf-state-backends]] — the page that defers here; defines locking as an optional backend responsibility. · [[tf-state-purpose]] — argues *why* teams need syncing and locking; this is the mechanism. · [[tf-cli-commands]] — lists `force-unlock` in the command catalogue. · [[05-terraform-plan]] — TID's take on `-lock=false` and the speculative-plan exception.
+Related: [[tf-backend-configure]] — the backend block and emulator setup used for this verification. · [[tf-state-backends]] — the page that defers here; defines locking as an optional backend responsibility. · [[tf-state-purpose]] — argues *why* teams need syncing and locking; this is the mechanism. · [[tf-cli-commands]] — lists `force-unlock` in the command catalogue. · [[05-terraform-plan]] — TID's take on `-lock=false` and the speculative-plan exception.
