@@ -99,6 +99,7 @@ nav = [
                     { "Manage state in remote backends" = "sources/terraform-docs/tf-state-backends.md" },
                     { "Refactor state" = "sources/terraform-docs/tf-state-refactor.md" },
                     { "Remove a resource from state" = "sources/terraform-docs/tf-state-remove.md" },
+                    { "Locking" = "sources/terraform-docs/tf-state-locking.md" },
                     { "removed block reference" = "sources/terraform-docs/tf-block-removed.md" },
                 ]},
                 { "Reference" = [

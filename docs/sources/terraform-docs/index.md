@@ -56,3 +56,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | State Storage and Locking (remote backends) | 2026-07-29 | [tf-state-backends](tf-state-backends.md) |
 | Refactor Terraform state (split across configs) | 2026-07-29 | [tf-state-refactor](tf-state-refactor.md) |
 | Remove a resource from state (forget, don't destroy) | 2026-07-30 | [tf-state-remove](tf-state-remove.md) |
+| State Locking (`-lock`, `force-unlock`) | 2026-07-30 | [tf-state-locking](tf-state-locking.md) |

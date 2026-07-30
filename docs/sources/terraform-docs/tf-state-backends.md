@@ -52,7 +52,7 @@ Ch6 §6.5.4 adds the better habit for restoring an older backup: rather than rea
 
 ## State locking
 
-Backends are responsible for supporting locking "if possible." Not all of them do, and each backend's own documentation states whether it does. The page defers the mechanics to the dedicated Locking page, not yet captured.
+Backends are responsible for supporting locking "if possible." Not all of them do, and each backend's own documentation states whether it does. The page defers the mechanics to the dedicated Locking page, captured in [[tf-state-locking]]: locking is automatic and silent, a failure to acquire stops the run, and `force-unlock` needs the lock ID as a nonce.
 
 ---
-Related: [[tf-state]] — the section overview; this page is the storage half of what that one summarizes. [[tf-state-purpose]] — argues *why* syncing and locking matter for teams; this page is the mechanism. [[tf-remote-state-data]] — reads root outputs from these same backends, and carries the full-snapshot access warning. [[tf-manage-sensitive-data]] — the sensitive-values problem that "never persisted to disk" partially addresses. [[tf-cli-commands]] — where `state pull`/`state push` sit in the command index.
+Related: [[tf-state-locking]] — the mechanics this page defers to. [[tf-state]] — the section overview; this page is the storage half of what that one summarizes. [[tf-state-purpose]] — argues *why* syncing and locking matter for teams; this page is the mechanism. [[tf-remote-state-data]] — reads root outputs from these same backends, and carries the full-snapshot access warning. [[tf-manage-sensitive-data]] — the sensitive-values problem that "never persisted to disk" partially addresses. [[tf-cli-commands]] — where `state pull`/`state push` sit in the command index.
