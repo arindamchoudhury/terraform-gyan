@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/cli/commands/graph](https://developer.hashicorp.com/terraform/cli/commands/graph)
 > **Added:** 2026-07-10
-> **Source updated:** undated CLI reference; captured 2026-07-10 against v1.15.x (latest)
+> **Source updated:** undated CLI reference; captured 2026-07-10 against v1.15.x (latest), re-fetched 2026-07-30 and byte-identical
 > **Tags:** cli, graph, dag, dot, graphviz, cycles, dependencies
 > **Type:** documentation
 
@@ -39,6 +39,11 @@ terraform graph -type=plan | dot -Tpng >graph.png
 ```
 
 Third-party online DOT renderers work too.
+
+The page's own example of the result:
+
+[![A plan graph rendered by dot](assets/tf-cmd-graph/01-plan-graph-example.png)](assets/tf-cmd-graph/01-plan-graph-example.png)
+*The page's example plan graph, rendered with `dot`. Worth reading for the **shapes**, which the docs never explain: the diamond is the provider, the ellipse `aws_instance.test` is the resource's **expand** node, and the three boxes below it are its `count` instances `.0`/`.1`/`.2`. Everything points at `provider.aws`, which is the provider-configuration ordering the default resources-only graph omits entirely.*
 
 ## Verified behavior
 
