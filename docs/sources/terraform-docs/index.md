@@ -61,3 +61,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Backend block configuration overview | 2026-07-30 | [tf-backend-configure](tf-backend-configure.md) |
 | `local` backend (`path`, `workspace_dir`, legacy `-state` flags) | 2026-07-30 | [tf-backend-local](tf-backend-local.md) |
 | Remote State (delegation, locking, HCP run queue) | 2026-07-30 | [tf-state-remote](tf-state-remote.md) |
+| `terraform refresh` command (deprecated) | 2026-07-30 | [tf-cmd-refresh](tf-cmd-refresh.md) |

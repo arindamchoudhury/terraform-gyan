@@ -42,7 +42,14 @@ nav = [
             ]},
             { "Terraform CLI" = [
                 { "Basic CLI Features" = "sources/terraform-docs/tf-cli-commands.md" },
-                { "graph" = "sources/terraform-docs/tf-cmd-graph.md" },
+                { "Inspecting Infrastructure" = [
+                    { "graph" = "sources/terraform-docs/tf-cmd-graph.md" },
+                ]},
+                { "Manually Update State" = [
+                    { "Inspecting State" = [
+                        { "refresh" = "sources/terraform-docs/tf-cmd-refresh.md" },
+                    ]},
+                ]},
             ]},
             { "Configuration Language" = [
                 { "Configure providers" = [

@@ -57,6 +57,7 @@ Log of all captured sources, organised by course.
 | [Backend block configuration overview](terraform-docs/tf-backend-configure.md) | documentation | 2026-07-30 | backend, backend-block, partial-configuration, backend-config, tfbackend, init, migrate-state, credentials | [url](https://developer.hashicorp.com/terraform/language/backend) |
 | [`local` backend](terraform-docs/tf-backend-local.md) | documentation | 2026-07-30 | backend, local-backend, workspace-dir, state-flag, backup, legacy-flags, terraform_remote_state | [url](https://developer.hashicorp.com/terraform/language/backend/local) |
 | [Remote State](terraform-docs/tf-state-remote.md) | documentation | 2026-07-30 | state, remote-state, delegation, locking, hcp-terraform, consul, decomposition | [url](https://developer.hashicorp.com/terraform/language/state/remote) |
+| [`terraform refresh` command](terraform-docs/tf-cmd-refresh.md) | documentation | 2026-07-30 | cli, refresh, refresh-only, deprecated, drift, state, auto-approve | [url](https://developer.hashicorp.com/terraform/cli/commands/refresh) |
 
 ## 2. OpenTofu Docs
 
