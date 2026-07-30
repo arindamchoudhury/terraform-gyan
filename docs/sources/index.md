@@ -51,6 +51,7 @@ Log of all captured sources, organised by course.
 | [Purpose of Terraform State](terraform-docs/tf-state-purpose.md) | documentation | 2026-07-29 | state, tfstate, dependencies, destroy-ordering, refresh, performance, state-locking, import | [url](https://developer.hashicorp.com/terraform/language/state/purpose) |
 | [State Storage and Locking](terraform-docs/tf-state-backends.md) | documentation | 2026-07-29 | state, backends, state-locking, state-pull, state-push, lineage, serial, sensitive-data | [url](https://developer.hashicorp.com/terraform/language/state/backends) |
 | [Refactor Terraform state](terraform-docs/tf-state-refactor.md) | documentation | 2026-07-29 | state, refactoring, splitting-state, removed-block, import-block, state-mv, state-pull, state-push | [url](https://developer.hashicorp.com/terraform/language/state/refactor) |
+| [Remove a resource from state](terraform-docs/tf-state-remove.md) | documentation | 2026-07-30 | state, removed-block, destroy, state-rm, import, forget | [url](https://developer.hashicorp.com/terraform/language/state/remove) |
 
 ## 2. OpenTofu Docs
 
