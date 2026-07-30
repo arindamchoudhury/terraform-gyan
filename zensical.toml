@@ -93,6 +93,9 @@ nav = [
                 { "Sensitive data" = [
                     { "Manage sensitive data" = "sources/terraform-docs/tf-manage-sensitive-data.md" },
                 ]},
+                { "Backends" = [
+                    { "Configure a backend" = "sources/terraform-docs/tf-backend-configure.md" },
+                ]},
                 { "State" = [
                     { "Overview" = "sources/terraform-docs/tf-state.md" },
                     { "Purpose" = "sources/terraform-docs/tf-state-purpose.md" },

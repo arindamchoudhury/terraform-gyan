@@ -58,3 +58,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Remove a resource from state (forget, don't destroy) | 2026-07-30 | [tf-state-remove](tf-state-remove.md) |
 | State Locking (`-lock`, `force-unlock`) | 2026-07-30 | [tf-state-locking](tf-state-locking.md) |
 | Workspaces (CLI workspaces, `terraform.workspace`) | 2026-07-30 | [tf-state-workspaces](tf-state-workspaces.md) |
+| Backend block configuration overview | 2026-07-30 | [tf-backend-configure](tf-backend-configure.md) |

@@ -54,6 +54,7 @@ Log of all captured sources, organised by course.
 | [Remove a resource from state](terraform-docs/tf-state-remove.md) | documentation | 2026-07-30 | state, removed-block, destroy, state-rm, import, forget | [url](https://developer.hashicorp.com/terraform/language/state/remove) |
 | [State Locking](terraform-docs/tf-state-locking.md) | documentation | 2026-07-30 | state, state-locking, lock, force-unlock, lock-id, backends | [url](https://developer.hashicorp.com/terraform/language/state/locking) |
 | [Workspaces](terraform-docs/tf-state-workspaces.md) | documentation | 2026-07-30 | state, workspaces, terraform-workspace, backends, terraform.workspace, hcp-workspaces | [url](https://developer.hashicorp.com/terraform/language/state/workspaces) |
+| [Backend block configuration overview](terraform-docs/tf-backend-configure.md) | documentation | 2026-07-30 | backend, backend-block, partial-configuration, backend-config, tfbackend, init, migrate-state, credentials | [url](https://developer.hashicorp.com/terraform/language/backend) |
 
 ## 2. OpenTofu Docs
 
