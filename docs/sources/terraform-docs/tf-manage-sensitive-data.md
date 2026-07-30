@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/manage-sensitive-data](https://developer.hashicorp.com/terraform/language/manage-sensitive-data)
 > **Added:** 2026-07-13
-> **Source updated:** v1.15.x (latest at capture); undated page, captured 2026-07-13
+> **Source updated:** v1.15.x (latest at capture); undated page, captured 2026-07-13, re-fetched 2026-07-30 and byte-identical
 > **Tags:** secrets, sensitive, ephemeral, write-only, state-security, encryption, provider-credentials
 > **Type:** documentation
 
@@ -54,6 +54,16 @@ A sensitive output renders as `connection_string = (sensitive value)`. Terraform
 !!! warning "`sensitive` does not protect state — and `-json`/`-raw` bypass redaction"
     Values marked `sensitive` are **stored in both state and plan files**; anyone who can read those files reads the secret. And `terraform output -json` or `terraform output -raw` prints sensitive variables/outputs **in plain text**. If you don't want the value stored at all, use ephemeral; if you must store it, secure the state (below).
 
+!!! danger "The gap this page leaves out: a named query needs no flag at all"
+    This page lists `-json` and `-raw` as the ways redaction is bypassed. There is a third, and it needs no flag. Verified on **v1.15.8** ([[tf-cmd-output]]):
+
+    | Command | Output |
+    |---|---|
+    | `terraform output` | `password = <sensitive>` |
+    | `terraform output password` | `"notasecurepassword"` |
+
+    So `sensitive` protects the **aggregate listing** and the operation log, nothing more. Reading the value back is a normal, flagless command. The CLI reference states this plainly — "Terraform does not redact sensitive values when you specify the output by name" — while the language *Output Values* page claims the opposite and is wrong. Treat `sensitive` as *hiding from logs*, never as access control.
+
 ## Omit values from state and plan files
 
 Ephemeral values are available during an operation but never written to state/plan. Because they aren't stored, **you must capture any generated value you want to keep** in another resource or output.
@@ -92,6 +102,22 @@ output "session_token" {
   sensitive = true
 }
 ```
+
+!!! note "Both halves of the root-module restriction, verified on v1.15.8"
+    The rule is tighter than "declare it in a child module." Neither route reaches the root:
+
+    ```
+    # output "eph" { ephemeral = true, ... } in the root module
+    Error: Ephemeral output not allowed
+    Ephemeral outputs are not allowed in context of a root module
+
+    # root output whose value = module.child.eph, where the child's output is ephemeral
+    Error: Ephemeral value not allowed
+    This output value is not declared as returning an ephemeral value, so it cannot be
+    set to a result derived from an ephemeral value.
+    ```
+
+    The practical consequence, since `terraform output` reads root outputs only: **an ephemeral value can never be read back through `terraform output`**. It is consumed within the run or not at all — which is exactly the point, but it also means you cannot use one to hand a credential to a wrapper script. See [[tf-cmd-output]].
 
 ### The `ephemeral` block
 
