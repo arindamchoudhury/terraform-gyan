@@ -86,6 +86,8 @@ Terraform always has a workspace named **`default`**, which cannot be deleted. C
 
 **Where the state goes.** The local backend keeps the default workspace at `terraform.tfstate` as usual, and every other workspace under a directory named `terraform.tfstate.d` — the constant `DefaultWorkspaceDir` in the local backend source. Remote backends that support multiple workspaces distinguish them with a path prefix instead.
 
+**Which backends support them.** Not all do, and the docs enumerate the ten that do ([[tf-state-workspaces]]): AzureRM, Consul, COS, GCS, Kubernetes, Local, OSS, Postgres, Remote, S3. Absent from that list are **`http`** and **`oci`** (the backend added in Terraform 1.12), so "remote backend" and "supports named workspaces" are separate properties — choosing where state lives does not settle whether you can hold more than one state there.
+
 **Reading the current workspace.** Terraform exposes it as **`terraform.workspace`**, known at **plan time**, so it is legal in `count` and `for_each`. The per-workspace lookup map is the common pattern:
 
 ```hcl
@@ -165,4 +167,4 @@ Both learning-path topics that own this subject are unstarted, so this page is c
 - **A4 — HCP Terraform / Terraform Cloud** will add workspace settings, variable sets, the run lifecycle, and health assessments.
 - **A7 — Multi-environment & multi-account patterns** will add the decisive comparison, from TUR Ch3 §"Isolation via Workspaces" (p94) against §"Isolation via File Layout" (p100), plus the multi-account half from TUR Ch7.
 
-Related: [[core-workflow]], [[workspaces-facts]] for the raw verified research, and the **state** topic once it graduates from the [topics backlog](index.md).
+Related: [[core-workflow]], [[tf-state-workspaces]] for the HCDocs page this leans on, [[workspaces-facts]] for the raw verified research, and the **state** topic once it graduates from the [topics backlog](index.md).
