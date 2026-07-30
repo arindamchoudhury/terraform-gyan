@@ -46,6 +46,7 @@ nav = [
                     { "Overview" = "sources/terraform-docs/tf-cli-inspect.md" },
                     { "graph" = "sources/terraform-docs/tf-cmd-graph.md" },
                     { "output" = "sources/terraform-docs/tf-cmd-output.md" },
+                    { "state list" = "sources/terraform-docs/tf-cmd-state-list.md" },
                 ]},
                 { "Manually Update State" = [
                     { "Inspecting State" = [
