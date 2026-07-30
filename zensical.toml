@@ -43,6 +43,7 @@ nav = [
             { "Terraform CLI" = [
                 { "Basic CLI Features" = "sources/terraform-docs/tf-cli-commands.md" },
                 { "Inspecting Infrastructure" = [
+                    { "Overview" = "sources/terraform-docs/tf-cli-inspect.md" },
                     { "graph" = "sources/terraform-docs/tf-cmd-graph.md" },
                 ]},
                 { "Manually Update State" = [

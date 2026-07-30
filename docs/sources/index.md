@@ -58,6 +58,7 @@ Log of all captured sources, organised by course.
 | [`local` backend](terraform-docs/tf-backend-local.md) | documentation | 2026-07-30 | backend, local-backend, workspace-dir, state-flag, backup, legacy-flags, terraform_remote_state | [url](https://developer.hashicorp.com/terraform/language/backend/local) |
 | [Remote State](terraform-docs/tf-state-remote.md) | documentation | 2026-07-30 | state, remote-state, delegation, locking, hcp-terraform, consul, decomposition | [url](https://developer.hashicorp.com/terraform/language/state/remote) |
 | [`terraform refresh` command](terraform-docs/tf-cmd-refresh.md) | documentation | 2026-07-30 | cli, refresh, refresh-only, deprecated, drift, state, auto-approve | [url](https://developer.hashicorp.com/terraform/cli/commands/refresh) |
+| [Inspect Infrastructure Commands Overview](terraform-docs/tf-cli-inspect.md) | documentation | 2026-07-30 | cli, inspection, graph, output, show, state-list, state-show, json, tool-integration | [url](https://developer.hashicorp.com/terraform/cli/inspect) |
 
 ## 2. OpenTofu Docs
 
