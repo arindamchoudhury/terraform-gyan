@@ -266,7 +266,7 @@
 
 ---
 
-### ⬜ B9 — State fundamentals
+### ✅ B9 — State fundamentals
 
 **What it is:** What `terraform.tfstate` is, why Terraform needs it (mapping config → real resources), what's in it, and why it must be protected and never hand-edited.
 
@@ -283,6 +283,9 @@
     - **KK:** [KodeKloud free labs](https://kodekloud.com/free-labs/terraform) — *Terraform State* (purpose of state, state considerations).
 
 **Milestone:** You can open a state file, explain how a resource address maps to a real cloud object, and articulate three reasons never to edit it by hand.
+
+!!! success "✅ Chapter written — [Ch 9: State fundamentals](book/ch09-state-fundamentals.md) (2026-07-30)"
+    Blends [[tf-state]], [[tf-state-purpose]], [[06-state-management]] §6.1–6.3/§6.6, [[tf-manage-sensitive-data]], and the inspection-command notes ([[tf-cmd-state-list]], [[tf-cmd-state-show]], [[tf-cmd-show]], [[tf-cmd-output]], [[tf-cmd-refresh]]). Lab verified end-to-end on **TF 1.15.8** against the emulator: `serial` landing at *resources + 1*, a no-op apply still bumping it, the `sensitive` output stored in plaintext and readable with a flagless named query, and `state list -id=` resolving a bucket name back to its address.
 
 ---
 
@@ -1105,7 +1108,7 @@ Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner — B1–B8 done (Ch 1–8 written). Next up: **B9 (State fundamentals)**.
+**You are currently here:** Beginner complete — B1–B9 done (Ch 1–9 written). Next up: **I1 (Meta-arguments: `count`, `for_each`, `depends_on`)**.
 
 ---
 

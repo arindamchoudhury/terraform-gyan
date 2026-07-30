@@ -21,6 +21,7 @@ nav = [
         { "6. Input variables, outputs & locals" = "book/ch06-input-variables-outputs-locals.md" },
         { "7. Expressions, operators & functions" = "book/ch07-expressions-operators-functions.md" },
         { "8. Data sources" = "book/ch08-data-sources.md" },
+        { "9. State fundamentals" = "book/ch09-state-fundamentals.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },

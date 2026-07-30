@@ -12,4 +12,4 @@ Synthesized chapters, one per learning-path topic. Each chapter blends every sou
 | [06](ch06-input-variables-outputs-locals.md) | B6 — Input variables, outputs & locals | ✅ 2026-07-13 |
 | [07](ch07-expressions-operators-functions.md) | B7 — Expressions, operators & built-in functions | ✅ 2026-07-15 |
 | [08](ch08-data-sources.md) | B8 — Data sources | ✅ 2026-07-22 |
-| 09 | B9 — State fundamentals | ⬜ |
+| [09](ch09-state-fundamentals.md) | B9 — State fundamentals | ✅ 2026-07-30 |
