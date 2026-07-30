@@ -26,7 +26,7 @@ Two audiences in one sentence, and the first is the one worth noticing. These co
 | `terraform output` | gets "the values for the top-level output values of a configuration, which are often helpful when making use of the infrastructure Terraform has provisioned" | [[tf-outputs]], [[tut-outputs]] |
 | `terraform show` | "generate human-readable versions of a state file or plan file, or generate **machine-readable** versions that can be integrated with other tools" | [[05-terraform-plan]] §5 |
 | `terraform state list` | lists "the resources being managed by the current working directory and workspace, providing a complete or filtered list" | [[06-state-management]] §6.5.3 (in the `state rm` example) |
-| `terraform state show` | prints "all of the attributes of a given resource… **including generated read-only attributes like the unique ID assigned by the cloud provider**" | no note yet; used in [[tf-state-refactor]] step 2 |
+| `terraform state show` | prints "all of the attributes of a given resource… **including generated read-only attributes like the unique ID assigned by the cloud provider**" | [[tf-cmd-state-show]]; used in [[tf-state-refactor]] step 2 |
 
 Two details in that table are worth pulling out.
 
