@@ -60,6 +60,7 @@ Log of all captured sources, organised by course.
 | [`terraform refresh` command](terraform-docs/tf-cmd-refresh.md) | documentation | 2026-07-30 | cli, refresh, refresh-only, deprecated, drift, state, auto-approve | [url](https://developer.hashicorp.com/terraform/cli/commands/refresh) |
 | [Inspect Infrastructure Commands Overview](terraform-docs/tf-cli-inspect.md) | documentation | 2026-07-30 | cli, inspection, graph, output, show, state-list, state-show, json, tool-integration | [url](https://developer.hashicorp.com/terraform/cli/inspect) |
 | [`terraform output` command](terraform-docs/tf-cmd-output.md) | documentation | 2026-07-30 | cli, output, json, raw, sensitive, ephemeral, root-module, automation | [url](https://developer.hashicorp.com/terraform/cli/commands/output) |
+| [`terraform show` command](terraform-docs/tf-cmd-show.md) | documentation | 2026-07-30 | cli, show, json, plan-file, state, schema-version, sensitive | [url](https://developer.hashicorp.com/terraform/cli/commands/show) |
 | [`terraform state list` command](terraform-docs/tf-cmd-state-list.md) | documentation | 2026-07-30 | cli, state-list, resource-addressing, filtering, id-lookup, inspection | [url](https://developer.hashicorp.com/terraform/cli/commands/state/list) |
 
 ## 2. OpenTofu Docs

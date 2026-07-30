@@ -64,4 +64,5 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `terraform refresh` command (deprecated) | 2026-07-30 | [tf-cmd-refresh](tf-cmd-refresh.md) |
 | Inspect Infrastructure Commands Overview | 2026-07-30 | [tf-cli-inspect](tf-cli-inspect.md) |
 | `terraform output` command (sensitive redaction verified) | 2026-07-30 | [tf-cmd-output](tf-cmd-output.md) |
+| `terraform show` command (`-json`, schema precondition) | 2026-07-30 | [tf-cmd-show](tf-cmd-show.md) |
 | `terraform state list` command (`-id` reverse lookup) | 2026-07-30 | [tf-cmd-state-list](tf-cmd-state-list.md) |
