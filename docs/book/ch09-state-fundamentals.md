@@ -111,9 +111,9 @@ Bindings alone would justify the file. State does three more things, and each on
 
 Terraform derives dependency order from your configuration: `aws_instance.app` references `aws_subnet.main.id`, so the subnet is created first and destroyed last.
 
-Those edges come from two places, and both live in your expressions. **Implicit** ones come from a reference to another resource's attribute, which is the `aws_subnet.main.id` above. **Explicit** ones come from a `depends_on` entry. A create walks the edges in order; a destroy walks them reversed.
+Now delete both blocks from your `.tf` files and run `apply`. Terraform must destroy two objects — and **the edges that told it the order have been deleted along with the code.**
 
-Now delete both blocks from your `.tf` files and run `apply`. Terraform must destroy two objects — and **the edges that told it the order have been deleted along with the code**, because deleting the blocks deleted the expressions the edges were derived from.
+Those edges come from two places, and both live in your expressions. **Implicit** ones come from a reference to another resource's attribute, which is the `aws_subnet.main.id` above. **Explicit** ones come from a `depends_on` entry. A create walks the edges in order and a destroy walks them reversed, so deleting the blocks deleted the only thing that knew which way round to go.
 
 State solves this by keeping a copy of each resource instance's most recent dependency set, as a `dependencies` array of plain addresses next to its attributes:
 
