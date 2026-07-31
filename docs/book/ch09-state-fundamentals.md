@@ -429,7 +429,7 @@ The output that produced the second line is declared `sensitive = true`. That ch
 
     If you need a value never to be stored, that is what **ephemeral** values and **write-only** arguments are for (Chapter 23). If it must be stored, protect the file.
 
-Three properties matter when deciding where state lives.
+Which makes the choice of **backend** — the storage from §4 — a security decision, not a plumbing one. Chapter 15 covers configuring and migrating them; what belongs here is the criteria, because they follow from what you have just seen inside the file. Three properties matter when deciding where state lives.
 
 - **Resiliency.** Losing state is among the worst positions to be in: Terraform can no longer plan, and recovery means manually deleting or re-importing every real resource. Judge a backend on durability — S3 advertises eleven nines of per-object durability — but remember that no durability figure stops an engineer deleting the bucket. **A resilient backend is not a backup.**
 - **Security.** State holds every attribute of every resource. A leaked state file exposes your architecture *and* its secrets. The concrete failure modes are mundane: state access without MFA, or a storage bucket left publicly readable.
