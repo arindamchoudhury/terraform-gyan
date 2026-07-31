@@ -111,9 +111,20 @@ Bindings alone would justify the file. State does three more things, and each on
 
 Terraform derives dependency order from your configuration: `aws_instance.app` references `aws_subnet.main.id`, so the subnet is created first and destroyed last.
 
-Now delete both blocks from your `.tf` files and run `apply`. Terraform must destroy two objects — and **the edges that told it the order have been deleted along with the code.**
+Those edges come from two places, and both live in your expressions. **Implicit** ones come from a reference to another resource's attribute, which is the `aws_subnet.main.id` above. **Explicit** ones come from a `depends_on` entry. A create walks the edges in order; a destroy walks them reversed.
 
-State solves this by keeping a copy of each resource's most recent dependency set. Destroy order for resources that are no longer in configuration comes from state, not config.
+Now delete both blocks from your `.tf` files and run `apply`. Terraform must destroy two objects — and **the edges that told it the order have been deleted along with the code**, because deleting the blocks deleted the expressions the edges were derived from.
+
+State solves this by keeping a copy of each resource instance's most recent dependency set, as a `dependencies` array of plain addresses next to its attributes:
+
+```json
+"dependencies": [
+  "tls_private_key.ca_key",
+  "tls_self_signed_cert.ca_cert"
+]
+```
+
+Destroy order for resources that are no longer in configuration comes from that array, not from config. It is written on every apply while the code still exists, which is what makes it available after the code is gone.
 
 !!! note "The alternative Terraform explicitly rejected"
     Terraform "could know that servers must be deleted before the subnets they are a part of. The complexity for this approach quickly explodes, however: in addition to Terraform having to understand the ordering semantics of every resource for every provider, Terraform must also understand the ordering across providers."
