@@ -215,10 +215,24 @@ The practical rules that survive:
 - Data sources are recorded in `resources` with `"mode": "data"` and produced no bump of their own in any run above.
 - Interrupting an apply writes *more* snapshots, not fewer: Terraform persists on the way out so a subsequent kill costs less recovery.
 
+!!! danger "Those extra writes are a crash safety net, and OpenTofu does not have one"
+    Terraform's habit of writing state throughout the run is what protects you when a run dies without a chance to clean up. Killed 15 seconds into a 40-second apply, on the same configuration:
+
+    | | State file after `kill -9` |
+    |---|---|
+    | Terraform 1.15.8 | 852 bytes, `serial` 1, the finished resource recorded |
+    | OpenTofu 1.12.4 | **0 bytes** — nothing recorded |
+
+    The resource that finished before the kill is a real object either way. On the Terraform side state knows about it. On the OpenTofu side it is an orphan the moment it is created: it exists, it costs money, and the next plan will build another one. That is the "created but not recorded" failure from §6, reached without anything going wrong beyond a power cut.
+
+    An ordinary Ctrl-C is safe on both, because the stop path forces a persist before exiting. The exposure is a hard kill, an OOM kill, or a lost machine — and on OpenTofu it lasts for the first 20 seconds of every apply.
+
 !!! info "OpenTofu — one write, not several"
     Every configuration in the table ends at `serial` **1** on OpenTofu **1.12.4** — all five of them, every run measured, including the emulator-backed first lab where Terraform lands on 3. Terraform ranged from 1 to 5 over the same configurations. OpenTofu is not writing less state, it is writing it fewer times; the file is otherwise the same format down to the `terraform_version` key.
 
     What is *not* different is the rule that decides a bump. A second, no-op apply of the first lab moved OpenTofu from 1 to 2, exactly as Terraform went 3 to 4, for the same reason: the marshalled document differed. So the counter still tracks writes-whose-content-differed on both. Only the number of writes per run changes — which is the step change any tooling that reads `serial` will see across a migration.
+
+    **Why one and not several.** The two local state managers split the same two operations differently. In Terraform, `WriteState` writes the file immediately and `PersistState` is a no-op, so every mid-apply state update reaches disk. In OpenTofu, `WriteState` only updates an in-memory copy and the disk write lives in `PersistState`, which the apply hook calls only once its interval — 20 seconds by default — has elapsed. A fast apply therefore declines every intermediate persist and writes once at the end. `TF_LOG=trace` shows it plainly: four `declined to persist a state snapshot` lines, then a single `writing snapshot`. Both behaviours are in the released sources, `v1.15.8` and `v1.12.4`.
 
 !!! warning "“No changes” in the plan does not mean the state file is unchanged"
     The plan summary counts **managed resources**. The `serial` guard compares the **whole marshalled state document**.
