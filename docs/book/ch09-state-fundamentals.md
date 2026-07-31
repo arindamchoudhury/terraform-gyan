@@ -200,9 +200,9 @@ What you cannot do is predict the number. Measured by repeating each configurati
 |---|---|---|
 | 4 × `random_password` (`serial/provider-backed`) | 4, 5, 5, 5, 5, 5 | 1, 1, 1, 1, 1, 1 |
 | 4 × `terraform_data` (`serial/in-core`) | 5, 4, 4, 1, 5, 5 | 1, 1, 1, 1, 1, 1 |
-| 2 × `random_password` | 3, 3, 3 | — |
-| 1 × `random_password` + 1 × `local_file` data source | 1, 1, 1 | — |
-| 1 × `random_password` + 1 × `aws_s3_bucket` (first lab) | 3 | — |
+| 2 × `random_password` | 3, 3, 3 | 1, 1, 1 |
+| 1 × `random_password` + 1 × `local_file` data source | 1, 1, 1 | 1, 1, 1 |
+| 1 × `random_password` + 1 × `aws_s3_bucket` (first lab) | 3 | 1 |
 
 Read the second row again: the same four resources, the same machine, and a first apply that wrote **five** snapshots on one run and **one** on another. Nothing about the configuration changed between those runs. When resources finish close enough together their state updates coalesce into a single write, and how they fall out is a matter of scheduling.
 
@@ -216,7 +216,9 @@ The practical rules that survive:
 - Interrupting an apply writes *more* snapshots, not fewer: Terraform persists on the way out so a subsequent kill costs less recovery.
 
 !!! info "OpenTofu — one write, not several"
-    Every configuration above ends at `serial` **1** on OpenTofu **1.12.4**. That held for all twelve runs of the two four-resource labs, provider-backed and in-core alike, where Terraform landed anywhere from 1 to 5. OpenTofu is not writing less state, it is writing it fewer times; the file is otherwise the same format down to the `terraform_version` key. If you have tooling that reads `serial`, that step change is what it will see across a migration.
+    Every configuration in the table ends at `serial` **1** on OpenTofu **1.12.4** — all five of them, every run measured, including the emulator-backed first lab where Terraform lands on 3. Terraform ranged from 1 to 5 over the same configurations. OpenTofu is not writing less state, it is writing it fewer times; the file is otherwise the same format down to the `terraform_version` key.
+
+    What is *not* different is the rule that decides a bump. A second, no-op apply of the first lab moved OpenTofu from 1 to 2, exactly as Terraform went 3 to 4, for the same reason: the marshalled document differed. So the counter still tracks writes-whose-content-differed on both. Only the number of writes per run changes — which is the step change any tooling that reads `serial` will see across a migration.
 
 !!! warning "“No changes” in the plan does not mean the state file is unchanged"
     The plan summary counts **managed resources**. The `serial` guard compares the **whole marshalled state document**.
