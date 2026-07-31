@@ -73,7 +73,13 @@ Two operations hand that guarantee back to you:
 | `terraform import` / `import` block | Binds an *existing* object to a resource instance | Make sure that object is not already bound elsewhere |
 | `terraform state rm` / `removed` block | Makes Terraform forget an object it still manages | Delete the real object, or re-import it somewhere |
 
-Skip the obligation and you get one of two failure shapes. **An orphan** — a real resource nobody manages, still costing money, invisible to every plan. Or **a double binding** — two resource instances pointed at one object, where each run fights the other and the config-to-object mapping is genuinely ambiguous. HashiCorp's [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) page describes that second case, under *Mapping to the Real World*, as one where "Terraform may behave unexpectedly". That phrasing undersells it.
+Skip the obligation and you get one of two failure shapes. **An orphan** — a real resource nobody manages, still costing money, invisible to every plan. Or **a double binding** — two resource instances pointed at one object, where each run fights the other and the config-to-object mapping is genuinely ambiguous.
+
+HashiCorp's [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) page states the second case, under *Mapping to the Real World*:
+
+> "Terraform expects that each remote object is bound to only one resource instance in the configuration. If a remote object is bound to multiple resource instances, the mapping from configuration to the remote object in the state becomes ambiguous, and Terraform may behave unexpectedly."
+
+"May behave unexpectedly" undersells it. Two instances bound to one object means every apply is a fight over the same remote state, and a `destroy` of either one deletes the object out from under the other.
 
 !!! danger "The rule is an invariant, not a warning"
     Everything in Chapter 16 (state operations) exists to move bindings around *without* breaking this rule. When you learn `moved`, `import`, and `removed` there, the reason they are preferred over CLI surgery is that they are declarative — the plan shows you the binding change before it happens, and an empty plan afterwards is the proof the invariant survived.
