@@ -162,7 +162,9 @@ You will use one in this chapter's lab. It is the cleanest possible demonstratio
 
 ## 4. Opening the file
 
-State is JSON, and with the default local backend it sits in your working directory as `terraform.tfstate`. Read it. The instruction "never edit it" is not "never look at it" — a state file you have never opened is a part of Terraform you do not understand.
+A word this chapter is about to use a lot. A **backend** is the thing that decides *where state lives and who is allowed to write it*: it stores the state and, optionally, provides an API for locking it. Write no `backend` block and you get the default one, `local`, which keeps state as a file in your working directory, locks it through the operating system, and runs operations on your own machine. Point Terraform at `s3`, `gcs`, `azurerm`, or HCP Terraform instead and the same state goes to shared storage that several people can use safely. Chapter 15 is about making that switch; everything here is the default local case, and none of it changes when you move.
+
+State is JSON, and with that default backend it sits in your working directory as `terraform.tfstate`. Read it. The instruction "never edit it" is not "never look at it" — a state file you have never opened is a part of Terraform you do not understand.
 
 Here is the real top level from this chapter's lab (one S3 bucket, one `random_password`, one output):
 
