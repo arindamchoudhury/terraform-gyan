@@ -82,7 +82,9 @@ HashiCorp's [Purpose of Terraform State](https://developer.hashicorp.com/terrafo
 "May behave unexpectedly" undersells it. Two instances bound to one object means every apply is a fight over the same remote state, and a `destroy` of either one deletes the object out from under the other.
 
 !!! danger "The rule is an invariant, not a warning"
-    Everything in Chapter 16 (state operations) exists to move bindings around *without* breaking this rule. When you learn `moved`, `import`, and `removed` there, the reason they are preferred over CLI surgery is that they are declarative — the plan shows you the binding change before it happens, and an empty plan afterwards is the proof the invariant survived.
+    **One remote object, one resource instance — in both directions, at all times.** Not a guideline that degrades gracefully when broken. Terraform's whole model of "what exists and what do I own" is built on it holding.
+
+    Everything in Chapter 16 (state operations) exists to move bindings around *without* breaking that rule. When you learn `moved`, `import`, and `removed` there, the reason they are preferred over CLI surgery is that they are declarative — the plan shows you the binding change before it happens, and an empty plan afterwards is the proof the invariant survived.
 
 ---
 
