@@ -194,19 +194,19 @@ One term first, because the field descriptions lean on it. A **snapshot** is one
 
 The lab's first apply created two managed resources and left `serial` at **3**, not 1. A single apply writes the state file several times: the local backend writes a fresh snapshot each time the graph walk produces a new state, and `serial` moves whenever that document differs from the one on disk. Under `TF_LOG=trace` you can watch it happen, as repeated `statemgr.Filesystem: writing snapshot at terraform.tfstate` lines within one run.
 
-What you cannot do is predict the number. Measured on Terraform **1.15.8**, repeating each configuration from scratch and recording every run:
+What you cannot do is predict the number. Measured by repeating each configuration from scratch and recording every run — you can reproduce this yourself with the second lab below:
 
-| Configuration | `serial` after a first apply |
-|---|---|
-| 1 × `random_password` + 1 × `aws_s3_bucket` (this chapter's lab) | 3 |
-| 2 × `random_password` | 3, 3, 3 |
-| 4 × `random_password` | 4, 5, 5, 4 |
-| 4 × `terraform_data` | 1, 1, 1, **4** |
-| 1 × `random_password` + 1 × `local_file` data source | 1, 1, 1 |
+| Configuration | Terraform 1.15.8 | OpenTofu 1.12.4 |
+|---|---|---|
+| 4 × `random_password` (`serial/provider-backed`) | 4, 5, 5, 5, 5, 5 | 1, 1, 1, 1, 1, 1 |
+| 4 × `terraform_data` (`serial/in-core`) | 5, 4, 4, 1, 5, 5 | 1, 1, 1, 1, 1, 1 |
+| 2 × `random_password` | 3, 3, 3 | — |
+| 1 × `random_password` + 1 × `local_file` data source | 1, 1, 1 | — |
+| 1 × `random_password` + 1 × `aws_s3_bucket` (first lab) | 3 | — |
 
-The two four-resource rows are the important ones: same configuration, same machine, four identical runs each, and neither one held still. Four provider-backed resources split between 4 and 5. Four in-core `terraform_data` resources collapsed to a single write three times out of four. The cause is the same in both cases — when resources finish close enough together, their state updates coalesce into one write.
+Read the second row again: the same four resources, the same machine, and a first apply that wrote **five** snapshots on one run and **one** on another. Nothing about the configuration changed between those runs. When resources finish close enough together their state updates coalesce into a single write, and how they fall out is a matter of scheduling.
 
-So `serial` is not "resources plus one", and it is not a count of applies either. The stable rows are only stable because they are small enough to have little to reorder.
+So `serial` is not "resources plus one", and it is not a count of applies either. The small rows look stable only because there is little there to reorder.
 
 The practical rules that survive:
 
@@ -216,7 +216,7 @@ The practical rules that survive:
 - Interrupting an apply writes *more* snapshots, not fewer: Terraform persists on the way out so a subsequent kill costs less recovery.
 
 !!! info "OpenTofu — one write, not several"
-    The same 2 × `random_password` configuration ends at `serial` **1** on OpenTofu **1.12.4**, repeatably, where Terraform 1.15.8 ends at **3**. OpenTofu is not writing less state, it is writing it fewer times; the field format is byte-identical otherwise, down to the `terraform_version` key. If you have tooling that compares `serial` values across a migration, that step change is what it will see.
+    Every configuration above ends at `serial` **1** on OpenTofu **1.12.4**. That held for all twelve runs of the two four-resource labs, provider-backed and in-core alike, where Terraform landed anywhere from 1 to 5. OpenTofu is not writing less state, it is writing it fewer times; the file is otherwise the same format down to the `terraform_version` key. If you have tooling that reads `serial`, that step change is what it will see across a migration.
 
 !!! warning "“No changes” in the plan does not mean the state file is unchanged"
     The plan summary counts **managed resources**. The `serial` guard compares the **whole marshalled state document**.
@@ -412,7 +412,7 @@ Chapter 16 covers the first three properly. The rule for now: if you are opening
 
 ---
 
-## 🧪 Lab: dissect a state file, and follow a binding both ways
+## 🧪 Lab 1: dissect a state file, and follow a binding both ways
 
 The milestone made concrete. You will apply a two-resource configuration, open the state file, map an address to a real object and back, prove a `sensitive` value is stored in plaintext, and watch `serial` move on a no-op apply. Everything runs against the free local **AWS emulator** from [Chapter 1's lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker). S3 is on the reliable free surface.
 
@@ -569,6 +569,81 @@ tflocal destroy
 
 ---
 
+## 🧪 Lab 2: measure `serial` yourself
+
+§4 claims `serial` is unpredictable. Claims like that are worth distrusting, so here is the measurement, ready to run.
+
+Nothing in this lab touches a cloud. `random_password` and `terraform_data` create no remote objects, so there are **no credentials to set up and no emulator to start** — the whole thing works on a laptop on a plane.
+
+Two configurations, four resources each. `labs/chapter9/serial/provider-backed` is four `random_password` resources, one plugin round trip apiece:
+
+```hcl
+resource "random_password" "a" { length = 8 }
+resource "random_password" "b" { length = 8 }
+resource "random_password" "c" { length = 8 }
+resource "random_password" "d" { length = 8 }
+```
+
+`labs/chapter9/serial/in-core` is four `terraform_data` resources, served by the built-in provider with no plugin involved:
+
+```hcl
+resource "terraform_data" "a" { input = "1" }
+resource "terraform_data" "b" { input = "2" }
+resource "terraform_data" "c" { input = "3" }
+resource "terraform_data" "d" { input = "4" }
+```
+
+The runner destroys, deletes the state, and applies again, so **every apply is a first apply**. It then reads the top-level `serial` out of `terraform.tfstate` and prints one line per run.
+
+```powershell
+cd labs/chapter9/serial
+./measure-serial.ps1 -Dir provider-backed -Runs 6
+```
+
+```shell
+cd labs/chapter9/serial
+./measure-serial.sh provider-backed 6
+```
+
+A real run of each, on Terraform 1.15.8:
+
+```
+run 1: serial = 4          run 1: serial = 5
+run 2: serial = 5          run 2: serial = 4
+run 3: serial = 5          run 3: serial = 4
+run 4: serial = 5          run 4: serial = 1
+run 5: serial = 5          run 5: serial = 5
+run 6: serial = 5          run 6: serial = 5
+
+provider-backed            in-core
+```
+
+Four resources; a first apply that wrote one snapshot in one run and five in another. That is the whole point, and it is why nothing should ever assert an expected `serial`.
+
+Now the same thing on OpenTofu, if you have it:
+
+```powershell
+./measure-serial.ps1 -Dir in-core -Runs 6 -Binary tofu
+```
+
+```shell
+./measure-serial.sh in-core 6 tofu
+```
+
+```
+run 1: serial = 1
+run 2: serial = 1
+...
+tofu in-core, 6 runs: 1 1 1 1 1 1
+```
+
+**What to take away:** the counter is a write count, the write count is a scheduling artifact, and the two CLIs schedule differently. Ordering is the only question `serial` answers reliably.
+
+!!! tip "If you get a different spread"
+    You should. The numbers depend on how fast four resources happen to complete on your machine, so a busy laptop and an idle one will not agree, and neither will two runs on the same laptop. A run of six that lands on the same value every time is not a refutation — raise `-Runs` and watch it eventually disagree with itself.
+
+---
+
 ## Common pitfalls
 
 - **Committing `terraform.tfstate`.** No locking, no access control, secrets in history forever. `.gitignore` it before your first apply, not after.
@@ -587,7 +662,7 @@ tflocal destroy
 ## Exercises
 
 1. **Break and restore a binding.** In the lab directory, run `terraform state rm random_password.db`, then `terraform plan`. Explain in one sentence what Terraform now believes, and what it will do. Restore the situation without destroying anything.
-2. **Fail to predict the serial.** Write a configuration with four `random_password` resources and no data sources. Predict `serial` after the first apply, then check. Now delete `terraform.tfstate` and apply from scratch twice more, recording the value each time. Explain what the spread tells you about using `serial` for anything other than ordering.
+2. **Fail to predict the serial.** Before running Lab 2, write down the `serial` you expect from four resources. Run `measure-serial` with `-Runs 10` on both directories, then explain the spread you got — and what it would have done to a CI check that asserted your predicted number.
 3. **Find the orphan.** Create a bucket with `awslocal s3 mb s3://orphan-bucket` (outside Terraform), then use `terraform state list -id=orphan-bucket` and explain the result. What would you have to do to bring it under management?
 4. **Prove the format claim.** Run `terraform show -json > snapshot.json` and compare its top-level keys against the raw `terraform.tfstate`. Which of the two would you point a monitoring script at, and why?
 5. **Three reasons, from memory.** Without looking, write down three distinct reasons never to hand-edit state. Then check §8 — if you wrote "it's dangerous" three ways, try again.
