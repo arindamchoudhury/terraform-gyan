@@ -44,7 +44,7 @@ It failed for blunt reasons:
 - **People edit tags out of band.** An index anyone can rewrite is not an index.
 
 !!! note "The honest version of the argument"
-    HashiCorp's own framing concedes more than a defence usually does: "in the scenarios where Terraform may be able to get away without state, doing so would require shifting massive amounts of complexity from one place (state) to another place (the replacement concept)."
+    HashiCorp's own framing, on the [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) page, concedes more than a defence usually does: "in the scenarios where Terraform may be able to get away without state, doing so would require shifting massive amounts of complexity from one place (state) to another place (the replacement concept)."
 
     So the claim is not that stateless Terraform is impossible. It is that every replacement is worse — and the tag prototype is the evidence, not a thought experiment.
 
@@ -73,7 +73,7 @@ Two operations hand that guarantee back to you:
 | `terraform import` / `import` block | Binds an *existing* object to a resource instance | Make sure that object is not already bound elsewhere |
 | `terraform state rm` / `removed` block | Makes Terraform forget an object it still manages | Delete the real object, or re-import it somewhere |
 
-Skip the obligation and you get one of two failure shapes. **An orphan** — a real resource nobody manages, still costing money, invisible to every plan. Or **a double binding** — two resource instances pointed at one object, where each run fights the other and the config-to-object mapping is genuinely ambiguous. The docs' phrasing for the second case is "Terraform may behave unexpectedly", which undersells it.
+Skip the obligation and you get one of two failure shapes. **An orphan** — a real resource nobody manages, still costing money, invisible to every plan. Or **a double binding** — two resource instances pointed at one object, where each run fights the other and the config-to-object mapping is genuinely ambiguous. HashiCorp's [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) page describes that second case, under *Mapping to the Real World*, as one where "Terraform may behave unexpectedly". That phrasing undersells it.
 
 !!! danger "The rule is an invariant, not a warning"
     Everything in Chapter 16 (state operations) exists to move bindings around *without* breaking this rule. When you learn `moved`, `import`, and `removed` there, the reason they are preferred over CLI surgery is that they are declarative — the plan shows you the binding change before it happens, and an empty plan afterwards is the proof the invariant survived.
@@ -101,7 +101,7 @@ Other metadata rides along for the same reason. The most useful is a pointer to 
 
 ### The attribute cache — the optional part
 
-State also caches every attribute of every resource. The docs are unusually blunt about this one: "This is the most optional feature of Terraform state and is done only as a performance improvement."
+State also caches every attribute of every resource. The [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) page is unusually blunt about this one: "This is the most optional feature of Terraform state and is done only as a performance improvement."
 
 Default behaviour ignores the cache. Every plan and apply refreshes all resources against the provider. That is correct, and for small configurations it is free.
 
@@ -240,7 +240,7 @@ terraform show -json           # the whole state snapshot
 terraform output -json         # root outputs only
 ```
 
-The distinction is not stylistic. `terraform state show` output is **explicitly not a machine interface** — the docs say it is "intended for human consumption, not programmatic consumption" and redirect you to `terraform show -json`. The rendered form is unversioned and free to change; the JSON form carries a `format_version` and a written spec.
+The distinction is not stylistic. `terraform state show` output is **explicitly not a machine interface** — its [command documentation](https://developer.hashicorp.com/terraform/cli/commands/state/show) says the output is "intended for human consumption, not programmatic consumption" and redirects you to `terraform show -json`. The rendered form is unversioned and free to change; the JSON form carries a `format_version` and a written spec.
 
 That is also the answer to "how do I read state from another tool?" — not by parsing `terraform.tfstate`, whose format is explicitly allowed to change between versions, but by running one of the `-json` commands right after a successful apply and storing the result as an artifact of the run.
 
@@ -254,7 +254,7 @@ That is also the answer to "how do I read state from another tool?" — not by p
     terraform state show 'terraform_data.worker["example"]'
     ```
 
-    HashiCorp's docs still show a backslash-escaped form (`'…worker[\"example\"]'`) for PowerShell. That is Windows PowerShell 5.1-era advice and **fails on PowerShell 7** with `Error parsing instance address` — the backslashes are passed through literally. The docs' `cmd.exe` guidance is correct.
+    The [`terraform state show` documentation](https://developer.hashicorp.com/terraform/cli/commands/state/show) still shows a backslash-escaped form (`'…worker[\"example\"]'`) for PowerShell. That is Windows PowerShell 5.1-era advice and **fails on PowerShell 7** with `Error parsing instance address` — the backslashes are passed through literally. The same page's `cmd.exe` row is correct.
 
 ---
 
