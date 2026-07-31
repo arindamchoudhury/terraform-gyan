@@ -478,7 +478,7 @@ docker compose -f labs/docker-compose.yml up -d      # start the emulator on :45
 curl -s http://localhost:4566/_floci/health     # wait until the services read "running"
 ```
 
-**The configuration** — one real cloud object, one state-only resource, one sensitive output:
+**The configuration** — one real cloud object, one state-only resource, one sensitive output. It is committed at `labs/chapter9/lab1`:
 
 ```hcl
 # main.tf
