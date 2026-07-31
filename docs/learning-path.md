@@ -285,7 +285,7 @@
 **Milestone:** You can open a state file, explain how a resource address maps to a real cloud object, and articulate three reasons never to edit it by hand.
 
 !!! success "✅ Chapter written — [Ch 9: State fundamentals](book/ch09-state-fundamentals.md) (2026-07-30)"
-    Blends [[tf-state]], [[tf-state-purpose]], [[06-state-management]] §6.1–6.3/§6.6, [[tf-manage-sensitive-data]], and the inspection-command notes ([[tf-cmd-state-list]], [[tf-cmd-state-show]], [[tf-cmd-show]], [[tf-cmd-output]], [[tf-cmd-refresh]]). Lab verified end-to-end on **TF 1.15.8** against the emulator: `serial` landing at *resources + 1*, a no-op apply still bumping it, the `sensitive` output stored in plaintext and readable with a flagless named query, and `state list -id=` resolving a bucket name back to its address.
+    Blends [[tf-state]], [[tf-state-purpose]], [[06-state-management]] §6.1–6.3/§6.6, [[tf-manage-sensitive-data]], and the inspection-command notes ([[tf-cmd-state-list]], [[tf-cmd-state-show]], [[tf-cmd-show]], [[tf-cmd-output]], [[tf-cmd-refresh]]). Lab verified end-to-end on **TF 1.15.8** against the emulator: a no-op apply still bumping `serial`, the `sensitive` output stored in plaintext and readable with a flagless named query, and `state list -id=` resolving a bucket name back to its address. **Re-audited 2026-07-31** on TF 1.15.8 and **OpenTofu 1.12.4**: the old *resources + 1* rule for `serial` was wrong and is gone — the count is timing-dependent (identical runs landed on 1, 1, 1, 4), and OpenTofu writes once where Terraform writes several.
 
 ---
 

@@ -178,6 +178,8 @@ Here is the real top level from this chapter's lab (one S3 bucket, one `random_p
 }
 ```
 
+One term first, because the field descriptions lean on it. A **snapshot** is one complete state document, written out whole. Terraform never patches the file in place or appends a delta to it: every write serialises the entire state and replaces what was there, which is why the previous snapshot has to be preserved separately as `terraform.tfstate.backup`.
+
 | Field | Meaning |
 |---|---|
 | `version` | Format version of the state data structure itself — currently **4**. Lets a newer Terraform recognise and upgrade an older file. |
@@ -198,10 +200,11 @@ What you cannot do is predict the number. Measured on Terraform **1.15.8**, thre
 |---|---|
 | 1 × `random_password` + 1 × `aws_s3_bucket` (this chapter's lab) | 3 |
 | 2 × `random_password` | 3, 3, 3 |
-| 4 × `terraform_data` | 1, 1, **4** |
+| 4 × `random_password` | 4, 5, 5, 4 |
+| 4 × `terraform_data` | 1, 1, 1, **4** |
 | 1 × `random_password` + 1 × `local_file` data source | 1, 1, 1 |
 
-The third row is the important one. Same configuration, same machine, three identical runs, and the counter landed on 1 twice and 4 once — because when resources finish close enough together their updates coalesce into a single write. So `serial` is not "resources plus one", and it is not a count of applies either.
+The bottom two rows are the important ones. Same configuration, same machine, four identical runs, and the counter moved anyway — because when resources finish close enough together their updates coalesce into a single write. The in-core `terraform_data` finishes fast enough to collapse to one write most of the time; four provider-backed resources split between 4 and 5. So `serial` is not "resources plus one", and it is not a count of applies either.
 
 The practical rules that survive:
 

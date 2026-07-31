@@ -196,7 +196,7 @@ output "password" {
 
     Consequences worth remembering:
 
-    - On a local backend, a **first apply** lands at roughly *number of managed resources + 1*. A fresh directory with three `random_password` resources ends at `serial` 4.
+    - On a local backend a **first apply** usually writes several snapshots, but **how many is not predictable from the resource count**. A fresh directory with three `random_password` resources ended at `serial` 4, which looks like *resources + 1* — and then four of them landed on 4, 5, 5, 4 across four identical from-scratch runs, and four `terraform_data` resources on 1, 1, 1, 4. Writes coalesce when resources finish close together (re-measured on **Terraform 1.15.8**, 2026-07-31; see Book Ch9 §4).
     - Data sources do **not** contribute a bump of their own.
     - A **no-op apply** leaves `serial` untouched *only if nothing in state changed*. "No changes" in the plan is not the same condition: the plan reports on **managed resources**, while the bump is decided by comparing the whole marshalled state, data sources included. Listing 6.1 fails this test — see below.
     - Therefore `serial` is a reliable *ordering* key for "which backup is newest", but it is **not** a count of applies, and gaps in it mean nothing.
