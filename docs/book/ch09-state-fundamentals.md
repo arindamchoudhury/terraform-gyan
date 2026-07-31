@@ -200,8 +200,8 @@ What you cannot do is predict the number. Measured by repeating each configurati
 
 | Configuration | Terraform 1.15.8 | OpenTofu 1.12.4 |
 |---|---|---|
-| 4 × `random_password` (`serial/provider-backed`) | 4, 5, 5, 5, 5, 5 | 1, 1, 1, 1, 1, 1 |
-| 4 × `terraform_data` (`serial/in-core`) | 5, 4, 4, 1, 5, 5 | 1, 1, 1, 1, 1, 1 |
+| 4 × `random_password` (`lab2/provider-backed`) | 4, 5, 5, 5, 5, 5 | 1, 1, 1, 1, 1, 1 |
+| 4 × `terraform_data` (`lab2/in-core`) | 5, 4, 4, 1, 5, 5 | 1, 1, 1, 1, 1, 1 |
 | 2 × `random_password` | 3, 3, 3 | 1, 1, 1 |
 | 1 × `random_password` + 1 × `local_file` data source | 1, 1, 1 | 1, 1, 1 |
 | 1 × `random_password` + 1 × `aws_s3_bucket` (first lab) | 3 | 1 |
@@ -630,7 +630,7 @@ tflocal destroy
 
 Nothing in this lab touches a cloud. `random_password` and `terraform_data` create no remote objects, so there are **no credentials to set up and no emulator to start** — the whole thing works on a laptop on a plane.
 
-Two configurations, four resources each. `labs/chapter9/serial/provider-backed` is four `random_password` resources, one plugin round trip apiece:
+Two configurations, four resources each. `labs/chapter9/lab2/provider-backed` is four `random_password` resources, one plugin round trip apiece:
 
 ```hcl
 resource "random_password" "a" { length = 8 }
@@ -639,7 +639,7 @@ resource "random_password" "c" { length = 8 }
 resource "random_password" "d" { length = 8 }
 ```
 
-`labs/chapter9/serial/in-core` is four `terraform_data` resources, served by the built-in provider with no plugin involved:
+`labs/chapter9/lab2/in-core` is four `terraform_data` resources, served by the built-in provider with no plugin involved:
 
 ```hcl
 resource "terraform_data" "a" { input = "1" }
@@ -651,12 +651,12 @@ resource "terraform_data" "d" { input = "4" }
 The runner destroys, deletes the state, and applies again, so **every apply is a first apply**. It then reads the top-level `serial` out of `terraform.tfstate` and prints one line per run.
 
 ```powershell
-cd labs/chapter9/serial
+cd labs/chapter9/lab2
 ./measure-serial.ps1 -Dir provider-backed -Runs 6
 ```
 
 ```shell
-cd labs/chapter9/serial
+cd labs/chapter9/lab2
 ./measure-serial.sh provider-backed 6
 ```
 
