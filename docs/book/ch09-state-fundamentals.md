@@ -194,7 +194,7 @@ One term first, because the field descriptions lean on it. A **snapshot** is one
 
 The lab's first apply created two managed resources and left `serial` at **3**, not 1. A single apply writes the state file several times: the local backend writes a fresh snapshot each time the graph walk produces a new state, and `serial` moves whenever that document differs from the one on disk. Under `TF_LOG=trace` you can watch it happen, as repeated `statemgr.Filesystem: writing snapshot at terraform.tfstate` lines within one run.
 
-What you cannot do is predict the number. Measured on Terraform **1.15.8**, three consecutive from-scratch applies of the same configuration:
+What you cannot do is predict the number. Measured on Terraform **1.15.8**, repeating each configuration from scratch and recording every run:
 
 | Configuration | `serial` after a first apply |
 |---|---|
@@ -204,7 +204,9 @@ What you cannot do is predict the number. Measured on Terraform **1.15.8**, thre
 | 4 × `terraform_data` | 1, 1, 1, **4** |
 | 1 × `random_password` + 1 × `local_file` data source | 1, 1, 1 |
 
-The bottom two rows are the important ones. Same configuration, same machine, four identical runs, and the counter moved anyway — because when resources finish close enough together their updates coalesce into a single write. The in-core `terraform_data` finishes fast enough to collapse to one write most of the time; four provider-backed resources split between 4 and 5. So `serial` is not "resources plus one", and it is not a count of applies either.
+The two four-resource rows are the important ones: same configuration, same machine, four identical runs each, and neither one held still. Four provider-backed resources split between 4 and 5. Four in-core `terraform_data` resources collapsed to a single write three times out of four. The cause is the same in both cases — when resources finish close enough together, their state updates coalesce into one write.
+
+So `serial` is not "resources plus one", and it is not a count of applies either. The stable rows are only stable because they are small enough to have little to reorder.
 
 The practical rules that survive:
 
