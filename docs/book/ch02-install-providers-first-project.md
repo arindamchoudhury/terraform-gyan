@@ -605,7 +605,7 @@ The `aws_instance` above assumes a real AWS account. You don't need one to pract
 
 ```shell
 docker compose -f labs/docker-compose.yml up -d      # start Floci on :4566, detached
-curl -s http://localhost:4566/_localstack/health     # wait until services read "available"
+curl -s http://localhost:4566/_localstack/health     # wait until the services read "running"
 ```
 
 We swap the EC2 instance for an **S3 bucket**. Two reasons: S3 is fully emulated on the free surface (EC2 is only mocked), and a bucket needs no AMI lookup, so the config stays about the *workflow*, not AWS trivia. Create a fresh directory with one file:

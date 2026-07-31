@@ -475,7 +475,7 @@ The milestone made concrete. You will apply a two-resource configuration, open t
 
 ```shell
 docker compose -f labs/docker-compose.yml up -d      # start the emulator on :4566, detached
-curl -s http://localhost:4566/_localstack/health     # wait until services read "available"
+curl -s http://localhost:4566/_localstack/health     # wait until the services read "running"
 ```
 
 **The configuration** — one real cloud object, one state-only resource, one sensitive output:
