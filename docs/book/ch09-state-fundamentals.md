@@ -333,9 +333,27 @@ The distinction is not stylistic. `terraform state show` output is **explicitly 
 That is also the answer to "how do I read state from another tool?" — not by parsing `terraform.tfstate`, whose format is explicitly allowed to change between versions, but by running one of the `-json` commands right after a successful apply and storing the result as an artifact of the run.
 
 !!! note "`show -json` returns different documents for state and for plans"
-    Run it on state and you get exactly three keys: `format_version`, `terraform_version`, `values`.
+    Run it on state and you get exactly three keys. Save a plan to a file and run it on that, and you get twelve. Both from the same command:
 
-    Run it on a **saved plan file** and the same command returns twelve on 1.15.8 — `configuration`, `prior_state`, `planned_values`, `resource_changes`, `resource_drift`, `output_changes`, plus the run's verdict in `applyable`, `complete`, `errored`, and `timestamp`. The plan, the configuration, and the state, three documents in one. Keys that describe changes only appear when there are changes of that kind to describe: `output_changes` is absent from a plan for a configuration with no outputs.
+    ```shell
+    terraform show -json | jq keys              # the current state
+
+    terraform plan -out tfplan                  # save a plan first
+    terraform show -json tfplan | jq keys       # then read it back
+    terraform show tfplan                       # same file, human form
+    ```
+
+    ```
+    ["format_version","terraform_version","values"]
+
+    ["applyable","complete","configuration","errored","format_version",
+     "output_changes","planned_values","prior_state","resource_changes",
+     "resource_drift","terraform_version","timestamp"]
+    ```
+
+    The plan document is the plan, the configuration, and the state, three documents in one, plus the run's own verdict in `applyable`, `complete`, `errored`, and `timestamp`.
+
+    Its key set is not fixed, because keys appear only when there is something for them to describe. The twelve above came from planning against existing state. The very first plan in an empty directory returns **eleven** instead: no `prior_state` and no `resource_drift`, since there is no prior state to report or drift against, and a `relevant_attributes` key that the later plan does not carry. `output_changes` is likewise absent from a plan for a configuration with no outputs. Read the keys you get, rather than assuming the set.
 
 !!! tip "Quoting an instance address on Windows"
     A `for_each` address contains double quotes, so it needs care in a shell. On **PowerShell 7**, single quotes are already literal — write the address exactly as `state list` prints it:
