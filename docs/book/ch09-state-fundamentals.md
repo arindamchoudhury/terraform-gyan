@@ -232,6 +232,18 @@ The practical rules that survive:
 
     An ordinary Ctrl-C is safe on both — the stop path forces a persist before exiting. The exposure is a hard kill, an OOM kill, or a lost machine.
 
+    **You cannot tune this into Terraform's behaviour.** Both CLIs read `TF_STATE_PERSIST_INTERVAL`, in seconds, and both refuse to go below the 20-second default — the knob only makes the window *longer*. Terraform ignores a smaller value silently. OpenTofu 1.12.4 rejects it by panicking:
+
+    ```
+    $ TF_STATE_PERSIST_INTERVAL=5 tofu apply
+    Can't use value lower than 20 for env variable TF_STATE_PERSIST_INTERVAL, got 5
+    github.com/opentofu/opentofu/internal/logging.panicHandler(...)
+    ```
+
+    On Terraform's local backend the setting is moot in any case: `WriteState` already writes every update to disk, and the interval governs only the remote backends, where a persist is a network round trip. On OpenTofu it is the whole mechanism, and 20 seconds is the floor.
+
+    So the mitigation is procedural, not configuration. Treat a hard-killed OpenTofu apply as having possibly created objects that state never recorded: plan first, look for resources it wants to create that you believe already exist, and import them before re-running.
+
     One more observation from the third run, repeated twice: the snapshot OpenTofu did write held only `time_sleep.wait_a`, not the `terraform_data` resource that had completed 25 seconds earlier and was in the in-memory state at the time. A mid-run snapshot is not a promise that everything finished so far is in it.
 
 !!! info "OpenTofu — one write, not several"
