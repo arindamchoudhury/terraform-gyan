@@ -79,7 +79,22 @@ HashiCorp's [Purpose of Terraform State](https://developer.hashicorp.com/terrafo
 
 > "Terraform expects that each remote object is bound to only one resource instance in the configuration. If a remote object is bound to multiple resource instances, the mapping from configuration to the remote object in the state becomes ambiguous, and Terraform may behave unexpectedly."
 
-"May behave unexpectedly" undersells it. Two instances bound to one object means every apply is a fight over the same remote state, and a `destroy` of either one deletes the object out from under the other.
+"May behave unexpectedly" undersells it, and the failure is easy to reproduce. Bind one emulator bucket to a second resource instance with an `import` block, give that second instance a tag the first one does not have, and the two never converge:
+
+```
+# apply 1
+aws_s3_bucket.shadow: Modifications complete   # tag owner=shadow added
+
+# plan
+# aws_s3_bucket.notes will be updated in-place
+  ~ tags = { - "owner" = "shadow" -> null }    # the other instance takes it away
+
+# apply 2, then plan again
+# aws_s3_bucket.shadow will be updated in-place
+  + "owner" = "shadow"                         # and it comes straight back
+```
+
+Every apply is a fight, with each instance reverting the other. Destroying either one is worse: `terraform destroy -target=aws_s3_bucket.shadow` deletes the bucket, and the next plan for the *other* instance reports `# aws_s3_bucket.notes will be created`, because its binding now points at nothing.
 
 !!! danger "The rule is an invariant, not a warning"
     **One remote object, one resource instance — in both directions, at all times.** Not a guideline that degrades gracefully when broken. Terraform's whole model of "what exists and what do I own" is built on it holding.
@@ -164,14 +179,28 @@ Here is the real top level from this chapter's lab (one S3 bucket, one `random_p
 
 ### `serial` counts writes, not applies
 
-The lab's first apply created two managed resources and left `serial` at **3**. That is not a bug and not an off-by-one — Terraform persists a snapshot as each resource finishes, plus a final one when the graph walk closes. Two resources plus the closing write is three.
+The lab's first apply created two managed resources and left `serial` at **3**, not 1. A single apply writes the state file several times: the local backend writes a fresh snapshot each time the graph walk produces a new state, and `serial` moves whenever that document differs from the one on disk. Under `TF_LOG=trace` you can watch it happen, as repeated `statemgr.Filesystem: writing snapshot at terraform.tfstate` lines within one run.
 
-The practical rules that follow:
+What you cannot do is predict the number. Measured on Terraform **1.15.8**, three consecutive from-scratch applies of the same configuration:
 
-- A first apply on a local backend lands at roughly **number of managed resources + 1**.
-- Data sources do not contribute a bump of their own.
-- `serial` is a reliable **ordering** key — "which of these backups is newest?" — but it is *not* a count of applies, and gaps in it mean nothing.
+| Configuration | `serial` after a first apply |
+|---|---|
+| 1 × `random_password` + 1 × `aws_s3_bucket` (this chapter's lab) | 3 |
+| 2 × `random_password` | 3, 3, 3 |
+| 4 × `terraform_data` | 1, 1, **4** |
+| 1 × `random_password` + 1 × `local_file` data source | 1, 1, 1 |
+
+The third row is the important one. Same configuration, same machine, three identical runs, and the counter landed on 1 twice and 4 once — because when resources finish close enough together their updates coalesce into a single write. So `serial` is not "resources plus one", and it is not a count of applies either.
+
+The practical rules that survive:
+
+- `serial` is a reliable **ordering** key — "which of these backups is newest?" — but nothing more. Gaps and jumps mean nothing.
+- Never assert an expected `serial` in a test or a script. It is timing-dependent.
+- Data sources are recorded in `resources` with `"mode": "data"` and produced no bump of their own in any run above.
 - Interrupting an apply writes *more* snapshots, not fewer: Terraform persists on the way out so a subsequent kill costs less recovery.
+
+!!! info "OpenTofu — one write, not several"
+    The same 2 × `random_password` configuration ends at `serial` **1** on OpenTofu **1.12.4**, repeatably, where Terraform 1.15.8 ends at **3**. OpenTofu is not writing less state, it is writing it fewer times; the field format is byte-identical otherwise, down to the `terraform_version` key. If you have tooling that compares `serial` values across a migration, that step change is what it will see.
 
 !!! warning "“No changes” in the plan does not mean the state file is unchanged"
     The plan summary counts **managed resources**. The `serial` guard compares the **whole marshalled state document**.
@@ -253,7 +282,9 @@ The distinction is not stylistic. `terraform state show` output is **explicitly 
 That is also the answer to "how do I read state from another tool?" — not by parsing `terraform.tfstate`, whose format is explicitly allowed to change between versions, but by running one of the `-json` commands right after a successful apply and storing the result as an artifact of the run.
 
 !!! note "`show -json` returns different documents for state and for plans"
-    Run it on state and you get `format_version`, `terraform_version`, `values`. Run it on a **saved plan file** and you also get `configuration`, `prior_state`, `planned_values`, `resource_changes`, and `output_changes` — the plan, the configuration, and the state, three documents in one.
+    Run it on state and you get exactly three keys: `format_version`, `terraform_version`, `values`.
+
+    Run it on a **saved plan file** and the same command returns twelve on 1.15.8 — `configuration`, `prior_state`, `planned_values`, `resource_changes`, `resource_drift`, `output_changes`, plus the run's verdict in `applyable`, `complete`, `errored`, and `timestamp`. The plan, the configuration, and the state, three documents in one. Keys that describe changes only appear when there are changes of that kind to describe: `output_changes` is absent from a plan for a configuration with no outputs.
 
 !!! tip "Quoting an instance address on Windows"
     A `for_each` address contains double quotes, so it needs care in a shell. On **PowerShell 7**, single quotes are already literal — write the address exactly as `state list` prints it:
@@ -339,7 +370,7 @@ Three properties matter when deciding where state lives.
     Add `terraform.tfstate` and `terraform.tfstate.backup` to `.gitignore` on day one.
 
 !!! info "OpenTofu — client-side state encryption"
-    OpenTofu ships opt-in **state encryption**, which encrypts the state file before it reaches any backend. Terraform's open-source CLI has no equivalent as of 1.15; it relies on the backend's at-rest encryption (S3's `encrypt`, GCS's customer-managed keys) or on HCP Terraform. If encrypted-at-source state is a hard requirement, that is a real reason to evaluate OpenTofu.
+    OpenTofu ships opt-in **state encryption**, configured in the `terraform` block or through `TF_ENCRYPTION`. It covers "state and plan files at rest, both for local storage and when using a backend" — so the plaintext password you found above would be encrypted in the file itself, not merely in whatever the backend does underneath. Terraform's open-source CLI has no equivalent as of 1.15; it relies on the backend's at-rest encryption (S3's `encrypt`, GCS's customer-managed keys) or on HCP Terraform. If encrypted-at-source state is a hard requirement, that is a real reason to evaluate OpenTofu.
 
 ---
 
@@ -435,7 +466,7 @@ aws_s3_bucket.notes
 random_password.db
 ```
 
-Now open `terraform.tfstate` and find the seven top-level fields. Two managed resources plus the closing write puts `serial` at **3**, `version` is **4**, and `check_results` is `null` because the configuration has no `check` blocks.
+Now open `terraform.tfstate` and find the seven top-level fields. `version` is **4**, `terraform_version` is the CLI that wrote it, and `check_results` is `null` because the configuration has no `check` blocks. This run landed at `serial` **3** — treat that as an observation, not a prediction, for the reason in §4.
 
 ### Step 2 — follow the binding outward
 
@@ -528,7 +559,7 @@ tflocal destroy
 - **Believing `sensitive = true` protects a value.** It suppresses display. The value is in state, in plan files, and one flagless `terraform output <name>` away.
 - **Parsing `terraform.tfstate` in a script.** The format may change between versions. Use `terraform show -json` or `terraform output -json`.
 - **Treating `terraform state show` output as machine-readable.** It is explicitly documented as human-only, for the same reason.
-- **Reading `serial` as a count of applies.** It counts *writes whose content differed*. Use it for ordering backups, nothing else.
+- **Reading `serial` as a count of applies, or predicting it.** It counts *writes whose content differed*, and identical runs of the same configuration can land on different numbers. Use it for ordering backups, nothing else.
 - **Assuming lineage protects you during normal runs.** It is not consulted on a routine plan or apply, and `-force` disables it on `state push`.
 - **Running `-refresh=false` habitually.** It makes the cache the source of truth and hides all out-of-band drift.
 - **Reaching for `terraform refresh`.** Deprecated, always auto-approved, and capable of emptying your state if provider credentials are misconfigured. Use `terraform apply -refresh-only`.
@@ -540,7 +571,7 @@ tflocal destroy
 ## Exercises
 
 1. **Break and restore a binding.** In the lab directory, run `terraform state rm random_password.db`, then `terraform plan`. Explain in one sentence what Terraform now believes, and what it will do. Restore the situation without destroying anything.
-2. **Predict the serial.** Write a configuration with four `random_password` resources and no data sources. Predict `serial` after the first apply, then check. Re-apply twice and explain why it does or does not move.
+2. **Fail to predict the serial.** Write a configuration with four `random_password` resources and no data sources. Predict `serial` after the first apply, then check. Now delete `terraform.tfstate` and apply from scratch twice more, recording the value each time. Explain what the spread tells you about using `serial` for anything other than ordering.
 3. **Find the orphan.** Create a bucket with `awslocal s3 mb s3://orphan-bucket` (outside Terraform), then use `terraform state list -id=orphan-bucket` and explain the result. What would you have to do to bring it under management?
 4. **Prove the format claim.** Run `terraform show -json > snapshot.json` and compare its top-level keys against the raw `terraform.tfstate`. Which of the two would you point a monitoring script at, and why?
 5. **Three reasons, from memory.** Without looking, write down three distinct reasons never to hand-edit state. Then check §8 — if you wrote "it's dangerous" three ways, try again.
@@ -552,7 +583,7 @@ tflocal destroy
 - State exists because **your configuration and your cloud share no identifier**. The tag-based alternative was built and abandoned: not all resources support tags, not all providers do, and humans edit them.
 - State's primary content is **bindings** between resource instances and remote objects. Terraform maintains a strict **one-to-one mapping**, and only `import` and `state rm` hand that obligation to you.
 - Three more jobs: **retained dependencies** so destroy order survives the deletion of the code, an **attribute cache** that is explicitly optional, and **state-only resources** that exist nowhere else.
-- The file is JSON with seven top-level fields. `serial` counts **writes whose content differed**; `lineage` identifies the project but is checked in far fewer places than its description suggests.
+- The file is JSON with seven top-level fields. `serial` counts **writes whose content differed**, and how many a run produces is timing-dependent, so it is an ordering key and nothing else. `lineage` identifies the project but is checked in far fewer places than its description suggests.
 - Read state with `state list` / `state show` for humans, `show -json` / `output -json` for machines. Never parse the file.
 - **Refresh** is what corrects state against reality and detects drift. `-refresh-only` accepts drift without changing infrastructure; `terraform refresh` is deprecated and unprompted.
 - State holds **secrets in plaintext**. `sensitive` hides values from logs, not from the file, and a named `terraform output` reads them back with no flag at all.
@@ -572,6 +603,6 @@ Before either, Chapters 10–14 cover the meta-arguments, dynamic blocks, and mo
 
 **Reading notes:** [State (overview)](../sources/terraform-docs/tf-state.md) · [Purpose of Terraform State](../sources/terraform-docs/tf-state-purpose.md) · [TID Ch 6 — State management](../books/tid/chapters/06-state-management.md) · [Manage sensitive data](../sources/terraform-docs/tf-manage-sensitive-data.md) · [`terraform state list`](../sources/terraform-docs/tf-cmd-state-list.md) · [`terraform state show`](../sources/terraform-docs/tf-cmd-state-show.md) · [`terraform show`](../sources/terraform-docs/tf-cmd-show.md) · [`terraform output`](../sources/terraform-docs/tf-cmd-output.md) · [`terraform refresh`](../sources/terraform-docs/tf-cmd-refresh.md) · [Inspect Infrastructure overview](../sources/terraform-docs/tf-cli-inspect.md) · [`local` backend](../sources/terraform-docs/tf-backend-local.md)
 
-**Docs:** [State](https://developer.hashicorp.com/terraform/language/state) · [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) · [Manage sensitive data](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) · [`terraform state list`](https://developer.hashicorp.com/terraform/cli/commands/state/list) · [`terraform state show`](https://developer.hashicorp.com/terraform/cli/commands/state/show) · [`terraform show`](https://developer.hashicorp.com/terraform/cli/commands/show) · [JSON Output Format](https://developer.hashicorp.com/terraform/internals/json-format)
+**Docs:** [State](https://developer.hashicorp.com/terraform/language/state) · [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) · [Manage sensitive data](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) · [`terraform state list`](https://developer.hashicorp.com/terraform/cli/commands/state/list) · [`terraform state show`](https://developer.hashicorp.com/terraform/cli/commands/state/show) · [`terraform show`](https://developer.hashicorp.com/terraform/cli/commands/show) · [JSON Output Format](https://developer.hashicorp.com/terraform/internals/json-format) · [OpenTofu state encryption](https://opentofu.org/docs/language/state/encryption/)
 
 **🧪 Lab:** [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)
