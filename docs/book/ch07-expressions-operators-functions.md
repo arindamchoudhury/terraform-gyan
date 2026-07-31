@@ -1264,7 +1264,7 @@ The milestone made concrete: take a list of bucket specs, transform it into a ke
 
 ```shell
 docker compose -f labs/docker-compose.yml up -d      # start the emulator on :4566, detached
-curl -s http://localhost:4566/_localstack/health     # wait until the services read "running"
+curl -s http://localhost:4566/_floci/health     # wait until the services read "running"
 ```
 
 Write the configuration:

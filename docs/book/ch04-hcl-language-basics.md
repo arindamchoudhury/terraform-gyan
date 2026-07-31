@@ -431,7 +431,7 @@ The milestone for this chapter is authoring a multi-file configuration from the 
 
 ```shell
 docker compose -f labs/docker-compose.yml up -d      # start Floci on :4566, detached
-curl -s http://localhost:4566/_localstack/health     # wait until the services read "running"
+curl -s http://localhost:4566/_floci/health     # wait until the services read "running"
 ```
 
 In an empty directory, create the conventional files by hand — no snippet to copy:

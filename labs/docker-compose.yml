@@ -3,7 +3,7 @@
 # so `tflocal` drives it directly.
 #
 #   Start:   docker compose -f labs/docker-compose.yml up -d
-#   Health:  curl -s http://localhost:4566/_localstack/health
+#   Health:  curl -s http://localhost:4566/_floci/health
 #   Console: http://localhost:4500   (starts with the emulator, see floci-ui below)
 #   Stop:    docker compose -f labs/docker-compose.yml down
 #

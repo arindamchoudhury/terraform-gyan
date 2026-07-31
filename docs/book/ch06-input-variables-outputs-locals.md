@@ -374,7 +374,7 @@ The milestone is to deploy one configuration to two environments by swapping onl
 
 ```shell
 docker compose -f labs/docker-compose.yml up -d      # start the emulator on :4566, detached
-curl -s http://localhost:4566/_localstack/health     # wait until the services read "running"
+curl -s http://localhost:4566/_floci/health     # wait until the services read "running"
 ```
 
 Write a small parameterized configuration — a uniquely-named bucket, tagged, whose count and name come from variables:

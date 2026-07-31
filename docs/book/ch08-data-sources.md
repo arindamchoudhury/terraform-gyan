@@ -305,7 +305,7 @@ The milestone made concrete. You'll create an S3 bucket **out-of-band** (as if a
 
 ```shell
 docker compose -f labs/docker-compose.yml up -d      # start the emulator on :4566, detached
-curl -s http://localhost:4566/_localstack/health     # wait until the services read "running"
+curl -s http://localhost:4566/_floci/health     # wait until the services read "running"
 ```
 
 **Create the unmanaged bucket** — this is the "resource you didn't create":

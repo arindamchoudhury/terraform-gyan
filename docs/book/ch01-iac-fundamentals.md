@@ -261,15 +261,25 @@ docker compose -f labs/docker-compose.yml up -d      # start the emulator, detac
 
     A pre-March-2026 Community tag (`localstack/localstack:4.12`) runs tokenless but is frozen with no security patches — a last resort, not the default. The GitHub Student Developer Pack unlocks a free **Student Plan**.
 
-Everything multiplexes through one gateway port, **4566**. Confirm the container is healthy — the health endpoint returns a JSON map of each service's state. Floci and LocalStack both answer the `/_localstack/health` path (MiniStack answers that *and* its own `/_ministack/health`):
+Everything multiplexes through one gateway port, **4566**. Confirm the container is healthy — the health endpoint returns a JSON map of each service's state, every one of which should read `running`. Floci's own path is `/_floci/health`, and that is what this book uses throughout:
 
 ```shell
-curl -s http://localhost:4566/_localstack/health
+curl -s http://localhost:4566/_floci/health
 ```
 
 ```json
-{ "services": { "s3": "available", "dynamodb": "available", "iam": "available", ... } }
+{
+  "services": { "s3": "running", "dynamodb": "running", "iam": "running", "...": "70 of them" },
+  "edition": "community",
+  "original_edition": "floci-always-free",
+  "version": "1.5.33"
+}
 ```
+
+If a service reads anything other than `running`, the container is still starting; wait and curl again.
+
+!!! note "The LocalStack path also answers"
+    Floci serves `/_localstack/health` as a compatibility alias, with a byte-identical body. You only need it if you swap the compose image for a different emulator — see the alternatives commented in `labs/docker-compose.yml`.
 
 ### See what you create — the Floci console (floci-ui)
 
@@ -327,7 +337,7 @@ curl -fsSL https://floci.io/install.sh | sh
 !!! note "`floci` the binary vs `floci/floci` the emulator"
     All four methods install the **CLI** — a binary named `floci`, from the `floci-io/floci-cli` repo. That's *not* the emulator: the emulator is the Docker image `floci/floci`, which your `docker compose up` pulls separately. Same name, two different things.
 
-Under the hood every command just shells out to `docker` or does an HTTP `GET` on Floci's native health path `/_floci/health` (same JSON as the `/_localstack/health` alias you curled above). So each maps to a plain command against your running `floci-lab`:
+Under the hood every command just shells out to `docker` or does an HTTP `GET` on `/_floci/health`, the same endpoint you curled above. So each maps to a plain command against your running `floci-lab`:
 
 | `floci-cli` | What it really does | Do the same with the running container |
 |---|---|---|

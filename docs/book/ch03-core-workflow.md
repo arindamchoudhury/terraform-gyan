@@ -490,7 +490,7 @@ The four verbs and four symbols are worth *seeing*, not just reading. This lab d
 
 ```shell
 docker compose -f labs/docker-compose.yml up -d      # start Floci on :4566, detached
-curl -s http://localhost:4566/_localstack/health     # wait until the services read "running"
+curl -s http://localhost:4566/_floci/health     # wait until the services read "running"
 ```
 
 Then start from this `main.tf`:
