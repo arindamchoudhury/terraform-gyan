@@ -33,3 +33,6 @@ secrets.tfvars
 
 # tflocal auto-generates this; never commit it
 localstack_providers_override.tf
+
+# Trace logs from lab runs
+*.log
