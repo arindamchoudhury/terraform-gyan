@@ -1,6 +1,6 @@
 # Meta-arguments and `lifecycle`
 
-Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]] and [[tf-meta-depends-on]] (HCDocs per-argument references), [[tut-count]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
+Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]] and [[tf-meta-depends-on]] (HCDocs per-argument references), [[tut-count]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
 
 Feeds learning-path **I1** (`count`/`for_each`/`depends_on`) and **I2** (`lifecycle`).
 
@@ -35,7 +35,7 @@ The HCDocs index gives a block-applicability map, but it is **not reliable as st
 !!! warning "That rule is a heuristic, not a guarantee — the reference pages have gaps too"
     [[tf-meta-count]]'s **Supported constructs** list names `data`, `ephemeral`, `module`, `resource`, and `list` (query configs). It omits **`action`** — which the same page's opening paragraph and one of its own use cases both describe as supported. So three block-applicability lists across two pages disagree with each other, and the *page body* is more reliable than the *page's own summary list*.
 
-    Working rule: treat every applicability list in these docs as a lower bound. Confirmed omissions so far — index page vs `count` (`data`), index page vs `depends_on` (five of six block types), `count` page vs itself (`action`).
+    Working rule: treat every applicability list in these docs as a lower bound. Confirmed omissions so far — index page vs `count` (`data`), index page vs `depends_on` (five of six block types), `count` page vs itself (`action`), `for_each` page vs itself (**`action` and `import`**, both described in that page's own examples).
 
 Two applicability facts worth holding:
 
@@ -70,6 +70,23 @@ This single constraint explains most of the friction people hit with meta-argume
 
 !!! warning "Renaming a `count` block is a rebuild unless you write a `moved` block"
     A resource address *is* its identity in state. [[tut-count]]'s refactor renames `aws_instance.app_a` → `aws_instance.app` and its own apply output reads **"8 added, 0 changed, 4 destroyed"** — the infrastructure was replaced solely because the addresses changed. `moved` blocks (Terraform 1.1+) exist for exactly this and the tutorial never mentions them. Same failure mode as the positional re-indexing above, reached by a different route.
+
+## `for_each` — keyed identity, and the three things `count` can't do
+
+[[tf-meta-for-each]] is the longer of the two per-argument pages, and most of the extra length is capability `count` has no equivalent for.
+
+**Chaining.** A `for_each` resource can be the `for_each` of another: `for_each = aws_vpc.example` gives one internet gateway per VPC, with `each.value` holding a whole `aws_vpc` object. The docs' argument for it is not brevity but coupling — it "tells Terraform to **expect the instance keys for both to always change together**." Deriving both from `var.vpcs` separately would produce the same keys today and leave them structurally independent.
+
+**Sensitive values are banned as keys**, and this is an error rather than a warning: Terraform "uses the value in `for_each` to identify the resource instance and **always discloses it in UI output**." Instance keys are public by construction — they appear in every plan line, state address, and error message. Sensitivity is contagious through functions, so `keys(local.map)` on sensitive *values* is itself sensitive; the escape is a `for` expression that touches only keys, `toset([for k, v in local.map : k])`.
+
+**No implicit list-to-set conversion.** `for_each` refuses lists and tuples outright "to prevent unexpected behavior during conversion", which is why `toset()` is mandatory rather than stylistic. This is the one place the docs' type story is strict — everywhere else a tuple converts to a list freely ([[conditional-branch-evaluation]]). `toset` is lossy by design: it discards order and dedupes, both harmless here since identity comes from the key.
+
+**`each.key` / `each.value`**, and for a set the two are identical. Addressing is `<TYPE>.<NAME>["key"]` — the same block-vs-instance split as `count`, keyed by string rather than integer.
+
+!!! danger "The accepted-types sentence is wrong in both reference pages' shared framing"
+    HCDocs says `for_each` "accepts a map or a set of strings." The implementation accepts map, set, **and object** (`eval_for_each.go:361`, TF 1.15.8) — so `for_each = { a = "1", b = "2" }` needs no `tomap()`, because braces build an object. The same page's chaining section calls a `for_each` resource "a map of objects" when it is an **object**; `count` gives a **tuple**, not a list. **OpenTofu's docs state all three kinds correctly.** Evidence: [[conditional-branch-evaluation]], [[ot-provider-for-each]].
+
+    The rejection of lists and tuples is *not* part of the error — that restriction is real and deliberate.
 
 ## `depends_on` — the precise semantics
 

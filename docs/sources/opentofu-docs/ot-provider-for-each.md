@@ -8,6 +8,11 @@
 
 OpenTofu-only feature (since 1.9): iterate a provider configuration with `for_each` to get one provider instance per element — e.g. one AWS region per instance — without repeating `provider` blocks. Terraform's open-source CLI has no equivalent.
 
+!!! info "Sharpened 2026-08-01 — Terraform *does* have it, gated behind Stacks"
+    [[tf-meta-for-each]]'s **Supported constructs** section lists `provider` under **Stack** configuration blocks. So the capability exists in Terraform, but only inside a Stack configuration; ordinary root and child modules cannot use it.
+
+    The divergence is therefore about the **configuration surface**, not the feature. OpenTofu puts provider iteration in the core language, usable anywhere; Terraform puts it behind a separate configuration type. The sentence above stays true for the CLI language, which is where a reader would look for it.
+
 ## The three OpenTofu-defined provider meta-arguments
 
 - `alias` — additional named configurations for the same provider.
