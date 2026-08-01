@@ -1,6 +1,6 @@
 # Meta-arguments and `lifecycle`
 
-Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]] and [[tf-meta-depends-on]] (HCDocs per-argument references), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
+Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]] and [[tf-meta-depends-on]] (HCDocs per-argument references), [[tut-count]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
 
 Feeds learning-path **I1** (`count`/`for_each`/`depends_on`) and **I2** (`lifecycle`).
 
@@ -62,6 +62,14 @@ This single constraint explains most of the friction people hit with meta-argume
 - **A `count` block reference is a `tuple`, not a list** (and a `for_each` one is an `object`, not a map) — verified on TF 1.15.8, [[conditional-branch-evaluation]]. Auto-conversion hides this almost everywhere, which is why the docs conflate them.
 
 **The `? 1 : 0` switch.** The page explicitly endorses `count` as a conditional (`count = var.creator ? 3 : 0`), and it is the only way to make a single resource optional in Terraform. Cost: the block is indexed forever, so every reference and every `moved` block carries `[0]`. **OpenTofu 1.11's `enabled`** is the first-class replacement; Terraform has none ([[opentofu-feature-history]]).
+
+**Two patterns from the hands-on** ([[tut-count]]), neither of which appears on the reference page:
+
+- **The count is usually a product, not a literal.** `count = var.instances_per_subnet * length(module.vpc.private_subnets)` derives one instance count from two independent knobs, so adding a subnet scales the fleet automatically. Both operands must be plan-time known, which `length()` over a configured list satisfies.
+- **Modulo spreads instances over buckets.** `subnet_id = module.vpc.private_subnets[count.index % length(module.vpc.private_subnets)]` round-robins four instances across two subnets. This is the canonical "N over M with a flat integer index" answer, and it is a clean illustration of where the `for_each` criterion does *not* apply: the distinct values here **can** be derived from the index.
+
+!!! warning "Renaming a `count` block is a rebuild unless you write a `moved` block"
+    A resource address *is* its identity in state. [[tut-count]]'s refactor renames `aws_instance.app_a` → `aws_instance.app` and its own apply output reads **"8 added, 0 changed, 4 destroyed"** — the infrastructure was replaced solely because the addresses changed. `moved` blocks (Terraform 1.1+) exist for exactly this and the tutorial never mentions them. Same failure mode as the positional re-indexing above, reached by a different route.
 
 ## `depends_on` — the precise semantics
 
