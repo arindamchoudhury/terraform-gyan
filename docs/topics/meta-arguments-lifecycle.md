@@ -1,6 +1,6 @@
 # Meta-arguments and `lifecycle`
 
-Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]] and [[tf-meta-depends-on]] (HCDocs per-argument references), [[tut-count]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
+Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]] and [[tf-meta-depends-on]] (HCDocs per-argument references), [[tut-count]] and [[tut-for-each]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
 
 Feeds learning-path **I1** (`count`/`for_each`/`depends_on`) and **I2** (`lifecycle`).
 
@@ -86,7 +86,31 @@ This single constraint explains most of the friction people hit with meta-argume
 !!! danger "The accepted-types sentence is wrong in both reference pages' shared framing"
     HCDocs says `for_each` "accepts a map or a set of strings." The implementation accepts map, set, **and object** (`eval_for_each.go:361`, TF 1.15.8) — so `for_each = { a = "1", b = "2" }` needs no `tomap()`, because braces build an object. The same page's chaining section calls a `for_each` resource "a map of objects" when it is an **object**; `count` gives a **tuple**, not a list. **OpenTofu's docs state all three kinds correctly.** Evidence: [[conditional-branch-evaluation]], [[ot-provider-for-each]].
 
-    The rejection of lists and tuples is *not* part of the error — that restriction is real and deliberate.
+    The rejection of lists and tuples is *not* part of the error — that restriction is real and deliberate. Re-verified on **TF 1.15.8**: `for_each = ["a", "b"]` fails with *"the `for_each` argument must be a map, or set of strings, and you have provided a value of type tuple"* ([[tut-for-each]], whose own text claims lists are supported).
+
+## Combining `count` and `for_each`
+
+Both reference pages state the mutual exclusion and stop there. [[tut-for-each]] gives the only documented way around it: **move the `count`-bearing resource into a module, and put `for_each` on the module block.** `count` multiplies inside, `for_each` multiplies outside, and the two never share a block.
+
+```hcl
+module "ec2_instances" {
+  source   = "./modules/aws-instance"
+  for_each = var.project
+
+  instance_count = each.value.instances_per_subnet * length(module.vpc[each.key].private_subnets)
+  # …
+}
+```
+
+!!! warning "A module using `count` or `for_each` cannot declare a `provider` block"
+    It must inherit provider configuration from its caller, and every instance the module creates uses the same configuration. So the wrapping trick buys multiplication but **not** multi-provider fan-out — one `for_each` module cannot put each instance in a different region by declaring its own provider. Pass configurations in with `providers = { … }` instead ([[tf-provider-block]]).
+
+    This is the constraint OpenTofu's core-language `provider for_each` removes ([[ot-provider-for-each]]); Terraform's equivalent is Stacks-only ([[tf-meta-for-each]]).
+
+**Two ways to correlate instances across blocks.** *Chaining* (`for_each = aws_vpc.example`) derives the downstream keys from the upstream resource, so the two sets change together by construction. *Re-iterating* (`for_each = var.project` on every block, correlating with `module.vpc[each.key]`) is what [[tut-for-each]] does across five blocks keyed off one variable. Both give matching keys; only chaining makes the coupling structural.
+
+!!! danger "`for_each` is for objects that share a lifecycle — environments do not"
+    [[tut-for-each]] states the rule in a Note — "use separate Terraform projects or workspaces instead of `for_each` to manage resource lifecycles independently … running `terraform destroy` will destroy both" — and then its worked example puts a `dev` and a `test` project in one configuration, so one destroy takes out both. Good exercise, bad template. See [[tf-state-workspaces]].
 
 ## `depends_on` — the precise semantics
 

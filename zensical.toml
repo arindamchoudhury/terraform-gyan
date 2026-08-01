@@ -163,6 +163,7 @@ nav = [
                 { "5. Output data" = "sources/terraform-tutorials/tut-outputs.md" },
                 { "6. Resource dependencies" = "sources/terraform-tutorials/tut-dependencies.md" },
                 { "7. Count" = "sources/terraform-tutorials/tut-count.md" },
+                { "8. For each" = "sources/terraform-tutorials/tut-for-each.md" },
             ]},
         ]},
         { "Terraform Registry" = [

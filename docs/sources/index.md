@@ -91,6 +91,7 @@ Log of all captured sources, organised by course.
 | [Output data (Configuration Language)](terraform-tutorials/tut-outputs.md) | documentation | 2026-07-13 | outputs, terraform-output, sensitive, json, raw, state | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/outputs) |
 | [Create resource dependencies (Configuration Language)](terraform-tutorials/tut-dependencies.md) | documentation | 2026-08-01 | dependencies, depends_on, implicit-dependencies, explicit-dependencies, dag, destroy-order, modules | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/dependencies) |
 | [Manage similar resources with `count` (Configuration Language)](terraform-tutorials/tut-count.md) | documentation | 2026-08-01 | count, count.index, modulo, splat, legacy-splat, refactoring, moved-block, scaling | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/count) |
+| [Manage similar resources with `for_each` (Configuration Language)](terraform-tutorials/tut-for-each.md) | documentation | 2026-08-01 | for_each, each.key, each.value, module-wrapping, count-and-for-each, provider-inheritance, for-expressions | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/for-each) |
 
 ## 4. Terraform Registry
 

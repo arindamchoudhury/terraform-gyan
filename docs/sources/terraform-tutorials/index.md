@@ -24,3 +24,4 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Output data | 2026-07-13 | [tut-outputs](tut-outputs.md) |
 | Create resource dependencies | 2026-08-01 | [tut-dependencies](tut-dependencies.md) |
 | Manage similar resources with `count` | 2026-08-01 | [tut-count](tut-count.md) |
+| Manage similar resources with `for_each` | 2026-08-01 | [tut-for-each](tut-for-each.md) |
