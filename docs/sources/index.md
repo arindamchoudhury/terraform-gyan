@@ -87,6 +87,7 @@ Log of all captured sources, organised by course.
 | [Query data sources (Configuration Language)](terraform-tutorials/tut-data-sources.md) | documentation | 2026-07-22 | data-sources, aws_availability_zones, aws_region, aws_ami, terraform_remote_state, two-workspace | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/data-sources) |
 | [Simplify with locals (Configuration Language)](terraform-tutorials/tut-locals.md) | documentation | 2026-07-13 | locals, merge, dynamic-expressions, resource-tags, dry | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/locals) |
 | [Output data (Configuration Language)](terraform-tutorials/tut-outputs.md) | documentation | 2026-07-13 | outputs, terraform-output, sensitive, json, raw, state | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/outputs) |
+| [Create resource dependencies (Configuration Language)](terraform-tutorials/tut-dependencies.md) | documentation | 2026-08-01 | dependencies, depends_on, implicit-dependencies, explicit-dependencies, dag, destroy-order, modules | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/dependencies) |
 
 ## 4. Terraform Registry
 

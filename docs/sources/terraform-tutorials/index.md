@@ -22,3 +22,4 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Query data sources | 2026-07-22 | [tut-data-sources](tut-data-sources.md) |
 | Simplify with locals | 2026-07-13 | [tut-locals](tut-locals.md) |
 | Output data | 2026-07-13 | [tut-outputs](tut-outputs.md) |
+| Create resource dependencies | 2026-08-01 | [tut-dependencies](tut-dependencies.md) |

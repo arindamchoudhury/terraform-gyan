@@ -1,6 +1,6 @@
 # The dependency graph: seeing it, and its blind spot
 
-Cross-source topic page. Sources: [[tf-cmd-graph]] (HCDocs `terraform graph`), [[tf-meta-depends-on]] (HCDocs `depends_on`), TID Ch2 §2.2.5 + §2.7.3, [TID Ch5 §5.1–5.2 + §5.7](../books/tid/chapters/05-terraform-plan.md) (the DAG chapter — nodes, node types, cycles), [[tf-configure-resource]] (HCDocs), plus experiments run locally against **Terraform v1.15.6**.
+Cross-source topic page. Sources: [[tf-cmd-graph]] (HCDocs `terraform graph`), [[tf-meta-depends-on]] (HCDocs `depends_on`), [[tut-dependencies]] (HCDocs hands-on tutorial), TID Ch2 §2.2.5 + §2.7.3, [TID Ch5 §5.1–5.2 + §5.7](../books/tid/chapters/05-terraform-plan.md) (the DAG chapter — nodes, node types, cycles), [[tf-configure-resource]] (HCDocs), plus experiments run locally against **Terraform v1.15.6**.
 
 Feeds learning-path **B3** (plan/apply ordering), **I1** (`depends_on`), and **E5** (`terraform graph`).
 
@@ -122,7 +122,32 @@ Because it is not free. The docs call it a **last resort**:
 
 An expression reference tells Terraform *which value* the dependency derives from, so it can skip planning changes when that value is unchanged. `depends_on` makes the entire upstream object opaque. Over-using it also serializes work the graph could have run in parallel.
 
+There are **two distinct costs**, and only the first is usually quoted:
+
+| Cost | Where it shows up | Source |
+|---|---|---|
+| Degraded plan — spurious `(known after apply)`, more resources replaced than necessary | `terraform plan` output | [[tf-meta-depends-on]] |
+| Longer apply — serialized work that could have run in parallel | wall-clock apply time | [[tut-dependencies]] |
+
 The rule that falls out: **prefer implicit references; reach for `depends_on` only when there is no attribute to reference.**
+
+## Route 4 — read the apply log
+
+The cheapest observation, and the one nobody bothers with. Terraform prints `Creating...` for every node the moment it starts, so **interleaved `Creating...` lines mean Terraform believes those nodes are independent**, and a node that waits has an edge.
+
+From [[tut-dependencies]], applying two EC2 instances and an Elastic IP attached to the first:
+
+```
+aws_instance.example_a: Creating...
+aws_instance.example_b: Creating...
+...
+aws_instance.example_a: Creation complete after 33s
+aws_eip.ip: Creating...
+```
+
+Both instances start together. The Elastic IP waits for `example_a` and *not* for `example_b` — exactly the edge set the configuration declares. If you expected a wait and see interleaving instead, the edge you assumed does not exist.
+
+**Destroy prints the mirror image.** Dependents are destroyed first, off the same edges, which is why a missing `depends_on` breaks teardown as well as setup.
 
 ## What TID Ch5 adds: the node types and cycles
 
@@ -156,4 +181,4 @@ resource "null_resource" "alpha" {
 Same principle as the "prefer implicit references" rule below, applied in reverse: sometimes you *want* to sever an inferred edge, and the fix is to depend on data (a variable) rather than a resource.
 
 ---
-Related: [[tf-cmd-graph]] — the command reference and its DOT dialects. · [[tf-meta-depends-on]] — the hidden-dependency meta-argument, its cost, and the `check`-block pattern. · [[meta-arguments-lifecycle]] — `depends_on` among the other five meta-arguments. · [[tf-configure-resource]] — "prefer implicit dependencies," stated without the plan-degradation reason.
+Related: [[tf-cmd-graph]] — the command reference and its DOT dialects. · [[tf-meta-depends-on]] — the hidden-dependency meta-argument, its cost, and the `check`-block pattern. · [[tut-dependencies]] — the hands-on lab, source of the apply/destroy log evidence and of the module-level `depends_on` example. · [[meta-arguments-lifecycle]] — `depends_on` among the other five meta-arguments. · [[tf-configure-resource]] — "prefer implicit dependencies," stated without the plan-degradation reason.
