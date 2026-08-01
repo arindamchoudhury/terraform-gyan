@@ -1,6 +1,6 @@
 # Meta-arguments and `lifecycle`
 
-Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
+Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]] and [[tf-meta-depends-on]] (HCDocs per-argument references), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
 
 Feeds learning-path **I1** (`count`/`for_each`/`depends_on`) and **I2** (`lifecycle`).
 
@@ -32,6 +32,11 @@ TID's Ch2 is a tour of HCL block components, so it covers the three meta-argumen
 
 The HCDocs index gives a block-applicability map, but it is **not reliable as stated** — see [[tf-meta-arguments]] for the discrepancy (the index omits `data` from its `count` list while listing it for `for_each`; the `count` reference page confirms `data` is supported). The per-argument reference pages win over the index.
 
+!!! warning "That rule is a heuristic, not a guarantee — the reference pages have gaps too"
+    [[tf-meta-count]]'s **Supported constructs** list names `data`, `ephemeral`, `module`, `resource`, and `list` (query configs). It omits **`action`** — which the same page's opening paragraph and one of its own use cases both describe as supported. So three block-applicability lists across two pages disagree with each other, and the *page body* is more reliable than the *page's own summary list*.
+
+    Working rule: treat every applicability list in these docs as a lower bound. Confirmed omissions so far — index page vs `count` (`data`), index page vs `depends_on` (five of six block types), `count` page vs itself (`action`).
+
 Two applicability facts worth holding:
 
 - **`count` and `for_each` are mutually exclusive** in the same `resource` or `module` block.
@@ -44,6 +49,19 @@ TID Ch2 supplies the rule the HCDocs index never states:
 > Meta arguments are processed **very early** in planning, so many require **literal** values — or at least values known at plan time. A `true`/`false` meta argument must be *literally* `true`/`false`, never a value that depends on an attribute known only post-apply.
 
 This single constraint explains most of the friction people hit with meta-arguments: why `prevent_destroy` can't be driven by `var.is_prod`, why `for_each` keys can't come from a computed attribute, why `replace_triggered_by` takes resource references rather than variables.
+
+## `count` — positional identity, and the `? 1 : 0` switch
+
+[[tf-meta-count]] gives the addressing rules and the choice criterion, and its silences are as informative as its text.
+
+**What it says.** `count` takes a whole number; each instance gets a distinct object, created/updated/destroyed separately. A `count` object appears in scope with the single attribute `count.index`, zero-based. The block and its instances are different addresses — `aws_instance.server` is the block, `aws_instance.server[0]` an instance — unlike a block with neither `count` nor `for_each`, which needs no index. Inside `provisioner`/`connection`, `self` is the *instance*. Choose `count` for "nearly identical instances", `for_each` when arguments "must have distinct values that can't be directly derived from an integer index". The two are mutually exclusive in one block.
+
+**What it never says**, and both matter more than most of the above:
+
+- **`count` keys instances by position.** Delete a middle element from the driving list and every later instance shifts index, so Terraform plans destroy-and-recreate for all of them. `for_each` keys by string and touches only the removed entry. The reference page's neutral "can't be directly derived from an integer index" is as close as it comes; TID Ch4 §4.8 is where this is actually taught ([[04-expressions-iterations]]).
+- **A `count` block reference is a `tuple`, not a list** (and a `for_each` one is an `object`, not a map) — verified on TF 1.15.8, [[conditional-branch-evaluation]]. Auto-conversion hides this almost everywhere, which is why the docs conflate them.
+
+**The `? 1 : 0` switch.** The page explicitly endorses `count` as a conditional (`count = var.creator ? 3 : 0`), and it is the only way to make a single resource optional in Terraform. Cost: the block is indexed forever, so every reference and every `moved` block carries `[0]`. **OpenTofu 1.11's `enabled`** is the first-class replacement; Terraform has none ([[opentofu-feature-history]]).
 
 ## `depends_on` — the precise semantics
 

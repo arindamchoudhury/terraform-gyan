@@ -126,6 +126,7 @@ nav = [
                     { "Configuration syntax" = "sources/terraform-docs/tf-config-syntax.md" },
                     { "Meta-arguments" = [
                         { "Overview" = "sources/terraform-docs/tf-meta-arguments.md" },
+                        { "count" = "sources/terraform-docs/tf-meta-count.md" },
                         { "depends_on" = "sources/terraform-docs/tf-meta-depends-on.md" },
                     ]},
                     { "Built-in resources" = [

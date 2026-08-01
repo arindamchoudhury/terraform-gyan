@@ -50,7 +50,7 @@ Same default-of-one starting point. `for_each` creates and manages several simil
 !!! note "This page's `count` block list is incomplete — `data` is missing"
     The index page says `count` applies to **resource, module, and ephemeral** blocks, while `for_each` applies to **resource, data, module, and ephemeral**. `data` appears only in the `for_each` list.
 
-    Checked against the [`count` reference](https://developer.hashicorp.com/terraform/language/meta-arguments/count) (fetched 2026-07-10, cached at `cache/web/tf-meta-count.txt`), which states `count` is supported in **`data`, `ephemeral`, `module`, and `resource`** blocks, plus **`list`** blocks in query configurations. So the asymmetry is a docs omission on the index page, not a real restriction. Trust the per-argument reference pages over this one.
+    Checked against the [`count` reference](https://developer.hashicorp.com/terraform/language/meta-arguments/count) ([[tf-meta-count]]), which states `count` is supported in **`data`, `ephemeral`, `module`, and `resource`** blocks, plus **`list`** blocks in query configurations. So the asymmetry is a docs omission on the index page, not a real restriction. Trust the per-argument reference pages over this one — though [[tf-meta-count]] has an omission of its own (`action`), so "per-argument page wins" is a rule of thumb, not a guarantee.
 
     The same reference adds a rule the index page never states: **you cannot use both `count` and `for_each` in the same `resource` or `module` block.**
 
@@ -90,7 +90,9 @@ Corrected against the per-argument reference pages, which are the authority. The
 | `providers` | `module` | `module` |
 
 !!! warning "The index page undercounts supported blocks"
-    Two confirmed cases so far: `count` (omits `data`) and `depends_on` (names only `resource`, while its reference page lists six block types). Both were found by opening the reference page after the index looked suspicious. Assume the index is a summary, not a spec — check the per-argument page before concluding a meta-argument is illegal somewhere. Sources: [[tf-meta-depends-on]], `cache/web/tf-meta-count.txt`.
+    Two confirmed cases so far: `count` (omits `data`) and `depends_on` (names only `resource`, while its reference page lists six block types). Both were found by opening the reference page after the index looked suspicious. Assume the index is a summary, not a spec — check the per-argument page before concluding a meta-argument is illegal somewhere. Sources: [[tf-meta-depends-on]], [[tf-meta-count]].
+
+    The reference pages are not immune either: [[tf-meta-count]]'s own **Supported constructs** list omits `action`, which its opening paragraph and one of its use cases both describe. Block-applicability claims in these docs are worth checking against the rest of the same page.
 
 !!! info "OpenTofu — the `enabled` meta-argument"
     OpenTofu 1.11 adds a seventh meta-argument, **`enabled`**, a first-class on/off switch for a resource. Terraform has no equivalent; you still write `count = var.enabled ? 1 : 0`, which forces `[0]` addressing and index churn. See [[opentofu-feature-history]].

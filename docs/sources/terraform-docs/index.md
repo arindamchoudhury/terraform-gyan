@@ -22,6 +22,7 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Dependency Lock File | 2026-07-10 | [tf-dependency-lock](tf-dependency-lock.md) |
 | `provider` block reference | 2026-07-10 | [tf-provider-block](tf-provider-block.md) |
 | Meta-arguments (index) | 2026-07-10 | [tf-meta-arguments](tf-meta-arguments.md) |
+| `count` reference | 2026-08-01 | [tf-meta-count](tf-meta-count.md) |
 | `depends_on` reference | 2026-07-10 | [tf-meta-depends-on](tf-meta-depends-on.md) |
 | `terraform graph` command | 2026-07-10 | [tf-cmd-graph](tf-cmd-graph.md) |
 | `terraform_data` resource reference | 2026-07-10 | [tf-terraform-data](tf-terraform-data.md) |
