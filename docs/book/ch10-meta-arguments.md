@@ -755,20 +755,14 @@ The graph is built from expression references plus the `depends_on` you wrote. A
 
 Verified on Terraform 1.15.6: deleting a `depends_on` removes the edge from `terraform graph`, and `terraform validate` still reports `Success! The configuration is valid.` No plan warning, no provider warning, no lint rule.
 
-Where the race comes from is worth being precise about, because "Terraform got the order wrong" is not what happens. Terraform got the order *right* for the graph it was given.
-
-**Terraform runs edge-free nodes at the same time.** That is the whole point of building a graph: anything with no path between it and another node can proceed in parallel, up to `-parallelism`, which defaults to **10**. You saw this in section 6 — two EC2 instances with nothing between them both print `Creating...` in the same moment.
-
-So an edge is not a hint about ordering. It is the *only* thing preventing two operations from being started together. Delete the edge and Terraform does not fall back to file order, or declaration order, or alphabetical order. It starts both immediately, and which one finishes first is decided by the cloud API, network latency, and how much work each side happens to have.
-
-That is a race in the ordinary sense: two operations in flight, correctness depending on which lands first, and nothing in the system enforcing an answer.
-
 What you get instead of a warning:
 
-- **A race you win by luck.** Passes locally, fails in CI. Or fails once and succeeds on rerun. Machine speed, API latency, and region load all move the timing, which is why the failure follows the environment rather than the configuration. That "just run it again" behaviour is the loudest signal available.
+- **A race you win by luck.** Passes locally, fails in CI. Or fails once and succeeds on rerun. That "just run it again" behaviour is the loudest signal available.
 - **A provider API error** that never mentions ordering.
 - **Success that isn't.** The server boots, the apply reports complete, and the application cannot reach its bucket. A semantic failure with no crash.
 - **A broken destroy.** Teardown walks the same graph in reverse, so the missing edge bites again on the way down.
+
+The first one is a race in the ordinary sense, and it is worth seeing why. Terraform did not order things badly. It ordered them correctly for the graph it was given, and **it runs edge-free nodes at the same time**, up to `-parallelism`, which defaults to 10. An edge is therefore not a hint about ordering; it is the only thing stopping two operations from starting together. Remove it and Terraform does not fall back to file order or declaration order. Both start immediately, and which lands first is decided by API latency and how much work each side has, which is why the failure follows the environment rather than the configuration.
 
 You can see the edges Terraform did build:
 
