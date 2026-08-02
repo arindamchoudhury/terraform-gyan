@@ -450,17 +450,47 @@ The documentation says "a map or a set of strings." That is incomplete in one di
 
 Keys are how Terraform names instances, so they are constrained more tightly than ordinary values.
 
-**Keys must be known before any remote operation.** Otherwise you get an error saying `for_each` "has dependencies that cannot be determined before apply", with a suggestion to use `-target`. Treat that suggestion as a diagnostic rather than advice. `-target` is an escape hatch, not a workflow.
+**Keys must be known before any remote operation.** The *Limitations on values* section puts it as: the keys of the map, or all values in a set of strings, must be known values, or Terraform "returns an error message that `for_each` has dependencies that cannot be determined before apply and that a `-target` may be needed." Treat that `-target` suggestion as a diagnostic rather than advice. It is an escape hatch, not a workflow.
 
-**Keys cannot come from impure functions.** `uuid`, `bcrypt`, and `timestamp` are named explicitly, "because Terraform defers evaluating impure functions during the main evaluation step."
+**Keys cannot come from impure functions.** HashiCorp's [`for_each` reference](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each), under *Limitations on values*, names three of them:
 
-**Keys cannot be sensitive.** This one is an error, not a warning, and the reason is worth internalising:
+> "Keys in the `for_each` argument cannot be the result of or rely on the result of impure functions, including `uuid`, `bcrypt`, or `timestamp`, because Terraform defers evaluating impure functions during the main evaluation step."
 
-> "Sensitive values are not allowed because Terraform uses the value in `for_each` to identify the resource instance and always discloses it in UI output."
+An impure function returns something different on every call, so a key built from one would rename the instance on every plan. The list is "including", not exhaustive.
 
-An instance key appears in every plan line, every state address, and every error message. A secret cannot survive that.
+!!! note "The error you actually get says something else"
+    Terraform does not report this as an impure-function problem. `for_each = toset([uuid()])` on 1.15.8 fails with:
 
-Sensitivity is also contagious. The docs put it as "most functions in Terraform return a sensitive result when given an argument with any sensitive content", so `keys(local.config)` comes back sensitive when any *value* in that map is sensitive, even though the keys themselves are not. The documented escape is a `for` expression that touches only the keys:
+    ```
+    Error: Invalid for_each argument
+
+    The "for_each" set includes values derived from resource attributes that
+    cannot be determined until apply, and so Terraform cannot determine the
+    full set of keys that will identify the instances of this resource.
+    ```
+
+    `toset([timestamp()])` gives the same `Invalid for_each argument`. The wording is the generic unknown-value diagnostic, and its mention of "resource attributes" is misleading here, since no resource attribute is involved. Read it as *this key is not known at plan time*, whatever made it unknown.
+
+**Keys cannot be sensitive.** An error, not a warning. The same *Limitations on values* section gives the reason:
+
+> "You cannot use sensitive values, such as sensitive input variables, sensitive outputs, or sensitive resource attributes, as arguments in `for_each`. Sensitive values are not allowed because Terraform uses the value in `for_each` to identify the resource instance and always discloses it in UI output."
+
+An instance key appears in every plan line, every state address, and every error message. A secret cannot survive that. The CLI states it more directly than the page does, on 1.15.8:
+
+```
+Error: Invalid for_each argument
+
+  on main.tf line 8, in resource "terraform_data" "s":
+   8:   for_each = var.secret
+    ├────────────────
+    │ var.secret has a sensitive value
+
+Sensitive values, or values derived from sensitive values, cannot be used
+as for_each arguments. If used, the sensitive value could be exposed as a
+resource instance key.
+```
+
+Sensitivity is contagious, which is how you hit this without meaning to. The same section notes that "most functions in Terraform return a sensitive result when given an argument with any sensitive content", so `keys(local.config)` comes back sensitive when any *value* in that map is sensitive, even though the keys themselves are not. The escape, given on the page, is a `for` expression that touches only the keys:
 
 ```hcl
 for_each = toset([for k, v in local.config : k])
@@ -605,14 +635,14 @@ resource "aws_instance" "app" {
 
 On a `module` block it applies to every resource and data source inside that module.
 
-The value is a list of references to resources or child modules in the same calling module, and it cannot be an arbitrary expression. The docs give the reason, and it is the "processed early" rule again:
+The value is a list of references to resources or child modules in the same calling module, and it cannot be an arbitrary expression. The same `depends_on` reference gives the reason, and it is the "processed early" rule again:
 
 > "This list cannot include arbitrary expressions because the `depends_on` value must be known before Terraform knows resource relationships and thus before it can safely evaluate expressions."
 
 ### The two costs
 
 !!! danger "`depends_on` is a last resort, and it is not free"
-    **Cost one: a worse plan.** The docs are blunt. Using it "can cause Terraform to create more conservative plans that replace more resources than necessary. For example, Terraform may treat more values as unknown `(known after apply)` because it is uncertain what changes will occur on the upstream object. This is especially likely when you use `depends_on` for modules."
+    **Cost one: a worse plan.** The `depends_on` reference is blunt about it. Using the meta-argument "can cause Terraform to create more conservative plans that replace more resources than necessary. For example, Terraform may treat more values as unknown `(known after apply)` because it is uncertain what changes will occur on the upstream object. This is especially likely when you use `depends_on` for modules."
 
     An expression reference tells Terraform *which value* the dependency derives from, so it can skip planning changes when that value is unchanged. `depends_on` makes the whole upstream object opaque.
 
