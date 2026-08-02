@@ -650,10 +650,25 @@ module "app_tier" {
 
 `count` multiplies inside the module. `for_each` multiplies outside. They never share a block. Instances address as `module.app_tier["client-webapp"].aws_instance.app[0]`.
 
-!!! warning "A module using `count` or `for_each` cannot declare a `provider` block"
-    It must inherit provider configuration from its caller, and every resource it creates uses that same configuration.
+!!! warning "A module with its own provider configuration cannot take `count`, `for_each`, **or** `depends_on`"
+    The constraint runs the other way round from how it is usually stated, and it covers all three meta-arguments. Verified on Terraform 1.15.8, with a child module containing `provider "aws" { region = "us-east-1" }`:
 
-    So this trick buys multiplication, not multi-provider fan-out. One `for_each` module cannot put each instance in a different region by declaring its own provider. Pass configurations in from the root with `providers = { … }` instead. Chapter 17 covers that.
+    ```
+    Error: Module is incompatible with count, for_each, and depends_on
+
+      on main.tf line 3, in module "m":
+       3:   for_each = toset(["a", "b"])
+
+    The module at module.m is a legacy module which contains its own local
+    provider configurations, and so calls to it may not use the count,
+    for_each, or depends_on arguments.
+    ```
+
+    Note the error fires at `terraform init`, not at `validate`, because the module has to be installed before Terraform can see inside it.
+
+    An **empty** `provider "aws" {}` block does not trigger this. Terraform reads that as a legacy "proxy provider configuration" and only warns that the syntax is deprecated. It is a *configured* provider block that makes the module legacy.
+
+    So the module-wrapping trick buys multiplication, not multi-provider fan-out. One `for_each` module cannot put each instance in a different region by declaring its own provider. Pass configurations in from the root with `providers = { … }` instead, which is the migration path the error itself recommends. Chapter 17 covers it.
 
 !!! info "OpenTofu — provider iteration is core language there"
     OpenTofu has supported `for_each` on `provider` blocks since 1.9, in ordinary configurations. Terraform supports it too, but only inside a **Stack** configuration, not in root or child modules.
@@ -686,8 +701,8 @@ Two entries in that table come from page prose rather than from a canonical list
 
 Two rules that hold everywhere:
 
-- `count` and `for_each` are **mutually exclusive** in one block.
-- `depends_on` composes with either.
+- `count` and `for_each` are **mutually exclusive** in one block. The error names it directly: "The `count` and `for_each` meta-arguments are mutually-exclusive, only one should be used to be explicit about the number of resources to be created."
+- `depends_on` composes with either, with one exception. A child module that declares its own provider configurations accepts **none** of the three, per the warning in section 7.
 
 !!! note "One `depends_on` use case this chapter defers"
     A `data` block nested inside a `check` block runs before the infrastructure it validates exists, so the check fails on the first apply. Adding `depends_on` to that nested `data` block defers the read, and Terraform prints `known after apply` instead of a false warning. Referencing the resource directly would work for ordering but couples the check to the resource's values, which makes it warn on any change at all.
@@ -900,8 +915,10 @@ Terraform will perform the following actions:
 
   # aws_s3_bucket.site[0] has moved to aws_s3_bucket.site["assets"]
     resource "aws_s3_bucket" "site" {
-        id = "ch10-migrate-assets"
+        id                          = "ch10-migrate-assets"
+        tags                        = {}
         # (15 unchanged attributes hidden)
+
         # (4 unchanged blocks hidden)
     }
 
@@ -953,7 +970,7 @@ tflocal destroy
 - **Passing a list to `for_each`.** It errors. Wrap with `toset()`, and remember that drops order and duplicates.
 - **A sensitive value as a `for_each` key.** Also an error. Instance keys are always printed. Project the keys out with a `for` expression.
 - **Assuming `each.key` is an index for sets.** It is the member string.
-- **Expecting `count`/`for_each` to give per-instance providers.** A module using either inherits provider configuration from its caller.
+- **Expecting `count`/`for_each` to give per-instance providers.** A module that declares its own provider configurations cannot be called with `count`, `for_each`, or `depends_on` at all. It must take provider configurations from its caller.
 - **Using `for_each` to separate environments.** `for_each` is for objects that share a lifecycle, and environments do not share one. Put `dev` and `prod` in one `for_each` and a single `terraform destroy` takes out both. Separate configurations or workspaces are the right tool; Chapter 24 covers the patterns.
 
 ---
@@ -963,7 +980,7 @@ tflocal destroy
 1. **Recall.** Without looking: what does `each.value` hold when `for_each` is given a set of strings? What about a map of objects?
 2. **Predict.** A `count` block manages five instances from a list. You remove the *last* element. How many objects are destroyed, and how many are replaced? Now remove the *first* element instead. Run both and check.
 3. **Apply.** Take the Part A configuration and add a fourth bucket at the *end* of the list. Plan it. Explain why this direction is safe when removal from the middle is not.
-4. **Apply.** Write the `moved` blocks needed to rename a `for_each` key from `"logs"` to `"audit"` without destroying the bucket.
+4. **Apply.** Rename a `for_each` key from `"logs"` to `"audit"` without destroying the bucket. Start from Part B's configuration and notice the trap: `bucket = "ch10-foreach-${each.key}"` derives the bucket *name* from the key, so changing the key changes an attribute that forces replacement, and no `moved` block can save it. Decouple the two first, by giving the map an explicit name per key. Then a `moved { from = ...["logs"], to = ...["audit"] }` is a pure address change and plans clean. The lesson generalises: `moved` fixes addresses, never attributes.
 5. **Extend.** Build the module-wrapping pattern from section 7 for real: a local module holding a `count` of buckets, called with `for_each` over two projects. Confirm the resulting addresses with `terraform state list`.
 6. **Extend.** Construct a configuration with a genuine hidden dependency, verify with `terraform graph` that no edge exists, add `depends_on`, and confirm the edge appears. Then delete it again and confirm `terraform validate` still passes.
 
@@ -973,11 +990,11 @@ tflocal destroy
 
 - **Meta-arguments come from Terraform core**, so every resource supports them regardless of provider. They control how a block is managed, never what it builds.
 - **They are processed before the dependency graph exists**, which is why their values must be known ahead of any remote operation.
-- **`count` keys instances by position.** Great for an on/off switch and for index-identical N. Dangerous for named sets, because removing a middle element re-indexes everything after it into a destroy-and-recreate.
+- **`count` keys instances by position.** Great for an on/off switch and for index-identical N. Dangerous for named sets, because removing an element at index *i* re-plans the `n - 1 - i` instances after it, plus one destroyed at the end. Where the index feeds a forced-new attribute, those are destroy-and-recreate.
 - **`for_each` keys instances by string.** Removing one key touches one instance. It accepts maps, objects, and sets of strings, never lists. Keys must be known, pure, and non-sensitive.
 - **`moved` blocks convert `count` to `for_each` for free.** An empty plan is the proof the refactor is safe.
 - **`depends_on` declares an ordering Terraform cannot infer**, and costs both plan precision and apply parallelism. Prefer an attribute reference wherever one exists. Nothing warns you when one is missing.
-- **To multiply on two axes**, put `count` inside a module and `for_each` on the module block. That module then cannot declare its own provider.
+- **To multiply on two axes**, put `count` inside a module and `for_each` on the module block. That module must not declare its own provider configurations, or Terraform refuses `count`, `for_each`, and `depends_on` on the call.
 
 ---
 
@@ -999,6 +1016,6 @@ You can now express *how many* of a thing to build and *in what order*. Chapter 
 
 **Verified facts** — [[conditional-branch-evaluation]] (accepted types, tuple/object shapes) · [[opentofu-enabled-argument]] (OpenTofu `enabled` is a `lifecycle` argument)
 
-**OpenTofu** — [`enabled` meta-argument](https://opentofu.org/docs/language/meta-arguments/enabled/) · [[ot-provider-for-each]] · [[opentofu-feature-history]]
+**OpenTofu** — [`enabled`](https://opentofu.org/docs/language/meta-arguments/enabled/) (filed under their meta-arguments section, but written inside a `lifecycle` block) · [[ot-provider-for-each]] · [[opentofu-feature-history]]
 
 🧪 **Lab** — [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)
