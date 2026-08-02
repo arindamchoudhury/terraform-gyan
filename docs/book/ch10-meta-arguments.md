@@ -661,7 +661,7 @@ resource "aws_instance" "app" {
 
 On a `module` block it applies to every resource and data source inside that module.
 
-The "read operations" clause is what makes `depends_on` useful on a **`data` block**. A data source is normally read during **plan**, so its values are available while Terraform decides what to do. Put `depends_on` on it and the read waits for the dependency instead:
+The "read operations" clause is what makes `depends_on` useful on a **`data` block**. A data source is normally read during **plan**, so its values are available while Terraform decides what to do. Add `depends_on` and the read can be pushed to apply instead:
 
 ```
   # data.local_file.deferred will be read during apply
@@ -669,9 +669,17 @@ The "read operations" clause is what makes `depends_on` useful on a **`data` blo
       + content = (known after apply)
 ```
 
-That excerpt is measured on 1.15.8, from a `data` block reading a file that a resource in the same configuration creates. Without the `depends_on` the plan fails, because the read runs before the file exists.
+Read the parenthetical carefully, because it states a condition. **The deferral is not unconditional.** It happens only when the dependency has changes pending. Measured on 1.15.8, one configuration in three states:
 
-Use it when the thing being read does not exist until the apply that is currently running. Section 8 has the case worth knowing.
+| Upstream dependency | The data source |
+|---|---|
+| Has pending changes | deferred — `will be read during apply` |
+| Nothing pending | **read during plan**, as normal |
+| Changed again | deferred again |
+
+That conditionality is deliberate. If `depends_on` deferred the read every time, every plan would report the values as unknown forever, and the source calls that out by name as the "perpetual diff" it is avoiding.
+
+So the rule is narrower than "`depends_on` makes a data source read at apply". It is: **when the dependency is about to change, do not trust a plan-time read of it.** Reach for this when the thing being read does not exist, or is not yet correct, until the apply that is currently running finishes. Section 8 has the case worth knowing.
 
 A managed resource is refreshed on every plan, and a refresh is a read too, so the clause covers that as well. Nothing special happens there: the refresh runs inside the resource's own plan node, and the `depends_on` edge orders that node like any other.
 
@@ -826,7 +834,7 @@ Two rules that hold everywhere:
 - `depends_on` composes with either, with one exception. A child module that declares its own provider configurations accepts **none** of the three, per the warning in section 7.
 
 !!! note "One `depends_on` use case this chapter defers"
-    A `data` block nested inside a `check` block runs before the infrastructure it validates exists, so the check fails on the first apply. Adding `depends_on` to that nested `data` block defers the read, and Terraform prints `known after apply` instead of a false warning. Referencing the resource directly would work for ordering but couples the check to the resource's values, which makes it warn on any change at all.
+    A `data` block nested inside a `check` block runs before the infrastructure it validates exists, so the check fails on the first apply. Adding `depends_on` to that nested `data` block defers the read while the dependency is being built, and Terraform prints `known after apply` instead of a false warning. Once the infrastructure is stable the deferral stops applying, per section 6, so later plans read the data source normally and the check does real work. Referencing the resource directly would order things too, but it couples the check to the resource's values, which makes it warn on any change at all.
 
     `check` blocks belong to Chapter 19, where validation is the subject. The pattern is noted here because it is the one place `depends_on` improves signal quality rather than degrading it.
 
