@@ -696,6 +696,46 @@ The value is a list of references to resources or child modules in the same call
 
 > "This list cannot include arbitrary expressions because the `depends_on` value must be known before Terraform knows resource relationships and thus before it can safely evaluate expressions."
 
+**"Arbitrary expression" means anything but a bare address.** The docs never say what is excluded, but Terraform's own error does:
+
+```
+Error: Invalid expression
+
+A single static variable reference is required: only attribute access and
+indexing with constant keys. No calculations, function calls, template
+expressions, etc are allowed here.
+```
+
+So the list must be written out literally, and each element must name a whole object. Verified on 1.15.8:
+
+| Written | Result |
+|---|---|
+| `[aws_s3_bucket.a]` | ✅ the normal form |
+| `[module.network]` | ✅ a whole child module |
+| `[aws_s3_bucket.a[0]]` | ✅ indexing with a constant key is allowed |
+| `[aws_s3_bucket.a.id]` | ❌ *"References in `depends_on` must be to a whole object (resource, etc), not to an attribute of an object."* |
+| `[var.enabled ? aws_s3_bucket.a : aws_s3_bucket.b]` | ❌ `Invalid expression` — a calculation |
+| `concat([aws_s3_bucket.a], [])` | ❌ *"A static list expression is required."* — the list itself must be literal |
+| `local.deps` | ❌ same; you cannot build the list elsewhere and point at it |
+| `["aws_s3_bucket.a"]` | ⚠️ works, with a deprecation warning. Quotes were required in Terraform 0.11 and will be removed |
+
+The `local.deps` row is the one that stings in practice. There is no way to share one dependency list across several blocks, because the list must be literal at every use.
+
+!!! danger "A `depends_on` pointing at a variable is accepted and does nothing"
+    `depends_on = [var.enabled]` is a single static reference, so it parses. It also passes `terraform validate` **and** `terraform plan` with no error and no warning.
+
+    It creates no edge. `terraform graph` on the same configuration, with and without it, is identical:
+
+    ```
+    depends_on = [var.enabled]        depends_on = [terraform_data.a]
+    ─────────────────────────         ───────────────────────────────
+    "terraform_data.a"                "terraform_data.a"
+    "terraform_data.b"                "terraform_data.b"
+                                      "terraform_data.b" -> "terraform_data.a"
+    ```
+
+    Verified on 1.15.8. This is the missing-`depends_on` blind spot from the next section, reached by a nastier route: you *wrote* the dependency, review saw it, and there is still no edge. Only a resource or a module address produces one.
+
 ### The two costs
 
 !!! danger "`depends_on` is a last resort, and it is not free"
