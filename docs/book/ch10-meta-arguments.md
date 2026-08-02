@@ -661,6 +661,60 @@ resource "aws_instance" "app" {
 
 On a `module` block it applies to every resource and data source inside that module.
 
+### What "read operations" means, and why the clause is there
+
+Terraform performs four kinds of operation on an object: create, update, destroy, and **read**. A read is not a write, so it is easy to assume ordering does not apply to it. The clause exists to say that it does.
+
+Reads are ordinarily **eager**. A `data` block is resolved during plan, because the whole point is to have its values available while Terraform is deciding what to do. That is fine until the thing being read does not exist yet.
+
+```hcl
+resource "local_file" "src" {
+  filename = "${path.module}/made.txt"
+  content  = "hello"
+}
+
+data "local_file" "eager" {
+  filename = "${path.module}/made.txt"
+}
+```
+
+Nothing connects those two blocks, so Terraform reads the data source while planning, and the plan fails. The file is created by the *apply* that has not run yet:
+
+```
+data.local_file.eager: Reading...
+
+Terraform planned the following actions, but then encountered a problem:
+```
+
+Add `depends_on` to the `data` block and the read moves to apply time:
+
+```hcl
+data "local_file" "deferred" {
+  filename   = "${path.module}/made.txt"
+  depends_on = [local_file.src]
+}
+```
+
+```
+  # data.local_file.deferred will be read during apply
+  # (depends on a resource or a module with changes pending)
+      + content = (known after apply)
+```
+
+At apply the ordering is visible in the log — the resource finishes, then the read happens:
+
+```
+local_file.src: Creation complete after 0s [id=aaf4c61d…]
+data.local_file.deferred: Reading...
+data.local_file.deferred: Read complete after 0s [id=aaf4c61d…]
+```
+
+Verified on Terraform 1.15.8. Two things to take from it.
+
+**This is the mechanism, not a special case.** "Including read operations" is what makes `depends_on` legal and useful on a `data` block at all. Point it at a module and every `data` block inside that module defers the same way.
+
+**It is also the plan-degradation cost, made concrete.** Look at what the deferred plan says: `content = (known after apply)`. Before the `depends_on`, that value was readable at plan time. After it, Terraform cannot know it until apply, so anything downstream that consumes it becomes unknown too. That is exactly the "more conservative plans" warning below, arriving through a `data` block rather than a resource.
+
 The value is a list of references to resources or child modules in the same calling module, and it cannot be an arbitrary expression. The same `depends_on` reference gives the reason, and it is the "processed early" rule again:
 
 > "This list cannot include arbitrary expressions because the `depends_on` value must be known before Terraform knows resource relationships and thus before it can safely evaluate expressions."
