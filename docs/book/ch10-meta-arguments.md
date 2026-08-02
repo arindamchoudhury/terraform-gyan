@@ -669,15 +669,19 @@ The "read operations" clause is what makes `depends_on` useful on a **`data` blo
       + content = (known after apply)
 ```
 
-Read the parenthetical carefully, because it states a condition. **The deferral is not unconditional.** It happens only when the dependency has changes pending. Measured on 1.15.8, one configuration in three states:
+Read the parenthetical carefully, because it states a condition. **The deferral is not unconditional.** Terraform asks one question on *every* plan: does this data source's dependency have changes pending in this run? Only then is the read pushed to apply.
 
-| Upstream dependency | The data source |
-|---|---|
-| Has pending changes | deferred — `will be read during apply` |
-| Nothing pending | **read during plan**, as normal |
-| Changed again | deferred again |
+Measured on 1.15.8, the same configuration planned three times:
 
-That conditionality is deliberate. If `depends_on` deferred the read every time, every plan would report the values as unknown forever, and the source calls that out by name as the "perpetual diff" it is avoiding.
+| Plan | Dependency has pending changes? | The data source |
+|---|---|---|
+| Before the first apply | Yes, it is about to be created | deferred — `will be read during apply` |
+| Right after that apply | No, it matches the configuration | **read during plan**, as normal |
+| After editing the dependency's config | Yes, it is about to be updated | deferred again |
+
+The third row is the one that matters. Deferral is not a one-time thing that happens while the infrastructure is first built and then goes away. It re-arms whenever the dependency is about to change, and relaxes whenever it is not.
+
+That is deliberate. If `depends_on` deferred the read every time, the values would report as unknown on every plan forever, and the source calls that out by name as the "perpetual diff" it is avoiding.
 
 So the rule is narrower than "`depends_on` makes a data source read at apply". It is: **when the dependency is about to change, do not trust a plan-time read of it.** Reach for this when the thing being read does not exist, or is not yet correct, until the apply that is currently running finishes. Section 8 has the case worth knowing.
 
