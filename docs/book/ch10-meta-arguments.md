@@ -128,7 +128,7 @@ resource "aws_instance" "app" {
 
 Two techniques here are worth stealing.
 
-**The count is a product.** One instance count derived from two independent knobs. Add a subnet and the fleet grows without editing the resource block.
+**The count is a product.** A single `count` value computed from two independent inputs: how many instances you want per subnet, and how many subnets there are. Change either one and the fleet resizes without touching the resource block. Add a subnet elsewhere in the configuration and this block grows on its own.
 
 **Modulo does round-robin placement.** `count.index % length(subnets)` cycles instances across subnets. With two subnets, indices 0, 1, 2, 3 land on subnets 0, 1, 0, 1. This is the canonical answer to "spread N things over M buckets when all I have is an integer index."
 

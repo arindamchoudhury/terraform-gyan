@@ -79,7 +79,7 @@ resource "aws_instance" "app" {
 
 Two things worth taking away.
 
-**The count is a product, not a literal.** `instances_per_subnet * length(module.vpc.private_subnets)` — one instance count derived from two independent knobs. Add a subnet and the instance count grows automatically, which is the limitation from the starting config, fixed.
+**The count is a product, not a literal.** `instances_per_subnet * length(module.vpc.private_subnets)` is a single `count` value computed from two independent inputs: instances per subnet, and the number of subnets. Add a subnet and the instance count grows on its own, which is exactly the limitation the starting config had.
 
 **Modulo does the round-robin placement.** `count.index % length(private_subnets)` cycles instances across subnets: with 2 subnets, indices 0,1,2,3 map to subnets 0,1,0,1. This is the idiomatic answer to "spread N instances over M buckets" with a flat integer index, and it is the clearest illustration of what [[tf-meta-count]] means by "distinct values that **can't** be directly derived from an integer index" being the `for_each` case — here they *can*, so `count` fits.
 
