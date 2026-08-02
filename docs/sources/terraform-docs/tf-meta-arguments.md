@@ -82,12 +82,15 @@ Corrected against the per-argument reference pages, which are the authority. The
 
 | Meta-argument | Supported blocks (per its reference page) | What the index page claims |
 |---|---|---|
-| `depends_on` | `check`, `data`, `ephemeral`, `module`, `output`, `resource` (+ `component` in Stacks) | `resource` only |
+| `depends_on` | `check` ❌, `data`, `ephemeral`, `module`, `output`, `resource` (+ `component` in Stacks) | `resource` only |
 | `count` | `data`, `ephemeral`, `module`, `resource` (+ `list` in query configs) | omits `data` |
 | `for_each` | `data`, `ephemeral`, `module`, `resource` | matches |
 | `lifecycle` | `resource`; support **varies by rule** across other block types | "varies" |
 | `provider` | `resource`, `data` | `resource` |
 | `providers` | `module` | `module` |
+
+!!! danger "❌ `check` in that first row is wrong — the reference page overcounts (verified 2026-08-02)"
+    A `check` block accepts no arguments at all, so `depends_on` on one fails with *"An argument named `depends_on` is not expected here"* on Terraform 1.15.8. `checkBlockSchema` (`internal/configs/checks.go`, tag v1.15.8) declares only the nested `data` and `assert` blocks and no attributes. The page presumably means `depends_on` on the `data` block *inside* a check. Details in [[tf-meta-depends-on]]; full measured matrix in Book Ch 10 §8.
 
 !!! warning "The index page undercounts supported blocks"
     Two confirmed cases so far: `count` (omits `data`) and `depends_on` (names only `resource`, while its reference page lists six block types). Both were found by opening the reference page after the index looked suspicious. Assume the index is a summary, not a spec — check the per-argument page before concluding a meta-argument is illegal somewhere. Sources: [[tf-meta-depends-on]], [[tf-meta-count]].

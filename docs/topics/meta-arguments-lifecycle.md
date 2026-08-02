@@ -35,7 +35,12 @@ The HCDocs index gives a block-applicability map, but it is **not reliable as st
 !!! warning "That rule is a heuristic, not a guarantee — the reference pages have gaps too"
     [[tf-meta-count]]'s **Supported constructs** list names `data`, `ephemeral`, `module`, `resource`, and `list` (query configs). It omits **`action`** — which the same page's opening paragraph and one of its own use cases both describe as supported. So three block-applicability lists across two pages disagree with each other, and the *page body* is more reliable than the *page's own summary list*.
 
-    Working rule: treat every applicability list in these docs as a lower bound. Confirmed omissions so far — index page vs `count` (`data`), index page vs `depends_on` (five of six block types), `count` page vs itself (`action`), `for_each` page vs itself (**`action` and `import`**, both described in that page's own examples).
+    Confirmed omissions so far — index page vs `count` (`data`), index page vs `depends_on` (five of six block types), `count` page vs itself (`action`), `for_each` page vs itself (**`action` and `import`**, both described in that page's own examples).
+
+    !!! danger "Not just a lower bound — the lists err in both directions (verified 2026-08-02)"
+        The working rule used to be "treat every applicability list as a lower bound." That is too generous. The `depends_on` reference page lists **`check`**, and Terraform rejects it: a `check` block accepts no arguments at all, because `checkBlockSchema` (`internal/configs/checks.go`, tag **v1.15.8**) declares only the nested `data` and `assert` blocks. The page presumably means `depends_on` on the `data` block *inside* a check.
+
+        So the lists both under-report and over-report. The only reliable check is to write the two lines and run `terraform validate`. A full measured matrix for `count`/`for_each`/`depends_on` across ten block types is in Book Ch 10 §8.
 
 Two applicability facts worth holding:
 

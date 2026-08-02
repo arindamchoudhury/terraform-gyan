@@ -861,18 +861,47 @@ module "app_tier" {
     - The **index page** lists only `resource` for `depends_on`. Its reference page lists six block types.
     - The **`count` page's** own "Supported constructs" list omits `action`, which that page's opening paragraph and one of its use cases both describe.
     - The **`for_each` page's** list omits both `action` and `import`, each of which has its own entry in that page's examples section.
+    - The **`depends_on` page** lists `check`, which Terraform rejects outright. See the matrix below.
 
-    Working rule: trust the page *body* over the page's own summary list, and check the per-argument page before concluding a meta-argument is illegal somewhere.
+    So the lists err in both directions. They under-report what works, and in at least one case report something that does not. The reliable move is to write the two lines and run `terraform validate`.
 
-Best current understanding, drawn from the per-argument pages and their bodies:
+So do not take the lists on faith. Here is the matrix, with every cell run through `terraform validate` on **1.15.8** rather than read off a page:
 
-| Meta-argument | Legal in |
-|---|---|
-| `count` | `data`, `ephemeral`, `module`, `resource`, `action`, plus `list` in query configs |
-| `for_each` | `data`, `ephemeral`, `module`, `resource`, `action`, `import`, plus `list` in query configs; in Stacks also `component`, `provider`, `removed` |
-| `depends_on` | `check`, `data`, `ephemeral`, `module`, `output`, `resource`; in Stacks also `component` |
+| Block | `count` | `for_each` | `depends_on` |
+|---|---|---|---|
+| `resource` | ✅ | ✅ | ✅ |
+| `data` | ✅ | ✅ | ✅ |
+| `module` | ✅ | ✅ | ✅ |
+| `ephemeral` | ✅ | ✅ | ✅ |
+| `action` | ✅ | ✅ | ❌ |
+| `import` | ❌ | ✅ | ❌ |
+| `output` | ❌ | ❌ | ✅ |
+| `check` | ❌ | ❌ | ❌ |
+| `removed` | ❌ | ❌ | ❌ |
+| `provider` | reserved | reserved | ❌ |
 
-Two entries in that table come from page prose rather than from a canonical list, so treat them as the weaker claims. `count` in `action` blocks is described in the `count` page's opening paragraph and in one of its use cases, and appears in no list. `for_each` in `import` blocks is the better-supported of the two: the `for_each` page describes it, and looping imports over a map is a documented 1.7 feature in its own right.
+A ❌ is `Error: Unsupported argument — An argument named "…" is not expected here.`
+
+Three rows are worth reading twice.
+
+**`check` accepts none of them, including `depends_on`.** HashiCorp's `depends_on` page lists `check` among its supported blocks. Terraform rejects it. The check block's schema in `internal/configs/checks.go` at tag v1.15.8 declares **no attributes at all**, only two nested block types:
+
+```go
+var checkBlockSchema = &hcl.BodySchema{
+	Blocks: []hcl.BlockHeaderSchema{
+		{Type: "data", LabelNames: []string{"type", "name"}},
+		{Type: "assert"},
+	},
+}
+```
+
+There is nowhere for an argument to go. What the docs must mean is `depends_on` on the **`data` block nested inside** a check, which does validate, and which is the pattern in the note below.
+
+**`provider` reports a different error.** Not "unsupported" but `Error: Reserved argument name in provider block`. Terraform has set the name aside rather than left it undefined, which fits `provider` `for_each` existing in Stacks.
+
+**`removed` rejects `for_each` in an ordinary configuration.** The `for_each` page lists `removed` under *Stack* configuration blocks, and that scoping turns out to be load-bearing.
+
+One cell is unverified: `list` blocks in query configurations, which need a `.tfquery.hcl` file and a provider exposing list resources. The docs claim both `count` and `for_each` there. Treat it as the only row still resting on the page.
 
 Two rules that hold everywhere:
 

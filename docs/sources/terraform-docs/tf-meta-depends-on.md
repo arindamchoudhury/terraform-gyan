@@ -49,7 +49,30 @@ The [[tf-meta-arguments]] index page names only `resource`. The real list is wid
 | Terraform | `check`, `data`, `ephemeral`, `module`, `output`, `resource` |
 | Stacks | `component` |
 
-The index page's block table is incomplete for `depends_on` exactly as it is for `count`. Trust the per-argument references.
+The index page's block table is incomplete for `depends_on` exactly as it is for `count`. Trust the per-argument references — but not blindly, per the correction below.
+
+!!! danger "🔄 This page's list is wrong about `check` (verified 2026-08-02)"
+    A `check` block does **not** accept `depends_on`. On Terraform **1.15.8**, `terraform validate` rejects it:
+
+    ```
+    Error: Unsupported argument
+    An argument named "depends_on" is not expected here.
+    ```
+
+    It cannot work by construction. `checkBlockSchema` in `internal/configs/checks.go`, read at tag **v1.15.8**, declares no attributes at all — only the nested `data` and `assert` block types:
+
+    ```go
+    var checkBlockSchema = &hcl.BodySchema{
+    	Blocks: []hcl.BlockHeaderSchema{
+    		{Type: "data", LabelNames: []string{"type", "name"}},
+    		{Type: "assert"},
+    	},
+    }
+    ```
+
+    What the page must mean is `depends_on` on the **`data` block nested inside** a check, which does validate and is the pattern this note's own check-block section describes. The other five Terraform rows were re-verified and all hold: `data`, `ephemeral`, `module`, `output`, `resource`.
+
+    So the standing rule "trust the per-argument reference over the index" holds only for *omissions*. This is the first case found where a reference page names a block that does not work. Full measured matrix in Book Ch 10 §8.
 
 ## The canonical example
 
