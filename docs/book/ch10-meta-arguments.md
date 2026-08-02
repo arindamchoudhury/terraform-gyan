@@ -1000,11 +1000,41 @@ addresses = {
 }
 ```
 
-Now remove the middle bucket. Do not apply; only plan.
+Now remove the middle bucket. Do not apply; only plan. The shorter list is committed alongside the configuration as `remove-logs.tfvars`:
+
+```hcl
+# remove-logs.tfvars
+bucket_names = ["assets", "media"]
+```
 
 ```shell
-tflocal plan -var='bucket_names=["assets","media"]'
+tflocal plan -var-file remove-logs.tfvars
 ```
+
+!!! warning "Why a `.tfvars` file rather than `-var` on the command line"
+    The obvious form is `-var='bucket_names=["assets","media"]'`, and it works in bash and in PowerShell 7. In **Windows PowerShell 5.1** it fails, because the shell strips the inner double quotes before Terraform sees them, so `assets` arrives as a bare identifier:
+
+    ```
+    Error: Variables not allowed
+
+      on <value for var.bucket_names> line 1:
+      (source code not available)
+
+    Variables may not be used here.
+    ```
+
+    Backslash-escaping the inner quotes fixes 5.1 and then **breaks** PowerShell 7 with `Invalid character`. Measured across both:
+
+    | Form | PowerShell 7.6 | Windows PowerShell 5.1 |
+    |---|---|---|
+    | `-var='bucket_names=["assets","media"]'` | ✅ | ❌ |
+    | `-var 'bucket_names=["assets","media"]'` | ✅ | ❌ |
+    | `-var 'bucket_names=[\"assets\",\"media\"]'` | ❌ | ✅ |
+    | `-var-file remove-logs.tfvars` | ✅ | ✅ |
+
+    Only the file works everywhere. That is the general lesson for any complex-typed variable: **put it in a `.tfvars` file** instead of quoting a list or map through a shell. It also survives being pasted into CI, where you rarely control the shell.
+
+    Note the flag is written `-var-file remove-logs.tfvars` with a space. Windows PowerShell splits an unquoted `-flag=value` at the `=`, and `-var-file=remove-logs.tfvars` fails there with `Too many command line arguments`.
 
 ```
 Terraform will perform the following actions:
@@ -1074,10 +1104,10 @@ Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
 
 The completion order is not alphabetical, and that is expected. The three buckets have no edges between them, so Terraform creates them concurrently and they finish in whatever order the API returns. Instance keys are stable; completion order is not.
 
-Same removal:
+Same removal, same `remove-logs.tfvars` (a `set(string)` accepts the same literal):
 
 ```shell
-tflocal plan -var='bucket_names=["assets","media"]'
+tflocal plan -var-file remove-logs.tfvars
 ```
 
 ```
