@@ -93,8 +93,13 @@ Two valid positions, with different scope:
 - **On the `removed` block** — default connection settings for *all* provisioners defined for the resource being removed.
 - **On a `provisioner` block** — settings specific to that provisioner.
 
+!!! note "Same two-position rule as a live `resource`, and the argument list is elsewhere"
+    This mirrors the normal case exactly. HashiCorp's [provisioners page](https://developer.hashicorp.com/terraform/language/resources/provisioners/syntax) states it for a live resource: "Add a `connection` block to either the `provisioner` block or to the `resource` block. All provisioners in the configuration can use connection settings defined in the `resource` block. Connection settings defined in the `provisioner` block are specific to that provisioner." A `removed` block simply takes the `resource` block's role.
+
+    Neither page carries the arguments. The **`connection` block reference** is a section of the [`resource` block reference](https://developer.hashicorp.com/terraform/language/block/resource#connection), captured in [[tf-block-resource]] — roughly 25 arguments, including the bastion and proxy sets. The standalone `/provisioners/connection` URL **redirects to** `/provisioners/syntax`; there is no separate connection page any more (checked 2026-08-02).
+
 !!! warning "HashiCorp still recommends against provisioners"
     The page repeats the standing warning: "We recommend using configuration management tools to perform actions on the local or remote machine instead of using provisioners." → learning-path **A1**.
 
 ---
-Related: [[tf-destroy-resource]] — the how-to that points here for destroy-time operations. · [[tf-terraform-data]] — the resource used to verify the destroy-vs-forget behavior. · [[feature-history]] — `removed` arrived in v1.7.0; the `destroy` argument is later. · [[meta-arguments-lifecycle]] — `lifecycle` here is a *restricted* form, supporting only `destroy`. · [[ot-dynamic-prevent-destroy]] — OpenTofu's `destroy = false` lives on the **resource's** `lifecycle`, not on a `removed` block.
+Related: [[tf-block-resource]] — holds the `connection` block's argument reference, which this page's placement rules assume but never list. · [[tf-destroy-resource]] — the how-to that points here for destroy-time operations. · [[tf-terraform-data]] — the resource used to verify the destroy-vs-forget behavior. · [[feature-history]] — `removed` arrived in v1.7.0; the `destroy` argument is later. · [[meta-arguments-lifecycle]] — `lifecycle` here is a *restricted* form, supporting only `destroy`. · [[ot-dynamic-prevent-destroy]] — OpenTofu's `destroy = false` lives on the **resource's** `lifecycle`, not on a `removed` block.

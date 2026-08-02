@@ -620,7 +620,15 @@ You are ready to advance when you can:
 
 **How to learn it:**
 
-1. **Reference — [HCDocs "Provisioners"](https://developer.hashicorp.com/terraform/language/resources/provisioners/syntax) (incl. the "last resort" warning) + [terraform_data](https://developer.hashicorp.com/terraform/language/resources/terraform-data)** (~40 min) — read HashiCorp's own case against provisioners. Note the knobs: **`when = destroy`** (run at teardown instead of create), **`on_failure = continue|fail`** (tolerate vs abort), and the `self` object + `connection` block for `remote-exec`. Notes: [[tf-terraform-data]].
+1. **Reference — [HCDocs "Provisioners"](https://developer.hashicorp.com/terraform/language/resources/provisioners/syntax) (incl. the "last resort" warning) + [terraform_data](https://developer.hashicorp.com/terraform/language/resources/terraform-data)** (~40 min) — read HashiCorp's own case against provisioners. Note the knobs: **`when = destroy`** (run at teardown instead of create), **`on_failure = continue|fail`** (tolerate vs abort), and the `self` object + `connection` block for `remote-exec`. Notes: [[tf-terraform-data]]. ⬜ The provisioners page itself is **not captured yet** — capture it when starting this topic.
+
+    !!! note "`connection` is documented in two halves, and the obvious URL is a redirect"
+        `/language/resources/provisioners/connection` **redirects to** `/provisioners/syntax` — the same page linked above, byte-identical (checked 2026-08-02). There is no standalone connection page.
+
+        - **Usage** lives on that provisioners page: the two valid positions ("Add a `connection` block to either the `provisioner` block or to the `resource` block. All provisioners in the configuration can use connection settings defined in the `resource` block."), `self` for referring to the parent resource, ephemeral values in connection blocks (TF **1.10+**), and the bastion-host and proxy how-tos.
+        - **Arguments** live in the [`resource` block reference](https://developer.hashicorp.com/terraform/language/block/resource#connection), captured as [[tf-block-resource]] — ~25 of them, bastion and proxy sets included.
+
+        A third position exists for teardown: a `connection` block on a **`removed`** block sets defaults for every provisioner running during removal ([[tf-block-removed]]).
 
 !!! note "📌 The alternative to a provisioner is a *handoff*, and `terraform output -json` is the seam"
     HashiCorp's case against provisioners ends at "use a configuration management tool" without showing where the boundary sits. It sits at the **output**: Terraform builds the hosts and publishes their addresses as a root output; a config tool reads that output as its **inventory** and takes over. Nothing runs inside the apply.
