@@ -34,7 +34,7 @@ The page also endorses `count` as a creation switch:
 !!! note "The conditional-creation pattern is endorsed here, and it is the one Terraform is missing a feature for"
     `count = condition ? 1 : 0` is the only way to make a single resource optional. It works, but it forces the block into indexed addressing forever — `aws_instance.server[0]`, not `aws_instance.server` — and every reference and `moved` block has to carry the index.
 
-    **OpenTofu 1.11 added `enabled`** as a first-class on/off switch precisely to avoid this. Terraform has no equivalent. See [[opentofu-feature-history]] and [[tf-meta-arguments]].
+    **OpenTofu 1.11 added `enabled`** as a first-class on/off switch precisely to avoid this — an argument inside the `lifecycle` block, not a top-level meta-argument. The address stays unindexed and a disabled resource is `null`. Terraform has no equivalent. Verified on OpenTofu 1.12.4: [[opentofu-enabled-argument]]. See also [[opentofu-feature-history]] and [[tf-meta-arguments]].
 
 ## Expressions in `count`
 

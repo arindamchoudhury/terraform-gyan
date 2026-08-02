@@ -29,7 +29,7 @@ Terraform CLI equivalent as of Terraform 1.15 (or Terraform got it later).
 | **1.8** | Aug 2024 | **Early variable / locals evaluation** — use `var`/`local` in `backend` config, module `source`, and state-encryption blocks (resolved at `tofu init`); **provider mocking + resource overrides** in `tofu test`; **`.tofu` / `.tofurc` file extensions** (parsed alongside `.tf`). | Early evaluation is **OpenTofu-only**; Terraform 1.15 only partially closes it via `const` + dynamic module sources. |
 | **1.9** | Jan 2025 | **Provider iteration — `for_each` on provider configurations** (one instance per region/account from a map/set); **`-exclude` flag** — inverse of `-target`, mutually exclusive with it. | Both **OpenTofu-only** as of Terraform 1.15. A resource's `for_each` must be a *subset* of its provider's. `-exclude-file`/`-target-file` came in 1.10. |
 | **1.10** | Jul 2025 | **OCI registries** for **both providers and modules** (`oci://` module sources; `oci_mirror` for provider plugins — reuse ECR/GAR/ACR/Docker Hub); **S3-native state locking** (lock file in the bucket, no DynamoDB); **MCP server** for AI-assisted IaC; experimental **OpenTelemetry tracing** (off by default; `OTEL_*` env vars); **`-target-file` / `-exclude-file`** (file-driven targeting); **global provider plugin-cache locking** (concurrent-safe shared cache). | S3-native locking **predates** Terraform's (which shipped it in 1.11). OCI *registries* are OpenTofu-first (Terraform 1.12 added an OCI *backend*, not registries). **DynamoDB locking no longer required.** |
-| **1.11** | Dec 2025 | **Ephemeral resources + ephemeral values + write-only arguments** (`*_wo`) — secrets that never touch state or plan; **`enabled` meta-argument** — a first-class on/off switch for a resource. | Ephemeral/write-only reach **parity with Terraform 1.10/1.11**. `enabled` is **OpenTofu-only** (Terraform still uses `count = var.x ? 1 : 0`). |
+| **1.11** | Dec 2025 | **Ephemeral resources + ephemeral values + write-only arguments** (`*_wo`) — secrets that never touch state or plan; **`enabled`** — a first-class on/off switch for a resource, written **inside the `lifecycle` block**. | Ephemeral/write-only reach **parity with Terraform 1.10/1.11**. `enabled` is **OpenTofu-only** (Terraform still uses `count = var.x ? 1 : 0`). Verified on 1.12.4: [[opentofu-enabled-argument]]. |
 | **1.12** | May 2026 | **Dynamic `prevent_destroy`** (bind to a variable/expression, not just a literal); **`destroy = false`** lifecycle arg (drop from state without destroying the remote object); **`-json-into=FILE`** (JSON stream to a file, human UI stays on stdout); **concurrent provider installation**; **full cross-platform provider checksums** (`zh:`+`h1:`) written to the lock file at `tofu init`. | All **OpenTofu-only** as of Terraform 1.15. `destroy = false` is the lifecycle-arg counterpart to Terraform's `removed` block; dynamic `prevent_destroy` — Terraform requires a literal. |
 
 !!! note "1.13 (unreleased, in development)"
@@ -54,7 +54,7 @@ still lacks:
 | Provider `for_each` | 1.9 | None |
 | `-exclude` (1.9); `-exclude-file` / `-target-file` (1.10) | 1.9 / 1.10 | None |
 | OCI registries for providers **and** modules | 1.10 | OCI *backend* only (1.12) |
-| `enabled` meta-argument | 1.11 | None (`count` trick) |
+| `enabled` (`lifecycle` argument) | 1.11 | None (`count` trick) |
 | Dynamic `prevent_destroy` | 1.12 | Literal only |
 | `destroy = false` lifecycle arg | 1.12 | Use the `removed` block |
 | `-json-into=FILE` | 1.12 | None (`-json` replaces stdout) |
@@ -80,7 +80,7 @@ OpenTofu inherits every pre-1.6 Terraform deprecation (see the
 |---|---|---|
 | DynamoDB table for S3 state locking (`dynamodb_table`) | **S3-native lock file** (`use_lockfile`) | 1.10 (OpenTofu shipped this before Terraform's 1.11) |
 | Storing secrets in provider args (persisted to state) | **Write-only arguments** (`*_wo`) / **ephemeral** values | 1.11 |
-| `count = var.x ? 1 : 0` on/off idiom | **`enabled` meta-argument** | 1.11 |
+| `count = var.x ? 1 : 0` on/off idiom | **`enabled`** (in `lifecycle`) | 1.11 |
 | `terraform state rm` to forget a resource | **`destroy = false`** lifecycle arg (or the `removed` block) | 1.12 |
 
 !!! note "Compatibility with Terraform"

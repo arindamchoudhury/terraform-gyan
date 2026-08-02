@@ -480,7 +480,7 @@ Better to guard against accidental destruction with `ignore_changes`. (`prevent_
 
     - **Dynamic `prevent_destroy`** (OT 1.12) — bind it to a **variable/expression**, so you *can* enable it for prod and disable it for dev. Terraform still requires a literal. See [[ot-dynamic-prevent-destroy]].
     - **`destroy = false`** (OT 1.12) — makes OpenTofu **stop managing** a resource without deleting the real thing. Normally, when Terraform decides a resource should go away, it destroys the actual cloud object. With `destroy = false`, OpenTofu just forgets the resource (drops it from state) and leaves the running object alone. Same outcome as Terraform's `removed` block (§2.9), but written as one line inside the resource's `lifecycle` instead of a separate top-level block.
-    - **`enabled` meta-argument** (OT 1.11) — toggle a resource on/off, cleaner than the `count = 0` idiom.
+    - **`enabled`** (OT 1.11) — a `lifecycle` argument that toggles a resource on/off, cleaner than the `count = 0` idiom.
 
     `create_before_destroy`, `ignore_changes`, and `replace_triggered_by` behave identically in both tools.
 

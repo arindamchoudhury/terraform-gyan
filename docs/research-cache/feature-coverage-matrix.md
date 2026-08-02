@@ -45,7 +45,7 @@
 | `precondition` / `postcondition` | A2 | ✅ |
 | dynamic `prevent_destroy` (OT 1.12, OpenTofu-only) | E3 | ✅ |
 | `destroy = false` lifecycle (OT 1.12, OpenTofu-only) | I7 | ✅ |
-| `enabled` meta-argument (OT 1.11, OpenTofu-only) | I1 | ➕ |
+| `enabled` — `lifecycle` argument (OT 1.11, OpenTofu-only) | I1 | ➕ |
 
 ## Variables / outputs / expressions / functions
 

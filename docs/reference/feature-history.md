@@ -97,7 +97,7 @@ full per-version OpenTofu catalogue, see
 | **1.9** | **`-exclude`** flag (and `-exclude-file`) — inverse of `-target` | None as of 1.15 |
 | **1.10** | **OCI registries** for modules *and* providers; experimental **OpenTelemetry tracing** | Terraform 1.12 added an OCI **backend**, not OCI registries; no OTel in Terraform |
 | **1.11** | **Ephemeral resources / write-only arguments** (parity with TF 1.10/1.11) | Yes — TF 1.10 / 1.11 |
-| **1.11** | **`enabled` meta-argument** (OpenTofu-only convenience) | None; use `count = var.x ? 1 : 0` |
+| **1.11** | **`enabled`** — an argument in the `lifecycle` block (OpenTofu-only convenience) | None; use `count = var.x ? 1 : 0` |
 | **1.12** | **Dynamic `prevent_destroy`** (expression, not just literal) | Terraform requires a literal |
 | **1.12** | **`destroy = false`** lifecycle arg (drop from state without destroying) | Use the `removed` block instead |
 | **1.12** | **`-json-into=FILE`** (JSON stream to file, human UI stays on stdout) | None (`-json` replaces stdout) |

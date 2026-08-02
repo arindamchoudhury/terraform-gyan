@@ -94,8 +94,10 @@ Corrected against the per-argument reference pages, which are the authority. The
 
     The reference pages are not immune either: [[tf-meta-count]]'s own **Supported constructs** list omits `action`, which its opening paragraph and one of its use cases both describe. Block-applicability claims in these docs are worth checking against the rest of the same page.
 
-!!! info "OpenTofu — the `enabled` meta-argument"
-    OpenTofu 1.11 adds a seventh meta-argument, **`enabled`**, a first-class on/off switch for a resource. Terraform has no equivalent; you still write `count = var.enabled ? 1 : 0`, which forces `[0]` addressing and index churn. See [[opentofu-feature-history]].
+!!! info "OpenTofu — the `enabled` argument"
+    OpenTofu 1.11 adds **`enabled`**, a first-class on/off switch for a resource. Terraform has no equivalent; you still write `count = var.enabled ? 1 : 0`, which forces `[0]` addressing and index churn.
+
+    **Corrected 2026-08-02:** this box previously called `enabled` "a seventh meta-argument", which is wrong about where it goes. It is an argument **inside the `lifecycle` block** — at the resource top level OpenTofu rejects it with *"An argument named `enabled` is not expected here."* Verified empirically on **OpenTofu 1.12.4**. The address also stays unindexed, and a disabled resource evaluates to **`null`** rather than an empty collection. Evidence: [[opentofu-enabled-argument]]. See also [[opentofu-feature-history]].
 
 ---
 Related: [[tf-meta-depends-on]] — the `depends_on` reference, which corrects this page's block list and adds the "last resort" cost. · [[dependency-graph]] — how to inspect the DAG these arguments build. · [[tf-configure-resource]] — surveys the same six from the resource-block side, with learning-path forward references. · [[tf-resources]] — the resources overview one level up. · [[tf-provider-block]] — the `provider` block that `provider`/`providers` select between. · [[tf-style-guide]] — meta-arguments go first in a block, meta-argument *blocks* (`lifecycle`) last. · [[opentofu-feature-history]] — OpenTofu's `enabled`.

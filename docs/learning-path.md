@@ -305,7 +305,7 @@ You are ready to advance when you can:
 
 ---
 
-### ⬜ I1 — Meta-arguments: count, for_each, depends_on
+### ✅ I1 — Meta-arguments: count, for_each, depends_on
 
 **What it is:** Creating multiple instances with `count` and `for_each`, addressing them (`[0]` vs `["key"]`), and forcing ordering with explicit `depends_on`.
 
@@ -337,8 +337,10 @@ You are ready to advance when you can:
 
     Counterweight: `depends_on` is a **last resort**, not a safety blanket. It forces more values to `(known after apply)` and replaces more resources than necessary, especially on `module` blocks. Prefer an attribute reference wherever one exists. (See [[dependency-graph]], [[tf-meta-depends-on]].)
 
-!!! info "📌 OpenTofu — `enabled` meta-argument (1.11)"
-    **OpenTofu 1.11** adds an `enabled` meta-argument — a first-class on/off switch for a resource, cleaner than the `count = var.enabled ? 1 : 0` idiom (which forces `[0]` addressing and index churn). OpenTofu-only; in Terraform you still use the `count` trick. (See [[feature-coverage-matrix]].)
+!!! info "📌 OpenTofu — `enabled` (1.11)"
+    **OpenTofu 1.11** adds `enabled`, a first-class on/off switch for a resource, cleaner than the `count = var.enabled ? 1 : 0` idiom (which forces `[0]` addressing and index churn). OpenTofu-only; in Terraform you still use the `count` trick.
+
+    It is an argument **inside the `lifecycle` block**, not a seventh top-level meta-argument — earlier notes here said otherwise. At the resource top level OpenTofu errors with *"An argument named `enabled` is not expected here."* A disabled resource evaluates to **`null`**, not an empty collection, and the address never gains an index. Verified empirically on **OpenTofu 1.12.4**: [[opentofu-enabled-argument]].
 
 !!! example "🧪 Labs (KL)"
     [Lab 04 — managing multiple resources](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_04_managing_mulitple_resources) · [Lab 08 — deploying multiple resources with for_each](https://github.com/btkrausen/terraform-associate-labs/tree/main/labs/lab_08_deploying_mulitple_resources_with_for_each).
@@ -1111,7 +1113,7 @@ Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner complete — B1–B9 done (Ch 1–9 written). Next up: **I1 (Meta-arguments: `count`, `for_each`, `depends_on`)**.
+**You are currently here:** Beginner complete, Intermediate started — B1–B9 and I1 done (Ch 1–10 written). Next up: **I2 (The `lifecycle` meta-argument)**.
 
 ---
 

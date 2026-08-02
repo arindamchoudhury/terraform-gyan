@@ -61,7 +61,7 @@ This single constraint explains most of the friction people hit with meta-argume
 - **`count` keys instances by position.** Delete a middle element from the driving list and every later instance shifts index, so Terraform plans destroy-and-recreate for all of them. `for_each` keys by string and touches only the removed entry. The reference page's neutral "can't be directly derived from an integer index" is as close as it comes; TID Ch4 §4.8 is where this is actually taught ([[04-expressions-iterations]]).
 - **A `count` block reference is a `tuple`, not a list** (and a `for_each` one is an `object`, not a map) — verified on TF 1.15.8, [[conditional-branch-evaluation]]. Auto-conversion hides this almost everywhere, which is why the docs conflate them.
 
-**The `? 1 : 0` switch.** The page explicitly endorses `count` as a conditional (`count = var.creator ? 3 : 0`), and it is the only way to make a single resource optional in Terraform. Cost: the block is indexed forever, so every reference and every `moved` block carries `[0]`. **OpenTofu 1.11's `enabled`** is the first-class replacement; Terraform has none ([[opentofu-feature-history]]).
+**The `? 1 : 0` switch.** The page explicitly endorses `count` as a conditional (`count = var.creator ? 3 : 0`), and it is the only way to make a single resource optional in Terraform. Cost: the block is indexed forever, so every reference and every `moved` block carries `[0]`. **OpenTofu 1.11's `enabled`** is the first-class replacement, written inside the `lifecycle` block; Terraform has none ([[opentofu-enabled-argument]]).
 
 **Two patterns from the hands-on** ([[tut-count]]), neither of which appears on the reference page:
 
@@ -177,7 +177,7 @@ Only four events exist — `before_create`, `after_create`, `before_update`, `af
 
     - **Dynamic `prevent_destroy`** (OT 1.12) — bind it to a variable or expression, so prod and dev *can* differ. Terraform still requires a literal. See [[ot-dynamic-prevent-destroy]].
     - **`destroy = false`** (OT 1.12) — stop managing a resource without deleting the real object, written as one line inside the **resource's** `lifecycle`. Terraform's nearest equivalent is a separate `removed` block that *also* carries `lifecycle { destroy = false }` — and note that a Terraform `removed` block **without** that line destroys the object. See [[tf-block-removed]].
-    - **`enabled` meta-argument** (OT 1.11) — a seventh meta-argument; a first-class on/off switch, cleaner than the `count = var.x ? 1 : 0` idiom that forces `[0]` addressing and index churn. Terraform has no equivalent. See [[opentofu-feature-history]].
+    - **`enabled`** (OT 1.11) — a first-class on/off switch, cleaner than the `count = var.x ? 1 : 0` idiom that forces `[0]` addressing and index churn. It is an argument **inside the `lifecycle` block**, not a seventh top-level meta-argument, and a disabled resource evaluates to `null` rather than an empty collection. Verified on OpenTofu 1.12.4: [[opentofu-enabled-argument]]. Terraform has no equivalent.
 
     `create_before_destroy`, `ignore_changes`, and `replace_triggered_by` behave identically in both tools.
 
