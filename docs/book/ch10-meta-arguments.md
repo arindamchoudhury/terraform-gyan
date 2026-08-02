@@ -209,8 +209,16 @@ Now delete `"logs"` from the middle of the list. You asked to remove one bucket.
 Terraform will perform the following actions:
 
   # aws_s3_bucket.site[1] must be replaced
+-/+ resource "aws_s3_bucket" "site" {
+      ~ bucket = "ch10-count-logs" -> "ch10-count-media" # forces replacement
+        ## ...
+    }
+
   # aws_s3_bucket.site[2] will be destroyed
   # (because index [2] is out of range for count)
+  - resource "aws_s3_bucket" "site" {
+        ## ...
+    }
 
 Plan: 1 to add, 0 to change, 2 to destroy.
 ```
@@ -219,7 +227,11 @@ Read that carefully. **`ch10-count-media` is destroyed and recreated, and you ne
 
 The reason is mechanical. Index 1 used to mean the logs bucket and now means the media bucket. `bucket` is a forced-new attribute, so index 1 must be replaced to hold a different name. Index 2 no longer exists, so it is destroyed. The list shrank by one; two objects moved.
 
-Three buckets is a toy. The same shape with thirty buckets and a deletion at position 3 replaces twenty-seven live objects.
+Three buckets is a toy, and the arithmetic generalises badly. Take thirty buckets at indices 0 through 29 and delete the element at index 3. Indices 0 to 2 are unchanged. Indices 3 through 28 each now hold the name that used to sit one place further along, so **twenty-six instances are replaced**. Index 29 falls out of range and is destroyed. Twenty-seven objects touched, twenty-six of which you never mentioned.
+
+The general rule for a list of length *n* with one element removed at index *i*: **`n - 1 - i` instances are re-planned, plus one destroyed at the end.** Remove from the front and you disturb nearly everything. Remove from the very end and you disturb nothing.
+
+Whether those re-planned instances are *replaced* or merely *updated in place* depends on the attribute the index feeds. Here it is `bucket`, which cannot be changed on a live S3 bucket, so each one is a `-/+` replacement. Feed the index into a mutable attribute instead and the same shift shows up as a `~` update. That is better, and it is still twenty-six resources changed because you deleted one.
 
 !!! danger "This is data loss, not churn"
     "Destroy and recreate" on an S3 bucket means the objects inside it are gone. On an RDS instance it means the database is gone. On an EBS volume it means the disk is gone. Terraform will do it because you told it to, and the plan says so plainly if you read past the summary line.
@@ -258,6 +270,9 @@ Terraform will perform the following actions:
 
   # aws_s3_bucket.site["logs"] will be destroyed
   # (because key ["logs"] is not in for_each map)
+  - resource "aws_s3_bucket" "site" {
+        ## ...
+    }
 
 Plan: 0 to add, 0 to change, 1 to destroy.
 ```
@@ -366,9 +381,14 @@ The documentation says "a map or a set of strings." That is incomplete in one di
       for_each = toset(["alpha", "beta"])
       input    = "key=${each.key} value=${each.value}"
     }
+
+    output "keys" {
+      value = { for k, v in terraform_data.x : k => v.input }
+    }
     ```
 
     ```
+    terraform_data.x["beta"]: Creating...
     terraform_data.x["alpha"]: Creation complete after 0s
     terraform_data.x["beta"]: Creation complete after 0s
 
@@ -392,7 +412,9 @@ Keys are how Terraform names instances, so they are constrained more tightly tha
 
 > "Sensitive values are not allowed because Terraform uses the value in `for_each` to identify the resource instance and always discloses it in UI output."
 
-An instance key appears in every plan line, every state address, and every error message. A secret cannot survive that. Sensitivity is also contagious through functions, so `keys(local.config)` is sensitive if any *value* in that map is sensitive, even though the keys themselves are not. The documented escape is a `for` expression that touches only the keys:
+An instance key appears in every plan line, every state address, and every error message. A secret cannot survive that.
+
+Sensitivity is also contagious. The docs put it as "most functions in Terraform return a sensitive result when given an argument with any sensitive content", so `keys(local.config)` comes back sensitive when any *value* in that map is sensitive, even though the keys themselves are not. The documented escape is a `for` expression that touches only the keys:
 
 ```hcl
 for_each = toset([for k, v in local.config : k])
@@ -583,11 +605,14 @@ Implicit and explicit edges render identically. Use `graph` to *confirm* a suspi
     aws_instance.example_a: Creating...
     aws_instance.example_b: Creating...
     ...
+    aws_instance.example_b: Creation complete after 32s
     aws_instance.example_a: Creation complete after 33s
     aws_eip.ip: Creating...
     ```
 
-    Both instances start together. The Elastic IP waits for `example_a` and not for `example_b`, which is exactly the edge set that configuration declares. If you expected a wait and see interleaving instead, the edge you assumed does not exist.
+    Both instances start in the same moment, so Terraform sees no edge between them. The Elastic IP does not start until `example_a` is complete, so there is an edge there.
+
+    Note what the log cannot tell you. `example_b` happened to finish first, so this run does not show whether the Elastic IP was also waiting on it. Absence of a wait is only observable when the other node is *still running*. The log is good at confirming edges you expected and at exposing parallelism you did not expect. It is not a substitute for `terraform graph`.
 
     Destroy prints the mirror image, because teardown walks the same edges in reverse.
 
@@ -656,6 +681,8 @@ Best current understanding, drawn from the per-argument pages and their bodies:
 | `count` | `data`, `ephemeral`, `module`, `resource`, `action`, plus `list` in query configs |
 | `for_each` | `data`, `ephemeral`, `module`, `resource`, `action`, `import`, plus `list` in query configs; in Stacks also `component`, `provider`, `removed` |
 | `depends_on` | `check`, `data`, `ephemeral`, `module`, `output`, `resource`; in Stacks also `component` |
+
+Two entries in that table come from page prose rather than from a canonical list, so treat them as the weaker claims. `count` in `action` blocks is described in the `count` page's opening paragraph and in one of its use cases, and appears in no list. `for_each` in `import` blocks is the better-supported of the two: the `for_each` page describes it, and looping imports over a map is a documented 1.7 feature in its own right.
 
 Two rules that hold everywhere:
 
@@ -750,8 +777,16 @@ tflocal plan -var='bucket_names=["assets","media"]'
 Terraform will perform the following actions:
 
   # aws_s3_bucket.site[1] must be replaced
+-/+ resource "aws_s3_bucket" "site" {
+      ~ bucket = "ch10-count-logs" -> "ch10-count-media" # forces replacement
+        ## ...
+    }
+
   # aws_s3_bucket.site[2] will be destroyed
   # (because index [2] is out of range for count)
+  - resource "aws_s3_bucket" "site" {
+        ## ...
+    }
 
 Plan: 1 to add, 0 to change, 2 to destroy.
 
@@ -796,12 +831,15 @@ tflocal apply
 ```
 
 ```
+aws_s3_bucket.site["assets"]: Creating...
 aws_s3_bucket.site["assets"]: Creation complete after 1s [id=ch10-foreach-assets]
-aws_s3_bucket.site["logs"]: Creation complete after 1s [id=ch10-foreach-logs]
 aws_s3_bucket.site["media"]: Creation complete after 1s [id=ch10-foreach-media]
+aws_s3_bucket.site["logs"]: Creation complete after 1s [id=ch10-foreach-logs]
 
 Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
 ```
+
+The completion order is not alphabetical, and that is expected. The three buckets have no edges between them, so Terraform creates them concurrently and they finish in whatever order the API returns. Instance keys are stable; completion order is not.
 
 Same removal:
 
@@ -814,6 +852,9 @@ Terraform will perform the following actions:
 
   # aws_s3_bucket.site["logs"] will be destroyed
   # (because key ["logs"] is not in for_each map)
+  - resource "aws_s3_bucket" "site" {
+        ## ...
+    }
 
 Plan: 0 to add, 0 to change, 1 to destroy.
 ```
@@ -844,17 +885,31 @@ tflocal init
 tflocal apply           # three buckets: ch10-migrate-{assets,logs,media}
 ```
 
-Now swap in the migrated configuration and plan:
+Now swap in the migrated configuration and plan. Keep a copy of the original first, so you can run the lab again:
 
 ```shell
+cp main.tf main.tf.before
 cp main.tf.after main.tf
 tflocal plan
 ```
 
+Terraform prints one block per moved instance. The resource bodies between them are elided here; every attribute is unchanged:
+
 ```
+Terraform will perform the following actions:
+
   # aws_s3_bucket.site[0] has moved to aws_s3_bucket.site["assets"]
+    resource "aws_s3_bucket" "site" {
+        id = "ch10-migrate-assets"
+        # (15 unchanged attributes hidden)
+        # (4 unchanged blocks hidden)
+    }
+
   # aws_s3_bucket.site[1] has moved to aws_s3_bucket.site["logs"]
+    ## ...
+
   # aws_s3_bucket.site[2] has moved to aws_s3_bucket.site["media"]
+    ## ...
 
 Plan: 0 to add, 0 to change, 0 to destroy.
 ```
