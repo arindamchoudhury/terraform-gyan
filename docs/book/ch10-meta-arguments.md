@@ -683,7 +683,7 @@ The third row is the one that matters. Deferral is not a one-time thing that hap
 
 That is deliberate. If `depends_on` deferred the read every time, the values would report as unknown on every plan forever, and the source calls that out by name as the "perpetual diff" it is avoiding.
 
-So the rule is narrower than "`depends_on` makes a data source read at apply". It is: **when the dependency is about to change, do not trust a plan-time read of it.** Reach for this when the thing being read does not exist, or is not yet correct, until the apply that is currently running finishes. Section 8 has the case worth knowing.
+So the rule is narrower than "`depends_on` makes a data source read at apply". It is: **when the dependency is about to change, do not trust a plan-time read of it.** Reach for this when the thing being read does not exist, or is not yet correct, until the apply that is currently running finishes. The clearest example is a `check` block validating a database that the same configuration creates, which section 8 sketches.
 
 A managed resource is refreshed on every plan, and a refresh is a read too, so the clause covers that as well. Nothing special happens there: the refresh runs inside the resource's own plan node, and the `depends_on` edge orders that node like any other.
 
