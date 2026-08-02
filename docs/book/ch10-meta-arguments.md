@@ -430,32 +430,21 @@ The documentation says "a map or a set of strings." That is incomplete in one di
 
 `toset` is lossy, by design. It "discards the ordering of the items in the list and removes any duplicate elements", so `toset(["b", "a", "b"])` is a two-element set in no particular order. Both losses are harmless here. Identity comes from the key, so order is meaningless and duplicates would collide anyway.
 
-!!! warning "For a set, `each.key` is the member — not an index"
-    A common misreading, repeated in HashiCorp's own `for_each` tutorial, is that `each.key` is the position of the item when the collection is a set. It is not. Verified on Terraform 1.15.8:
+!!! warning "`toset()` throws the positions away, and that is the point"
+    You wrote a list, so it is fair to ask where the positions went. They are gone. A set has no first element, and `for_each` never invents an index to replace one.
 
-    ```hcl
-    resource "terraform_data" "x" {
-      for_each = toset(["alpha", "beta"])
-      input    = "key=${each.key} value=${each.value}"
-    }
-
-    output "keys" {
-      value = { for k, v in terraform_data.x : k => v.input }
-    }
-    ```
+    Watch the addresses. This is the same `["alpha", "beta"]` under both meta-arguments:
 
     ```
-    terraform_data.x["beta"]: Creating...
-    terraform_data.x["alpha"]: Creation complete after 0s
-    terraform_data.x["beta"]: Creation complete after 0s
-
-    keys = {
-      "alpha" = "key=alpha value=alpha"
-      "beta"  = "key=beta value=beta"
-    }
+    count = 2                        for_each = toset(["alpha", "beta"])
+    ─────────────────────            ───────────────────────────────────
+    terraform_data.x[0]              terraform_data.x["alpha"]
+    terraform_data.x[1]              terraform_data.x["beta"]
     ```
 
-    The address is `["alpha"]`, `each.key` is `"alpha"`, and `each.key == each.value`. No index appears anywhere. That is the entire reason `for_each` survives a mid-list deletion.
+    Under `count`, `count.index` is `0` and `1`. Under `for_each`, `each.key` is `"alpha"` and `"beta"` — the members themselves. For a set `each.value` is the same string again, so `key=${each.key} value=${each.value}` prints `key=alpha value=alpha`. Verified on Terraform 1.15.8.
+
+    Now delete `"alpha"`. Under `count` the surviving element moves from index 1 to index 0, and Terraform re-plans that slot. Under `for_each` nothing moves, because `"beta"` was never at a position to move from. **That is the whole mechanism behind the two plans you saw in section 3.** Positional identity is what makes deletion dangerous; `toset()` discarding position is what makes it safe.
 
 ### Three restrictions on keys
 
