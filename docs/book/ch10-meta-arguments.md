@@ -518,7 +518,33 @@ resource "aws_internet_gateway" "example" {
 }
 ```
 
-Watch what `each.value` holds in each block. In the first it is an element of `var.vpcs`. In the second it is an entire `aws_vpc` object, attributes and all.
+!!! note "Reading `map(object({ cidr_block = string }))`"
+    Type constraints nest, which is the part Chapter 6 introduces one layer at a time and never puts together. Read this one outside in:
+
+    - `map(T)` is a collection with **string keys**, every value of the same type `T`.
+    - Here `T` is `object({ cidr_block = string })`, a **fixed shape** with one attribute named `cidr_block` holding a string.
+
+    So the whole thing means: *string keys, each pointing at a record that has a `cidr_block` string.* A value satisfying it:
+
+    ```hcl
+    vpcs = {
+      prod    = { cidr_block = "10.0.0.0/16" }
+      staging = { cidr_block = "10.1.0.0/16" }
+    }
+    ```
+
+    The keys are yours to choose and become the instance keys. The object part is a contract on each value, and Terraform enforces it at the variable rather than deep inside `aws_vpc`. Misspell the attribute and the error names the offending element:
+
+    ```
+    Error: Invalid value for input variable
+
+    Unsuitable value for var.vpcs set using -var="vpcs=...": element "prod":
+    attribute "cidr_block" is required.
+    ```
+
+    This shape is the natural input for `for_each`: the map supplies the keys, and the object supplies the per-instance arguments. Chapter 12 covers the full type system, including `optional(type, default)` for attributes a caller may leave out.
+
+Watch what `each.value` holds in each block. In the first it is an element of `var.vpcs`, so `each.value.cidr_block` reaches into the object. In the second it is an entire `aws_vpc` object, attributes and all.
 
 You could get the same keys by writing `for_each = var.vpcs` on both blocks. The docs argue for chaining anyway, and the argument is not brevity:
 

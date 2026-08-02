@@ -99,6 +99,17 @@ A type constraint tells the caller what shape of value the variable expects, and
 - **Collection** — `list(T)` (ordered, indexable), `map(T)` (string keys → values of type `T`), `set(T)` (unordered, unique). Every element is the same type `T`.
 - **Structural** — `object({ name = string, port = number })` and `tuple([string, number])`, which hold a **fixed** shape of mixed types.
 
+**Constraints nest.** The `T` in `list(T)`, `map(T)`, or `set(T)` is itself a type, so it can be a structural one. `map(object({ cidr_block = string }))` reads outside in: a map with string keys, each value an object carrying a `cidr_block` string.
+
+```hcl
+vpcs = {
+  prod    = { cidr_block = "10.0.0.0/16" }
+  staging = { cidr_block = "10.1.0.0/16" }
+}
+```
+
+That combination is worth recognising on sight. It is the standard input shape for `for_each` (Chapter 10), where the map's keys become the resource instance keys and the object supplies each instance's arguments.
+
 ```hcl
 variable "subnet_cidr_blocks" {
   type    = list(string)
