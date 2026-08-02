@@ -878,7 +878,7 @@ So do not take the lists on faith. Here is the matrix, with every cell run throu
 | `output` | ❌ | ❌ | ✅ |
 | `check` | ❌ | ❌ | ❌ |
 | `removed` | ❌ | ❌ | ❌ |
-| `provider` | reserved | reserved | ❌ |
+| `provider` | reserved | reserved | reserved |
 
 A ❌ is `Error: Unsupported argument — An argument named "…" is not expected here.`
 
@@ -902,6 +902,20 @@ There is nowhere for an argument to go. What the docs must mean is `depends_on` 
 **`removed` rejects `for_each` in an ordinary configuration.** The `for_each` page lists `removed` under *Stack* configuration blocks, and that scoping turns out to be load-bearing.
 
 One cell is unverified: `list` blocks in query configurations, which need a `.tfquery.hcl` file and a provider exposing list resources. The docs claim both `count` and `for_each` there. Treat it as the only row still resting on the page.
+
+!!! info "OpenTofu — the same matrix, with two differences"
+    Every row above was re-run under **OpenTofu 1.12.4**. Eight of the ten blocks behave identically, including the `check` rejection, so that documentation error is inherited by both tools. Two rows differ:
+
+    | | Terraform 1.15.8 | OpenTofu 1.12.4 |
+    |---|---|---|
+    | `provider` + `for_each` | `Reserved argument name in provider block` | ✅ **validates** |
+    | `action` block | exists; takes `count` and `for_each` | `Blocks of type "action" are not expected here` |
+
+    The first is the divergence from section 7 seen from the other side. OpenTofu put provider iteration in the core language in 1.9; Terraform has reserved the name but only honours it inside a Stack configuration.
+
+    The second is simply a feature Terraform has and OpenTofu does not yet. `action` blocks arrived in Terraform 1.14, and OpenTofu 1.12 does not parse the block type at all, so the whole row is not applicable rather than unsupported.
+
+    `provider` + `count` and `provider` + `depends_on` are reserved on **both** tools.
 
 Two rules that hold everywhere:
 
