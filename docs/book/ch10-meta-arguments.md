@@ -264,10 +264,31 @@ Plan: 4 to add, 0 to change, 5 to destroy.
 
 Scale it up. Thirty buckets, delete index 3: **27 objects destroyed, 26 recreated**, and 26 of those destructions are of buckets you never mentioned. Remove from the front and you destroy nearly everything. Remove from the very end and you destroy exactly the one you asked for, which is why appending and truncating feel safe and editing the middle does not.
 
-!!! note "Replacement versus in-place update"
-    Whether the shifted slots are **replaced** or merely **updated in place** depends on the attribute the index feeds. Here it is `bucket`, which cannot be changed on a live S3 bucket, so each shift is a `-/+` replacement and the table above applies.
+!!! note "Replacement versus in-place update is decided per **attribute**, not per resource type"
+    A provider marks individual attributes as forcing a new object. Everything else it can patch on a live one. So the same resource type gives different damage depending on **which attribute the index feeds**.
 
-    Feed the index into a mutable attribute instead and the same shift shows up as a `~` update, with nothing destroyed but the element you removed. Better, and still `n - 1 - i` resources modified because you deleted one.
+    Both of these are `aws_s3_bucket` with `count`, three instances, removing the middle element. Only the attribute differs:
+
+    | Index feeds | Plan |
+    |---|---|
+    | `bucket = "ch10-count-${var.names[count.index]}"` | `1 to add, 0 to change, 2 to destroy` |
+    | `tags = { Name = var.names[count.index] }`, with `bucket` fixed per slot | `0 to add, 1 to change, 1 to destroy` |
+
+    In the second case the shifted slot is a `~` update, not a rebuild:
+
+    ```
+      # aws_s3_bucket.t[1] will be updated in-place
+              ~ "Name" = "logs" -> "media"
+
+      # aws_s3_bucket.t[2] will be destroyed
+      # (because index [2] is out of range for count)
+
+    Plan: 0 to add, 1 to change, 1 to destroy.
+    ```
+
+    `bucket` cannot be changed on a live S3 bucket, so it forces replacement and the object table above applies. `tags` can, so nothing is destroyed except the element you actually removed.
+
+    Two things this does *not* buy you. The tail instance still falls out of range and is destroyed either way. And `n - 1 - i` resources are still modified because you deleted one, so the plan is still noisy and still wrong about intent. It is a smaller blast radius, not a fix. The fix is `for_each`.
 
 !!! danger "This is data loss, not churn"
     "Destroy and recreate" on an S3 bucket means the objects inside it are gone. On an RDS instance it means the database is gone. On an EBS volume it means the disk is gone. Terraform will do it because you told it to, and the plan says so plainly if you read past the summary line.
