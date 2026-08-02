@@ -227,11 +227,47 @@ Read that carefully. **`ch10-count-media` is destroyed and recreated, and you ne
 
 The reason is mechanical. Index 1 used to mean the logs bucket and now means the media bucket. `bucket` is a forced-new attribute, so index 1 must be replaced to hold a different name. Index 2 no longer exists, so it is destroyed. The list shrank by one; two objects moved.
 
-Three buckets is a toy, and the arithmetic generalises badly. Take thirty buckets at indices 0 through 29 and delete the element at index 3. Indices 0 to 2 are unchanged. Indices 3 through 28 each now hold the name that used to sit one place further along, so **twenty-six instances are replaced**. Index 29 falls out of range and is destroyed. Twenty-seven objects touched, twenty-six of which you never mentioned.
+### Two ways to read the same plan, and only one of them is useful
 
-The general rule for a list of length *n* with one element removed at index *i*: **`n - 1 - i` instances are re-planned, plus one destroyed at the end.** Remove from the front and you disturb nearly everything. Remove from the very end and you disturb nothing.
+The plan is written in terms of **addresses**: slot `[1]` is replaced, slot `[2]` is destroyed. That is what Terraform says, and it is the less useful view.
 
-Whether those re-planned instances are *replaced* or merely *updated in place* depends on the attribute the index feeds. Here it is `bucket`, which cannot be changed on a live S3 bucket, so each one is a `-/+` replacement. Feed the index into a mutable attribute instead and the same shift shows up as a `~` update. That is better, and it is still twenty-six resources changed because you deleted one.
+Read it in terms of **objects** instead and the damage is obvious:
+
+| Object | Fate |
+|---|---|
+| `ch10-count-assets` | untouched, still at slot `[0]` |
+| `ch10-count-logs` | **destroyed** — this is the one you removed |
+| `ch10-count-media` | **destroyed and recreated** — nobody asked for this |
+
+Every object from index *i* onward is destroyed. All of them except the one you removed are then created again, one slot lower. Terraform is not "removing the last one and shuffling"; it is tearing down the tail of the list and rebuilding it.
+
+**The general rule** for a list of length *n* with the element at index *i* removed:
+
+- **`n - i` objects are destroyed** — the one you removed, plus every object after it.
+- **`n - 1 - i` of those are recreated** at the next slot down.
+- Objects at indices `0` through `i - 1` are untouched.
+
+Measured on six buckets, removing index 1:
+
+```
+  # aws_s3_bucket.site[1] must be replaced
+  # aws_s3_bucket.site[2] must be replaced
+  # aws_s3_bucket.site[3] must be replaced
+  # aws_s3_bucket.site[4] must be replaced
+  # aws_s3_bucket.site[5] will be destroyed
+  # (because index [5] is out of range for count)
+
+Plan: 4 to add, 0 to change, 5 to destroy.
+```
+
+`6 - 1 = 5` destroyed, `6 - 1 - 1 = 4` recreated. Delete one bucket, lose five.
+
+Scale it up. Thirty buckets, delete index 3: **27 objects destroyed, 26 recreated**, and 26 of those destructions are of buckets you never mentioned. Remove from the front and you destroy nearly everything. Remove from the very end and you destroy exactly the one you asked for, which is why appending and truncating feel safe and editing the middle does not.
+
+!!! note "Replacement versus in-place update"
+    Whether the shifted slots are **replaced** or merely **updated in place** depends on the attribute the index feeds. Here it is `bucket`, which cannot be changed on a live S3 bucket, so each shift is a `-/+` replacement and the table above applies.
+
+    Feed the index into a mutable attribute instead and the same shift shows up as a `~` update, with nothing destroyed but the element you removed. Better, and still `n - 1 - i` resources modified because you deleted one.
 
 !!! danger "This is data loss, not churn"
     "Destroy and recreate" on an S3 bucket means the objects inside it are gone. On an RDS instance it means the database is gone. On an EBS volume it means the disk is gone. Terraform will do it because you told it to, and the plan says so plainly if you read past the summary line.
@@ -990,7 +1026,7 @@ tflocal destroy
 
 - **Meta-arguments come from Terraform core**, so every resource supports them regardless of provider. They control how a block is managed, never what it builds.
 - **They are processed before the dependency graph exists**, which is why their values must be known ahead of any remote operation.
-- **`count` keys instances by position.** Great for an on/off switch and for index-identical N. Dangerous for named sets, because removing an element at index *i* re-plans the `n - 1 - i` instances after it, plus one destroyed at the end. Where the index feeds a forced-new attribute, those are destroy-and-recreate.
+- **`count` keys instances by position.** Great for an on/off switch and for index-identical N. Dangerous for named sets: removing the element at index *i* destroys **`n - i` objects**, the one you asked for plus every object after it, and recreates `n - 1 - i` of them one slot lower. Measured on six buckets, deleting one destroyed five.
 - **`for_each` keys instances by string.** Removing one key touches one instance. It accepts maps, objects, and sets of strings, never lists. Keys must be known, pure, and non-sensitive.
 - **`moved` blocks convert `count` to `for_each` for free.** An empty plan is the proof the refactor is safe.
 - **`depends_on` declares an ordering Terraform cannot infer**, and costs both plan precision and apply parallelism. Prefer an attribute reference wherever one exists. Nothing warns you when one is missing.
