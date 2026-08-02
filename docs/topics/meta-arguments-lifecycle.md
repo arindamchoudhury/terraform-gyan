@@ -193,6 +193,20 @@ Two traps, both from [[tf-provider-block]] rather than the index page:
 - The **default configuration is the unaliased `provider` block.** If every block is aliased, Terraform invents an **implied empty default configuration**, and any resource that omits the `provider` meta-argument silently binds to *that*.
 - **`providers = {}` does not disable inheritance.** An explicit `providers` map overrides inheritance only for the providers it enumerates.
 
+### The map is a remap, not an injection ([[tf-meta-providers]])
+
+The `providers` reference page adds the semantics the index page leaves out. The value is a map whose **keys are configuration names used inside the child** and whose **values are configuration names in the parent**. Both sides are unquoted references — a bare local name for a default configuration, `<PROVIDER>.<ALIAS>` for an alternate.
+
+So `providers = { aws = aws.usw2 }` does not hand the child a new provider. It rewrites what the child's own `aws` *means*. The child module keeps writing plain `aws_*` resources with no `provider` argument, and each caller decides which region that resolves to. That is the whole point of the argument: **you retarget a module without editing it.**
+
+Two consequences worth holding onto:
+
+- `providers` is optional **only while the child declares no `configuration_aliases`.** A module that needs two configurations of one provider — the docs' example is a tunnel with a source and a destination — always requires the argument, because non-default configurations are never inherited.
+- The argument also exists on Stacks' `component` and `removed` blocks, not just on `module`. [[tf-meta-arguments]]'s applicability table lists `module` alone.
+
+!!! warning "The reference page still carries the un-narrowed cancellation claim"
+    It says supplying `providers` "cancels the default behavior" so the child "only has access to the provider configurations you specify." That is the exact wording issue [#35781](https://github.com/hashicorp/terraform/issues/35781) was filed against, and the fix landed on *Providers Within Modules* rather than here. Per-provider is the accurate reading. See [[tf-meta-providers]].
+
 ## Style
 
 From [[tf-style-guide]]: meta-arguments go **first** in a block, then normal arguments, then subblocks, and meta-argument *blocks* (`lifecycle`) go **last**.
@@ -211,4 +225,4 @@ resource "aws_instance" "example" {
 ```
 
 ---
-Related: [[tf-terraform-data]] — the built-in resource that makes a plain value usable in `replace_triggered_by`. · [[tf-meta-arguments]] — the HCDocs index, and the source of the six-member list. · [[tf-configure-resource]] — surveys the same set from the resource-block side. · [[ot-dynamic-prevent-destroy]] — OpenTofu's fix for the literal-only `prevent_destroy`. · [[tf-provider-block]] — the `provider` blocks that `provider`/`providers` select between. · [[tf-style-guide]] — ordering within a block. · [[providers]] — the provider topic page this one hands off to.
+Related: [[tf-terraform-data]] — the built-in resource that makes a plain value usable in `replace_triggered_by`. · [[tf-meta-arguments]] — the HCDocs index, and the source of the six-member list. · [[tf-configure-resource]] — surveys the same set from the resource-block side. · [[ot-dynamic-prevent-destroy]] — OpenTofu's fix for the literal-only `prevent_destroy`. · [[tf-provider-block]] — the `provider` blocks that `provider`/`providers` select between. · [[tf-meta-providers]] — the `providers` reference: map semantics, Stacks applicability, and the cancellation-claim discrepancy. · [[tf-style-guide]] — ordering within a block. · [[providers]] — the provider topic page this one hands off to.

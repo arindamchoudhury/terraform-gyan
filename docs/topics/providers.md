@@ -57,6 +57,21 @@ Two further constraints from the same page, both consistent with [[providers]]'s
 - **Provider configuration inherits into child modules; `source` and `version` do not.** Each child module declares its own `required_providers` regardless. A child that needs an *aliased* config must declare `configuration_aliases = [aws.west]` — the receiving end of the caller's `providers = { aws.west = aws.west }`.
 - **The `version` argument inside a `provider` block is deprecated** and will be removed. Constraints belong in `required_providers` (see [[provider-requirements]]).
 
+### Passing configurations into a module ([[tf-meta-providers]])
+
+The `providers` reference is the caller's half of the contract whose receiving half is `configuration_aliases`. It is a **map from names inside the child to names in the parent**, with both sides written as unquoted references — a bare local name for a default configuration, `<PROVIDER>.<ALIAS>` for an alternate.
+
+The framing that makes it click: `providers = { aws = aws.usw2 }` remaps what `aws` *means* inside the child. The module's code still says `aws_instance` with no `provider` argument; only the caller decides which region that lands in. A module is retargeted without being edited.
+
+The rules that follow from that:
+
+- **Omit the argument and the child inherits every default configuration from its parent.** Defaults are the blocks with no `alias`.
+- **Non-default configurations are never inherited.** A module needing two configurations of one provider — the docs' tunnel example, with a source and a destination — always requires an explicit `providers` map, and its documentation should name every configuration it expects.
+- **`providers` is optional only while the child declares no `configuration_aliases`.** Declaring one makes it mandatory.
+- **Stacks use it too**, on `component` and `removed` blocks.
+
+The one claim to distrust on that page is its statement that supplying `providers` cancels inheritance outright. That is the wording corrected elsewhere after issue [#35781](https://github.com/hashicorp/terraform/issues/35781); the override is per-provider.
+
 ## Where the sources differ
 
 - HCDocs treats providers as one bullet inside the broader "How does Terraform work?" section — brief, illustrative.
@@ -73,6 +88,7 @@ Two further constraints from the same page, both consistent with [[providers]]'s
 - [What is Terraform? (Intro)](../sources/terraform-docs/terraform-intro.md)
 - [Providers (language overview)](../sources/terraform-docs/tf-providers.md) — provider tiers, installation/plugin cache, private-registry `.netrc`
 - [`provider` block reference](../sources/terraform-docs/tf-provider-block.md) — `alias`, implied empty default configuration, `configuration_aliases`, deprecated `version` argument
+- [`providers` reference](../sources/terraform-docs/tf-meta-providers.md) — the `providers` map's remap semantics, when it becomes mandatory, Stacks applicability
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
 - [TID Ch 2 — Terraform HCL components](../books/tid/chapters/02-hcl-components.md) §2.4 — declare/configure/alias mechanics
 - [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on `required_providers` + `provider` block
