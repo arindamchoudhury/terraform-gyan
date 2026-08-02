@@ -661,19 +661,24 @@ resource "aws_instance" "app" {
 
 On a `module` block it applies to every resource and data source inside that module.
 
-**What "read operations" covers.** Terraform does four things to an object: create it, update it, destroy it, and **read** it. Only the first three change anything, so ordering looks like it should cover just those. The clause says it covers the fourth as well. What that buys you depends on what the dependency is, and the two cases are not the same mechanism.
+The "read operations" clause is what makes `depends_on` useful on a **`data` block**. A data source is normally read during **plan**, so its values are available while Terraform decides what to do. Put `depends_on` on it and the read waits for the dependency instead:
 
-**A managed resource.** Terraform refreshes it, which is a read. That refresh runs inside the resource's own plan node, so the `depends_on` edge orders it along with everything else that node does. Nothing here is specific to reads; the edge orders the whole node.
+```
+  # data.local_file.deferred will be read during apply
+  # (depends on a resource or a module with changes pending)
+      + content = (known after apply)
+```
 
-**A `data` block, or a module containing one.** Here there *is* read-specific machinery, and this is the case the clause exists for. Data-source reads are normally **eager**: resolved during plan, so their values are available while Terraform decides what to do. A `depends_on` overrides that and pushes the read to apply, where the plan reports `will be read during apply` and the attributes go to `(known after apply)`.
+That excerpt is measured on 1.15.8, from a `data` block reading a file that a resource in the same configuration creates. Without the `depends_on` the plan fails, because the read runs before the file exists.
 
-Terraform's own graph builder treats this as a data-resource concern and nothing else. `attachDataResourceDependsOnTransformer` walks every node and skips anything that is not a data resource, with the comment:
+Use it when the thing being read does not exist until the apply that is currently running. Section 8 has the case worth knowing.
 
-> "Only data need to attach depends_on, so they can determine if they are eligible to be read during plan."
+A managed resource is refreshed on every plan, and a refresh is a read too, so the clause covers that as well. Nothing special happens there: the refresh runs inside the resource's own plan node, and the `depends_on` edge orders that node like any other.
 
-The docs sentence points the same way — it refers you onward to *specifying resource dependencies* and *data resource dependencies*. Verified against the Terraform source at tag **v1.15.8**; that transformer's current form ships in v1.15.0.
+!!! note "The deferral machinery is data-only"
+    `attachDataResourceDependsOnTransformer` skips every node whose mode is not a data resource, with the comment: *"Only data need to attach depends_on, so they can determine if they are eligible to be read during plan."* So `depends_on` changes *when a read happens* only for data sources; for managed resources it just orders the node.
 
-Section 8 has the one case where the deferral is what you want.
+    Read against the Terraform source at tag **v1.15.8**, the release this book targets. That transformer's current form ships in v1.15.0.
 
 The value is a list of references to resources or child modules in the same calling module, and it cannot be an arbitrary expression. The same `depends_on` reference gives the reason, and it is the "processed early" rule again:
 
