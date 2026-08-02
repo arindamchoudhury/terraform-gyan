@@ -97,6 +97,11 @@ A type constraint tells the caller what shape of value the variable expects, and
 
 - **Primitive** — `string`, `number`, `bool`.
 - **Collection** — `list(T)` (ordered, indexable), `map(T)` (string keys → values of type `T`), `set(T)` (unordered, unique). Every element is the same type `T`.
+
+!!! note "Map keys are always strings, and the type never says so"
+    `T` in `map(T)` constrains the **values**. Keys have no type parameter because there is nothing to choose: they are strings, always. `type(tomap({ a = 1 }))` is `map(number)`, and `keys()` on any map returns a `list(string)`.
+
+    A numeric-looking key is not a number. `tomap({ 10 = "x", 2 = "y" })` has the keys `"10"` and `"2"`, so they sort as text and `"10"` comes before `"2"`. Verified on Terraform 1.15.8.
 - **Structural** — `object({ name = string, port = number })` and `tuple([string, number])`, which hold a **fixed** shape of mixed types.
 
 **Constraints nest.** The `T` in `list(T)`, `map(T)`, or `set(T)` is itself a type, so it can be a structural one. `map(object({ cidr_block = string }))` reads outside in: a map with string keys, each value an object carrying a `cidr_block` string.

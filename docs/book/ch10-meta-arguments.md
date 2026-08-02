@@ -521,7 +521,7 @@ resource "aws_internet_gateway" "example" {
 !!! note "Reading `map(object({ cidr_block = string }))`"
     Type constraints nest, which is the part Chapter 6 introduces one layer at a time and never puts together. Read this one outside in:
 
-    - `map(T)` is a collection with **string keys**, every value of the same type `T`.
+    - `map(T)` is a collection with **string keys**, every value of the same type `T`. The `T` constrains the values only; keys do not appear in the type, because they are always strings. `type(tomap({ a = 1 }))` is `map(number)`, and `keys(...)` on any map is a `list(string)`. Even a numeric-looking key is a string: `tomap({ 10 = "x" })` has the key `"10"`, quotes and all. Verified on Terraform 1.15.8.
     - Here `T` is `object({ cidr_block = string })`, a **fixed shape** with one attribute named `cidr_block` holding a string.
 
     So the whole thing means: *string keys, each pointing at a record that has a `cidr_block` string.* A value satisfying it:
