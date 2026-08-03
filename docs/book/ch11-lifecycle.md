@@ -1112,7 +1112,7 @@ tflocal plan
 
     The read-back runs through the **S3 Control** `ListTagsForResource` operation rather than `GetBucketTagging`, and it returns an empty tag set, which is what puts `tags = {}` in state. Tags set afterwards through `put-bucket-tagging` **do** persist and the same read finds them, which is why the drift step works. Full trace in [Floci Facts](../research-cache/floci-facts.md).
 
-    The effect on this exercise: the standing diff you are about to suppress is partly the emulator's own, not purely the out-of-band change. Everything the rule does is still visible. On real AWS the starting state would read `data-team` rather than empty.
+    The effect on this exercise: the standing diff you are about to suppress is partly the emulator's own, not purely the out-of-band change. Everything the rule does is still visible. On real AWS the starting state would read `data-team` rather than empty — AWS's `CreateBucket` reference documents the `Tags` array the provider is sending, so this is Floci's gap and not the provider's.
 
 ```
   # aws_s3_bucket.reports will be updated in-place
@@ -1179,7 +1179,12 @@ replace_triggered_by.
 Finish with `tflocal destroy -var revision=2 -auto-approve`.
 
 !!! warning "Emulation is not AWS"
-    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. The emulator's DynamoDB refused a duplicate table name, which is what makes Part C work. Other services are less faithful, and Part D hits one: Floci ignores the `<Tags>` element in a `CreateBucket` body, so an S3 bucket's tags never land until something sets them through the tagging API. Validate anything load-bearing against real free-tier AWS before trusting it.
+    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. Both of this lab's emulator-dependent behaviours were checked against the AWS API references, and they land on opposite sides:
+
+    - **Parts C and C2 transfer.** AWS's [CreateTable](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html) states that "table names must be unique within each Region" and lists "You attempted to recreate an existing table" under `ResourceInUseException`. The emulator returns the same exception with the same HTTP 400, so the collision you just triggered is the one real AWS would give you.
+    - **Part D does not, in one respect.** AWS's [CreateBucket](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) documents a `Tags` array inside `CreateBucketConfiguration` — "an array of tags that you can apply to the bucket that you're creating" — so on real AWS the provider's tags land at creation and the starting state reads `data-team`. Floci ignores that element, which is why the emulator starts empty.
+
+    That is the shape of the risk in general. An emulator can be exact on the constraint your lab depends on and silently absent on the feature next to it, and only the API reference tells you which. Validate anything load-bearing against real free-tier AWS before trusting it.
 
 !!! note "If every provider suddenly fails to load"
     On a machine where security software intercepts loopback TLS, every Terraform command that loads a provider can fail with `Failed to load plugin schemas`. That is the plugin mTLS channel being intercepted, not a problem with the provider or the emulator. Exclude `terraform.exe` and `.terraform/providers/**` from the security product's *network/SSL inspection*. As a scoped fallback for one command, `TF_DISABLE_PLUGIN_TLS=1` works, but never set it persistently: it makes the Terraform-to-plugin channel plaintext for every provider, and credentials cross that channel.

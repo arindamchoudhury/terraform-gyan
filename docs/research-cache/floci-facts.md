@@ -227,8 +227,8 @@ control configuration before being recorded here.
 
 | Gap | Detail | Found in |
 |---|---|---|
-| **S3 bucket tags are dropped at create** | `aws_s3_bucket` with a `tags` map applies cleanly, but the tags never reach the object. State records `tags = {}` and **every subsequent plan proposes to add them again** — a perpetual diff. A control bucket with no `lifecycle` block behaves identically. Tags set afterwards through `put-bucket-tagging` **do** persist. Full mechanism below. Measured 2026-08-03, TF 1.15.8, AWS provider 6.57.1. | Book Ch 11 lab, Part D |
-| **DynamoDB duplicate table names are refused** | Not a gap — worth recording as *working* fidelity. `CreateTable` on an existing name returns `ResourceInUseException: Table already exists`, which is what makes the `create_before_destroy` collision lab reproducible. Measured 2026-08-03. | Book Ch 11 lab, Parts C and C2 |
+| **S3 bucket tags are dropped at create** — ❌ **diverges from AWS** | `aws_s3_bucket` with a `tags` map applies cleanly, but the tags never reach the object. State records `tags = {}` and **every subsequent plan proposes to add them again** — a perpetual diff. A control bucket with no `lifecycle` block behaves identically. Tags set afterwards through `put-bucket-tagging` **do** persist. Real AWS accepts these tags (citation below), so this is a genuine fidelity gap, not a provider quirk. Full mechanism below. Measured 2026-08-03, TF 1.15.8, AWS provider 6.57.1. | Book Ch 11 lab, Part D |
+| **DynamoDB duplicate table names are refused** — ✅ **matches AWS** | Not a gap; recorded as *working* fidelity. `CreateTable` on an existing name returns `ResourceInUseException: Table already exists` with HTTP 400, which is what makes the `create_before_destroy` collision lab reproducible and what makes its lesson transfer to real AWS. Verified against the AWS API reference (citation below). Measured 2026-08-03. | Book Ch 11 lab, Parts C and C2 |
 
 ### The bucket-tag gap, traced end to end
 
@@ -282,6 +282,39 @@ implements `handlePutBucketTagging` and the S3 Control read; it just has no path
 
 **Practical rule for labs:** do not use `aws_s3_bucket` `tags` as the thing a lab measures. Set tags
 through the tagging API, or use a resource type whose tags land.
+
+### Checked against AWS (2026-08-03)
+
+Both behaviours were compared with the AWS API references rather than assumed.
+
+**S3 bucket tags at create — Floci diverges.** AWS's
+[CreateBucket](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) request syntax
+carries the element the provider sends:
+
+```
+<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+   <LocationConstraint>{{string}}</LocationConstraint>
+   …
+   <Tags>
+      <Tag>
+         <Key>{{string}}</Key>
+         <Value>{{string}}</Value>
+      </Tag>
+   </Tags>
+</CreateBucketConfiguration>
+```
+
+and the Request Body section documents it: *"An array of tags that you can apply to the bucket that
+you're creating… You must have the `s3:TagResource` permission to create a general purpose bucket
+with tags."* That permission name is the same S3 Control tagging surface the provider reads back
+through, so the two halves are consistent on AWS. The tags land there; they do not here.
+
+**DynamoDB duplicate table name — Floci matches.** AWS's
+[CreateTable](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html)
+states *"In an AWS account, table names must be unique within each Region"*, and lists under
+`ResourceInUseException` (HTTP 400): *"The operation conflicts with the resource's availability. For
+example: **You attempted to recreate an existing table.**"* Floci returns the same exception name and
+the same status code.
 
 ## Sources
 
