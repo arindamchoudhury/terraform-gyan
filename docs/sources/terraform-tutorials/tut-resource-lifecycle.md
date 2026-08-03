@@ -135,7 +135,7 @@ New instance up before the old one goes down. The security group is modified fir
     dispAddr = fmt.Sprintf("%s (deposed object %s)", dispAddr, dk)
     ```
 
-    So on any current version the line reads `aws_instance.example (deposed object 940b3833): Destroying...`. The tutorial's bare-parenthesis form is from the older CLI it was written against. If a deposed object survives a failed apply it stays in state and shows up in `terraform state list` — the tutorial never mentions this, and it is the main operational cost of CBD. See [[tf-state]], [[tf-cmd-state-list]].
+    So on any current version the line reads `aws_instance.example (deposed object 940b3833): Destroying...`. The tutorial's bare-parenthesis form is from the older CLI it was written against. If a deposed object survives a failed apply it stays in state and the next plan will destroy it, which is the main operational cost of CBD. The tutorial never mentions it. **It will not appear in `terraform state list`** — that command prints one address per resource instance, taken from the *current* object only (`internal/command/state_list.go`, tag v1.15.8), so a deposed object gets no line. Use `terraform show -json` and look for `deposed_key`. See [[tf-state]], [[tf-cmd-state-list]].
 
 !!! warning "CBD propagated to the security group here, invisibly"
     [[tf-meta-lifecycle]] records that `create_before_destroy` propagates along dependency edges: `aws_instance.example` depends on `aws_security_group.sg_web`, so Terraform enables CBD on the security group too and writes it to state — even though the tutorial never puts a `lifecycle` block there.

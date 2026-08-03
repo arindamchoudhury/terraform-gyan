@@ -47,7 +47,14 @@ resource "aws_db_instance" "main" {
 
 The subblock is deliberate. Resource arguments come from the provider, and the provider chose those names. If `prevent_destroy` were a top-level argument, then the day some provider shipped a resource with an argument called `prevent_destroy` the two would collide. Putting the rules inside a namespaced block means Terraform can add new ones for years without ever colliding with a vendor name.
 
-That is not a hypothetical. It has happened twice. The block began with four rules and now has seven.
+That is not a hypothetical. The block has grown twice, and it now holds more than twice what it started with.
+
+!!! info "Three rules became seven"
+    At **v1.1.0** the `lifecycle` block accepted exactly three attributes: `create_before_destroy`, `prevent_destroy`, and `ignore_changes` (`internal/configs/resource.go`, read at that tag).
+
+    **v1.2.0** added three at once: `replace_triggered_by`, `precondition`, and `postcondition`. **v1.14.0** added `action_trigger`, alongside the new top-level `actions` block that its release notes describe as covering "use cases outside the normal CRUD model".
+
+    Every one of those names arrived without a single provider argument having to move, which is the whole argument for the subblock.
 
 !!! tip "Where the block goes in a resource"
     HashiCorp's [style guide](https://developer.hashicorp.com/terraform/language/style) fixes the order inside a block: meta-*arguments* such as `count` and `for_each` come first, then normal arguments, then nested blocks, and meta-argument *blocks* such as `lifecycle` come **last**. Following it means a reader can find the lifecycle rules in the same place in every resource you write, which matters more here than for most conventions, because these rules change behaviour that the rest of the block does not hint at.
@@ -71,6 +78,8 @@ There is an eighth rule, `destroy`, which is legal only inside a `removed` block
 Try to drive a lifecycle rule from a variable and Terraform stops you. Measured on **1.15.8**:
 
 ```hcl
+terraform { required_version = ">= 1.12" }
+
 variable "protect" {
   type    = bool
   default = true
@@ -78,12 +87,13 @@ variable "protect" {
 
 resource "terraform_data" "db" {
   input = "pretend-database"
-
   lifecycle {
     prevent_destroy = var.protect      # rejected
   }
 }
 ```
+
+`terraform validate` returns two errors, and the second is the more interesting one:
 
 ```
 Error: Variables not allowed
@@ -92,7 +102,16 @@ Error: Variables not allowed
   11:     prevent_destroy = var.protect
 
 Variables may not be used here.
+
+Error: Unsuitable value type
+
+  on main.tf line 11, in resource "terraform_data" "db":
+  11:     prevent_destroy = var.protect
+
+Unsuitable value: value must be known
 ```
+
+"Value must be known" is the real constraint. "Variables not allowed" is how it shows up in practice, because a variable is the usual way to make something unknown at this stage.
 
 The reference page gives the reason in one sentence: *"All lifecycle settings affect how Terraform constructs and traverses the dependency graph. As a result, only literal values can be used because the processing happens too early for arbitrary expression evaluation."*
 
@@ -117,7 +136,7 @@ Three consequences follow directly.
 
 **A resource inherited from someone else has no guard until you write one.** Importing an object into state imports the object, not a policy about it.
 
-**Condition results are the partial exception.** Terraform records the *results* of `precondition` and `postcondition` checks to state, but not the contents of the checks. That is why `terraform show` can tell you a check passed without telling you what it checked.
+**Condition results are the partial exception.** Terraform records the *results* of `precondition` and `postcondition` checks to state, but not the contents of the checks. They surface as a `checks` section in `terraform show -json`, marshalled from the state's check results (`internal/command/jsonstate/state.go:218`, tag v1.15.8). So the output can tell you a check passed without telling you what it checked.
 
 ### Why `create_before_destroy` is exempt
 
@@ -295,9 +314,11 @@ aws_s3_bucket.app: Destruction complete after 0s
 That parenthesis is not an instance index. During a create-before-destroy replacement, the old object cannot simply stay at `aws_s3_bucket.app`, because the new object needs that address. Terraform moves the old one aside in state under a generated **deposed key**, then destroys it.
 
 !!! warning "A failed apply leaves the deposed object in state"
-    The deposal is the reason `create_before_destroy` has an operational cost that neither the reference page nor the tutorial mentions. If the apply dies between the create and the destroy, the deposed object survives in state and in the cloud. It shows up in `terraform state list`, and the next plan will try to destroy it again.
+    The deposal is the reason `create_before_destroy` has an operational cost that neither the reference page nor the tutorial mentions. If the apply dies between the create and the destroy, the deposed object survives in state and in the cloud. The next plan will pick it up and plan its destruction, because *"deposed instances are always a destroy or forget operation"* (`internal/terraform/node_resource_destroy_deposed.go`, tag v1.15.8).
 
-    That is recoverable, and Chapter 17 covers the recovery. It is worth knowing before you turn the rule on across a codebase, because the failure mode is "an orphaned object you are still paying for" rather than "an error message".
+    **`terraform state list` will not show it.** That command prints one address per resource instance, taken from the instance's *current* object, so a deposed object gets no line of its own. To see one, use `terraform show -json` and look for `deposed_key` on the instance, or read the state file directly.
+
+    Recovery is Chapter 17's subject. It is worth knowing before you turn the rule on across a codebase, because the failure mode is "an orphaned object you are still paying for" rather than "an error message".
 
 !!! warning "A destroy-time provisioner on the resource stops running"
     The reference page states it in one clause and it is easy to miss: when a resource contains a provisioner that runs during destroy, setting `create_before_destroy = true` "also prevents the provisioner from running."
@@ -359,11 +380,11 @@ It runs **in the plan graph builder**, before planned changes are constructed. T
 
     So the practical rule is stronger than the documented one. Turning `create_before_destroy` on for one resource turns it on for **everything that resource depends on**, transitively, and no configuration you write can opt any of them out.
 
-Which leads to the real risk. `create_before_destroy` is opt-in because it is unsafe on resource types whose old and new objects cannot coexist. Propagation applies it to resources you did not choose it for. If one of those upstream resources has a fixed unique name and later needs replacing, the apply fails on a collision, in a resource you never edited.
+Which leads to the real risk. `create_before_destroy` is opt-in because it is unsafe on resource types whose old and new objects cannot coexist. Propagation applies it to resources you did not choose it for.
 
 ### When it cannot work
 
-Make that concrete. A DynamoDB table's name is fixed by the configuration, and changing its `hash_key` forces replacement. With `create_before_destroy = true`, Terraform tries to create the replacement while the original still holds the name.
+A DynamoDB table's name is fixed by the configuration, and changing its `hash_key` forces replacement. With `create_before_destroy = true`, Terraform tries to create the replacement while the original still holds the name.
 
 The plan is clean:
 
@@ -391,11 +412,58 @@ Two lessons. First, **a valid plan is not proof that `create_before_destroy` is 
 
 The fix for a resource like this is to make the name derivable rather than fixed, using a random suffix or a `name_prefix` argument where the provider offers one. If the name cannot move, `create_before_destroy` is not available and the downtime is real.
 
+### The two halves together
+
+Those two sections combine into the failure this chapter most wants you to be able to predict, and it was measured rather than reasoned. Take the same table with **no `lifecycle` block at all**, and make an S3 bucket that declares `create_before_destroy` depend on it:
+
+```hcl
+resource "aws_dynamodb_table" "sessions" {
+  name         = "ch11-prop-sessions"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = var.hash_key
+  # ...
+}
+
+resource "aws_s3_bucket" "app" {
+  bucket = "ch11-prop-app"
+
+  tags = {
+    table = aws_dynamodb_table.sessions.id
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+```
+
+Change `hash_key` and the table is the resource that has to be replaced. Measured on 1.15.8:
+
+```
++/- create replacement and then destroy
+
+  # aws_dynamodb_table.sessions must be replaced
++/- resource "aws_dynamodb_table" "sessions" {
+      ~ hash_key = "session_id" -> "tenant_id" # forces replacement
+```
+
+```
+aws_dynamodb_table.sessions: Creating...
+
+Error: creating AWS DynamoDB Table (ch11-prop-sessions): operation error
+DynamoDB: CreateTable, https response error StatusCode: 400,
+ResourceInUseException: Table already exists: ch11-prop-sessions
+```
+
+The table got `+/-` and then failed on the collision. Nothing in its own block asked for create-before-destroy, and no one editing that table would find the cause by reading it. The cause is a `lifecycle` block on a bucket, one dependency edge away.
+
+That is the concrete reason to treat `create_before_destroy` as a decision about a **dependency subgraph**, not about a resource.
+
 ---
 
 ## 5. `ignore_changes` — sharing a resource with something else
 
-The most-used rule of the four, and the one whose semantics are most often assumed rather than known.
+TID calls this *probably the most-used* lifecycle option, and it is certainly the one whose semantics are most often assumed rather than known.
 
 Its purpose is drift you want to keep. Something outside Terraform edits an attribute of a managed object. On the next plan Terraform notices the difference and proposes to change it back. Sometimes that is exactly right. Sometimes the other system is the authority for that attribute, and Terraform reverting it is the bug.
 
@@ -442,7 +510,7 @@ Now read the state:
 The configuration says `data-team`. State and reality say `platform-team`. Terraform is content, and will stay content.
 
 !!! note "`ignore_changes` suppresses the plan, not the read"
-    Terraform still refreshes the attribute and still records the real value in state. What it stops doing is proposing an update. The consequence is that configuration and state legitimately disagree from then on, and `terraform state show` is the source of truth for what is actually there.
+    Terraform still refreshes the attribute and still records the real value in state. What it stops doing is proposing an update. The consequence is that configuration and state legitimately disagree from then on. `terraform state show` is where you find the value the object actually has; the configuration no longer tells you.
 
 ### Considered on create, ignored on update
 
@@ -461,8 +529,7 @@ Entries are **relative addresses of attributes**, and index notation works:
 ```hcl
 lifecycle {
   ignore_changes = [
-    tags["LastScanned"],       # one key, rest of the map still managed
-    ebs_block_device[0].size,
+    tags["LastScanned"],       # one key; the rest of the map stays managed
   ]
 }
 ```
@@ -487,7 +554,7 @@ This object has no argument, nested block, or exported attribute named
 |---|---|
 | `ignore_changes = all` | valid |
 | `ignore_changes = [all]` | `Error: Unsupported attribute … no … attribute named "all"` |
-| `ignore_changes = ["all"]` | valid, with a *"Quoted references are deprecated"* warning |
+| `ignore_changes = ["all"]` | the **same error**, preceded by a *"Quoted references are deprecated"* warning |
 
 `all` means Terraform can create and destroy the object but will never propose an update to it.
 
@@ -605,30 +672,45 @@ The standing advice from Chapter 10 still applies to anything outside those rows
 
 ## 8. OpenTofu
 
-`create_before_destroy`, `ignore_changes`, and `replace_triggered_by` behave identically on both tools. The propagation measurement in section 4 was re-run under **OpenTofu 1.12.4** and produced the same forcing behaviour, from the same transformer, with the same silence.
+Three of this chapter's four rules were re-run under **OpenTofu 1.12.4** against the same emulator, and behaved identically to Terraform 1.15.8:
 
-`prevent_destroy` is where they part company.
+- **`create_before_destroy`** — same `+/-` plan symbol, and the same silent propagation. `create_before_destroy = false` on the dependency was discarded, logged by a transformer of the same name in OpenTofu's own package.
+- **`ignore_changes`** — the same drifted tag produced the same `~ "owner" = "platform-team" -> "data-team"` plan without the rule, and the same `0 added, 0 changed, 0 destroyed` with it, leaving `platform-team` in state.
+- **`replace_triggered_by`** — the same `will be replaced due to changes in replace_triggered_by` line, with the `terraform_data` still only updated in place.
+
+`prevent_destroy` is where the two tools part company.
 
 !!! info "OpenTofu — dynamic `prevent_destroy` (1.12)"
-    The literal-only restriction is exactly what OpenTofu 1.12 lifted for this one rule. The same configuration that Terraform rejects with *"Variables not allowed"* validates cleanly under `tofu`. Measured on **Terraform 1.15.8** versus **OpenTofu 1.12.4**:
+    The literal-only restriction is exactly what OpenTofu 1.12 lifted for this one rule. The configuration from section 1, unchanged, run through both CLIs:
 
     ```hcl
-    variable "prevent_database_deletion" {
+    variable "protect" {
       type    = bool
       default = true
     }
 
+    resource "terraform_data" "db" {
+      input = "pretend-database"
+      lifecycle {
+        prevent_destroy = var.protect
+      }
+    }
+    ```
+
+    **Terraform 1.15.8** gives `Error: Variables not allowed` plus `Unsuitable value: value must be known`. **OpenTofu 1.12.4** gives `Success! The configuration is valid.`
+
+    That removes the first of TID's three objections. A module can protect its database by default and let a development caller switch the protection off:
+
+    ```hcl
+    # inside the module
     resource "aws_db_instance" "main" {
       # ...
       lifecycle {
         prevent_destroy = var.prevent_database_deletion
       }
     }
-    ```
 
-    That removes the first of TID's three objections. A module can protect its database by default and let a development caller switch the protection off:
-
-    ```hcl
+    # the dev caller
     module "database" {
       source                    = "./modules/database"
       prevent_database_deletion = false
@@ -638,7 +720,19 @@ The standing advice from Chapter 10 still applies to anything outside those rows
     The other two objections stand on both tools. It still blocks destroy plans, and it still dies with the block.
 
 !!! info "OpenTofu — `destroy = false` on the resource itself (1.12)"
-    Terraform's "forget without destroying" lives in a separate `removed` block, as section 3 showed. OpenTofu also accepts it as one line inside the **resource's own** `lifecycle`, which means the intent stays next to the resource instead of moving to a different block at the moment you delete it.
+    Terraform's "forget without destroying" lives in a separate `removed` block, as section 3 showed. OpenTofu also accepts it as one line inside the **resource's own** `lifecycle`, so the intent stays next to the resource instead of moving to a different block at the moment you delete it.
+
+    ```hcl
+    resource "terraform_data" "keep" {
+      input = "leave-me-running"
+
+      lifecycle {
+        destroy = false
+      }
+    }
+    ```
+
+    **OpenTofu 1.12.4**: `Success! The configuration is valid.` **Terraform 1.15.8**: `Error: Unsupported argument — An argument named "destroy" is not expected here.`
 
 !!! info "OpenTofu — `enabled` (1.11)"
     Chapter 10 left the `count = var.enabled ? 1 : 0` idiom as the only way to make a single resource optional in Terraform, with the cost that the address gains a permanent `[0]`. OpenTofu's replacement is an argument **inside the `lifecycle` block**, not a top-level meta-argument:
@@ -661,7 +755,7 @@ The standing advice from Chapter 10 still applies to anything outside those rows
 
 ## 🧪 Lab: protect a bucket, replace one with no downtime, and keep someone else's drift
 
-This is the milestone made concrete. You will guard a bucket and then watch the guard fail in the way that matters. You will force a replacement in both orders and read the symbol that tells them apart. You will prove that `create_before_destroy` propagates to a resource that never asked for it, then break it on a resource whose name cannot move. Finally you will let an outside process win an argument with Terraform.
+This is the milestone made concrete. You will guard a bucket and then watch the guard fail in the way that matters. You will force a replacement in both orders and read the symbol that tells them apart. You will break create-first on a resource whose name cannot move, then prove that `create_before_destroy` propagates and breaks a second resource that never asked for it. Finally you will let an outside process win an argument with Terraform.
 
 Everything runs against the free local **AWS emulator** from [Chapter 1's lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker). S3 and DynamoDB are both on the reliable free surface.
 
@@ -885,17 +979,56 @@ CreateTable, https response error StatusCode: 400, ResourceInUseException:
 Table already exists: ch11-sessions
 ```
 
-Check what survived:
+Check what survived. `terraform state list` cannot answer this, because it never prints deposed objects, so ask the JSON:
 
 ```shell
-tflocal state list
+tflocal show -json | python -c "
+import json, sys
+d = json.load(sys.stdin)
+for r in d['values']['root_module']['resources']:
+    print(r['address'], '| deposed_key =', r.get('deposed_key'))
+"
 ```
 
 ```
-aws_dynamodb_table.sessions
+aws_dynamodb_table.sessions | deposed_key = None
 ```
 
-One entry, no deposed object, state unchanged. The create failed before anything could be deposed, so this particular failure is clean. Tear down with `tflocal destroy -auto-approve`.
+One object, not deposed, state unchanged. The create failed before anything could be deposed, so this particular failure is clean. Tear down with `tflocal destroy -auto-approve`.
+
+### Part C2 — the same collision, on a resource that never asked for it
+
+`labs/chapter11/lab6` is the same table with **no `lifecycle` block**, plus an S3 bucket that declares `create_before_destroy` and depends on the table through a tag.
+
+```shell
+tflocal init
+tflocal apply -auto-approve
+tflocal plan -var hash_key=tenant_id
+```
+
+```
++/- create replacement and then destroy
+
+  # aws_dynamodb_table.sessions must be replaced
++/- resource "aws_dynamodb_table" "sessions" {
+      ~ hash_key = "session_id" -> "tenant_id" # forces replacement
+```
+
+The table got the create-first symbol from a `lifecycle` block in a different resource.
+
+```shell
+tflocal apply -var hash_key=tenant_id -auto-approve
+```
+
+```
+aws_dynamodb_table.sessions: Creating...
+
+Error: creating AWS DynamoDB Table (ch11-prop-sessions): operation error
+DynamoDB: CreateTable, https response error StatusCode: 400,
+ResourceInUseException: Table already exists: ch11-prop-sessions
+```
+
+Read the table's own block and there is nothing to find. Clean up with `tflocal destroy -auto-approve`.
 
 ### Part D — let the other system win
 
@@ -986,7 +1119,7 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
 - **Trusting `prevent_destroy` to survive an edit.** It guards against an unintended plan, not against deleting or commenting out the block. Use a `removed` block with `destroy = false` when the intent is "stop managing this".
 - **Writing a bare `removed` block.** `destroy` defaults to `true`. Omitting the `lifecycle` line destroys the object.
 - **Turning on `create_before_destroy` without checking the resource type.** If the object has a fixed unique name, creating the replacement first collides. The plan will not tell you; the apply will.
-- **Forgetting that `create_before_destroy` propagates.** Every resource upstream of the one you edited gets it too, transitively, written to state, and cannot be opted out.
+- **Forgetting that `create_before_destroy` propagates.** Every resource upstream of the one you edited gets it too, transitively, written to state, and cannot be opted out. If one of them has a fixed unique name, its next replacement fails on a collision with nothing in its own block to explain why.
 - **Reading a `false` you wrote as a `false` Terraform honoured.** `create_before_destroy = false` on a propagated resource is silently discarded. Only a trace log shows it.
 - **Assuming `ignore_changes` freezes the attribute.** It suppresses updates only. Creation still uses the configured value, so a later replacement resets whatever had drifted.
 - **Reaching for `ignore_changes = all`.** It ends the configuration's authority over the object permanently, including for changes you intend. Name the attributes.
@@ -994,6 +1127,7 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
 - **Trying to `ignore_changes` a meta-argument.** Only attributes the resource type defines are addressable.
 - **Putting a variable in `replace_triggered_by`.** It has no planned action to inspect. Wrap it in a `terraform_data`.
 - **Expecting a lifecycle rule to be visible in state.** Only `create_before_destroy` is recorded. Everything else exists solely in the configuration.
+- **Looking for a deposed object in `terraform state list`.** That command prints one address per resource instance, from the *current* object only. Use `terraform show -json` and check `deposed_key`.
 
 ---
 
@@ -1015,10 +1149,10 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
 - **Lifecycle rules are not recorded in state, except `create_before_destroy`.** They are instructions in the configuration, read fresh each run. That single fact explains why deleting a block deletes its protection.
 - **`prevent_destroy` rejects a destroy plan with an error, and dies with the block that carries it.** It is a guard against an unintended plan, never against an unintended edit. The real "stop managing, do not delete" tool is a `removed` block with `destroy = false`.
 - **`create_before_destroy` flips the replacement order**, which the plan announces only through the `+/-` symbol. The old object is deposed under a generated key before being destroyed, and survives a failed apply.
-- **It propagates to every resource upstream, transitively**, is written to their state, and cannot be opted out. An explicit `false` is discarded without an error or a warning.
+- **It propagates to every resource upstream, transitively**, is written to their state, and cannot be opted out. An explicit `false` is discarded without an error or a warning, and a propagated resource with a fixed unique name fails its next replacement on a collision.
 - **`ignore_changes` is honoured on create and ignored on update.** It suppresses the plan, not the read, so configuration and state legitimately diverge. `all` is a bare keyword and a much bigger commitment than a list.
 - **`replace_triggered_by` watches planned actions, not values**, except for attribute references, which watch values. A variable has no planned action, so `terraform_data` is the documented bridge.
-- **OpenTofu lifts the literal-only restriction for `prevent_destroy`**, accepts `destroy = false` on the resource itself, and offers `enabled` in place of the `count = cond ? 1 : 0` idiom. The other three rules behave identically on both tools.
+- **OpenTofu lifts the literal-only restriction for `prevent_destroy`**, accepts `destroy = false` on the resource itself, and offers `enabled` in place of the `count = cond ? 1 : 0` idiom. The other three rules were re-measured under OpenTofu 1.12.4 and behaved identically.
 
 ---
 

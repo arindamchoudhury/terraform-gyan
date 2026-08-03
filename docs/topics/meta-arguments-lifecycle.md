@@ -180,7 +180,7 @@ Read the symbol literally — it is the operation order. Confirmed at tag v1.15.
 aws_instance.example (deposed object 940b3833): Destroying...
 ```
 
-(The tutorial shows the older bare-parenthesis form.) If an apply fails partway, the deposed object stays in state and appears in `terraform state list` — the main operational cost of CBD, and something neither the reference page nor the tutorial mentions. See [[tf-state]].
+(The tutorial shows the older bare-parenthesis form.) If an apply fails partway, the deposed object stays in state and the next plan destroys it, which is the main operational cost of CBD and something neither the reference page nor the tutorial mentions. It does **not** show up in `terraform state list`, which prints only current objects; `terraform show -json` reports it as `deposed_key`. Verified against the v1.15.8 source. See [[tf-state]].
 
 **`ignore_changes` refreshes state to the drifted value.** Change a tag out of band with `aws ec2 create-tags`, then apply: `0 added, 0 changed, 0 destroyed`, and `terraform state show` reports the **new** value. The rule suppresses the plan to update, not the read. Config and state legitimately disagree from then on — until a replacement, which re-creates the resource from the configured value.
 
