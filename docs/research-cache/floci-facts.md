@@ -220,6 +220,16 @@ Verify with `awslocal` or `aws --endpoint-url=http://localhost:4566 s3 ls`.
 `tflocal` just works, no signup). Keep MiniStack and LocalStack as alternatives. Lab bodies use
 `tflocal`, which drives all three — the reader swaps only the `docker run` line.
 
+## Measured fidelity gaps
+
+Things the emulator does differently from AWS, found while writing labs. Each one was isolated with a
+control configuration before being recorded here.
+
+| Gap | Detail | Found in |
+|---|---|---|
+| **S3 bucket tags are dropped at create** | `aws_s3_bucket` with a `tags` map applies cleanly, but the tags never reach the object. State records `tags = {}`, `get-bucket-tagging` returns an empty `TagSet`, and **every subsequent plan proposes to add them again** — a perpetual diff. A control bucket with no `lifecycle` block behaves identically, so it is the emulator, not Terraform. Tags set afterwards through `put-bucket-tagging` **do** persist and are read back correctly on refresh. Measured 2026-08-03, TF 1.15.8. | Book Ch 11 lab, Part D |
+| **DynamoDB duplicate table names are refused** | Not a gap — worth recording as *working* fidelity. `CreateTable` on an existing name returns `ResourceInUseException: Table already exists`, which is what makes the `create_before_destroy` collision lab reproducible. Measured 2026-08-03. | Book Ch 11 lab, Parts C and C2 |
+
 ## Sources
 
 - Floci repo / README — <https://github.com/floci-io/floci>

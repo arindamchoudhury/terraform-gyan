@@ -81,6 +81,8 @@ The one genuinely surprising behavior on the page, and it is not in TID.
 
     **OpenTofu 1.12.4** behaves identically, same transformer name in its own package. Measured in Book Ch 11's lab (`labs/chapter11/lab2`).
 
+    Propagation is also **transitive**, not one hop. A three-bucket chain where only the last declares the rule ends with `create_before_destroy = true` in state for all three, including the one two edges away. Measured on 1.15.8.
+
 !!! note "The forcing pass, in the source"
     `ForcedCBDTransformer` (`internal/terraform/transform_destroy_cbd.go`, tag **v1.15.8**) walks every CBD-able vertex; if a non-CBD node has a CBD descendant it upgrades that node. Its own comment states the reason the docs compress into one clause:
 

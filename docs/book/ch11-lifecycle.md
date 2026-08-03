@@ -256,7 +256,18 @@ TID's Chapter 2 recommends using `prevent_destroy` *exceedingly rarely*, and giv
 
 The reference page adds a fourth: enabling it "makes certain configuration changes impossible to apply." Any change that would force replacement is now an error, not a replacement.
 
-Its honest use case is narrower than "protect the database". It protects against a **replacement** you did not intend, on an object that is expensive or impossible to reproduce. Compliance-retained logs are the clean example. For everything else, section 5 has a better tool.
+Its honest use case is narrower than "protect the database". It protects against a **replacement** you did not intend, on an object that is expensive or impossible to reproduce. That is worth checking rather than assuming, because a replacement is not a `terraform destroy`. Measured on 1.15.8: change the bucket name on the guarded resource above, which forces replacement, and the plan is refused with the same error:
+
+```
+Plan: 1 to add, 0 to change, 1 to destroy.
+
+Error: Instance cannot be destroyed
+
+Resource aws_s3_bucket.guarded has lifecycle.prevent_destroy set, but the
+plan calls for this resource to be destroyed.
+```
+
+So the guard covers both routes to a destroy. Compliance-retained logs are the clean example. For everything else, section 5 has a better tool.
 
 ---
 
@@ -370,7 +381,15 @@ aws_s3_bucket.app    -> create_before_destroy = True
 aws_s3_bucket.config -> create_before_destroy = True
 ```
 
-`aws_s3_bucket.config` acquired the rule and had it written to state, despite never mentioning it. Terraform propagates `create_before_destroy` along dependency edges, upward from the resource that declared it.
+`aws_s3_bucket.config` acquired the rule and had it written to state, despite never mentioning it. Terraform propagates `create_before_destroy` along dependency edges, from the resource that declared it toward the resources it depends on.
+
+It does not stop at one hop. A three-bucket chain where only the last one declares the rule, measured on 1.15.8:
+
+```
+aws_s3_bucket.a -> create_before_destroy = True     # declares it
+aws_s3_bucket.b -> create_before_destroy = True     # one edge away
+aws_s3_bucket.c -> create_before_destroy = True     # two edges away
+```
 
 The reason is graph-shaped. A create-before-destroy node destroys its old object *after* creating the new one, which reverses the direction of its destroy edges. If its dependency still destroyed first, the two orderings would demand a cycle. Rather than fail, Terraform upgrades the dependency to match. The pass has a name and says so in the log (`internal/terraform/transform_destroy_cbd.go`, tag v1.15.8):
 
@@ -535,6 +554,18 @@ The rule that makes the whole feature make sense, stated exactly by the referenc
 So the ignored attribute is not dead. It still applies the first time the object is built. It stops mattering from the second plan onward.
 
 This is the mechanic behind the canonical AMI example. An instance is built from the AMI the configuration looked up. Later AMI releases would otherwise force a replacement of a perfectly healthy server, so you ignore the attribute. But if that instance is ever replaced for some other reason, it comes back on whatever the configuration says at that moment, not on the value that had drifted.
+
+The plan says so directly. With `ignore_changes = [tags]` in force and the tag drifted to `platform-team`, a change that forces replacement produces this, measured on 1.15.8:
+
+```
+  # aws_s3_bucket.guarded must be replaced
+      ~ bucket = "ch11-probe-ic-v1" -> "ch11-probe-ic-v2" # forces replacement
+      ~ tags   = {
+          ~ "owner" = "platform-team" -> "data-team"
+        }
+```
+
+The drifted value is on its way out, because this is a create and creates honour the configured value.
 
 ### What you can put in the list
 
@@ -1065,6 +1096,22 @@ awslocal s3api put-bucket-tagging --bucket ch11-drift \
 tflocal plan
 ```
 
+!!! warning "The emulator does not persist bucket tags set at creation"
+    Run `tflocal plan` immediately after that first apply, before touching anything, and it is **not** empty. Measured on the default Floci image with a control bucket that has no `lifecycle` block at all:
+
+    ```
+      # aws_s3_bucket.control will be updated in-place
+      ~ tags = {
+          + "owner" = "data-team"
+        }
+
+    Plan: 0 to add, 1 to change, 0 to destroy.
+    ```
+
+    The control behaves the same way, so this is the emulator dropping tags passed to `CreateBucket`, not anything to do with `ignore_changes`. Tags set afterwards through `put-bucket-tagging` **do** persist, which is why the drift step works.
+
+    The effect on this exercise: the standing diff you are about to suppress is partly the emulator's own, not purely the out-of-band change. Everything the rule does is still visible. On real AWS the starting state would read `data-team` rather than empty.
+
 ```
   # aws_s3_bucket.reports will be updated in-place
   ~ resource "aws_s3_bucket" "reports" {
@@ -1093,7 +1140,7 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
     }
 ```
 
-The configuration still says `data-team`. State and reality say `platform-team`. Nothing is broken; the two are allowed to disagree now. Clean up with `tflocal destroy -auto-approve` after restoring `main.tf`.
+The configuration still says `data-team`. State and reality say `platform-team`. Nothing is broken; the two are allowed to disagree now, and the standing diff from the warning above is gone with it. Clean up with `tflocal destroy -auto-approve` after restoring `main.tf`.
 
 !!! note "`awslocal` is the wrapper; the long form works too"
     `awslocal <cmd>` is `aws --endpoint-url http://localhost:4566 <cmd>` with throwaway credentials preset. If you skipped the wrapper in Chapter 1, use the long form with `AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1` in the environment.
@@ -1130,7 +1177,7 @@ replace_triggered_by.
 Finish with `tflocal destroy -var revision=2 -auto-approve`.
 
 !!! warning "Emulation is not AWS"
-    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. The emulator's DynamoDB refused a duplicate table name, which is what makes Part C work, but not every emulated service enforces every constraint its real counterpart does. Validate anything load-bearing against real free-tier AWS before trusting it.
+    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. The emulator's DynamoDB refused a duplicate table name, which is what makes Part C work. Other services are less faithful, and Part D hits one: the emulator drops tags passed to `CreateBucket`, so an S3 bucket's tags never land until something sets them through the tagging API. Validate anything load-bearing against real free-tier AWS before trusting it.
 
 !!! note "If every provider suddenly fails to load"
     On a machine where security software intercepts loopback TLS, every Terraform command that loads a provider can fail with `Failed to load plugin schemas`. That is the plugin mTLS channel being intercepted, not a problem with the provider or the emulator. Exclude `terraform.exe` and `.terraform/providers/**` from the security product's *network/SSL inspection*. As a scoped fallback for one command, `TF_DISABLE_PLUGIN_TLS=1` works, but never set it persistently: it makes the Terraform-to-plugin channel plaintext for every provider, and credentials cross that channel.
@@ -1160,7 +1207,7 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
 2. **Predict.** A plan shows `+/-` for a resource whose name is fixed by the configuration. Will the apply succeed? What determines the answer, and where would you check?
 3. **Apply.** Take Part B's configuration and add a third bucket that the *config* bucket depends on. Predict whether it acquires `create_before_destroy`, then check the state file. Explain the direction propagation travels.
 4. **Apply.** Reproduce Part C's collision, then fix it. Build the table's name from a `random_id` suffix — and notice the trap before you run it: a plain `random_id` keeps its value across applies, so the replacement asks for the *same* name and collides exactly as before. The suffix has to be regenerated by the same change that forces the replacement, which is what `random_id`'s `keepers` argument is for. Wire `keepers = { hash_key = var.hash_key }`, confirm the apply now succeeds, and say what became of the old table.
-5. **Apply.** Using Part D's bucket, drift the tag out of band and then *deliberately* change the configured tag as well. With `ignore_changes = [tags]` in place, predict the plan before running it, then destroy and re-apply and explain why the tag comes back as the configured value.
+5. **Apply.** Using Part D's bucket, drift the tag out of band and then force a replacement by changing the bucket name, with `ignore_changes = [tags]` still in place. Predict the plan first, then read the `tags` line in it and explain why the drifted value loses. Do not expect the applied result to match on the emulator — read Part D's warning and say which of the two you would trust.
 6. **Extend.** Build the two-tool comparison from section 8 for real: one configuration with `prevent_destroy = var.protect`, validated under both `terraform` and `tofu`. Then convert it to a form that works on both tools, and say what you gave up.
 
 ---
