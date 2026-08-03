@@ -1,0 +1,39 @@
+# Chapter 11 Lab, Part B, step 2 — the same configuration with
+# create_before_destroy on the dependent resource only.
+
+terraform {
+  required_version = ">= 1.15"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+variable "suffix" {
+  description = "Changing this renames the app bucket, which forces replacement."
+  type        = string
+  default     = "v1"
+}
+
+# Still no lifecycle block here. Watch it acquire one anyway.
+resource "aws_s3_bucket" "config" {
+  bucket = "ch11-cbd-config"
+}
+
+resource "aws_s3_bucket" "app" {
+  bucket = "ch11-cbd-app-${var.suffix}"
+
+  tags = {
+    config_bucket = aws_s3_bucket.config.id
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}

@@ -1,0 +1,29 @@
+# Chapter 11 Lab, Part D, step 2 — the same bucket with the drifted attribute
+# ignored. Terraform stops planning the update, and refreshes state to the
+# drifted value rather than the configured one.
+
+terraform {
+  required_version = ">= 1.15"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_s3_bucket" "reports" {
+  bucket = "ch11-drift"
+
+  tags = {
+    owner = "data-team"
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}

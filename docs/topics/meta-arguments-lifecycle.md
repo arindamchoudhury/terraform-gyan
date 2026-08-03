@@ -150,7 +150,9 @@ HCDocs adds one qualifier the book doesn't: **support for each individual rule v
 **`create_before_destroy`** — Terraform's default on replacement is destroy-then-create. That default is the safe one: many resources hold unique identifiers that can't be duplicated, so create-first would error. Two IAM roles can't share a name. Two instances can't share an Elastic IP. Set it `true` for high-availability cases where even brief loss hurts.
 
 !!! warning "Turning it on for one resource turns it on for everything upstream"
-    CBD propagates along dependency edges, and you cannot switch it back off. If A has `create_before_destroy = true` and A depends on B, Terraform enables it on B implicitly and writes that to state. Overriding B to `false` is rejected, because a CBD node depending on a non-CBD node "would imply dependency cycles in the graph" ([[tf-meta-lifecycle]]).
+    CBD propagates along dependency edges, and you cannot switch it back off. If A has `create_before_destroy = true` and A depends on B, Terraform enables it on B implicitly and writes that to state. The docs say you cannot override B to `false`, because a CBD node depending on a non-CBD node "would imply dependency cycles in the graph" ([[tf-meta-lifecycle]]).
+
+    Measured on **1.15.8** and **OpenTofu 1.12.4**, "cannot" means *silently ignored*, not rejected: writing `create_before_destroy = false` on B plans and applies with no error and no warning, and only `TF_LOG=trace` shows `ForcedCBDTransformer: forcing create_before_destroy on for "…"`. Lab: `labs/chapter11/lab2`.
 
     `ForcedCBDTransformer` (`internal/terraform/transform_destroy_cbd.go`, tag v1.15.8) does this in the **plan** graph builder, before planned changes are constructed — so it shows up in the plan, not as an apply-time surprise.
 

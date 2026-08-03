@@ -60,6 +60,16 @@ The one genuinely surprising behavior on the page, and it is not in TID.
 - A depends on B, so Terraform **enables CBD on B implicitly and stores it to state**.
 - You therefore **cannot override CBD to `false` on B**, "because that would imply dependency cycles in the graph."
 
+!!! danger "Measured: the override is not rejected, it is silently ignored (2026-08-03)"
+    "Cannot override" reads like an error. It is not. On **Terraform 1.15.8**, writing `lifecycle { create_before_destroy = false }` on the dependency plans and applies with **no error and no warning** — Terraform simply forces the flag back on. `TF_LOG=trace` is the only place it says so:
+
+    ```
+    ForcedCBDTransformer: "aws_s3_bucket.config (expand)" has CBD descendant "aws_s3_bucket.app (expand)"
+    ForcedCBDTransformer: forcing create_before_destroy on for "aws_s3_bucket.config (expand)"
+    ```
+
+    **OpenTofu 1.12.4** behaves identically, same transformer name in its own package. Measured in Book Ch 11's lab (`labs/chapter11/lab2`).
+
 !!! note "The forcing pass, in the source"
     `ForcedCBDTransformer` (`internal/terraform/transform_destroy_cbd.go`, tag **v1.15.8**) walks every CBD-able vertex; if a non-CBD node has a CBD descendant it upgrades that node. Its own comment states the reason the docs compress into one clause:
 
