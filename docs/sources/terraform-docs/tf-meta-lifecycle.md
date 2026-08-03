@@ -52,6 +52,17 @@ Two consequences the page draws out.
 
 Same rule already recorded in [[tf-block-resource]] and [[meta-arguments-lifecycle]]. Worth noting it is stated here as covering **all** settings, not just the boolean ones.
 
+!!! note "Measured: “literal” means “no references”, not “no expressions” (2026-08-03)"
+    The boundary is narrower and wider than the word suggests. Run through `terraform validate` on **1.15.8**, with `prevent_destroy`:
+
+    | Value | Result |
+    |---|---|
+    | `true` · `true && true` · `!false` | valid |
+    | `local.protect` · `var.protect` · `terraform.workspace == "default"` | `Error: Variables not allowed` |
+    | `alltrue([true])` | `Error: Function calls not allowed` |
+
+    Operators over constants are accepted. **Every reference is rejected, including `local`**, which is a compile-time constant by any ordinary definition. The expression is evaluated with no scope and no function table at all, which is what "before it evaluates arbitrary expressions" amounts to in practice. Book Ch 11 §1.
+
 ## `create_before_destroy` propagates to dependencies
 
 The one genuinely surprising behavior on the page, and it is not in TID.

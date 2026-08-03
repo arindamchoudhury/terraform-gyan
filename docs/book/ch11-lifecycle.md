@@ -71,7 +71,7 @@ That is not a hypothetical. The block has grown twice, and it now holds more tha
 
 This chapter teaches the first four. The last three are named here so the list is complete, and each is picked up where it belongs: `precondition` and `postcondition` in Chapter 19, where validation is the subject, and `action_trigger` in Chapter 18, alongside provisioners and the other escape hatches.
 
-There is an eighth rule, `destroy`, which is legal only inside a `removed` block. It appears in section 4 because it is the fix for `prevent_destroy`'s biggest weakness, and it belongs properly to Chapter 17.
+There is an eighth rule, `destroy`, which is legal only inside a `removed` block. It appears in section 3 because it is the fix for `prevent_destroy`'s biggest weakness, and it belongs properly to Chapter 17.
 
 ### Why every rule takes literals
 
@@ -111,14 +111,28 @@ Error: Unsuitable value type
 Unsuitable value: value must be known
 ```
 
-"Value must be known" is the real constraint. "Variables not allowed" is how it shows up in practice, because a variable is the usual way to make something unknown at this stage.
+Neither message is quite the rule, though, and the boundary is worth pinning down because "literal" is a loose word. Every form below was run through `terraform validate` on **1.15.8**:
+
+| `prevent_destroy = …` | Result |
+|---|---|
+| `true` | valid |
+| `true && true` | valid |
+| `!false` | valid |
+| `local.protect` | `Error: Variables not allowed` |
+| `var.protect` | `Error: Variables not allowed` |
+| `terraform.workspace == "default"` | `Error: Variables not allowed` |
+| `alltrue([true])` | `Error: Function calls not allowed` |
+
+So operators over constants are fine. **Any reference is not, even one Terraform could resolve without touching a provider.** `local.protect` is a compile-time constant by any reasonable definition, and it is still rejected, because the expression is evaluated with no scope at all — no variables, no locals, and no function table.
+
+"Literal" is therefore accurate enough as advice, and "the expression may not refer to anything" is the rule.
 
 The reference page gives the reason in one sentence: *"All lifecycle settings affect how Terraform constructs and traverses the dependency graph. As a result, only literal values can be used because the processing happens too early for arbitrary expression evaluation."*
 
 Read that as a claim about ordering, not about types. The dependency graph has to exist before any expression can be evaluated, because evaluating an expression means resolving references, and resolving references *is* the graph. A lifecycle rule is an **input** to graph construction. It cannot depend on anything graph construction produces.
 
 !!! note "The same rule you already met, stated with its mechanism"
-    Chapter 10 said meta-arguments are processed before the graph exists, which is why `count` and `for_each` values must be known ahead of any remote operation. `lifecycle` is the strictest case of that rule. `count` at least accepts an expression over known values. `prevent_destroy` accepts the token `true` or the token `false` and nothing else.
+    Chapter 10 said meta-arguments are processed before the graph exists, which is why `count` and `for_each` values must be known ahead of any remote operation. `lifecycle` is the strictest case of that rule. `count` accepts any expression whose value is known at plan time, including one built from variables and locals. `prevent_destroy` accepts no reference at all.
 
 ---
 
@@ -132,7 +146,7 @@ Nothing else in this chapter matters as much. The lifecycle rules live in the co
 
 Three consequences follow directly.
 
-**Deleting a resource block deletes its guard.** Not "removes the resource and keeps the protection". The protection was a line in the block you just deleted. Section 4 measures exactly this.
+**Deleting a resource block deletes its guard.** Not "removes the resource and keeps the protection". The protection was a line in the block you just deleted. Section 3 measures exactly this.
 
 **A resource inherited from someone else has no guard until you write one.** Importing an object into state imports the object, not a policy about it.
 
@@ -952,6 +966,15 @@ TF_LOG=trace TF_LOG_PATH=trace.log tflocal plan -var suffix=v4
 grep -o "ForcedCBDTransformer:.*" trace.log | sort -u
 ```
 
+PowerShell has no inline environment-variable prefix, so set them first:
+
+```powershell
+$env:TF_LOG = "trace"; $env:TF_LOG_PATH = "trace.log"
+tflocal plan -var suffix=v4
+Select-String "ForcedCBDTransformer:" trace.log | ForEach-Object { $_.Line } | Sort-Object -Unique
+$env:TF_LOG = $null; $env:TF_LOG_PATH = $null
+```
+
 ```
 ForcedCBDTransformer: "aws_s3_bucket.config (expand)" has CBD descendant "aws_s3_bucket.app (expand)"
 ForcedCBDTransformer: forcing create_before_destroy on for "aws_s3_bucket.config (expand)"
@@ -1107,7 +1130,7 @@ replace_triggered_by.
 Finish with `tflocal destroy -var revision=2 -auto-approve`.
 
 !!! warning "Emulation is not AWS"
-    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. The emulator's DynamoDB refused a duplicate table name exactly as the real service does, which is the point of Part C, but not every service enforces every constraint the same way. Validate anything load-bearing against real free-tier AWS before trusting it.
+    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. The emulator's DynamoDB refused a duplicate table name, which is what makes Part C work, but not every emulated service enforces every constraint its real counterpart does. Validate anything load-bearing against real free-tier AWS before trusting it.
 
 !!! note "If every provider suddenly fails to load"
     On a machine where security software intercepts loopback TLS, every Terraform command that loads a provider can fail with `Failed to load plugin schemas`. That is the plugin mTLS channel being intercepted, not a problem with the provider or the emulator. Exclude `terraform.exe` and `.terraform/providers/**` from the security product's *network/SSL inspection*. As a scoped fallback for one command, `TF_DISABLE_PLUGIN_TLS=1` works, but never set it persistently: it makes the Terraform-to-plugin channel plaintext for every provider, and credentials cross that channel.
@@ -1123,7 +1146,7 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
 - **Reading a `false` you wrote as a `false` Terraform honoured.** `create_before_destroy = false` on a propagated resource is silently discarded. Only a trace log shows it.
 - **Assuming `ignore_changes` freezes the attribute.** It suppresses updates only. Creation still uses the configured value, so a later replacement resets whatever had drifted.
 - **Reaching for `ignore_changes = all`.** It ends the configuration's authority over the object permanently, including for changes you intend. Name the attributes.
-- **Bracketing the `all` keyword.** `ignore_changes = all` is valid; `[all]` is an error.
+- **Bracketing the `all` keyword.** `ignore_changes = all` is valid; both `[all]` and `["all"]` are `Unsupported attribute` errors.
 - **Trying to `ignore_changes` a meta-argument.** Only attributes the resource type defines are addressable.
 - **Putting a variable in `replace_triggered_by`.** It has no planned action to inspect. Wrap it in a `terraform_data`.
 - **Expecting a lifecycle rule to be visible in state.** Only `create_before_destroy` is recorded. Everything else exists solely in the configuration.
@@ -1136,7 +1159,7 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
 1. **Recall.** Without looking: which lifecycle rule is written to state, and what would break if it were not?
 2. **Predict.** A plan shows `+/-` for a resource whose name is fixed by the configuration. Will the apply succeed? What determines the answer, and where would you check?
 3. **Apply.** Take Part B's configuration and add a third bucket that the *config* bucket depends on. Predict whether it acquires `create_before_destroy`, then check the state file. Explain the direction propagation travels.
-4. **Apply.** Reproduce Part C's collision, then fix it. Give the table a name built from a `random_id` suffix so the replacement can hold a different name, and confirm the apply now succeeds. Note what happens to the old table.
+4. **Apply.** Reproduce Part C's collision, then fix it. Build the table's name from a `random_id` suffix — and notice the trap before you run it: a plain `random_id` keeps its value across applies, so the replacement asks for the *same* name and collides exactly as before. The suffix has to be regenerated by the same change that forces the replacement, which is what `random_id`'s `keepers` argument is for. Wire `keepers = { hash_key = var.hash_key }`, confirm the apply now succeeds, and say what became of the old table.
 5. **Apply.** Using Part D's bucket, drift the tag out of band and then *deliberately* change the configured tag as well. With `ignore_changes = [tags]` in place, predict the plan before running it, then destroy and re-apply and explain why the tag comes back as the configured value.
 6. **Extend.** Build the two-tool comparison from section 8 for real: one configuration with `prevent_destroy = var.protect`, validated under both `terraform` and `tofu`. Then convert it to a form that works on both tools, and say what you gave up.
 
@@ -1148,7 +1171,7 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
 - **Every rule takes literal values only.** Lifecycle settings are inputs to dependency-graph construction, and the graph must exist before any expression can be evaluated.
 - **Lifecycle rules are not recorded in state, except `create_before_destroy`.** They are instructions in the configuration, read fresh each run. That single fact explains why deleting a block deletes its protection.
 - **`prevent_destroy` rejects a destroy plan with an error, and dies with the block that carries it.** It is a guard against an unintended plan, never against an unintended edit. The real "stop managing, do not delete" tool is a `removed` block with `destroy = false`.
-- **`create_before_destroy` flips the replacement order**, which the plan announces only through the `+/-` symbol. The old object is deposed under a generated key before being destroyed, and survives a failed apply.
+- **`create_before_destroy` flips the replacement order**, which the plan announces only through the `+/-` symbol. The old object is deposed under a generated key before being destroyed, and an apply that fails between those two steps leaves the deposed object behind.
 - **It propagates to every resource upstream, transitively**, is written to their state, and cannot be opted out. An explicit `false` is discarded without an error or a warning, and a propagated resource with a fixed unique name fails its next replacement on a collision.
 - **`ignore_changes` is honoured on create and ignored on update.** It suppresses the plan, not the read, so configuration and state legitimately diverge. `all` is a bare keyword and a much bigger commitment than a list.
 - **`replace_triggered_by` watches planned actions, not values**, except for attribute references, which watch values. A variable has no planned action, so `terraform_data` is the documented bridge.

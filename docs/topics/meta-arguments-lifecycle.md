@@ -138,6 +138,17 @@ HCDocs adds one qualifier the book doesn't: **support for each individual rule v
 !!! note "Why `lifecycle` accepts only literal values"
     "Configurations defined in the `lifecycle` block **affect how Terraform constructs and traverses the dependency graph**. You can only use literal values … because Terraform processes them **before it evaluates arbitrary expressions**." The `lifecycle` block is an *input* to graph construction, so it cannot depend on anything the graph produces. That is the mechanism behind TID's "known early" warning.
 
+!!! note "Measured: “literal” means “no references”, not “no expressions” (2026-08-03)"
+    The boundary is narrower and wider than the word suggests. Run through `terraform validate` on **1.15.8**, with `prevent_destroy`:
+
+    | Value | Result |
+    |---|---|
+    | `true` · `true && true` · `!false` | valid |
+    | `local.protect` · `var.protect` · `terraform.workspace == "default"` | `Error: Variables not allowed` |
+    | `alltrue([true])` | `Error: Function calls not allowed` |
+
+    Operators over constants are accepted. **Every reference is rejected, including `local`**, which is a compile-time constant by any ordinary definition. The expression is evaluated with no scope and no function table at all, which is what "before it evaluates arbitrary expressions" amounts to in practice. Book Ch 11 §1.
+
 !!! danger "Lifecycle rules are not recorded in state — except one"
     [[tf-meta-lifecycle]] adds the fact that reframes half of this section: *"Except for `create_before_destroy`, Terraform does not explicitly record a resource's lifecycle rule to state."*
 

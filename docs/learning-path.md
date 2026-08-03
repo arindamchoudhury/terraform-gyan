@@ -362,10 +362,12 @@ You are ready to advance when you can:
 3. **Interactive — experiment** (~30 min) — extend the tutorial's config: confirm CBD propagated to the security group without being written there, then force the security group to be *replaced* rather than updated in-place and watch the name collision that propagation causes.
 4. **Book chapter — TID Ch 2 §2.7.2 "Lifecycle"** (~30 min) — the lifecycle meta-argument itself, real use cases and gotchas (Captured notes: [[02-hcl-components]]). `ignore_changes` as the fix for cascading `# forces replacement` is Ch 5 §5.7 *Cascading changes* ([[05-terraform-plan]]).
 
-!!! note "📌 `lifecycle` has seven rules, and only takes literals"
+!!! note "📌 `lifecycle` has seven rules, and takes no references at all"
     Beyond the classic four, `lifecycle` also holds **`precondition`** / **`postcondition`** (→ A2) and **`action_trigger`** (→ A1). Full list in [[tf-block-resource]].
 
     Why literals only: "Configurations defined in the `lifecycle` block affect how Terraform **constructs and traverses the dependency graph**. You can only use literal values … because Terraform processes them **before it evaluates arbitrary expressions**." The block is an *input* to graph construction. (See [[meta-arguments-lifecycle]].)
+
+    Measured on **1.15.8** while writing Ch 11: "literal" is the wrong word for the boundary. `prevent_destroy = true && true` and `!false` are **valid**, while `local.protect` is rejected with `Error: Variables not allowed` and `alltrue([true])` with `Error: Function calls not allowed`. Operators over constants are fine; every reference fails, even a local. The rule is *no references*, not *no expressions*.
 
     Also note `prevent_destroy` "doesn't prevent Terraform from destroying the resource **if you remove the resource configuration**" — the guard dies with the block it guards.
 
