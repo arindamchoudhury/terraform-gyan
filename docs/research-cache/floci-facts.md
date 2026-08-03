@@ -242,7 +242,7 @@ provider actually uses for bucket tags.
 <CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Tags><Tag><Key>owner</Key><Value>data-team</Value></Tag></Tags></CreateBucketConfiguration>
 ```
 
-**What Floci does with it.** Nothing. `S3Controller.createBucket` (`src/main/java/io/github/hectorvent/floci/services/s3/S3Controller.java`, read at `main` @ `9bbe9ffe`, 2026-08-02) parses that body for exactly one element:
+**What Floci does with it.** Nothing. `S3Controller.createBucket` parses that body for exactly one element (`src/main/java/io/github/hectorvent/floci/services/s3/S3Controller.java:257`, read at tag **1.5.33** — the version the `floci/floci:latest` container reported while these measurements were taken):
 
 ```java
 String locationConstraint = null;
@@ -254,8 +254,16 @@ if (body != null && body.length > 0) {
 s3Service.createBucket(bucket, region);
 ```
 
-`<Tags>` is never looked at, and `S3Service.createBucket(String bucketName, String region)` has no
-parameter to receive them. The request succeeds, so nothing surfaces as an error.
+`<Tags>` is never looked at, and `S3Service.createBucket(String bucketName, String region)`
+(`S3Service.java:185`) has no parameter to receive them. The request succeeds, so nothing surfaces as
+an error.
+
+The emulator is not missing a tag store — it has one, and a working writer. `handlePutBucketTagging`
+(`S3Controller.java:1588`) parses the tag pairs and calls `s3Service.putBucketTagging(bucket, tags)`.
+The `CreateBucket` path simply has no wire into it.
+
+Checked at **1.5.34** as well: that release rewrites much of `S3Controller` (135 insertions), but the
+`createBucket` body-parsing block is byte-identical, so the behaviour is unchanged.
 
 **How the value gets read back.** Not with `GetBucketTagging` — that operation appears **zero** times
 in either the apply or the plan trace. The provider reads bucket tags through the **S3 Control** API:

@@ -1108,7 +1108,7 @@ tflocal plan
     Plan: 0 to add, 1 to change, 0 to destroy.
     ```
 
-    The control behaves the same way, so this is the emulator and not `ignore_changes`. Traced to the source: AWS provider 6.57.1 sends bucket tags inside the **`CreateBucket` request body**, as `<CreateBucketConfiguration><Tags>…</Tags></CreateBucketConfiguration>`, and Floci's `S3Controller.createBucket` parses that body for `LocationConstraint` and nothing else, then calls `S3Service.createBucket(bucketName, region)` — a method with no parameter for tags. The request succeeds, so nothing errors.
+    The control behaves the same way, so this is the emulator and not `ignore_changes`. Traced to the source: AWS provider 6.57.1 sends bucket tags inside the **`CreateBucket` request body**, as `<CreateBucketConfiguration><Tags>…</Tags></CreateBucketConfiguration>`, and Floci's `S3Controller.createBucket` parses that body for `LocationConstraint` and nothing else, then calls `S3Service.createBucket(bucketName, region)` — a method with no parameter for tags (read at tag **1.5.33**, the running image). The emulator does have a bucket-tag store and a working `handlePutBucketTagging`; the create path just has no wire into it. The request succeeds, so nothing errors.
 
     The read-back runs through the **S3 Control** `ListTagsForResource` operation rather than `GetBucketTagging`, and it returns an empty tag set, which is what puts `tags = {}` in state. Tags set afterwards through `put-bucket-tagging` **do** persist and the same read finds them, which is why the drift step works. Full trace in [Floci Facts](../research-cache/floci-facts.md).
 
