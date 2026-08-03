@@ -1108,7 +1108,9 @@ tflocal plan
     Plan: 0 to add, 1 to change, 0 to destroy.
     ```
 
-    The control behaves the same way, so this is the emulator dropping tags passed to `CreateBucket`, not anything to do with `ignore_changes`. Tags set afterwards through `put-bucket-tagging` **do** persist, which is why the drift step works.
+    The control behaves the same way, so this is the emulator and not `ignore_changes`. Traced to the source: AWS provider 6.57.1 sends bucket tags inside the **`CreateBucket` request body**, as `<CreateBucketConfiguration><Tags>…</Tags></CreateBucketConfiguration>`, and Floci's `S3Controller.createBucket` parses that body for `LocationConstraint` and nothing else, then calls `S3Service.createBucket(bucketName, region)` — a method with no parameter for tags. The request succeeds, so nothing errors.
+
+    The read-back runs through the **S3 Control** `ListTagsForResource` operation rather than `GetBucketTagging`, and it returns an empty tag set, which is what puts `tags = {}` in state. Tags set afterwards through `put-bucket-tagging` **do** persist and the same read finds them, which is why the drift step works. Full trace in [Floci Facts](../research-cache/floci-facts.md).
 
     The effect on this exercise: the standing diff you are about to suppress is partly the emulator's own, not purely the out-of-band change. Everything the rule does is still visible. On real AWS the starting state would read `data-team` rather than empty.
 
@@ -1177,7 +1179,7 @@ replace_triggered_by.
 Finish with `tflocal destroy -var revision=2 -auto-approve`.
 
 !!! warning "Emulation is not AWS"
-    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. The emulator's DynamoDB refused a duplicate table name, which is what makes Part C work. Other services are less faithful, and Part D hits one: the emulator drops tags passed to `CreateBucket`, so an S3 bucket's tags never land until something sets them through the tagging API. Validate anything load-bearing against real free-tier AWS before trusting it.
+    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. The emulator's DynamoDB refused a duplicate table name, which is what makes Part C work. Other services are less faithful, and Part D hits one: Floci ignores the `<Tags>` element in a `CreateBucket` body, so an S3 bucket's tags never land until something sets them through the tagging API. Validate anything load-bearing against real free-tier AWS before trusting it.
 
 !!! note "If every provider suddenly fails to load"
     On a machine where security software intercepts loopback TLS, every Terraform command that loads a provider can fail with `Failed to load plugin schemas`. That is the plugin mTLS channel being intercepted, not a problem with the provider or the emulator. Exclude `terraform.exe` and `.terraform/providers/**` from the security product's *network/SSL inspection*. As a scoped fallback for one command, `TF_DISABLE_PLUGIN_TLS=1` works, but never set it persistently: it makes the Terraform-to-plugin channel plaintext for every provider, and credentials cross that channel.

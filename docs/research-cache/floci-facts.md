@@ -227,8 +227,51 @@ control configuration before being recorded here.
 
 | Gap | Detail | Found in |
 |---|---|---|
-| **S3 bucket tags are dropped at create** | `aws_s3_bucket` with a `tags` map applies cleanly, but the tags never reach the object. State records `tags = {}`, `get-bucket-tagging` returns an empty `TagSet`, and **every subsequent plan proposes to add them again** — a perpetual diff. A control bucket with no `lifecycle` block behaves identically, so it is the emulator, not Terraform. Tags set afterwards through `put-bucket-tagging` **do** persist and are read back correctly on refresh. Measured 2026-08-03, TF 1.15.8. | Book Ch 11 lab, Part D |
+| **S3 bucket tags are dropped at create** | `aws_s3_bucket` with a `tags` map applies cleanly, but the tags never reach the object. State records `tags = {}` and **every subsequent plan proposes to add them again** — a perpetual diff. A control bucket with no `lifecycle` block behaves identically. Tags set afterwards through `put-bucket-tagging` **do** persist. Full mechanism below. Measured 2026-08-03, TF 1.15.8, AWS provider 6.57.1. | Book Ch 11 lab, Part D |
 | **DynamoDB duplicate table names are refused** | Not a gap — worth recording as *working* fidelity. `CreateTable` on an existing name returns `ResourceInUseException: Table already exists`, which is what makes the `create_before_destroy` collision lab reproducible. Measured 2026-08-03. | Book Ch 11 lab, Parts C and C2 |
+
+### The bucket-tag gap, traced end to end
+
+Worth writing out because the obvious guesses are all wrong, and because it shows which API the AWS
+provider actually uses for bucket tags.
+
+**What the provider sends.** AWS provider 6.57.1 does not call `PutBucketTagging` for an
+`aws_s3_bucket`. It puts the tags in the **`CreateBucket` request body**, from `TF_LOG=trace`:
+
+```xml
+<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Tags><Tag><Key>owner</Key><Value>data-team</Value></Tag></Tags></CreateBucketConfiguration>
+```
+
+**What Floci does with it.** Nothing. `S3Controller.createBucket` (`src/main/java/io/github/hectorvent/floci/services/s3/S3Controller.java`, read at `main` @ `9bbe9ffe`, 2026-08-02) parses that body for exactly one element:
+
+```java
+String locationConstraint = null;
+if (body != null && body.length > 0) {
+    locationConstraint = XmlParser.extractFirst(new String(body, StandardCharsets.UTF_8),
+            "LocationConstraint", null);
+}
+…
+s3Service.createBucket(bucket, region);
+```
+
+`<Tags>` is never looked at, and `S3Service.createBucket(String bucketName, String region)` has no
+parameter to receive them. The request succeeds, so nothing surfaces as an error.
+
+**How the value gets read back.** Not with `GetBucketTagging` — that operation appears **zero** times
+in either the apply or the plan trace. The provider reads bucket tags through the **S3 Control** API:
+
+```
+rpc.method="S3 Control/ListTagsForResource"
+<ListTagsForResourceResult …><Tags></Tags></ListTagsForResourceResult>
+```
+
+Empty on create, which is what writes `tags = {}` into state. After a `put-bucket-tagging` call the
+same operation returns the tag, which is why out-of-band drift *is* visible to Terraform. Floci
+implements `handlePutBucketTagging` and the S3 Control read; it just has no path from
+`CreateBucket` into the tag store.
+
+**Practical rule for labs:** do not use `aws_s3_bucket` `tags` as the thing a lab measures. Set tags
+through the tagging API, or use a resource type whose tags land.
 
 ## Sources
 
