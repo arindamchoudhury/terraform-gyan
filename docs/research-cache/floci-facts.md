@@ -91,7 +91,7 @@ docker-compose:
 ```yaml
 services:
   floci:
-    image: floci/floci:latest
+    image: floci/floci:1.5.34        # pinned, not :latest — see the note below
     ports:
       - "127.0.0.1:4566:4566"
     volumes:
@@ -242,7 +242,7 @@ provider actually uses for bucket tags.
 <CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Tags><Tag><Key>owner</Key><Value>data-team</Value></Tag></Tags></CreateBucketConfiguration>
 ```
 
-**What Floci does with it.** Nothing. `S3Controller.createBucket` parses that body for exactly one element (`src/main/java/io/github/hectorvent/floci/services/s3/S3Controller.java:257`, read at tag **1.5.33** — the version the `floci/floci:latest` container reported while these measurements were taken):
+**What Floci does with it.** Nothing. `S3Controller.createBucket` parses that body for exactly one element (`src/main/java/io/github/hectorvent/floci/services/s3/S3Controller.java:257`, read at tag **1.5.33**, the version these measurements were first taken on):
 
 ```java
 String locationConstraint = null;
@@ -263,7 +263,9 @@ The emulator is not missing a tag store — it has one, and a working writer. `h
 The `CreateBucket` path simply has no wire into it.
 
 Checked at **1.5.34** as well: that release rewrites much of `S3Controller` (135 insertions), but the
-`createBucket` body-parsing block is byte-identical, so the behaviour is unchanged.
+`createBucket` body-parsing block is byte-identical. Re-measured on the 1.5.34 container after the
+compose pin was bumped — state still records `tags = {}` after create, and the plan straight after
+apply still proposes `+ "owner" = "data-team"`. Unchanged.
 
 **How the value gets read back.** Not with `GetBucketTagging` — that operation appears **zero** times
 in either the apply or the plan trace. The provider reads bucket tags through the **S3 Control** API:

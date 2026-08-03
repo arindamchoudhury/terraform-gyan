@@ -175,7 +175,7 @@ Everything so far has been the *why*. Before the next chapters put you on a keyb
 
 Several emulators fit, and all listen on the same gateway port **4566**, so the labs run identically on any of them — you swap only the `docker run` line. Three worth knowing, in the order this book recommends:
 
-- **Floci** (`floci/floci`) — **MIT, free, no account, no token.** A Quarkus-native emulator with ~69 services, a tiny image, and near-instant startup; it serves the LocalStack API on `:4566`, so the `tflocal` wrapper drives it directly. Ships extras (a local console UI, a CLI, Azure/GCP siblings). **The book's default.**
+- **Floci** (`floci/floci`) — **MIT, free, no account, no token.** A Quarkus-native emulator with ~70 services, a tiny image, and near-instant startup; it serves the LocalStack API on `:4566`, so the `tflocal` wrapper drives it directly. Ships extras (a local console UI, a CLI, Azure/GCP siblings). **The book's default.**
 - **MiniStack** (`ministackorg/ministack`) — **MIT, free forever, no account, no token.** ~270 MB, ~60 services. Another solid zero-signup choice.
 - **LocalStack** (`localstack/localstack`) — the established, most-documented emulator. As of March 2026 its image needs a **free account + `LOCALSTACK_AUTH_TOKEN`** (Hobby plan). Most mature; slightly more setup.
 
@@ -210,11 +210,17 @@ The Docker socket mount lets Floci spin up *real* containers for services like R
 
 Better than a one-off `docker run`: this book ships a ready `labs/docker-compose.yml` (in the repo root) so you start the emulator the same way in every lab. It's the file below — Floci on `:4566`, with a comment showing how to swap in MiniStack or LocalStack:
 
+!!! tip "The image tag is pinned, and that is deliberate"
+    Every lab from Chapter 2 onward prints real command output, and several chapters publish numbers measured against this emulator. A floating `:latest` would silently change what those commands return, which makes a published measurement unreproducible and an unexplained difference impossible to diagnose. The compose file therefore names an exact version, and bumping it is a decision you make rather than one that happens to you.
+
+    Same reasoning as pinning a provider version in `required_providers`. When you do bump it, re-run the labs whose output you care about — Chapter 11 records one emulator behaviour that a lab's narrative depends on.
+
+
 ```yaml
 # labs/docker-compose.yml
 services:
   floci:
-    image: floci/floci:latest        # swap: ministackorg/ministack | localstack/localstack:stable
+    image: floci/floci:1.5.34        # swap: ministackorg/ministack | localstack/localstack:stable
     container_name: floci-lab
     ports:
       - "127.0.0.1:4566:4566"
@@ -272,7 +278,7 @@ curl -s http://localhost:4566/_floci/health
   "services": { "s3": "running", "dynamodb": "running", "iam": "running", "...": "70 of them" },
   "edition": "community",
   "original_edition": "floci-always-free",
-  "version": "1.5.33"
+  "version": "1.5.34"
 }
 ```
 
