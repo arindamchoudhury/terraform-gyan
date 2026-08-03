@@ -1,6 +1,6 @@
 # Meta-arguments and `lifecycle`
 
-Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]] and [[tf-meta-depends-on]] (HCDocs per-argument references), [[tut-count]] and [[tut-for-each]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
+Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]], [[tf-meta-depends-on]] and [[tf-meta-lifecycle]] (HCDocs per-argument references), [[tut-count]] and [[tut-for-each]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
 
 Feeds learning-path **I1** (`count`/`for_each`/`depends_on`) and **I2** (`lifecycle`).
 
@@ -138,7 +138,25 @@ HCDocs adds one qualifier the book doesn't: **support for each individual rule v
 !!! note "Why `lifecycle` accepts only literal values"
     "Configurations defined in the `lifecycle` block **affect how Terraform constructs and traverses the dependency graph**. You can only use literal values … because Terraform processes them **before it evaluates arbitrary expressions**." The `lifecycle` block is an *input* to graph construction, so it cannot depend on anything the graph produces. That is the mechanism behind TID's "known early" warning.
 
+!!! danger "Lifecycle rules are not recorded in state — except one"
+    [[tf-meta-lifecycle]] adds the fact that reframes half of this section: *"Except for `create_before_destroy`, Terraform does not explicitly record a resource's lifecycle rule to state."*
+
+    The guard lives in the configuration and nowhere else. Delete the `resource` block and you delete `prevent_destroy` with it, which is why removing a block destroys the object regardless. TID lists that as one of three reasons to avoid `prevent_destroy`; this is the mechanism behind it. The sanctioned alternative is a `removed` block with `destroy = false` ([[tf-block-removed]], [[tf-state-remove]]).
+
+    `create_before_destroy` is the exception because it also determines *destroy ordering*, which still has to work after the config is gone. State v4 carries it per instance as `create_before_destroy` (`internal/states/statefile/version4.go:719`, tag v1.15.8); the field comment says so directly.
+
+    Condition rules sit in between: Terraform records the **results** of `precondition`/`postcondition` checks to state, but not the checks themselves.
+
 **`create_before_destroy`** — Terraform's default on replacement is destroy-then-create. That default is the safe one: many resources hold unique identifiers that can't be duplicated, so create-first would error. Two IAM roles can't share a name. Two instances can't share an Elastic IP. Set it `true` for high-availability cases where even brief loss hurts.
+
+!!! warning "Turning it on for one resource turns it on for everything upstream"
+    CBD propagates along dependency edges, and you cannot switch it back off. If A has `create_before_destroy = true` and A depends on B, Terraform enables it on B implicitly and writes that to state. Overriding B to `false` is rejected, because a CBD node depending on a non-CBD node "would imply dependency cycles in the graph" ([[tf-meta-lifecycle]]).
+
+    `ForcedCBDTransformer` (`internal/terraform/transform_destroy_cbd.go`, tag v1.15.8) does this in the **plan** graph builder, before planned changes are constructed — so it shows up in the plan, not as an apply-time surprise.
+
+    The practical risk follows from why CBD is opt-in at all: it is only safe on resource types whose old and new objects can coexist. Propagation can push an upstream resource with a unique-name constraint into a mode it cannot support, and you never edited that resource.
+
+    One more side effect: with `create_before_destroy = true`, a **destroy-time provisioner on that resource does not run**.
 
 **`prevent_destroy`** — any plan that would destroy the resource fails. TID says use it *exceedingly rarely*, for three reasons:
 
@@ -152,6 +170,12 @@ It earns its keep in narrow compliance cases (logs that mustn't be deleted).
 
 The special value **`all`** (bare, **not** in brackets) ignores every change. TID recommends `ignore_changes` over `prevent_destroy` as the accidental-destruction guard: listing the forced-new fields keeps the resource from being recreated while still allowing other updates, and unlike `prevent_destroy` it doesn't block destroy plans.
 
+Three precision points from [[tf-meta-lifecycle]] that the summary above hides:
+
+- **Ignored on update, honored on create.** The listed arguments are still considered when planning a *create*. They stop mattering from the second plan onward. That is exactly what makes the AMI case work — the instance is built from the looked-up AMI, and only later drift is ignored.
+- **Entries are relative attribute addresses, and index notation works** — `tags["Name"]`, `list[0]`. One map key can be ignored while the rest of the map stays managed.
+- **Only attributes defined by the resource type.** You cannot `ignore_changes` a meta-argument, or `lifecycle` itself. No ignoring `count`, `for_each`, or `provider`.
+
 **`replace_triggered_by`** — force replacement when *another* resource changes. Takes resource references (any change → replace) or specific attribute references. It **cannot** take a plain value: local values and input variables are invalid.
 
 The reason isn't the "known early" rule, as it might appear. Per [[tf-terraform-data]], replacement is decided from the **planned operations** of the referenced resources — a plain value has no planned operation to inspect. The documented workaround is to wrap the value in a `terraform_data`, which plans an action whenever its `input` changes:
@@ -163,6 +187,16 @@ resource "example_database" "test" {
   lifecycle { replace_triggered_by = [terraform_data.replacement] }
 }
 ```
+
+[[tf-meta-lifecycle]] enumerates what actually counts as a trigger, and the three cases are not uniform:
+
+| Reference is to | Replacement triggers when |
+|---|---|
+| a resource with multiple instances | a plan to update **or replace any instance** |
+| a single resource instance | a plan to update or replace **that** instance |
+| a single attribute of an instance | **any change to the attribute value** |
+
+The first two watch a *planned action*; the third watches a *value*. Inside a `count`/`for_each` block you may use `count.index` or `each.key` in the expression to pair instance-for-instance with another block on the same collection, rather than triggering on the whole resource.
 
 **`action_trigger`** — invoke provider **actions** (Terraform 1.14) on lifecycle events. `events` and `actions` are required; `condition` gates the run.
 
@@ -176,6 +210,10 @@ lifecycle {
 ```
 
 Only four events exist — `before_create`, `after_create`, `before_update`, `after_update`. **There is no destroy event** (verified on v1.15.6; `before_destroy` yields `Error: No events specified`). Destroy-time work still means a destroy-time provisioner. See [[tf-block-resource]].
+
+`actions` is an **ordered** list, so several actions on one event fire in list order. The optional `condition` argument gates the invocation — the one place an expression is legal anywhere inside `lifecycle`, because it is a per-event runtime gate rather than an input to graph construction ([[tf-meta-lifecycle]]).
+
+**`precondition` / `postcondition`** belong to **A2**, but two scheduling facts belong here because they are ordering, not validation. A `precondition` runs **before** the resource's own configuration arguments are evaluated and can pre-empt an argument error, and it runs **after** `count`/`for_each`, so it evaluates per instance with `each.key`/`count.index` in scope. A failed `postcondition` **blocks changes to every resource downstream** of it. Both accept `data`, `ephemeral`, and `resource`. Do not put the same condition on a `resource` and on a `data` block representing the same object — Terraform may then ignore data-block changes caused by the resource. Detail in [[tf-meta-lifecycle]] and [[tf-conditionals]].
 
 !!! info "OpenTofu — `lifecycle` divergences"
     OpenTofu directly lifts the `prevent_destroy` limitation TID calls out:
@@ -230,4 +268,4 @@ resource "aws_instance" "example" {
 ```
 
 ---
-Related: [[tf-terraform-data]] — the built-in resource that makes a plain value usable in `replace_triggered_by`. · [[tf-meta-arguments]] — the HCDocs index, and the source of the six-member list. · [[tf-configure-resource]] — surveys the same set from the resource-block side. · [[ot-dynamic-prevent-destroy]] — OpenTofu's fix for the literal-only `prevent_destroy`. · [[tf-provider-block]] — the `provider` blocks that `provider`/`providers` select between. · [[tf-meta-providers]] — the `providers` reference: map semantics, Stacks applicability, and the cancellation-claim discrepancy. · [[tf-style-guide]] — ordering within a block. · [[providers]] — the provider topic page this one hands off to.
+Related: [[tf-meta-lifecycle]] — the `lifecycle` reference page: state semantics, CBD propagation, and the exact ignore/trigger evaluation rules. · [[tf-terraform-data]] — the built-in resource that makes a plain value usable in `replace_triggered_by`. · [[tf-meta-arguments]] — the HCDocs index, and the source of the six-member list. · [[tf-configure-resource]] — surveys the same set from the resource-block side. · [[ot-dynamic-prevent-destroy]] — OpenTofu's fix for the literal-only `prevent_destroy`. · [[tf-provider-block]] — the `provider` blocks that `provider`/`providers` select between. · [[tf-meta-providers]] — the `providers` reference: map semantics, Stacks applicability, and the cancellation-claim discrepancy. · [[tf-style-guide]] — ordering within a block. · [[providers]] — the provider topic page this one hands off to.

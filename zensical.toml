@@ -130,6 +130,7 @@ nav = [
                         { "count" = "sources/terraform-docs/tf-meta-count.md" },
                         { "depends_on" = "sources/terraform-docs/tf-meta-depends-on.md" },
                         { "for_each" = "sources/terraform-docs/tf-meta-for-each.md" },
+                        { "lifecycle" = "sources/terraform-docs/tf-meta-lifecycle.md" },
                         { "providers" = "sources/terraform-docs/tf-meta-providers.md" },
                     ]},
                     { "Built-in resources" = [
