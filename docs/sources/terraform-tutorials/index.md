@@ -25,3 +25,9 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Create resource dependencies | 2026-08-01 | [tut-dependencies](tut-dependencies.md) |
 | Manage similar resources with `count` | 2026-08-01 | [tut-count](tut-count.md) |
 | Manage similar resources with `for_each` | 2026-08-01 | [tut-for-each](tut-for-each.md) |
+
+## State
+
+| Page | Added | File |
+|---|---|---|
+| Lifecycle rules (Manage resource lifecycle) | 2026-08-03 | [tut-resource-lifecycle](tut-resource-lifecycle.md) |

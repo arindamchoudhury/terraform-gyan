@@ -1,6 +1,6 @@
 # Meta-arguments and `lifecycle`
 
-Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]], [[tf-meta-depends-on]] and [[tf-meta-lifecycle]] (HCDocs per-argument references), [[tut-count]] and [[tut-for-each]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
+Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]], [[tf-meta-depends-on]] and [[tf-meta-lifecycle]] (HCDocs per-argument references), [[tut-count]], [[tut-for-each]] and [[tut-resource-lifecycle]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
 
 Feeds learning-path **I1** (`count`/`for_each`/`depends_on`) and **I2** (`lifecycle`).
 
@@ -158,6 +158,30 @@ HCDocs adds one qualifier the book doesn't: **support for each individual rule v
 
     One more side effect: with `create_before_destroy = true`, a **destroy-time provisioner on that resource does not run**.
 
+### How the three rules look at the terminal
+
+[[tut-resource-lifecycle]] is the hands-on, and its transcripts supply the artifacts none of the reference pages show.
+
+**`prevent_destroy` fails at plan, with no override flag.** The error names the rule and offers exactly two ways out: edit the config, or "reduce the scope of the plan using the `-target` flag." One of the few places HashiCorp recommends `-target`.
+
+**`create_before_destroy` flips the plan symbol.** Default replacement is `-/+ destroy and then create replacement`; with CBD it becomes:
+
+```
++/- create replacement and then destroy
+```
+
+Read the symbol literally — it is the operation order. Confirmed at tag v1.15.8 (`internal/command/jsonformat/plan.go:688`). Nothing else in the plan announces that CBD is active, so this is the check. A replacement also always shows as two numbers in the summary (`1 to add … 1 to destroy`) for one resource.
+
+**The old object is deposed, and current output says so.** During the swap the prior object is moved aside in state under a generated key:
+
+```
+aws_instance.example (deposed object 940b3833): Destroying...
+```
+
+(The tutorial shows the older bare-parenthesis form.) If an apply fails partway, the deposed object stays in state and appears in `terraform state list` — the main operational cost of CBD, and something neither the reference page nor the tutorial mentions. See [[tf-state]].
+
+**`ignore_changes` refreshes state to the drifted value.** Change a tag out of band with `aws ec2 create-tags`, then apply: `0 added, 0 changed, 0 destroyed`, and `terraform state show` reports the **new** value. The rule suppresses the plan to update, not the read. Config and state legitimately disagree from then on — until a replacement, which re-creates the resource from the configured value.
+
 **`prevent_destroy`** — any plan that would destroy the resource fails. TID says use it *exceedingly rarely*, for three reasons:
 
 - It takes only **literal** values, so you can't enable it for prod and disable it for dev.
@@ -268,4 +292,4 @@ resource "aws_instance" "example" {
 ```
 
 ---
-Related: [[tf-meta-lifecycle]] — the `lifecycle` reference page: state semantics, CBD propagation, and the exact ignore/trigger evaluation rules. · [[tf-terraform-data]] — the built-in resource that makes a plain value usable in `replace_triggered_by`. · [[tf-meta-arguments]] — the HCDocs index, and the source of the six-member list. · [[tf-configure-resource]] — surveys the same set from the resource-block side. · [[ot-dynamic-prevent-destroy]] — OpenTofu's fix for the literal-only `prevent_destroy`. · [[tf-provider-block]] — the `provider` blocks that `provider`/`providers` select between. · [[tf-meta-providers]] — the `providers` reference: map semantics, Stacks applicability, and the cancellation-claim discrepancy. · [[tf-style-guide]] — ordering within a block. · [[providers]] — the provider topic page this one hands off to.
+Related: [[tf-meta-lifecycle]] — the `lifecycle` reference page: state semantics, CBD propagation, and the exact ignore/trigger evaluation rules. · [[tut-resource-lifecycle]] — the hands-on: plan symbols, deposed objects, and manufactured drift. · [[tf-terraform-data]] — the built-in resource that makes a plain value usable in `replace_triggered_by`. · [[tf-meta-arguments]] — the HCDocs index, and the source of the six-member list. · [[tf-configure-resource]] — surveys the same set from the resource-block side. · [[ot-dynamic-prevent-destroy]] — OpenTofu's fix for the literal-only `prevent_destroy`. · [[tf-provider-block]] — the `provider` blocks that `provider`/`providers` select between. · [[tf-meta-providers]] — the `providers` reference: map semantics, Stacks applicability, and the cancellation-claim discrepancy. · [[tf-style-guide]] — ordering within a block. · [[providers]] — the provider topic page this one hands off to.

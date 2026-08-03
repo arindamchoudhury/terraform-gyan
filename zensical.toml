@@ -168,6 +168,9 @@ nav = [
                 { "7. Count" = "sources/terraform-tutorials/tut-count.md" },
                 { "8. For each" = "sources/terraform-tutorials/tut-for-each.md" },
             ]},
+            { "State" = [
+                { "7. Lifecycle rules" = "sources/terraform-tutorials/tut-resource-lifecycle.md" },
+            ]},
         ]},
         { "Terraform Registry" = [
             { "Overview" = "sources/terraform-registry/index.md" },
