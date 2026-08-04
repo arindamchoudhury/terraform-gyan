@@ -227,6 +227,25 @@ Three things in that output are worth reading closely.
 
 **The rejection happens at plan time.** The plan was fully rendered before the error appeared. Nothing was destroyed and then rolled back, because nothing had started.
 
+!!! info "OpenTofu — the same refusal, a different way out (1.12)"
+    The same configuration was re-run under **OpenTofu 1.12.4** against the same emulator. All three readings above hold: the full `Plan: 0 to add, 0 to change, 1 to destroy.` is rendered first, the refusal is an error with nothing to confirm through, and the hole measured below reproduces exactly, with the block deleted and the bucket destroyed on the next apply. What differs is the message and the escape it names:
+
+    ```
+    Error: Resource instance cannot be destroyed
+
+      on main.tf line 15:
+      15: resource "aws_s3_bucket" "audit_logs" {
+
+    Resource instance aws_s3_bucket.audit_logs has prevent_destroy set, but the
+    plan calls for it to be destroyed.
+
+    To proceed, either disable prevent_destroy for this resource or exclude
+    instances of this resource from this round using:
+        -exclude="aws_s3_bucket.audit_logs"
+    ```
+
+    `-exclude` is the inverse of `-target`. It plans everything *except* the named address, rather than asking you to enumerate everything you do want. For the actual intent here, which is tearing down an environment while the protected object survives, that is one flag instead of a list that grows with every resource you add. Terraform 1.15.8 has no such flag: `terraform plan -exclude=…` fails with `flag provided but not defined: -exclude`, which is why its message can only offer `-target`.
+
 ### The hole
 
 Now delete the resource block instead of running destroy. Same state, same object, no `lifecycle` line anywhere, because you deleted the block that carried it.
@@ -743,7 +762,7 @@ Three of this chapter's four rules were re-run under **OpenTofu 1.12.4** against
 - **`ignore_changes`** — the same drifted tag produced the same `~ "owner" = "platform-team" -> "data-team"` plan without the rule, and the same `0 added, 0 changed, 0 destroyed` with it, leaving `platform-team` in state.
 - **`replace_triggered_by`** — the same `will be replaced due to changes in replace_triggered_by` line, with the `terraform_data` still only updated in place.
 
-`prevent_destroy` is where the two tools part company.
+`prevent_destroy` is where the two tools part company, in two places. Section 3 measured the first: the refusal itself is identical, but OpenTofu points at `-exclude`, a flag Terraform 1.15.8 does not have. The second is the rule's value.
 
 !!! info "OpenTofu — dynamic `prevent_destroy` (1.12)"
     The literal-only restriction is exactly what OpenTofu 1.12 lifted for this one rule. The configuration from section 1, unchanged, run through both CLIs:
