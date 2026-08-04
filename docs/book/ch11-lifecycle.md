@@ -45,6 +45,24 @@ resource "aws_db_instance" "main" {
 }
 ```
 
+!!! note "Block by syntax, meta-argument by name"
+    HashiCorp's [`lifecycle` reference](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle) is titled *lifecycle Meta-Argument*, yet the example above writes it with no `=`. Both are right, because the two words classify different things. *Meta-argument* is Terraform's term for a name that means the same thing on every resource type rather than coming from the provider's schema, and it says nothing about syntax. HCL's split is the syntactic one: `name = value` is an **attribute**, `name { … }` is a **block**.
+
+    Terraform's parser applies exactly that split. In `ResourceBlockSchema` (`internal/configs/resource.go`, read at tag `v1.15.8`), `count`, `for_each`, `provider`, and `depends_on` are listed under `Attributes`, while `lifecycle`, `connection`, and `provisioner` are listed under `Blocks`. So `depends_on` and `lifecycle` are both meta-arguments, and only one of them takes an `=`.
+
+    Get it wrong and the config is rejected before any rule inside is even read. Measured on **1.15.8** and **OpenTofu 1.12.4**, `lifecycle = { prevent_destroy = true }` gives the same error on both:
+
+    ```
+    Error: Unsupported argument
+
+      on main.tf line 5, in resource "terraform_data" "db":
+       5:   lifecycle = {
+
+    An argument named "lifecycle" is not expected here.
+    ```
+
+    The rules *inside* the block are attributes, which is why `prevent_destroy = true` does take an `=`.
+
 The subblock is deliberate. Resource arguments come from the provider, and the provider chose those names. If `prevent_destroy` were a top-level argument, then the day some provider shipped a resource with an argument called `prevent_destroy` the two would collide. Putting the rules inside a namespaced block means Terraform can add new ones for years without ever colliding with a vendor name.
 
 That is not a hypothetical. The block has grown twice, and it now holds more than twice what it started with.
