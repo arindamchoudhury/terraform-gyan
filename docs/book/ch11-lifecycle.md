@@ -156,9 +156,10 @@ Read that as a claim about ordering, not about types. The dependency graph has t
 
 ## 2. The fact that governs everything else: lifecycle rules are not in state
 
-Before any individual rule, one property of the whole block. From the reference page:
+Before any individual rule, one property of the whole block.
 
-> "Except for `create_before_destroy`, Terraform does not explicitly record a resource's lifecycle rule to state."
+!!! info "From HashiCorp's `lifecycle` reference"
+    "Except for `create_before_destroy`, Terraform does not explicitly record a resource's lifecycle rule to state."
 
 Nothing else in this chapter matters as much. The lifecycle rules live in the configuration file and nowhere else. They are instructions to the planner, read fresh on every run. They are not properties of the object.
 
@@ -565,9 +566,10 @@ The configuration says `data-team`. State and reality say `platform-team`. Terra
 
 ### Considered on create, ignored on update
 
-The rule that makes the whole feature make sense, stated exactly by the reference page:
+The rule that makes the whole feature make sense is stated exactly by the reference page.
 
-> "Terraform considers the arguments corresponding to the given attribute names when planning a **create** operation, but are ignored when planning an **update** operation."
+!!! info "From HashiCorp's `lifecycle` reference, under `ignore_changes`"
+    "Terraform considers the arguments corresponding to the given attribute names when planning a **create** operation, but are ignored when planning an **update** operation."
 
 So the ignored attribute is not dead. It still applies the first time the object is built. It stops mattering from the second plan onward.
 
@@ -761,6 +763,45 @@ Three of this chapter's four rules were re-run under **OpenTofu 1.12.4** against
     ```
 
     **Terraform 1.15.8** gives `Error: Variables not allowed` plus `Unsuitable value: value must be known`. **OpenTofu 1.12.4** gives `Success! The configuration is valid.`
+
+    Passing `validate` is not the same as being enforced, so the guard was applied and then destroyed twice, at two different values of the variable. The rule under test was written as a conditional, to check that the expression is genuinely evaluated rather than merely tolerated:
+
+    ```hcl
+    variable "env" {
+      type    = string
+      default = "prod"
+    }
+
+    resource "terraform_data" "db" {
+      input = "pretend-database"
+      lifecycle {
+        prevent_destroy = var.env == "prod" ? true : false
+      }
+    }
+    ```
+
+    `tofu destroy` at the default `env = "prod"` is refused:
+
+    ```
+    Error: Resource instance cannot be destroyed
+
+      on main.tf line 8:
+       8: resource "terraform_data" "db" {
+
+    Resource instance terraform_data.db has prevent_destroy set, but the plan
+    calls for it to be destroyed.
+    ```
+
+    `tofu destroy -var env=dev`, against that same state, goes through:
+
+    ```
+    terraform_data.db: Destroying... [id=86026da6-fe8e-d46b-ad3e-d497f545d63b]
+    terraform_data.db: Destruction complete after 0s
+
+    Destroy complete! Resources: 1 destroyed.
+    ```
+
+    So OpenTofu evaluates the expression per run and enforces the result, which is the behaviour the feature promises rather than a parser that has merely stopped objecting.
 
     That removes the first of TID's three objections. A module can protect its database by default and let a development caller switch the protection off:
 
