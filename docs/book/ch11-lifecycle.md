@@ -156,7 +156,7 @@ Read that as a claim about ordering, not about types. The dependency graph has t
 
 ## 2. The fact that governs everything else: lifecycle rules are not in state
 
-Before any individual rule, one property of the whole block.
+Before any individual rule, one property of the block as a whole decides how all of them behave. HashiCorp's reference page states it in a single sentence that is easy to read past.
 
 !!! info "From HashiCorp's `lifecycle` reference"
     "Except for `create_before_destroy`, Terraform does not explicitly record a resource's lifecycle rule to state."
