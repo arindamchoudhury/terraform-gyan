@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/expressions/dynamic-blocks](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks)
 > **Added:** 2026-07-15
-> **Source updated:** v1.15.x (latest at capture); undated page, captured 2026-07-15
+> **Source updated:** v1.15.x (latest at capture); undated page, captured 2026-07-15, re-verified unchanged 2026-08-05
 > **Tags:** dynamic-blocks, nested-blocks, for_each, iterator, multi-level-nesting, module-abstraction
 > **Type:** documentation
 
