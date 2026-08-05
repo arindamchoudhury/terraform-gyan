@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/expressions/type-constraints](https://developer.hashicorp.com/terraform/language/expressions/type-constraints)
 > **Added:** 2026-07-15
-> **Source updated:** v1.15.x (latest at capture); undated page, captured 2026-07-15
+> **Source updated:** v1.15.x (latest at capture); undated page, captured 2026-07-15, re-verified unchanged 2026-08-05
 > **Tags:** type-constraints, primitive-types, collection-types, structural-types, any, optional-attributes, type-conversion
 > **Type:** documentation
 
@@ -178,6 +178,50 @@ Results:
 - `production` and `docs` get `enabled = true`; `website` defaults are supplied, then `docs`'s explicit values override them.
 - `archived` and `docs` get `routing_rules = null` (optional, no default supplied → `null`).
 - `archived` gets its whole `website` populated from the type-constraint defaults.
+
+The resolved variable value the page prints:
+
+```hcl
+tolist([
+  {
+    "enabled" = true
+    "name" = "production"
+    "website" = {
+      "error_document" = "error.html"
+      "index_document" = "index.html"
+      "routing_rules" = <<-EOT
+      [
+        {
+          "Condition" = { "KeyPrefixEquals": "img/" },
+          "Redirect"  = { "ReplaceKeyPrefixWith": "images/" }
+        }
+      ]
+
+      EOT
+    }
+  },
+  {
+    "enabled" = false
+    "name" = "archived"
+    "website" = {
+      "error_document" = "error.html"
+      "index_document" = "index.html"
+      "routing_rules" = tostring(null)
+    }
+  },
+  {
+    "enabled" = true
+    "name" = "docs"
+    "website" = {
+      "error_document" = "error.txt"
+      "index_document" = "index.txt"
+      "routing_rules" = tostring(null)
+    }
+  },
+])
+```
+
+Two things the dump makes concrete. The outer value prints as **`tolist([...])`**, not a tuple — the `list(object(...))` constraint converted the tuple literal from `.tfvars`. And an unsupplied optional attribute prints as **`tostring(null)`**, a typed null: absent doesn't mean untyped, it means `null` of the attribute's declared type.
 
 ### Example: conditionally setting an optional attribute
 
