@@ -1,0 +1,61 @@
+name: Deploy docs to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; let in-progress production deploys finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Zensical
+        run: pip install zensical tomli-w
+
+      # Published site shows only these top-level nav sections. The committed
+      # zensical.toml keeps the full nav for local builds; this trims a copy in
+      # the ephemeral CI checkout only (not committed).
+      - name: Trim published nav
+        run: |
+          python - <<'PY'
+          import tomllib, tomli_w
+          KEEP = {"Learning Path", "Book"}
+          with open("zensical.toml", "rb") as f:
+              cfg = tomllib.load(f)
+          nav = cfg["project"]["nav"]
+          cfg["project"]["nav"] = [it for it in nav if next(iter(it)) in KEEP]
+          with open("zensical.toml", "wb") as f:
+              tomli_w.dump(cfg, f)
+          print("Published nav:", [next(iter(it)) for it in cfg["project"]["nav"]])
+          PY
+
+      - name: Build site
+        run: zensical build          # outputs ./site
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

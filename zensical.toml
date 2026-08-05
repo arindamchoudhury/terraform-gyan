@@ -1,5 +1,6 @@
 [project]
 site_name = "Terraform Learning Notes"
+site_url = "https://arindamchoudhury.github.io/terraform-gyan/"
 site_description = "Personal notes and book from learning Terraform (and OpenTofu)."
 site_author = "arindam@live.com"
 extra_css = ["stylesheets/extra.css"]
