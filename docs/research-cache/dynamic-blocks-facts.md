@@ -73,6 +73,22 @@ receiving module never sees `null`. This matches HashiCorp's
 [Type Constraints](https://developer.hashicorp.com/terraform/language/expressions/type-constraints)
 page, which states it but does not contrast it with `nullable`.
 
+### `optional()` also decides whether a caller's typo is caught
+
+Found during the Ch 12 review, and it corrects an overstatement in the first draft. The attribute
+discard is **always** silent, but whether it causes damage depends on how the correctly-spelled
+attribute was declared. Caller writes `enable_https`; module declares `enabled_https`:
+
+| Module declares | Result |
+|---|---|
+| `enabled_https = bool` (required) | **Caught.** `Error: Invalid value for input variable … attribute "enabled_https" is required.` |
+| `enabled_https = optional(bool, false)` | **Absorbed.** Apply succeeds, module receives `enabled_https = false`, caller's intent silently inverted. |
+
+So the footgun needs both halves of this chapter: the object constraint removes the attribute, and
+`optional()` removes the evidence. Not an argument against `optional()` — an argument for watching
+which attributes of a widely-consumed interface are optional. Measured on 1.15.8, reproducible in
+`labs/chapter12/lab4` (`mod-optional/` plus `main.tf.required`).
+
 ---
 
 ## Measured — OpenTofu divergence: dropped object attributes

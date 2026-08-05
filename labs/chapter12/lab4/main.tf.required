@@ -1,0 +1,15 @@
+# Copy over mod-optional/main.tf and re-run `terraform validate` to see the
+# same typo become a hard error:
+#
+#   Error: Invalid value for input variable
+#   ... attribute "enabled_https" is required.
+variable "cfg" {
+  type = object({
+    name          = string
+    enabled_https = bool # required, not optional
+  })
+}
+
+output "cfg" {
+  value = var.cfg
+}

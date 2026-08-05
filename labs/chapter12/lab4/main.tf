@@ -95,3 +95,24 @@ output "module_cfg" {
   description = "The undeclared attribute never reaches the module."
   value       = module.typo.cfg
 }
+
+# --- what decides whether the typo is caught ---------------------------------
+# ./mod-optional declares enabled_https as optional(bool, false). The caller
+# misspells it. The attribute is discarded exactly as above, but now nothing is
+# missing, so the default fills the hole and the apply succeeds with the wrong
+# value. Swap the source to ./mod-required (see main.tf.required) to see the
+# same typo rejected by name instead.
+
+module "typo_optional" {
+  source = "./mod-optional"
+
+  cfg = {
+    name          = "a"
+    enable_https  = true # typo: the module declares enabled_https
+  }
+}
+
+output "typo_optional" {
+  description = "enabled_https is false, not true. The caller's intent was dropped."
+  value       = module.typo_optional.cfg
+}

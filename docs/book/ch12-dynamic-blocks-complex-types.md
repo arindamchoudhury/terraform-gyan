@@ -5,7 +5,7 @@
 By the end you can:
 
 - Say what a **type constraint** does to a value at a module boundary, and name the three outcomes it can produce.
-- Predict which attributes an `object(...)` constraint **silently discards**, and why that is the most dangerous thing in this chapter.
+- Predict which attributes an `object(...)` constraint **silently discards**, and say what decides whether that discard is harmless or a silent misconfiguration.
 - Explain why `optional(type, default)` carries a guarantee that a variable's `default` does not, from the mechanism rather than the slogan.
 - Write a `dynamic` block, name its five parts, and say which temporary variable its body reads.
 - Generate **zero or one** nested block, not just N, using two different idioms.
@@ -93,7 +93,7 @@ Success! The configuration is valid.
 
 And the values that come out the other side are:
 
-```hcl
+```
 unify = tolist([
   "a",
   "1",
@@ -107,19 +107,40 @@ cfg = {
 Two things happened without a word of complaint. The `list(any)` constraint **unified** three different types into `string`, rewriting `1` as `"1"` and `true` as `"true"`. The `object` constraint **deleted** two attributes.
 
 !!! danger "An `object(...)` constraint silently deletes undeclared attributes"
-    This is the single most dangerous behavior in the chapter, because it turns a typo into a no-op instead of an error.
-
-    A caller writes `enable_https = true` when the module declared `enabled_https`. The object constraint does not recognise `enable_https`, so it discards it. The module reads its own attribute, finds the default, and provisions the wrong thing. Nothing in the plan, the apply, or `terraform validate` mentions it.
-
-    Measured at a module boundary on **1.15.8**, with a module declaring `object({ name = string })` and a caller passing `name` plus `enable_https`:
+    The discard itself is unconditional and always silent. Measured at a module boundary on **1.15.8**, with a module declaring `object({ name = string })` and a caller passing `name` plus `enable_https`:
 
     ```
     Success! The configuration is valid.
     ```
 
-    The module receives `{ "name" = "kept" }`. The attribute is simply gone.
+    The module receives `{ "name" = "kept" }`. The extra attribute is simply gone.
 
     HashiCorp's Type Constraints page states the rule plainly, in a sentence worth reading twice: *"values with additional attributes are also acceptable, but the extra attributes are discarded during type conversion."* The behavior is intentional. It exists so that a whole resource object can satisfy a narrow constraint, which is genuinely useful. The cost is that it cannot tell that use from a misspelling.
+
+!!! warning "Whether the typo *hurts* depends on `optional()`"
+    It is worth being precise here, because the discard being silent does not by itself mean the mistake goes unnoticed. What decides that is how the correctly-spelled attribute was declared.
+
+    A caller writes `enable_https = true`. The module declared `enabled_https`. The misspelled attribute is discarded either way. Then:
+
+    - If `enabled_https` is **required**, the value that survives the discard is missing a required attribute, and Terraform rejects the call by name. Measured on 1.15.8:
+
+        ```
+        Error: Invalid value for input variable
+
+        The given value is not suitable for module.typo_optional.var.cfg declared
+        at mod-optional\main.tf:3,1-15: attribute "enabled_https" is required.
+        ```
+
+    - If `enabled_https` is **`optional(bool, false)`**, nothing is missing. The default fills the hole, the apply succeeds, and the module quietly does the opposite of what the caller asked. Measured on the same version, the module receives:
+
+        ```
+        {
+          "enabled_https" = false
+          "name" = "a"
+        }
+        ```
+
+    So the two halves of this chapter combine into a footgun neither has alone. The object constraint removes the caller's attribute; `optional()` removes the evidence. That is not an argument against `optional()`, which is genuinely useful. It is a reason to keep an eye on which attributes of a widely-used module interface are optional, because those are the ones where a caller's typo can pass review, pass `validate`, pass `plan`, and provision the wrong thing.
 
 !!! info "OpenTofu — it warns, and Terraform does not"
     Same configuration, same values, different diagnostics. OpenTofu **1.12.4** reports the dropped attribute; Terraform **1.15.8** does not.
@@ -175,9 +196,9 @@ A **structural** type takes a schema. `object({ name = string, port = number })`
 
 The pair that gets confused is `map` and `object`, because both are keyed by strings and the docs often use the words interchangeably. They differ on exactly the thing this chapter cares about. A **map** fixes the value type and leaves the key set open, so arbitrary keys are all kept. An **object** fixes the key set and lets each key have its own type, so keys it does not declare are dropped. That is why `map(string)` is right for tags and `object({...})` is right for a rule.
 
-Sets have a similar catch on the way through a constraint. Converting a list or tuple to a `set` discards duplicates and loses ordering, and converting back gives an arbitrary order, which for strings happens to be lexicographical. A `set` constraint on a module input therefore throws away the caller's ordering permanently. Use `list` when order carries meaning, such as a sequence of rules evaluated top to bottom.
+Sets have a similar catch on the way through a constraint. Converting a list or tuple to a `set` discards duplicates and loses ordering. A `set` constraint on a module input therefore throws away the caller's ordering permanently. Use `list` when order carries meaning, such as a sequence of rules evaluated top to bottom.
 
-The same loss happens on the way *out*, in a place that catches people by surprise. Many provider schemas declare a repeated nested block as a **set**, so blocks generated in one order come back in another. The lab in this chapter declares its rules as 443, 80, 5432 and the plan renders them 80, 443, 5432. Part A shows the transcript.
+Converting back out of a set gives an order you did not choose. For a set **of strings** that order is lexicographical, which is at least predictable. For a set of anything else there is no rule you can rely on, and that is the case you will actually meet, because many provider schemas declare a repeated nested block as a set of objects. The lab declares its rules as 443, 80, 5432 and the plan renders them 80, 443, 5432 — not lexicographical, not the input order, just the provider's. Part A shows the transcript.
 
 For module inputs the practical rule is short. Use `object` inside a `list` or `map` whenever an element has more than one field. That is the shape this entire chapter runs on:
 
@@ -522,7 +543,47 @@ dynamic "origin_group" {
 
 Both iterators are live inside the inner `content`. `origin_group.value` is the outer element and `origin.value` is the inner one. The outer variable stays reachable, which is the whole reason the iterator is named after the label instead of being a fixed `each`.
 
-The failure mode is a name collision. If a nested block type shares a name with its parent, the inner `dynamic` shadows the outer variable and the outer element becomes unreachable. That is what `iterator` is for. Give one of them a distinct name and both stay addressable.
+The failure mode is a name collision. If a nested block type shares a name with its parent, the inner `dynamic` shadows the outer variable and the outer element becomes unreachable. That is what `iterator` is for.
+
+Some schemas nest a block type inside itself. A `rule` containing a `rule`, say. Written the obvious way, the inner block's iterator is also called `rule`, so `rule.value` inside it means the inner element and the outer one can no longer be named at all:
+
+```hcl
+dynamic "rule" {
+  for_each = var.rules
+  content {
+    name = rule.key
+
+    dynamic "rule" {
+      for_each = rule.value.sub_rules   # still the outer `rule` here
+      content {
+        name = rule.value.name          # but this is the INNER one — the outer is gone
+      }
+    }
+  }
+}
+```
+
+Rename one of them and both stay addressable:
+
+```hcl
+dynamic "rule" {
+  for_each = var.rules
+  iterator = group                      # unquoted
+  content {
+    name = group.key
+
+    dynamic "rule" {
+      for_each = group.value.sub_rules
+      content {
+        name   = rule.value.name
+        parent = group.key              # the outer element is reachable again
+      }
+    }
+  }
+}
+```
+
+Renaming the outer one reads better than renaming the inner one, because the inner block is the one whose label you are most likely to be reading against the provider's documentation.
 
 ---
 
@@ -923,6 +984,37 @@ The object type for input variable "cfg" does not include an attribute named
 
 Note which one warned and which did not. Then note that OpenTofu stayed silent about the identical mistake in `terraform.tfvars`, three lines above the module call, and only caught the one written in the module block.
 
+Finally, the case that decides whether any of this bites. The lab calls `./mod-optional`, which declares `enabled_https = optional(bool, false)`, and misspells it as `enable_https`. The apply succeeds and the module gets the opposite of what the caller asked:
+
+```
+typo_optional = {
+  "enabled_https" = false
+  "name" = "a"
+}
+```
+
+Now make that attribute required and run the same configuration:
+
+```shell
+cp main.tf.required mod-optional/main.tf
+terraform validate
+```
+
+```
+Error: Invalid value for input variable
+
+  on main.tf line 109, in module "typo_optional":
+ 109:   cfg = {
+ 110:     name          = "a"
+ 111:     enable_https  = true # typo: the module declares enabled_https
+ 112:   }
+
+The given value is not suitable for module.typo_optional.var.cfg declared at
+mod-optional\main.tf:3,1-15: attribute "enabled_https" is required.
+```
+
+One word of difference in the module's declaration, and the same typo goes from shipped to rejected by name. Restore the file with `git checkout mod-optional/main.tf` when you are done.
+
 !!! warning "Emulation is not AWS"
     A green `apply` here proves your **HCL, expressions, and workflow** are correct. It does not prove the configuration behaves identically on real AWS. The emulator mocks the API surface, not every semantic, and the EC2 surface Part A uses is mocked more shallowly than S3. Validate any load-bearing configuration against real free-tier AWS before trusting it.
 
@@ -930,7 +1022,7 @@ Note which one warned and which did not. Then note that OpenTofu stayed silent a
 
 ## Common pitfalls
 
-- **Trusting `object(...)` to catch a typo in a caller's input.** It does the opposite. The undeclared attribute is discarded and nothing is reported. OpenTofu warns for module calls and variable defaults; Terraform never does, and neither warns about `.tfvars`.
+- **Trusting `object(...)` to catch a typo in a caller's input.** It does the opposite. The undeclared attribute is discarded and nothing is reported. You are saved only when the attribute the caller meant was **required**, which fails by name; an `optional()` one absorbs the mistake silently. OpenTofu warns for module calls and variable defaults; Terraform never does, and neither warns about `.tfvars`.
 - **Writing `default = null` on a variable and expecting the default to apply.** It applies only to absence. An explicit `null` is kept unless you add `nullable = false`. Inside an object type, `optional()` behaves the other way and always substitutes.
 - **Reading `.key` on a set-driven `dynamic` block.** For a set, `key` is the whole element. Iterate a map when you need a real key.
 - **Assuming generated blocks keep the order you wrote them in.** They keep it only when the provider's schema is a list. Where the schema is a set, the order is the provider's. A map-driven `dynamic` block is the predictable case: sorted key order, every run.
@@ -957,7 +1049,7 @@ Note which one warned and which did not. Then note that OpenTofu stayed silent a
 ## Summary
 
 - A **type constraint** is a conversion step, not a gate. It can convert a value, discard part of it, or reject it. Only rejection is loud.
-- `object(...)` **silently discards** undeclared attributes. This is intentional and useful, and it turns a caller's typo into a no-op. OpenTofu warns for module calls and variable defaults; Terraform does not warn at all; neither catches it in `.tfvars`.
+- `object(...)` **silently discards** undeclared attributes, always. Whether that matters depends on the attribute the caller *meant*: a **required** one then fails by name, an **`optional()`** one is filled by its default and the mistake ships. OpenTofu warns for module calls and variable defaults; Terraform does not warn at all; neither catches it in `.tfvars`.
 - `list(any)` **unifies** rather than mixes. Three different types become one, with values rewritten. Use `tuple` or `object` when positions genuinely differ.
 - `any` belongs on values the module never inspects. Omitting `type` means the same thing.
 - **`optional(type, default)` and a variable `default` disagree about `null`.** The optional default is substituted for an explicit `null` as well as for absence, so a non-null optional default is guaranteed never `null` inside the module. A variable default is not, unless you add `nullable = false`.
