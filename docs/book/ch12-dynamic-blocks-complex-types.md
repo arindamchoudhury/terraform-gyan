@@ -177,6 +177,8 @@ The pair that gets confused is `map` and `object`, because both are keyed by str
 
 Sets have a similar catch on the way through a constraint. Converting a list or tuple to a `set` discards duplicates and loses ordering, and converting back gives an arbitrary order, which for strings happens to be lexicographical. A `set` constraint on a module input therefore throws away the caller's ordering permanently. Use `list` when order carries meaning, such as a sequence of rules evaluated top to bottom.
 
+The same loss happens on the way *out*, in a place that catches people by surprise. Many provider schemas declare a repeated nested block as a **set**, so blocks generated in one order come back in another. The lab in this chapter declares its rules as 443, 80, 5432 and the plan renders them 80, 443, 5432. Part A shows the transcript.
+
 For module inputs the practical rule is short. Use `object` inside a `list` or `map` whenever an element has more than one field. That is the shape this entire chapter runs on:
 
 ```hcl
@@ -385,6 +387,8 @@ The variable has exactly two attributes:
     A set has no indices and no order, so there is no meaningful key to hand you. Terraform gives you the value twice rather than failing. Code that reads `.key` on a set-driven dynamic block is usually a bug wearing a working disguise, because it looks like it is reading an identifier and is actually reading the whole element.
 
     If you need a key, iterate a **map**. The map key is then a stable name you chose, which is the same argument Chapter 10 made for `for_each` over `count`.
+
+    A map buys ordering as well as identity. `for_each` over a map iterates in **sorted key order**, deterministically. Measured in the lab: a map declared `logs`, `tmp`, `everything` generates its blocks as `everything`, `logs`, `tmp`, the same way every run. A list feeding a nested block whose provider schema is a **set** gives you no such guarantee, and the lab shows that too.
 
 ### The body must sit in `content`
 
@@ -613,10 +617,7 @@ docker compose -f labs/docker-compose.yml up -d      # start the emulator on :45
 curl -s http://localhost:4566/_floci/health          # wait until the services read "running"
 ```
 
-!!! warning "Parts A and B are unverified on the author's machine"
-    Parts C and D below were measured and every output shown for them is real. Parts A and B were **not** run, because no provider plugin would load at the time of writing. A local security product was intercepting the loopback mTLS handshake that Terraform uses to talk to provider binaries, and both Terraform and OpenTofu failed identically at schema load with `x509: certificate signed by unknown authority`.
-
-    The configurations in `labs/chapter12/lab1` and `labs/chapter12/lab2` are committed and complete, but no command output from them is reproduced in this chapter, because none was captured. Treat them as exercises rather than transcripts. See [[env_norton_breaks_terraform_plugin_mtls]] for the diagnosis.
+Every transcript below was captured on **Terraform 1.15.8** with **AWS provider 6.58.0** against Floci. Long outputs are trimmed to the lines that carry the point, and nothing is paraphrased.
 
 ### Part A — one rule list, one block per rule
 
@@ -626,18 +627,78 @@ curl -s http://localhost:4566/_floci/health          # wait until the services r
 cd labs/chapter12/lab1
 tflocal init
 tflocal apply -auto-approve
-tflocal state show aws_security_group.app     # three generated ingress blocks
 ```
 
-Then flip `enable_ssh` to `true` and plan again. One block appears, and nothing else in the resource moves.
+Three rules in, three blocks out. Measured on **1.15.8** with AWS provider **6.58.0**:
+
+```
+      + ingress                = [
+          + {
+              + cidr_blocks      = [ + "0.0.0.0/0" ]
+              + description      = "HTTP from anywhere"
+              + from_port        = 80
+              + protocol         = "tcp"
+              + to_port          = 80
+            },
+          + {
+              + cidr_blocks      = [ + "0.0.0.0/0" ]
+              + description      = "HTTPS from anywhere"
+              + from_port        = 443
+              + protocol         = "tcp"
+              + to_port          = 443
+            },
+          + {
+              + cidr_blocks      = [ + "10.0.0.0/8" ]
+              + description      = "Postgres from the VPC"
+              + from_port        = 5432
+              + protocol         = "tcp"
+              + to_port          = 5432
+            },
+        ]
+```
+
+Read the defaults doing their work. Only the Postgres rule declared `cidr_blocks`, so the other two got `["0.0.0.0/0"]` from `optional(list(string), ["0.0.0.0/0"])`. None of the three declared `protocol`, so all three got `"tcp"`. The variable in the lab supplies one required attribute per rule and the constraint filled in the rest.
+
+!!! note "The order you wrote is not the order you get"
+    The variable lists the rules as 443, 80, 5432. The plan renders them 80, 443, 5432.
+
+    Nothing reordered your variable. `ingress` is a **set** in the provider's schema, not a list, so it has no order to preserve and the provider renders it in its own. This is the constraint-side fact from section 2 showing up in practice: a set discards ordering permanently, and no amount of care in the input list gets it back.
+
+    It matters more than it looks for a `dynamic` block, because it means you cannot use position to identify a generated block. If you need stable identity per rule, that is the argument for the `for_each`-over-resources shape in section 8, where each rule gets its own address.
+
+Now the toggle. Flip `enable_ssh` to `true` and plan again:
 
 ```shell
 tflocal plan -var enable_ssh=true
+```
+
+```
+  # aws_security_group.app will be updated in-place
+  ~ resource "aws_security_group" "app" {
+        id                     = "sg-92dae2458b4843099"
+      ~ ingress                = [
+          + {
+              + cidr_blocks      = [ + "10.0.0.0/8" ]
+              + description      = "SSH"
+              + from_port        = 22
+              + protocol         = "tcp"
+              + to_port          = 22
+            },
+            # (3 unchanged elements hidden)
+        ]
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+```
+
+That is the zero-or-one idiom working exactly as advertised. One block appears. The other three are untouched, which is what `# (3 unchanged elements hidden)` is telling you. The resource is updated in place rather than replaced.
+
+```shell
 tflocal destroy -auto-approve
 ```
 
 !!! note "This part uses the EC2 surface"
-    Security groups are EC2, which the emulator mocks more shallowly than S3. Floci runs the shape; MiniStack and LocalStack may not. Part B is pure S3 and is portable across all three.
+    Security groups are EC2, which the emulator mocks more shallowly than S3. Verified working on **Floci**, including the `data "aws_vpc" "default"` lookup that resolves to `vpc-default`. MiniStack and LocalStack may not run it. Part B is pure S3 and is portable across all three.
 
 ### Part B — a dynamic block inside a dynamic block
 
@@ -647,11 +708,111 @@ tflocal destroy -auto-approve
 cd labs/chapter12/lab2
 tflocal init
 tflocal apply -auto-approve
+```
+
+The plan is the whole lesson in one screen:
+
+```
+  + resource "aws_s3_bucket_lifecycle_configuration" "archive" {
+      + rule {
+          + id     = "everything"
+          + status = "Enabled"
+
+          + transition {
+              + days          = 180
+              + storage_class = "GLACIER"
+            }
+        }
+      + rule {
+          + id     = "logs"
+          + status = "Enabled"
+
+          + expiration {
+              + days                         = 365
+              + expired_object_delete_marker = false
+            }
+
+          + filter {
+              + prefix = "logs/"
+            }
+
+          + transition {
+              + days          = 30
+              + storage_class = "STANDARD_IA"
+            }
+          + transition {
+              + days          = 90
+              + storage_class = "GLACIER"
+            }
+        }
+      + rule {
+          + id     = "tmp"
+          + status = "Enabled"
+
+          + expiration {
+              + days                         = 7
+              + expired_object_delete_marker = false
+            }
+
+          + filter {
+              + prefix = "tmp/"
+            }
+        }
+    }
+```
+
+Three outer blocks from a map of three. Inside them, **two** `transition` blocks for `logs`, **one** for `everything`, and **none** for `tmp`, each count coming from that rule's own list. The zero-or-one blocks behave the same way: `everything` declared no `prefix` and no `expire_days`, so it has neither a `filter` nor an `expiration` block, while the other two have both.
+
+Confirm the emulator agrees:
+
+```shell
 awslocal s3api get-bucket-lifecycle-configuration --bucket ch12-archive
-tflocal destroy -auto-approve
+```
+
+```json
+{
+    "Rules": [
+        {
+            "ID": "everything",
+            "Filter": {},
+            "Status": "Enabled",
+            "Transitions": [ { "Days": 180, "StorageClass": "GLACIER" } ]
+        },
+        {
+            "Expiration": { "Days": 365 },
+            "ID": "logs",
+            "Filter": { "Prefix": "logs/" },
+            "Status": "Enabled",
+            "Transitions": [
+                { "Days": 30, "StorageClass": "STANDARD_IA" },
+                { "Days": 90, "StorageClass": "GLACIER" }
+            ]
+        },
+        {
+            "Expiration": { "Days": 7 },
+            "ID": "tmp",
+            "Filter": { "Prefix": "tmp/" },
+            "Status": "Enabled"
+        }
+    ]
+}
 ```
 
 Read the config and confirm which iterator each expression uses. `rule.key` names the rule. `rule.value.transitions` feeds the inner block. `transition.value.days` is the inner element.
+
+!!! note "A map iterates in sorted key order, and that is the point"
+    The variable declares its rules in the order `logs`, `tmp`, `everything`. Every output above lists them `everything`, `logs`, `tmp`.
+
+    That is not the arbitrary reordering Part A showed. `for_each` over a **map** iterates in **sorted key order**, deterministically, every run. Compare the two parts directly. Part A's rules went through a provider **set** and came back in an order you neither chose nor can predict from the input. Part B's went through a **map** and came back sorted, which is a rule you can state in advance.
+
+    This is the same argument Chapter 10 made for `for_each` over `count`, applied one level down. A map key is a name you chose, so it survives, sorts predictably, and identifies the block. A set element is only itself.
+
+```shell
+tflocal destroy -auto-approve
+```
+
+!!! note "The lifecycle configuration is slow on the emulator"
+    Measured at **55 seconds** to create, against 3 seconds for the bucket, with `Still creating...` ticking every 10 seconds. Nothing is wrong. The emulator is slower than S3 here, and the resource is one of the ones where it shows. Do not read the delay as a problem with the configuration.
 
 ### Part C — what will not be generated
 
@@ -767,6 +928,7 @@ Note which one warned and which did not. Then note that OpenTofu stayed silent a
 - **Trusting `object(...)` to catch a typo in a caller's input.** It does the opposite. The undeclared attribute is discarded and nothing is reported. OpenTofu warns for module calls and variable defaults; Terraform never does, and neither warns about `.tfvars`.
 - **Writing `default = null` on a variable and expecting the default to apply.** It applies only to absence. An explicit `null` is kept unless you add `nullable = false`. Inside an object type, `optional()` behaves the other way and always substitutes.
 - **Reading `.key` on a set-driven `dynamic` block.** For a set, `key` is the whole element. Iterate a map when you need a real key.
+- **Assuming generated blocks keep the order you wrote them in.** They keep it only when the provider's schema is a list. Where the schema is a set, the order is the provider's. A map-driven `dynamic` block is the predictable case: sorted key order, every run.
 - **Putting arguments directly under `dynamic`** instead of inside `content { }`.
 - **Quoting the `iterator` name.** It is an unquoted symbol. `iterator = s`, not `iterator = "s"`.
 - **Nesting two `dynamic` blocks with the same label** and losing access to the outer element. Rename one with `iterator`.
@@ -797,7 +959,8 @@ Note which one warned and which did not. Then note that OpenTofu stayed silent a
 - Nested optional defaults apply **top-down**, which is what makes `optional(object({...}), {})` deliver a fully populated sub-object.
 - A **`dynamic` block** is to nested blocks what a `for` expression is to values. Label, `for_each`, `content` are required; `iterator` and `labels` are not.
 - The iterator is **named after the label** and carries `key` and `value`. For a set, `key` is the element, so do not use it.
-- **Zero or one** block comes from a toggle (`cond ? [1] : []`) or from splat on a nullable object (`var.x[*]`).
+- **Zero or one** block comes from a toggle (`cond ? [1] : []`) or from splat on a nullable object (`var.x[*]`). Adding one is an **in-place update**, not a replacement.
+- **Generated blocks do not keep your declaration order** unless the provider schema is a list. Through a provider **set** the order is the provider's. Through a **map**, iteration is sorted by key and predictable every run.
 - `dynamic` blocks **nest**, and both iterators stay live. Rename one with `iterator` when labels collide.
 - It **cannot** generate `lifecycle` or `provisioner`, and the error you get is indistinguishable from a typo.
 - Use it to build a clean module interface, not to avoid typing. Where a provider has promoted a nested block to its own resource, **`for_each` on that resource is the better answer**.

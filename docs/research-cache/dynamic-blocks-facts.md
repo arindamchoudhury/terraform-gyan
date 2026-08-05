@@ -3,7 +3,8 @@
 Captured for **Book Ch 12 (I3)**. Every row was either measured locally or read from an
 official source pinned to a release tag.
 
-_Last verified: 2026-08-05. Terraform **1.15.8**, OpenTofu **1.12.4**, AWS provider **6.54.0**._
+_Last verified: 2026-08-05. Terraform **1.15.8**, OpenTofu **1.12.4**. AWS provider **6.54.0** for the
+documentation quotes below, **6.58.0** for the lab measurements._
 
 ---
 
@@ -154,9 +155,39 @@ The output variable requested could not be found in the state file.
 
 ---
 
+## Measured — block generation and ordering
+
+Run against Floci on **Terraform 1.15.8**, AWS provider **6.58.0**. Labs `labs/chapter12/lab1`
+and `lab2`.
+
+**Generation works as documented.** A `list(object(...))` of three rules produces three `ingress`
+blocks. `optional()` defaults are visible in the plan: rules that omitted `cidr_blocks` got
+`["0.0.0.0/0"]`, and all three omitted `protocol` and got `"tcp"`. Nesting works: a map of three
+lifecycle rules produced two `transition` blocks for one rule, one for another, and none for the
+third, each count coming from that rule's own list.
+
+**The zero-or-one toggle is an in-place update.** Flipping `enable_ssh` to `true` plans
+`0 to add, 1 to change, 0 to destroy`, adding one element with `# (3 unchanged elements hidden)`.
+No replacement.
+
+**Ordering has two different stories, and the contrast is the finding.**
+
+| Source | Declared | Generated | Predictable? |
+|---|---|---|---|
+| `list(object)` → provider **set** (`aws_security_group.ingress`) | 443, 80, 5432 | 80, 443, 5432 | No — the provider's order |
+| `map(object)` → `for_each` (`aws_s3_bucket_lifecycle_configuration.rule`) | logs, tmp, everything | everything, logs, tmp | Yes — sorted key order |
+
+The set case loses declaration order permanently, because a set has no order to preserve. The map
+case is deterministic sorted-key iteration. So a map-driven dynamic block is the one whose output
+order you can state in advance, which is the block-level version of the same argument Ch 10 makes
+for `for_each` over `count`.
+
+**Emulator note.** `aws_s3_bucket_lifecycle_configuration` took **55 seconds** to create on Floci
+against 3 seconds for the bucket. Slow, not broken.
+
+---
+
 ## Not verified
 
-- Whether `dynamic` block generation itself behaves identically under OpenTofu — the provider
-  plugin could not be loaded on this machine at capture time (Norton intercepts the loopback
-  mTLS handshake; see [[env_norton_breaks_terraform_plugin_mtls]]). Everything above is either
-  provider-free or documentary.
+- Whether `dynamic` block generation behaves identically under **OpenTofu**. Parts A and B were
+  run under Terraform only. The type-constraint measurements above *were* run under both.
