@@ -15,3 +15,4 @@ Synthesized chapters, one per learning-path topic. Each chapter blends every sou
 | [09](ch09-state-fundamentals.md) | B9 — State fundamentals | ✅ 2026-07-30 |
 | [10](ch10-meta-arguments.md) | I1 — Meta-arguments: `count`, `for_each`, `depends_on` | ✅ 2026-08-02 |
 | [11](ch11-lifecycle.md) | I2 — The `lifecycle` meta-argument | ✅ 2026-08-03 |
+| [12](ch12-dynamic-blocks-complex-types.md) | I3 — Dynamic blocks & complex types | ✅ 2026-08-05 |

@@ -1,0 +1,823 @@
+# Chapter 12 — Dynamic blocks & complex types
+
+## Learning outcomes
+
+By the end you can:
+
+- Say what a **type constraint** does to a value at a module boundary, and name the three outcomes it can produce.
+- Predict which attributes an `object(...)` constraint **silently discards**, and why that is the most dangerous thing in this chapter.
+- Explain why `optional(type, default)` carries a guarantee that a variable's `default` does not, from the mechanism rather than the slogan.
+- Write a `dynamic` block, name its five parts, and say which temporary variable its body reads.
+- Generate **zero or one** nested block, not just N, using two different idioms.
+- Nest one `dynamic` block inside another and keep the two iterators straight.
+- Name what a `dynamic` block **cannot** generate, and recognise the unhelpful error you get when you try.
+- Decide when a `dynamic` block is the wrong answer, including the case where the provider has moved on.
+
+---
+
+## 1. A module has two interfaces, and this chapter is about both
+
+Chapter 6 gave you input variables. Chapter 10 gave you `count` and `for_each`. Put them together and you can write a module that takes some values and stamps out N copies of a resource.
+
+That is not enough to write a *good* module, because it only covers one direction.
+
+A reusable module has an interface on the way **in**: the shape of the data a caller must supply. It has another on the way **out**: the shape of the configuration it produces for the provider. Both of those get harder the moment the module needs to be flexible.
+
+Take the standard example. You want a security group module. Callers need to specify their own inbound rules, and different callers need different numbers of them. One team needs HTTPS only. Another needs HTTPS, HTTP, and Postgres from a specific CIDR. A third needs those plus SSH, but only in the development account.
+
+Neither half of that is solvable with what you have so far.
+
+On the way in, `type = list` is not a description of a rule. It says "a list of something". A caller who passes `["443", "80"]` and a caller who passes `[{port=443}, {port=80}]` both satisfy it, and only one of them is useful. You need to describe the *shape* of an element, not just that elements exist.
+
+On the way out, the `ingress` rules of a security group are not separate resources you can `for_each` over. They are repeated **nested blocks** inside one resource. Every expression tool you have works on the right-hand side of `name = value`. A block is not a value, and you cannot write an expression that produces three of them.
+
+```hcl
+resource "aws_security_group" "app" {
+  name = "app"          # an expression is fine here
+
+  ingress {
+    # ...but this is a literal block, and there is exactly one of it
+  }
+}
+```
+
+The two answers are **type constraints** and **`dynamic` blocks**. They are usually taught apart. They belong together, because a good module uses the first to describe what the second will iterate over.
+
+---
+
+## 2. Type constraints — the interface on the way in
+
+Chapter 7 §2 covered types from the **value** side: what a `tuple` is, how a `set` differs from a `list`, what `null` means. This section is the other half. A **type constraint** is not a type. It is a rule written in a `type =` argument that every incoming value must satisfy, and it actively changes the values that pass through it.
+
+### Where a constraint is legal
+
+Constraints look like expressions and are not. They are special syntax, valid in exactly three places:
+
+- the `type` argument of an **input variable**,
+- the `type` argument of a **module output** (Terraform 1.15+, covered in Chapter 6),
+- a call to **`convert()`** (Terraform 1.15+, Terraform-only, see Chapter 7 §6).
+
+Anywhere else, `string` and `list(string)` are not meaningful expressions.
+
+### Keywords and constructors
+
+HashiCorp's [Type Constraints](https://developer.hashicorp.com/terraform/language/expressions/type-constraints) page splits the syntax in two. A **type keyword** is a bare unquoted symbol naming one static type: `string`, `bool`, `number`, `any`. A **type constructor** is a symbol followed by parentheses carrying an argument: `list(string)`, `object({ name = string })`.
+
+The distinction matters when the parentheses are missing. A constructor without its argument represents a *kind* of similar types rather than one type. Writing `type = list` is legal and means `list(any)`, which is almost never what you meant. Write the element type.
+
+### What a constraint actually does
+
+This is the part that is easy to skim past. A constraint is not a gate that accepts or rejects. It is a **conversion step**, and it has three possible outcomes.
+
+It can **convert** the value. It can **discard** part of the value. Or it can **reject** the value with an error.
+
+Only one of those three is loud.
+
+```hcl
+variable "unify" {
+  type    = list(any)
+  default = ["a", 1, true]
+}
+
+variable "cfg" {
+  type    = object({ name = string })
+  default = { name = "n", extra = "dropped", another = 5 }
+}
+```
+
+Measured on **1.15.8**, `terraform validate` on that configuration prints:
+
+```
+Success! The configuration is valid.
+```
+
+And the values that come out the other side are:
+
+```hcl
+unify = tolist([
+  "a",
+  "1",
+  "true",
+])
+cfg = {
+  "name" = "n"
+}
+```
+
+Two things happened without a word of complaint. The `list(any)` constraint **unified** three different types into `string`, rewriting `1` as `"1"` and `true` as `"true"`. The `object` constraint **deleted** two attributes.
+
+!!! danger "An `object(...)` constraint silently deletes undeclared attributes"
+    This is the single most dangerous behavior in the chapter, because it turns a typo into a no-op instead of an error.
+
+    A caller writes `enable_https = true` when the module declared `enabled_https`. The object constraint does not recognise `enable_https`, so it discards it. The module reads its own attribute, finds the default, and provisions the wrong thing. Nothing in the plan, the apply, or `terraform validate` mentions it.
+
+    Measured at a module boundary on **1.15.8**, with a module declaring `object({ name = string })` and a caller passing `name` plus `enable_https`:
+
+    ```
+    Success! The configuration is valid.
+    ```
+
+    The module receives `{ "name" = "kept" }`. The attribute is simply gone.
+
+    HashiCorp's Type Constraints page states the rule plainly, in a sentence worth reading twice: *"values with additional attributes are also acceptable, but the extra attributes are discarded during type conversion."* The behavior is intentional. It exists so that a whole resource object can satisfy a narrow constraint, which is genuinely useful. The cost is that it cannot tell that use from a misspelling.
+
+!!! info "OpenTofu — it warns, and Terraform does not"
+    Same configuration, same values, different diagnostics. OpenTofu **1.12.4** reports the dropped attribute; Terraform **1.15.8** does not.
+
+    ```
+    Warning: Object attribute is ignored
+
+      on main.tf line 90, in module "typo":
+      88:   cfg = {
+      89:     name         = "kept"
+      90:     enable_https = true
+      91:   }
+
+    The object type for input variable "cfg" does not include an attribute named
+    "enable_https", so this definition is unused.
+    ```
+
+    The resulting value is identical in both tools. Only the warning differs, which makes this a pure developer-experience divergence rather than a behavioral one.
+
+    Measured boundary, because it is narrower than it first looks. OpenTofu warns when the extra attribute is written in a **module call** or in a **variable `default`**. It stays silent when the same value arrives from a **`.tfvars` file**, which is where a lot of real input comes from. Do not treat it as complete coverage. Both measurements are in `labs/chapter12/lab4`.
+
+The third outcome, rejection, happens only when no conversion exists at all:
+
+```
+Error: Invalid default value for variable
+
+  on main.tf line 4, in variable "bad_unify":
+   4:   default = ["a", [], "b"]
+
+This default value is not compatible with the variable's type constraint: all
+list elements must have the same type.
+```
+
+```
+Error: Invalid default value for variable
+
+  on main.tf line 8, in variable "tup":
+   8:   default = ["a", 1, true]
+
+This default value is not compatible with the variable's type constraint:
+tuple required.
+```
+
+The first fails because no single type holds both a string and a tuple. The second fails because a `tuple` constraint fixes the element count, and three values cannot satisfy a two-element tuple.
+
+### Choosing the constraint: collection or structural
+
+The choice that decides how well a module interface behaves is collection versus structural.
+
+A **collection** type takes one element type and applies it to every element. `list(string)`, `set(number)`, `map(string)`. The number of elements is free and their type is fixed.
+
+A **structural** type takes a schema. `object({ name = string, port = number })`, `tuple([string, number])`. The shape is fixed and each position or key carries its own type.
+
+The pair that gets confused is `map` and `object`, because both are keyed by strings and the docs often use the words interchangeably. They differ on exactly the thing this chapter cares about. A **map** fixes the value type and leaves the key set open, so arbitrary keys are all kept. An **object** fixes the key set and lets each key have its own type, so keys it does not declare are dropped. That is why `map(string)` is right for tags and `object({...})` is right for a rule.
+
+Sets have a similar catch on the way through a constraint. Converting a list or tuple to a `set` discards duplicates and loses ordering, and converting back gives an arbitrary order, which for strings happens to be lexicographical. A `set` constraint on a module input therefore throws away the caller's ordering permanently. Use `list` when order carries meaning, such as a sequence of rules evaluated top to bottom.
+
+For module inputs the practical rule is short. Use `object` inside a `list` or `map` whenever an element has more than one field. That is the shape this entire chapter runs on:
+
+```hcl
+variable "ingress_rules" {
+  type = list(object({
+    port        = number
+    description = optional(string, "Managed by Terraform")
+    protocol    = optional(string, "tcp")
+    cidr_blocks = optional(list(string), ["0.0.0.0/0"])
+  }))
+}
+```
+
+Every element is checked. A caller who forgets `port` gets an error naming the attribute. A caller who passes `port = "443"` gets it converted to a number. A caller who passes nothing else gets three defaults.
+
+!!! warning "`list(any)` unifies, it does not mix"
+    `any` in an element slot does not mean "each element can be whatever it likes". Terraform must still find **one** element type, so it looks for a type every element converts to.
+
+    `["a", "b", "c"]` gives `list(string)`. `[1, 2, 3]` gives `list(number)`. `["a", 1, true]` gives `list(string)` **and rewrites the values**, because numbers and bools convert to strings. `["a", [], "b"]` fails outright, because nothing is both a string and a tuple.
+
+    If you genuinely need different types per position, that is what `tuple` and `object` are for.
+
+!!! tip "`any` is for pass-through, and almost nothing else"
+    The honest use for `type = any` is a value the module never inspects. It accepts it and hands it to something else.
+
+    ```hcl
+    variable "settings" {
+      type = any
+    }
+
+    resource "aws_s3_object" "example" {
+      # Reasonable: the module writes the data as JSON and never reads inside it.
+      content = jsonencode(var.settings)
+    }
+    ```
+
+    The moment any part of the module reads an attribute, indexes an element, or expects a string, `any` is the wrong constraint. Write the real one. Omitting `type` entirely is the same as writing `any`, which is why an untyped variable is a worse interface than it looks.
+
+!!! tip "Precise is not the same as elaborate"
+    Everything above argues for describing input precisely, and that argument has a limit. A deeply nested object with five levels and a dozen optional attributes is precise and nearly unusable. Callers cannot see the shape without reading the module source, and the error messages get long enough to be useless.
+
+    When an input grows that complex, split it into several simpler inputs instead. Two flat variables beat one nested object most of the time.
+
+---
+
+## 3. `optional()` — and the trap in the word "default"
+
+An object constraint normally requires every declared attribute. Marking one `optional` lets the caller leave it out.
+
+```hcl
+variable "site" {
+  type = object({
+    name  = string                        # required
+    index = optional(string, "index.html") # optional, with a default
+    error = optional(string)               # optional, no default
+  })
+}
+```
+
+The modifier takes the attribute's type, and optionally a default. With no default, an absent attribute becomes `null`. Note that this is a **typed** null, not an untyped hole. It prints as `tostring(null)`, because the constraint still knows what the attribute would have been.
+
+`optional(type, default)` graduated from experiment to stable in **Terraform 1.3**. It is available in every version this book targets and in OpenTofu.
+
+### The asymmetry worth memorising
+
+Terraform uses the word "default" for two different mechanisms, and they disagree about `null`.
+
+A **variable's `default`** is a fallback for absence only. If the caller explicitly passes `null`, that is a real value and Terraform keeps it, because `nullable` defaults to `true`.
+
+An **`optional()` attribute's default** is applied for absence *and* for an explicit `null`. It behaves the way `nullable = false` behaves, and there is no way to opt out.
+
+Measured on **1.15.8**, passing an explicit `null` to all three:
+
+| Declaration | Caller passes | Result |
+|---|---|---|
+| `default = "fallback"` | `null` | `null` — the default does **not** apply |
+| `default = "fallback"`, `nullable = false` | `null` | `"fallback"` |
+| `optional(string, "fallback")` | `null` | `"fallback"` |
+
+This is why the docs can promise something about `optional()` that they cannot promise about a variable default. HashiCorp's Type Constraints page puts it as a guarantee: an optional attribute with a non-null default *"is guaranteed to never have the value null within the receiving module."* Your code does not need a null check on it. That is a real simplification, and it comes from the substitution happening in both cases rather than one.
+
+!!! note "The corollary, which is easy to miss"
+    `optional(string)` **without** a default has no such guarantee. It is `null` whenever the caller omits it. Only the two-argument form buys you the never-null promise.
+
+### Defaults apply top-down
+
+When optional attributes nest, the outer default is applied first, and then the inner defaults are applied to the result. That ordering is what makes an empty default object useful:
+
+```hcl
+variable "buckets" {
+  type = list(object({
+    name    = string
+    enabled = optional(bool, true)
+    website = optional(object({
+      index_document = optional(string, "index.html")
+      error_document = optional(string, "error.html")
+      routing_rules  = optional(string)
+    }), {})
+  }))
+}
+```
+
+A caller who omits `website` entirely gets `{}` from the outer default. The inner defaults are then applied to that empty object, so they arrive fully populated:
+
+```hcl
+{
+  "enabled" = false
+  "name" = "archived"
+  "website" = {
+    "error_document" = "error.html"
+    "index_document" = "index.html"
+    "routing_rules" = tostring(null)
+  }
+}
+```
+
+Reverse the order and `{}` would stay empty. The top-down rule is what turns `optional(object({...}), {})` into "give me the whole default sub-object".
+
+### Leaving one attribute unset, conditionally
+
+Because a non-null default is substituted for an explicit `null`, `null` becomes usable as "let the default apply". That gives a clean conditional:
+
+```hcl
+module "buckets" {
+  source = "./modules/buckets"
+
+  buckets = [
+    {
+      name = "maybe_legacy"
+      website = {
+        error_document = var.legacy_filenames ? "ERROR.HTM" : null
+        index_document = var.legacy_filenames ? "INDEX.HTM" : null
+      }
+    },
+  ]
+}
+```
+
+With `legacy_filenames = true` the caller's names win. With `false`, both arms deliver `null`, the `optional()` defaults take over, and the module behaves as though the attributes were never written.
+
+---
+
+## 4. `dynamic` blocks — the interface on the way out
+
+Now the other half. A `dynamic` block generates repeated nested blocks from a collection.
+
+```hcl
+resource "aws_security_group" "app" {
+  name   = "app"
+  vpc_id = var.vpc_id
+
+  dynamic "ingress" {
+    for_each = var.ingress_rules
+    content {
+      description = ingress.value.description
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
+    }
+  }
+}
+```
+
+Three rules in the variable produce three `ingress` blocks. Four produce four. The resource body does not change.
+
+The mental model that makes this click: a `dynamic` block is to nested blocks what a `for` expression is to values. Both iterate a collection. `for` produces a complex typed value. `dynamic` produces blocks, which are not values and cannot be produced any other way.
+
+```mermaid
+flowchart LR
+    V["var.ingress_rules<br/>list(object)"] --> D{"dynamic &quot;ingress&quot;<br/>for_each"}
+    D -->|element 0| B0["ingress { 443 }"]
+    D -->|element 1| B1["ingress { 80 }"]
+    D -->|element 2| B2["ingress { 5432 }"]
+    B0 --> R["aws_security_group.app"]
+    B1 --> R
+    B2 --> R
+```
+
+### The five parts
+
+| Part | Required | What it is |
+|---|---|---|
+| **label** | yes | The kind of nested block to generate. `dynamic "ingress"` generates `ingress` blocks. |
+| **`for_each`** | yes | The collection to iterate. Any collection or structural value. |
+| **`content`** | yes | The body of each generated block. |
+| **`iterator`** | no | Renames the temporary variable. Defaults to the label. |
+| **`labels`** | no | A list of strings giving the generated blocks' own labels, in order. |
+
+`dynamic` is supported inside `resource`, `data`, `provider`, and `provisioner` blocks.
+
+### The iterator is named after the label
+
+This is the part everyone looks up, every time.
+
+A `dynamic` block does not use `each` or `count`. It **invents a new temporary variable named after its own label**. Inside `dynamic "ingress"`, that variable is `ingress`. Inside `dynamic "setting"`, it is `setting`.
+
+The variable has exactly two attributes:
+
+- **`value`** — the current element.
+- **`key`** — the map key or the list index of the current element.
+
+!!! warning "For a set, `key` is the element itself"
+    HashiCorp's [dynamic blocks](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks) page states the caveat directly: *"If the `for_each` expression produces a set value then `key` is identical to `value` and should not be used."*
+
+    A set has no indices and no order, so there is no meaningful key to hand you. Terraform gives you the value twice rather than failing. Code that reads `.key` on a set-driven dynamic block is usually a bug wearing a working disguise, because it looks like it is reading an identifier and is actually reading the whole element.
+
+    If you need a key, iterate a **map**. The map key is then a stable name you chose, which is the same argument Chapter 10 made for `for_each` over `count`.
+
+### The body must sit in `content`
+
+The second thing everyone gets wrong. Arguments go inside a `content { }` sub-block, not directly under `dynamic`. *Terraform in Depth* is blunt about the ergonomics here, and it is right: this is the most confusing syntax in the language, and experienced users still look it up.
+
+### Renaming the iterator
+
+The optional `iterator` argument replaces the label-derived name. It takes an **unquoted** name, not a string.
+
+```hcl
+dynamic "setting" {
+  for_each = var.settings
+  iterator = s
+  content {
+    namespace = s.value.namespace
+    value     = s.value.value
+  }
+}
+```
+
+You need this when nested `dynamic` blocks would otherwise share a label, so the inner one shadows the outer one's variable. Section 6 shows that case.
+
+### The `labels` argument, and why you have probably never used it
+
+Most nested block types take no label. `ingress {}`, `setting {}`, `rule {}`. For those, `labels` is meaningless and you omit it.
+
+It matters only when the block type you are generating expects a label of its own, as in `equal "contents" { ... }`. Then `labels` supplies one per iteration:
+
+```hcl
+data "testing_assertions" "terraform_disco" {
+  subject = "Terraform discovery document"
+
+  dynamic "equal" {
+    for_each = local.test_assertions
+    labels   = [equal.key]
+    content {
+      statement = equal.value.statement
+      got       = equal.value.got
+      want      = equal.value.want
+    }
+  }
+}
+```
+
+Each map entry becomes a labeled block, with the label taken from the map key. It is a **list** because a block type can require more than one label, supplied in order.
+
+---
+
+## 5. Generating zero or one block
+
+`for_each` over a three-element list gives three blocks. The more common need in a real module is **zero or one**, which is how you make an optional block optional.
+
+There are two idioms and they are worth knowing both, because they read differently.
+
+**The toggle.** Switch `for_each` between an empty collection and a one-element one. The element's value is never read, so it can be anything:
+
+```hcl
+dynamic "ingress" {
+  for_each = var.enable_ssh ? [1] : []
+  content {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/8"]
+  }
+}
+```
+
+Only the length matters. An empty collection generates no block at all, which is different from generating an empty one.
+
+**The splat.** When the block should appear exactly when an optional input was supplied, splat does the null check for you. Chapter 7 §8 introduced the behavior: `[*]` on a non-list wraps it in a one-element tuple, and on `null` it yields an **empty** tuple.
+
+```hcl
+variable "logging" {
+  type    = object({ target_bucket = string })
+  default = null
+}
+
+dynamic "logging" {
+  for_each = var.logging[*]         # [] when null, [obj] when set
+  content {
+    target_bucket = logging.value.target_bucket
+  }
+}
+```
+
+That reads better than `var.logging == null ? [] : [var.logging]` and means the same thing. It is the idiom to reach for when the variable is a nullable object.
+
+!!! tip "Shaping `for_each` before it reaches the block"
+    `for_each` accepts any collection or structural value, so a `for` expression or a splat can reshape a collection on the way in. When the blocks come from a nested structure or from combinations across several structures, derive the flat collection first.
+
+    `flatten` collapses nesting into one list. `setproduct` builds every combination of two collections. Both are the standard answer to "I have a map of groups each holding a list, and I need one block per (group, item) pair". Section 6 shows the alternative, which is to nest the dynamic blocks instead.
+
+!!! info "OpenTofu — provider-defined functions in `for_each` needed 1.12"
+    If the expression feeding `for_each` calls a **provider-defined** function, OpenTofu rejected it before **1.12.0**. The fix is listed under that release's bug fixes: *"`for_each` arguments in `dynamic` blocks can now call provider-defined functions."* ([opentofu#3429](https://github.com/opentofu/opentofu/issues/3429))
+
+    This is parity restored rather than a divergence, so it only matters if you are pinned below OpenTofu 1.12. Provider-defined functions themselves arrived in Terraform 1.8 and OpenTofu 1.7; Chapter 7 §6 covers them.
+
+---
+
+## 6. Nesting one `dynamic` inside another
+
+Some resource types nest blocks several levels deep. You generate those by putting a `dynamic` block inside the `content` of another one.
+
+```hcl
+variable "load_balancer_origin_groups" {
+  type = map(object({
+    origins = set(object({
+      hostname = string
+    }))
+  }))
+}
+```
+
+```hcl
+dynamic "origin_group" {
+  for_each = var.load_balancer_origin_groups
+  content {
+    name = origin_group.key
+
+    dynamic "origin" {
+      for_each = origin_group.value.origins
+      content {
+        hostname = origin.value.hostname
+      }
+    }
+  }
+}
+```
+
+Both iterators are live inside the inner `content`. `origin_group.value` is the outer element and `origin.value` is the inner one. The outer variable stays reachable, which is the whole reason the iterator is named after the label instead of being a fixed `each`.
+
+The failure mode is a name collision. If a nested block type shares a name with its parent, the inner `dynamic` shadows the outer variable and the outer element becomes unreachable. That is what `iterator` is for. Give one of them a distinct name and both stay addressable.
+
+---
+
+## 7. What a `dynamic` block will not do
+
+Two limits, one of which produces a genuinely unhelpful error.
+
+**It cannot generate meta-argument blocks.** `lifecycle` and `provisioner` are processed before it is safe to evaluate expressions, so they cannot be produced by something that requires evaluation. HashiCorp's dynamic blocks page states this outright.
+
+What it does not tell you is that Terraform does not explain itself when you try. Measured on **1.15.8** and identical on **OpenTofu 1.12.4**:
+
+```
+Error: Unsupported block type
+
+  on probe.tf line 7, in resource "terraform_data" "limit":
+   7:   dynamic "lifecycle" {
+
+Blocks of type "lifecycle" are not expected here.
+```
+
+Now compare that with a plain typo, `dynamic "nonexistent"`:
+
+```
+Error: Unsupported block type
+
+  on probe.tf line 7, in resource "terraform_data" "limit":
+   7:   dynamic "nonexistent" {
+
+Blocks of type "nonexistent" are not expected here.
+```
+
+The two are the same error. Nothing distinguishes "this block type does not exist" from "this block type exists and may never be generated". A reader who hits the second one will go looking for a misspelling that is not there. Knowing the rule in advance is the only thing that saves the time.
+
+**It cannot generate arguments.** A `dynamic` block produces blocks, not `name = value` assignments. If the thing you want to repeat is an argument, the answer is a `for` expression building a collection, not a `dynamic` block.
+
+---
+
+## 8. When not to reach for it
+
+HashiCorp's own guidance on `dynamic` is unusually discouraging for a feature page, and it is worth taking seriously: *"Overuse of dynamic blocks can make configuration hard to read and maintain, so we recommend using them only when you need to hide details in order to build a clean user interface for a re-usable module. Always write nested blocks out literally where possible."*
+
+Two tests follow from that.
+
+**Is this a reusable module?** In a root module, where you know the rules, three literal `ingress` blocks are clearer than a `dynamic` block plus a variable holding three rules. The indirection buys nothing.
+
+**Is the module still an abstraction?** If you find yourself generating most of a resource's blocks from directly-corresponding input attributes, the module has become a pass-through with extra steps. The Type Constraints page's advice applies: it may be better for the calling module to define the resource itself and pass information into yours.
+
+### The case where the provider moved on
+
+There is a third test, and it is newer than most of the material teaching this feature.
+
+The security group is *the* canonical `dynamic` block example. It is what *Terraform in Depth* uses. It is what this chapter opened with. And the AWS provider now recommends against the inline blocks it generates.
+
+The AWS provider's own `aws_security_group` documentation, read at tag **v6.54.0**, opens with the discouragement: *"Avoid using the `ingress` and `egress` arguments of the `aws_security_group` resource to configure in-line rules, as they struggle with managing multiple CIDR blocks, and, due to the historical lack of unique IDs, tags and descriptions."* It then names the replacement: *"To avoid these problems, use the current best practice of the `aws_vpc_security_group_egress_rule` and `aws_vpc_security_group_ingress_rule` resources with one CIDR block per rule."*
+
+The recommended shape is now one resource per rule, iterated with `for_each`:
+
+```hcl
+resource "aws_vpc_security_group_ingress_rule" "app" {
+  for_each = { for r in var.ingress_rules : "${r.port}-${r.cidr}" => r }
+
+  security_group_id = aws_security_group.app.id
+  description       = each.value.description
+  from_port         = each.value.port
+  to_port           = each.value.port
+  ip_protocol       = each.value.protocol
+  cidr_ipv4         = each.value.cidr
+}
+```
+
+That is Chapter 10's tool, not this chapter's. Resource iteration replaced block iteration for this resource type, and it brought Chapter 10's benefits with it. Each rule gets its own address, its own identity in state, and its own line in the plan. A rule removed from the middle of the list no longer rewrites the whole security group.
+
+!!! danger "Never mix the two shapes on one security group"
+    The provider warns about this explicitly, and it is a real outage rather than a style point: *"You should not use the `aws_security_group` resource with in-line rules (using the `ingress` and `egress` arguments of `aws_security_group`) in conjunction with the `aws_vpc_security_group_egress_rule` and `aws_vpc_security_group_ingress_rule` resources or the `aws_security_group_rule` resource. Doing so may cause rule conflicts, perpetual differences, and result in rules being overwritten."*
+
+    Pick one shape per security group. The inline blocks own the entire rule set, so a separate rule resource pointing at the same group gets deleted on the next apply.
+
+Inline blocks are still supported, so existing modules are not broken. But the lesson generalises past AWS. **When a provider splits a repeated nested block into a first-class resource, the `for_each` version is the better answer.** `dynamic` remains the only answer where the provider has not done that, which is still most places: S3 lifecycle rules, IAM policy statements, DynamoDB attributes and indexes, Elastic Beanstalk settings.
+
+---
+
+## 🧪 Lab: drive nested blocks from a typed variable
+
+You will build the milestone module, nest a `dynamic` block inside another, and then watch Terraform refuse to generate the two block types it reserves for itself. The last part needs no provider at all.
+
+Everything runs against the free local **AWS emulator** from [Chapter 1's lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker).
+
+**Start the emulator** (from the repo root; skip if already running):
+
+```shell
+docker compose -f labs/docker-compose.yml up -d      # start the emulator on :4566, detached
+curl -s http://localhost:4566/_floci/health          # wait until the services read "running"
+```
+
+!!! warning "Parts A and B are unverified on the author's machine"
+    Parts C and D below were measured and every output shown for them is real. Parts A and B were **not** run, because no provider plugin would load at the time of writing. A local security product was intercepting the loopback mTLS handshake that Terraform uses to talk to provider binaries, and both Terraform and OpenTofu failed identically at schema load with `x509: certificate signed by unknown authority`.
+
+    The configurations in `labs/chapter12/lab1` and `labs/chapter12/lab2` are committed and complete, but no command output from them is reproduced in this chapter, because none was captured. Treat them as exercises rather than transcripts. See [[env_norton_breaks_terraform_plugin_mtls]] for the diagnosis.
+
+### Part A — one rule list, one block per rule
+
+`labs/chapter12/lab1` holds a security group whose `ingress` blocks come from a `list(object(...))` with three optional attributes and one required one. It also carries a second `dynamic "ingress"` block driven by the zero-or-one toggle, and a literal `egress` block, to show that all three coexist in one resource.
+
+```shell
+cd labs/chapter12/lab1
+tflocal init
+tflocal apply -auto-approve
+tflocal state show aws_security_group.app     # three generated ingress blocks
+```
+
+Then flip `enable_ssh` to `true` and plan again. One block appears, and nothing else in the resource moves.
+
+```shell
+tflocal plan -var enable_ssh=true
+tflocal destroy -auto-approve
+```
+
+!!! note "This part uses the EC2 surface"
+    Security groups are EC2, which the emulator mocks more shallowly than S3. Floci runs the shape; MiniStack and LocalStack may not. Part B is pure S3 and is portable across all three.
+
+### Part B — a dynamic block inside a dynamic block
+
+`labs/chapter12/lab2` builds an S3 lifecycle configuration from a **map** of rules. The map key becomes the rule id. Each rule carries its own list of storage-class transitions, which the inner `dynamic "transition"` iterates. `filter` and `expiration` use the zero-or-one idiom, because each is a single optional block rather than a repeated one.
+
+```shell
+cd labs/chapter12/lab2
+tflocal init
+tflocal apply -auto-approve
+awslocal s3api get-bucket-lifecycle-configuration --bucket ch12-archive
+tflocal destroy -auto-approve
+```
+
+Read the config and confirm which iterator each expression uses. `rule.key` names the rule. `rule.value.transitions` feeds the inner block. `transition.value.days` is the inner element.
+
+### Part C — what will not be generated
+
+No provider, no emulator, no network. `terraform_data` is built into the CLI.
+
+```shell
+cd labs/chapter12/lab3
+terraform init
+terraform validate                    # Success!
+cp main.tf.lifecycle probe.tf
+terraform validate
+```
+
+```
+Error: Unsupported block type
+
+  on probe.tf line 7, in resource "terraform_data" "limit":
+   7:   dynamic "lifecycle" {
+
+Blocks of type "lifecycle" are not expected here.
+```
+
+Now the typo, which is the point of the exercise:
+
+```shell
+cp main.tf.typo probe.tf
+terraform validate
+rm probe.tf
+```
+
+```
+Error: Unsupported block type
+
+  on probe.tf line 7, in resource "terraform_data" "limit":
+   7:   dynamic "nonexistent" {
+
+Blocks of type "nonexistent" are not expected here.
+```
+
+Identical in form. The error never says "this block type may not be generated dynamically". Verified the same on OpenTofu 1.12.4.
+
+### Part D — what the constraint did to your input
+
+Also provider-free. `labs/chapter12/lab4` passes an explicit `null` to three differently-declared inputs, hands an object constraint two attributes it never declared, and gives `list(any)` three different types.
+
+```shell
+cd labs/chapter12/lab4
+terraform init
+terraform apply -auto-approve
+```
+
+```
+cfg = {
+  "name" = "kept"
+}
+not_nullable = "fallback"
+site = {
+  "error" = tostring(null)
+  "index" = "index.html"
+  "name" = "explicit-null"
+}
+unify = tolist([
+  "a",
+  "1",
+  "true",
+])
+```
+
+Four findings in one screen. `cfg` lost two attributes. `not_nullable` replaced an explicit null with its default. `site.index` did the same because `optional()` always does, while `site.error` stayed a typed null because it has no default. `unify` became three strings.
+
+The `plain` output is missing from that list, and its absence is itself a finding. It evaluated to `null`, and Terraform does not write a null output to state at all:
+
+```shell
+terraform output plain
+```
+
+```
+Error: Output "plain" not found
+
+The output variable requested could not be found in the state file.
+```
+
+Now compare the two tools on the silent drop:
+
+```shell
+terraform validate      # Success! The configuration is valid.
+tofu init
+tofu validate
+```
+
+```
+Warning: Object attribute is ignored
+
+  on main.tf line 90, in module "typo":
+  88:   cfg = {
+  89:     name         = "kept"
+  90:     enable_https = true # the module declares no such attribute
+  91:   }
+
+The object type for input variable "cfg" does not include an attribute named
+"enable_https", so this definition is unused.
+```
+
+Note which one warned and which did not. Then note that OpenTofu stayed silent about the identical mistake in `terraform.tfvars`, three lines above the module call, and only caught the one written in the module block.
+
+!!! warning "Emulation is not AWS"
+    A green `apply` here proves your **HCL, expressions, and workflow** are correct. It does not prove the configuration behaves identically on real AWS. The emulator mocks the API surface, not every semantic, and the EC2 surface Part A uses is mocked more shallowly than S3. Validate any load-bearing configuration against real free-tier AWS before trusting it.
+
+---
+
+## Common pitfalls
+
+- **Trusting `object(...)` to catch a typo in a caller's input.** It does the opposite. The undeclared attribute is discarded and nothing is reported. OpenTofu warns for module calls and variable defaults; Terraform never does, and neither warns about `.tfvars`.
+- **Writing `default = null` on a variable and expecting the default to apply.** It applies only to absence. An explicit `null` is kept unless you add `nullable = false`. Inside an object type, `optional()` behaves the other way and always substitutes.
+- **Reading `.key` on a set-driven `dynamic` block.** For a set, `key` is the whole element. Iterate a map when you need a real key.
+- **Putting arguments directly under `dynamic`** instead of inside `content { }`.
+- **Quoting the `iterator` name.** It is an unquoted symbol. `iterator = s`, not `iterator = "s"`.
+- **Nesting two `dynamic` blocks with the same label** and losing access to the outer element. Rename one with `iterator`.
+- **Reaching for `dynamic` in a root module.** Literal blocks are clearer wherever the set of blocks is known.
+- **Using `type = list` or omitting `type`.** Both mean `any` somewhere, which means silent unification later.
+- **Mixing inline `ingress` blocks with `aws_vpc_security_group_ingress_rule` resources.** The provider warns that rules get overwritten.
+
+---
+
+## Exercises
+
+1. **Recall.** Name the five parts of a `dynamic` block. Which two are optional, and what does each do?
+2. **Recall.** A caller passes `null` for an attribute declared `optional(number, 30)`. What does the module see? What if it were declared `optional(number)`?
+3. **Apply.** Write a variable declaring a list of S3 CORS rules where `allowed_methods` is required, `allowed_origins` defaults to `["*"]`, and `max_age_seconds` is optional with no default. Generate the `cors_rule` blocks from it.
+4. **Apply.** Convert `for_each = var.config == null ? [] : [var.config]` to the splat form, and say what makes them equivalent.
+5. **Extend.** Take the map-of-groups-each-holding-a-list shape from section 6 and produce one **flat** list of blocks instead of nested ones, using `flatten`. When would you prefer that over nesting two `dynamic` blocks?
+6. **Extend.** Rewrite the Part A security group using `aws_vpc_security_group_ingress_rule` with `for_each`. What does each rule gain in the plan output, and what key would you use to keep the addresses stable when a rule is removed from the middle?
+
+---
+
+## Summary
+
+- A **type constraint** is a conversion step, not a gate. It can convert a value, discard part of it, or reject it. Only rejection is loud.
+- `object(...)` **silently discards** undeclared attributes. This is intentional and useful, and it turns a caller's typo into a no-op. OpenTofu warns for module calls and variable defaults; Terraform does not warn at all; neither catches it in `.tfvars`.
+- `list(any)` **unifies** rather than mixes. Three different types become one, with values rewritten. Use `tuple` or `object` when positions genuinely differ.
+- `any` belongs on values the module never inspects. Omitting `type` means the same thing.
+- **`optional(type, default)` and a variable `default` disagree about `null`.** The optional default is substituted for an explicit `null` as well as for absence, so a non-null optional default is guaranteed never `null` inside the module. A variable default is not, unless you add `nullable = false`.
+- Nested optional defaults apply **top-down**, which is what makes `optional(object({...}), {})` deliver a fully populated sub-object.
+- A **`dynamic` block** is to nested blocks what a `for` expression is to values. Label, `for_each`, `content` are required; `iterator` and `labels` are not.
+- The iterator is **named after the label** and carries `key` and `value`. For a set, `key` is the element, so do not use it.
+- **Zero or one** block comes from a toggle (`cond ? [1] : []`) or from splat on a nullable object (`var.x[*]`).
+- `dynamic` blocks **nest**, and both iterators stay live. Rename one with `iterator` when labels collide.
+- It **cannot** generate `lifecycle` or `provisioner`, and the error you get is indistinguishable from a typo.
+- Use it to build a clean module interface, not to avoid typing. Where a provider has promoted a nested block to its own resource, **`for_each` on that resource is the better answer**.
+
+---
+
+## What's next
+
+You can now describe a module's input precisely and generate its output blocks from that description. That is everything needed to write a module worth reusing, except the part where somebody else uses it.
+
+Chapter 13 turns to **consuming modules**: where they come from, how `source` addresses resolve, how version constraints pin them, and what `module.<name>.<output>` gives you back. Chapter 14 then puts you on the authoring side, where the interface design in this chapter becomes the module's public contract.
+
+---
+
+## References
+
+- HashiCorp, [dynamic Blocks](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks) — anatomy, the set-key caveat, the meta-argument limitation, multi-level nesting, best practices.
+- HashiCorp, [Type Constraints](https://developer.hashicorp.com/terraform/language/expressions/type-constraints) — keywords and constructors, conversion rules, `any`, optional attributes and top-down defaults.
+- AWS provider, [`aws_security_group`](https://github.com/hashicorp/terraform-provider-aws/blob/v6.54.0/website/docs/r/security_group.html.markdown) at tag v6.54.0 — the guidance against inline rules and the warning against mixing shapes.
+- Reading notes: [[tf-expr-dynamic-blocks]], [[tf-expr-type-constraints]], [[tf-expr-types]] (the value side), [[tf-expr-splat]] (splat on `null`), [[tf-expr-for]], [[tf-conditionals]], [[tf-block-variable]] (`nullable`, the full variable argument surface).
+- *Terraform in Depth* Ch 3 §3.6 (value types, `optional()`, the `list(any)` unification warning) and Ch 4 §4.10 (dynamic blocks, the toggle idiom), captured as [[03-variables-modules]] and [[04-expressions-iterations]].
+- Measurements: `docs/research-cache/dynamic-blocks-facts.md`, labs at `labs/chapter12/`.
+- 🧪 Lab: [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)

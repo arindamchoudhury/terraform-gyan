@@ -77,7 +77,7 @@ Every value has a type, and the type decides where the value is legal and how it
 
     So "has a literal" and "is structural" aren't two facts that happen to line up. They're the same property. Which is also why there is no `totuple()` or `toobject()` function: the three `to*` collection converters exist precisely because those are the three types you can't write down.
 
-The five subsections that follow each cover the **value** side: what actually produces the type, how it behaves, and where it bites. The **constraint** side (writing `type = ...` to restrict a module input) is Ch 12; each subsection signposts its constraint form so you can connect the two halves.
+The five subsections that follow each cover the **value** side: what actually produces the type, how it behaves, and where it bites. The **constraint** side (writing `type = ...` to restrict a module input) is [Ch 12](ch12-dynamic-blocks-complex-types.md); each subsection signposts its constraint form so you can connect the two halves.
 
 ### `tuple` — ordered, per-position types
 
@@ -354,7 +354,7 @@ Invalid value for "value" parameter: attribute "age" is required.
     What OpenTofu can't do is apply an arbitrary schema **inline**, mid-expression, with no declared boundary. That is exactly what #2630 asks for, and its motivating case is coercing `jsondecode`/`yamldecode` output. Typed outputs are no help either, since `type` on an `output` is also Terraform 1.15+ and OpenTofu rejects it. For primitives and collections the fixed casters (`tostring`, `tonumber`, `tolist`, `toset`, `tomap`) cover the same ground in both tools, so the gap is specifically **object and tuple schemas**.
 
 !!! note "Constraint form — `object({ name = string })`"
-    Written `object({ <KEY> = <TYPE>, ... })`. Ch 12 covers the schema rules and **`optional(type, default)`**, which is how an object attribute becomes genuinely optional instead of merely defaulting to `null`.
+    Written `object({ <KEY> = <TYPE>, ... })`. [Ch 12](ch12-dynamic-blocks-complex-types.md) covers the schema rules and **`optional(type, default)`**, which is how an object attribute becomes genuinely optional instead of merely defaulting to `null`.
 
 ### `map` — string keys, one value type
 
@@ -1205,7 +1205,7 @@ Two ways to get the same list from a `for_each` resource. Collapse the object do
 ]
 ```
 
-Splat has one special trick: on a non-list value it wraps it in a one-element tuple, and on `null` it yields an **empty** tuple — handy for feeding an optional variable into a `dynamic` block's `for_each` (Ch 12).
+Splat has one special trick: on a non-list value it wraps it in a one-element tuple, and on `null` it yields an **empty** tuple — handy for feeding an optional variable into a `dynamic` block's `for_each` ([Ch 12](ch12-dynamic-blocks-complex-types.md)).
 
 ### The milestone: list of maps → keyed map → `for_each`
 

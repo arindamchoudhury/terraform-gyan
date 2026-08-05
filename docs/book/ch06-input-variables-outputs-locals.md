@@ -159,7 +159,7 @@ Four arguments solve narrower problems. Know they exist; two get their full trea
 **`nullable`** controls whether the caller may pass `null`. It defaults to `true`. Set `nullable = false` to forbid a null value — and note that when it's `false`, a `null` supplied to a *defaulted* variable falls back to the default instead of erroring.
 
 !!! warning "`default = null` does **not** mean *optional*"
-    A common trap: writing `default = null` to make a variable optional. It doesn't do what people expect. It makes `null` the variable's default **value**, which your configuration then has to handle everywhere it reads `var.name`. An unset reference becomes `null`, not a sensible fallback. If you want *optional with a real fallback*, give a real default (`default = "t2.micro"`). Optional *attributes inside an object type* are a different feature — `optional()` — covered with complex types in I3.
+    A common trap: writing `default = null` to make a variable optional. It doesn't do what people expect. It makes `null` the variable's default **value**, which your configuration then has to handle everywhere it reads `var.name`. An unset reference becomes `null`, not a sensible fallback. If you want *optional with a real fallback*, give a real default (`default = "t2.micro"`). Optional *attributes inside an object type* are a different feature — `optional()` — covered with complex types in [Chapter 12](ch12-dynamic-blocks-complex-types.md).
 
 **`sensitive`** redacts the value from CLI output; a plan shows `(sensitive value)` instead of the secret, and any expression referencing a sensitive variable becomes sensitive too. It is **hiding, not protection** — the value is still written to state in plaintext. Full secrets handling, including `ephemeral` and write-only arguments, is A6.
 
@@ -377,6 +377,21 @@ output "instance_public_ip" {
 !!! info "OpenTofu — no typed outputs"
     `type` on an `output` block is **Terraform 1.15+ only**. OpenTofu rejects it outright as of 1.12.4: `An argument named "type" is not expected here.` A module written to run under both tools cannot use the argument at all, so its outputs stay untyped and the interface is documented by `description` alone. The other arguments here are portable: OpenTofu supports `sensitive`, `ephemeral`, `depends_on`, and `deprecated` on outputs, and `const`, `deprecated`, `nullable`, and `ephemeral` on variables.
 
+!!! warning "An output whose value is `null` is not stored at all"
+    Terraform does not write a null-valued output to state, and the omission is total rather than cosmetic. There is no `"value": null` entry to find.
+
+    Measured on **1.15.8**, with a declared `output "plain"` whose value evaluated to `null`:
+
+    ```
+    $ terraform output plain
+
+    Error: Output "plain" not found
+
+    The output variable requested could not be found in the state file.
+    ```
+
+    `terraform output -json` omits the key entirely, and the apply summary skips the output rather than printing it as `null`. A consumer script that does `terraform output -json | jq .plain.value` gets `null` from *jq* for a missing key, so the two cases look identical from outside and only one of them is a configuration you can debug. If a downstream step needs to distinguish "absent" from "explicitly nothing", emit a sentinel string rather than relying on the key existing.
+
 !!! note "Typed outputs also change the shape of `module.<NAME>` — treat that as a curiosity"
     There is a second-order effect worth knowing and not worth chasing. When a child module's outputs are **fully** typed, a `count`/`for_each` reference to that module produces a real `list`/`map`; when any output is untyped it produces a `tuple`/`object` instead. Terraform branches on exactly that condition internally, so the mechanism is real — but callers almost never notice, because a tuple splats, converts, and satisfies a `list(object(…))` constraint just as a list does. **Resources have no such switch and are always structural.** So type your outputs for the checked, self-documenting interface, which is reason enough; the collection shape is a consequence of the uniformity guarantee, not a benefit stacked on top. Chapter 7 §3 has the machinery.
 
@@ -527,7 +542,7 @@ tflocal destroy -var-file="prod.tfvars"
 
 ## Common pitfalls
 
-- **`default = null` to mean "optional."** It makes `null` the default value your code must handle, not an absent-with-fallback input. Use a real default, or `optional()` inside an object type (I3).
+- **`default = null` to mean "optional."** It makes `null` the default value your code must handle, not an absent-with-fallback input. Use a real default, or `optional()` inside an object type ([Ch 12](ch12-dynamic-blocks-complex-types.md)).
 - **A `.tfvars` file that isn't auto-loaded.** Only `terraform.tfvars`, `*.auto.tfvars` (and their `.json` forms) load automatically. `dev.tfvars` does nothing unless you pass `-var-file="dev.tfvars"`.
 - **Expecting `sensitive` to protect a secret.** It redacts aggregate CLI output only. Querying by name, `-json`, `-raw`, and the state file all show it in plaintext. Use `ephemeral` / write-only args (A6) to keep it out of state.
 - **A variable `default` that references another object.** Defaults must be literals. Move the computed value into a `locals` block instead.

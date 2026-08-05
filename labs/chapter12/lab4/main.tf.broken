@@ -1,0 +1,11 @@
+# Copy over probe.tf and run `terraform validate` to see the two constraint
+# failures that DO get reported, in contrast to the silent drop in main.tf.
+variable "bad_unify" {
+  type    = list(any)
+  default = ["a", [], "b"]     # no single type fits a string and a tuple
+}
+
+variable "tup" {
+  type    = tuple([string, number])
+  default = ["a", 1, true]     # a tuple constraint is exact-length
+}
