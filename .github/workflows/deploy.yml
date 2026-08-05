@@ -24,6 +24,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Creates the Pages site on the first run, so no manual repo-settings
+      # step is needed before the first deploy.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
