@@ -619,6 +619,11 @@ curl -s http://localhost:4566/_floci/health          # wait until the services r
 
 Every transcript below was captured on **Terraform 1.15.8** with **AWS provider 6.58.0** against Floci. Long outputs are trimmed to the lines that carry the point, and nothing is paraphrased.
 
+!!! info "OpenTofu — Parts A and B were re-run and match"
+    Both parts were run again under **OpenTofu 1.12.4** (AWS provider 6.57.1, which is what `~> 6.0` resolves to on OpenTofu's registry). Every result in this section reproduced: the same three generated blocks with the same `optional()` defaults, the same reordering through the provider set, the same sorted-key order from the map, and the same 55-second create. There is no divergence to report for block generation, so read the transcripts as applying to both tools.
+
+    Do not try to share the lab directory between them, though. `.terraform.lock.hcl` is keyed by the fully-qualified provider address, so Terraform's lock names `registry.terraform.io/hashicorp/aws` and OpenTofu refuses it with `Inconsistent dependency lock file`. Chapter 2 has the detail. Use a separate directory, or `tofu init -upgrade`.
+
 ### Part A — one rule list, one block per rule
 
 `labs/chapter12/lab1` holds a security group whose `ingress` blocks come from a `list(object(...))` with three optional attributes and one required one. It also carries a second `dynamic "ingress"` block driven by the zero-or-one toggle, and a literal `egress` block, to show that all three coexist in one resource.
@@ -662,7 +667,7 @@ Read the defaults doing their work. Only the Postgres rule declared `cidr_blocks
 !!! note "The order you wrote is not the order you get"
     The variable lists the rules as 443, 80, 5432. The plan renders them 80, 443, 5432.
 
-    Nothing reordered your variable. `ingress` is a **set** in the provider's schema, not a list, so it has no order to preserve and the provider renders it in its own. This is the constraint-side fact from section 2 showing up in practice: a set discards ordering permanently, and no amount of care in the input list gets it back.
+    Nothing reordered your variable. `ingress` is a **set** in the provider's schema, not a list, so it has no order to preserve and the provider renders it in its own. The same reordering happens under OpenTofu, so this is the provider's doing rather than either CLI's. This is the constraint-side fact from section 2 showing up in practice: a set discards ordering permanently, and no amount of care in the input list gets it back.
 
     It matters more than it looks for a `dynamic` block, because it means you cannot use position to identify a generated block. If you need stable identity per rule, that is the argument for the `for_each`-over-resources shape in section 8, where each rule gets its own address.
 
@@ -803,7 +808,7 @@ Read the config and confirm which iterator each expression uses. `rule.key` name
 !!! note "A map iterates in sorted key order, and that is the point"
     The variable declares its rules in the order `logs`, `tmp`, `everything`. Every output above lists them `everything`, `logs`, `tmp`.
 
-    That is not the arbitrary reordering Part A showed. `for_each` over a **map** iterates in **sorted key order**, deterministically, every run. Compare the two parts directly. Part A's rules went through a provider **set** and came back in an order you neither chose nor can predict from the input. Part B's went through a **map** and came back sorted, which is a rule you can state in advance.
+    That is not the arbitrary reordering Part A showed. `for_each` over a **map** iterates in **sorted key order**, deterministically, every run, and identically under OpenTofu 1.12.4. Compare the two parts directly. Part A's rules went through a provider **set** and came back in an order you neither chose nor can predict from the input. Part B's went through a **map** and came back sorted, which is a rule you can state in advance.
 
     This is the same argument Chapter 10 made for `for_each` over `count`, applied one level down. A map key is a name you chose, so it survives, sorts predictably, and identifies the block. A set element is only itself.
 

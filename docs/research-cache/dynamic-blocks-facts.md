@@ -187,7 +187,43 @@ against 3 seconds for the bucket. Slow, not broken.
 
 ---
 
+**OpenTofu re-run: no divergence.** Both labs were run again under **OpenTofu 1.12.4** (AWS
+provider **6.57.1**). Every result reproduced exactly — same generated blocks, same `optional()`
+defaults, same set reordering, same sorted-key map order, same 55-second create. Block generation
+is tool-independent, and the set reordering is the provider's doing rather than either CLI's.
+
+---
+
+## Measured — a lock file is not portable between Terraform and OpenTofu
+
+Found by running the OpenTofu pass in a directory holding Terraform's committed lock.
+
+`.terraform.lock.hcl` entries are keyed by the **fully-qualified** provider source address,
+including the registry host. Terraform records `registry.terraform.io/hashicorp/aws`; OpenTofu
+resolves the identical `source = "hashicorp/aws"` to `registry.opentofu.org/hashicorp/aws`. So
+one lock cannot serve both:
+
+```
+Error: Inconsistent dependency lock file
+
+The following dependency selections recorded in the lock file are inconsistent
+with the current configuration:
+  - provider registry.opentofu.org/hashicorp/aws: required by this configuration
+    but no version is selected
+```
+
+`tofu init -upgrade` writes OpenTofu's entry. A repo that must build under both tools cannot
+share one committed lock file.
+
+**Resolved versions drift too.** The same `~> 6.0` constraint on the same day selected AWS
+provider **6.58.0** from Terraform's registry and **6.57.1** from OpenTofu's. Both satisfy the
+constraint; the mirrors are not in lockstep.
+
+This corrects a line in **Book Ch 2**, which said version constraints and the lock file "behave
+the same in both tools." The format and purpose do; a written lock file does not transfer.
+
+---
+
 ## Not verified
 
-- Whether `dynamic` block generation behaves identically under **OpenTofu**. Parts A and B were
-  run under Terraform only. The type-constraint measurements above *were* run under both.
+- Nothing outstanding for this chapter.

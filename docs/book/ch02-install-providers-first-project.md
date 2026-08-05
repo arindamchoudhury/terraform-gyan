@@ -289,7 +289,22 @@ terraform {
 So `hashicorp/aws` expands to `registry.terraform.io/hashicorp/aws`. The key on the left (`aws`) is the **local name** — the identifier you use everywhere else in the module. Nearly every provider has a *preferred* local name that doubles as its resource-type prefix, which is why `aws_instance` implies the `aws` local name. Keep local name = type unless two providers collide (two different `http` providers, say), in which case you give them distinct compound names.
 
 !!! info "OpenTofu — default provider registry"
-    The same shorthand `hashicorp/aws` resolves from a **different host** under OpenTofu: `registry.opentofu.org`, not `registry.terraform.io`. The short address is identical, so configs port unchanged; write the full `registry.terraform.io/hashicorp/aws` only if you must pin HashiCorp's registry specifically. Version constraints and the lock file behave the same in both tools.
+    The same shorthand `hashicorp/aws` resolves from a **different host** under OpenTofu: `registry.opentofu.org`, not `registry.terraform.io`. The short address is identical, so configs port unchanged; write the full `registry.terraform.io/hashicorp/aws` only if you must pin HashiCorp's registry specifically. Version constraints behave the same in both tools, and so does the lock file's format and purpose.
+
+    **A committed lock file is not portable between the two tools, though**, and that follows directly from the host difference above. Entries in `.terraform.lock.hcl` are keyed by the **fully-qualified** source address, host included, so a lock written by Terraform records `registry.terraform.io/hashicorp/aws` and cannot satisfy OpenTofu, which is looking for `registry.opentofu.org/hashicorp/aws`. Running `tofu` in a directory holding Terraform's lock fails before it plans anything. Measured while writing Chapter 12:
+
+    ```
+    Error: Inconsistent dependency lock file
+
+    The following dependency selections recorded in the lock file are inconsistent
+    with the current configuration:
+      - provider registry.opentofu.org/hashicorp/aws: required by this configuration
+        but no version is selected
+    ```
+
+    `tofu init -upgrade` resolves it by writing OpenTofu's own entry. The practical consequence for a repo that must build under both: the two tools cannot share one committed lock file, so pick one tool per working directory rather than expecting a single lock to serve both.
+
+    Expect the resolved **versions** to drift apart too. The same `~> 6.0` constraint, run on the same day against the two registries, selected AWS provider **6.58.0** under Terraform and **6.57.1** under OpenTofu. Both satisfy the constraint; the mirrors simply are not in lockstep.
 
 !!! note "Why some old modules have no `source` at all"
     Terraform v0.12.26–v0.13 **accepted but ignored** the `source` argument, and v0.12 couldn't auto-install third-party providers at all. Modules written to work on both eras therefore omit `source` entirely for `hashicorp`-namespace providers and rely on inference. You'll still meet this in long-lived repos. It isn't a style choice — it's a fossil, and there's no reason to write new code that way.
