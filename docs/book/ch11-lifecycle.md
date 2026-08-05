@@ -1192,6 +1192,8 @@ tflocal plan
 
     The effect on this exercise: the standing diff you are about to suppress is partly the emulator's own, not purely the out-of-band change. Everything the rule does is still visible. On real AWS the starting state would read `data-team` rather than empty — AWS's `CreateBucket` reference documents the `Tags` array the provider is sending, so this is Floci's gap and not the provider's.
 
+    **This is being fixed.** [floci-io/floci#2115](https://github.com/floci-io/floci/pull/2115) wires the creation-time tags into the existing tag store, and was merged on 2026-08-05. No release carries it yet: the latest is 1.5.34, which is what `labs/docker-compose.yml` pins and what everything above was measured on. If you are running a later image and your first plan comes back empty, the fix has shipped and this warning no longer applies to you.
+
 ```
   # aws_s3_bucket.reports will be updated in-place
   ~ resource "aws_s3_bucket" "reports" {
@@ -1260,7 +1262,7 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
     A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. Both of this lab's emulator-dependent behaviours were checked against the AWS API references, and they land on opposite sides:
 
     - **Parts C and C2 transfer.** AWS's [CreateTable](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html) states that "table names must be unique within each Region" and lists "You attempted to recreate an existing table" under `ResourceInUseException`. The emulator returns the same exception with the same HTTP 400, so the collision you just triggered is the one real AWS would give you.
-    - **Part D does not, in one respect.** AWS's [CreateBucket](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) documents a `Tags` array inside `CreateBucketConfiguration` — "an array of tags that you can apply to the bucket that you're creating" — so on real AWS the provider's tags land at creation and the starting state reads `data-team`. Floci ignores that element, which is why the emulator starts empty.
+    - **Part D does not, in one respect.** AWS's [CreateBucket](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) documents a `Tags` array inside `CreateBucketConfiguration` — "an array of tags that you can apply to the bucket that you're creating" — so on real AWS the provider's tags land at creation and the starting state reads `data-team`. Floci at 1.5.34 ignores that element, which is why the emulator starts empty. A merged fix is waiting on a release, as Part D notes.
 
     That is the shape of the risk in general. An emulator can be exact on the constraint your lab depends on and silently absent on the feature next to it, and only the API reference tells you which. Validate anything load-bearing against real free-tier AWS before trusting it.
 

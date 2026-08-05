@@ -227,7 +227,7 @@ control configuration before being recorded here.
 
 | Gap | Detail | Found in |
 |---|---|---|
-| **S3 bucket tags are dropped at create** — ❌ **diverges from AWS** | `aws_s3_bucket` with a `tags` map applies cleanly, but the tags never reach the object. State records `tags = {}` and **every subsequent plan proposes to add them again** — a perpetual diff. A control bucket with no `lifecycle` block behaves identically. Tags set afterwards through `put-bucket-tagging` **do** persist. Real AWS accepts these tags (citation below), so this is a genuine fidelity gap, not a provider quirk. Full mechanism below. Measured 2026-08-03, TF 1.15.8, AWS provider 6.57.1. | Book Ch 11 lab, Part D |
+| **S3 bucket tags are dropped at create** — ❌ **diverges from AWS**, fixed upstream but **not yet released** (see below) | `aws_s3_bucket` with a `tags` map applies cleanly, but the tags never reach the object. State records `tags = {}` and **every subsequent plan proposes to add them again** — a perpetual diff. A control bucket with no `lifecycle` block behaves identically. Tags set afterwards through `put-bucket-tagging` **do** persist. Real AWS accepts these tags (citation below), so this is a genuine fidelity gap, not a provider quirk. Full mechanism below. Measured 2026-08-03, TF 1.15.8, AWS provider 6.57.1. | Book Ch 11 lab, Part D |
 | **DynamoDB duplicate table names are refused** — ✅ **matches AWS** | Not a gap; recorded as *working* fidelity. `CreateTable` on an existing name returns `ResourceInUseException: Table already exists` with HTTP 400, which is what makes the `create_before_destroy` collision lab reproducible and what makes its lesson transfer to real AWS. Verified against the AWS API reference (citation below). Measured 2026-08-03. | Book Ch 11 lab, Parts C and C2 |
 
 ### The bucket-tag gap, traced end to end
@@ -282,6 +282,34 @@ implements `handlePutBucketTagging` and the S3 Control read; it just has no path
 
 **Practical rule for labs:** do not use `aws_s3_bucket` `tags` as the thing a lab measures. Set tags
 through the tagging API, or use a resource type whose tags land.
+
+#### Status: fixed upstream, unreleased as of 2026-08-05
+
+[floci-io/floci#2115](https://github.com/floci-io/floci/pull/2115) parses the creation-time `<Tag>`
+pairs and routes them through the existing `s3Service.putBucketTagging`. It was **merged
+2026-08-05**, approved by the maintainer (`hectorvent`) after checking the wire shape against
+botocore's `service-2.json`, which declares `CreateBucketConfiguration.Tags` as a `TagSet` list with
+`locationName: Tag`. That is the shape traced above.
+
+**No release contains it yet.** The latest release is **1.5.34** (2026-07-29), which is what
+`labs/docker-compose.yml` pins and what every measurement here was taken on. Everything above stays
+accurate for 1.5.34 and for any earlier image.
+
+**When a release ships with it, re-measure before editing anything.** The fix is merged, not
+verified here against a released image. What should change: state records the tag after the first
+apply, the plan straight after apply is empty, and `get-bucket-tagging` returns the tag. That would
+retire the practical rule above and remove the standing diff that Ch 11's Part D currently warns
+about.
+
+Two related items the review surfaced, both still open:
+
+- **Repeat `CreateBucket` in `us-east-1` is idempotent here; AWS is not.** LocalStack's provider
+  raises `BucketAlreadyOwnedByYou` when the bucket exists and either the region is not `us-east-1`
+  or creation tags were supplied. `BucketAlreadyOwnedByYou` is one of the two errors the S3 model
+  declares for `CreateBucket`, so SDKs map it to a typed exception. Floci returns success instead.
+- **Creation tags are not validated.** AWS rejects duplicate keys, the `aws:` prefix, and
+  out-of-pattern keys or values with `InvalidTag`. Floci validates neither creation tags nor
+  `PutBucketTagging`, so the gap is pre-existing and consistent within the codebase.
 
 ### Checked against AWS (2026-08-03)
 
