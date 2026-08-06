@@ -29,17 +29,59 @@ Neither half of that is solvable with what you have so far.
 
 On the way in, `type = list` is not a description of a rule. It says "a list of something". A caller who passes `["443", "80"]` and a caller who passes `[{port=443}, {port=80}]` both satisfy it, and only one of them is useful. You need to describe the *shape* of an element, not just that elements exist.
 
-On the way out, the `ingress` rules of a security group are not separate resources you can `for_each` over. They are repeated **nested blocks** inside one resource. Every expression tool you have works on the right-hand side of `name = value`. A block is not a value, and you cannot write an expression that produces three of them.
+The way out is the harder half, so it is worth walking into the wall deliberately.
+
+A security group holds its inbound rules as repeated `ingress` **blocks** inside the one resource:
 
 ```hcl
 resource "aws_security_group" "app" {
-  name = "app"          # an expression is fine here
+  name = "app"
 
   ingress {
-    # ...but this is a literal block, and there is exactly one of it
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 ```
+
+Two rules, so the block is written twice. Three rules, three times. The number of blocks is decided by **how many times you typed it**, which is fixed when you write the module. The caller's rule count is not known until they call it.
+
+The obvious escape is `for_each`, from Chapter 10. It does not work here, and the reason is worth being precise about. `for_each` on the resource repeats the **resource**:
+
+```hcl
+resource "aws_security_group" "app" {
+  for_each = var.ingress_rules      # three rules...
+  # ...
+}
+```
+
+That gives you three security groups with one rule each. What you wanted was one security group with three rules. `for_each` varies the number of *resources*, and here the thing that has to vary is inside one.
+
+The other instinct is to assign the rules the way you would assign anything else:
+
+```hcl
+ingress = var.ingress_rules         # treat the block like an argument
+```
+
+Here is the distinction the whole chapter rests on. `name = "app"` works because `name` is an **argument**, and an argument takes a value on the right of the `=`. `ingress { ... }` is a **block**. A block is not a value, so there is no expression whose result is "three blocks". Every function, `for` expression, and splat from Chapter 7 produces a value, and a value is not what is needed here.
+
+So the repetition has to come from something that operates on blocks rather than on values. That something is `dynamic`.
+
+!!! note "You will meet `ingress = [ ... ]` in older code, and it is not a counter-example"
+    Terraform has a narrow legacy allowance called [attributes as blocks](https://developer.hashicorp.com/terraform/language/attr-as-blocks), where a handful of provider arguments accept **either** the block form **or** an `=` with a list of objects. It exists for compatibility, and HashiCorp is plain about the status: it is *"one necessary concession on the equivalence between native syntax and JSON syntax made pragmatically for compatibility with existing provider design patterns"*, and *"providers may phase out such patterns in future major releases."*
+
+    It applies only to *"certain special arguments that were relying on this usage pattern prior to Terraform v0.12"*, so it is a property of a few specific old arguments rather than a general escape from the rule above. It also carries a sharp edge the block form does not have: with the `=` form, *"all of the arguments must be assigned a value, even if it's an explicit `null`"*, so you cannot leave optional fields out.
+
+    Do not build a module on it. `dynamic` is the supported answer, works on every repeatable block regardless of the provider's age, and does not force you to spell out every optional field.
 
 The two answers are **type constraints** and **`dynamic` blocks**. They are usually taught apart. They belong together, because a good module uses the first to describe what the second will iterate over.
 

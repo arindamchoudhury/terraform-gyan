@@ -243,3 +243,26 @@ the same in both tools." The format and purpose do; a written lock file does not
 ## Not verified
 
 - Nothing outstanding for this chapter.
+
+---
+
+## Attributes as blocks — the legacy `ingress = [ ... ]` form
+
+Relevant because a reader will meet it and wonder whether it contradicts "a block is not a value".
+Documentary, **not measured** — the provider plugin would not load at capture time.
+
+HashiCorp's [Attributes as Blocks](https://developer.hashicorp.com/terraform/language/attr-as-blocks)
+page describes a narrow compatibility allowance where certain provider arguments accept either the
+block form or an `=` with a list of objects:
+
+- Scope: *"certain special arguments that were relying on this usage pattern prior to Terraform
+  v0.12."* Not a general rule.
+- Status: *"one necessary concession on the equivalence between native syntax and JSON syntax made
+  pragmatically for compatibility with existing provider design patterns"*, and *"providers may
+  phase out such patterns in future major releases."*
+- Caveat unique to the `=` form: *"all of the arguments must be assigned a value, even if it's an
+  explicit `null`"* — optional fields cannot be omitted.
+
+Not verified whether `aws_security_group`'s `ingress` specifically accepts the `=` form on provider
+6.x. The chapter therefore does not claim it errors; it presents the general rule and flags this as
+a legacy exception to avoid building on.
