@@ -23,9 +23,7 @@ That is not enough to write a *good* module, because it only covers one directio
 
 A reusable module has an interface on the way **in**: the shape of the data a caller must supply. It has another on the way **out**: the shape of the configuration it produces for the provider. Both of those get harder the moment the module needs to be flexible.
 
-A module is where both pressures show up at once, which is why this chapter is framed around one. Only one of the two answers is genuinely a boundary feature, though, and §4 comes back to how little the module actually matters to the other.
-
-Take the standard one. You want a security group module. Callers need to specify their own inbound rules, and different callers need different numbers of them. One team needs HTTPS only. Another needs HTTPS, HTTP, and Postgres from a specific CIDR. A third needs those plus SSH, but only in the development account.
+Take the standard example. You want a security group module. Callers need to specify their own inbound rules, and different callers need different numbers of them. One team needs HTTPS only. Another needs HTTPS, HTTP, and Postgres from a specific CIDR. A third needs those plus SSH, but only in the development account.
 
 Neither half of that is solvable with what you have so far.
 
@@ -86,6 +84,8 @@ So the repetition has to come from something that operates on blocks rather than
     Do not build a module on it. `dynamic` is the supported answer, works on every repeatable block regardless of the provider's age, and does not force you to spell out every optional field.
 
 The two answers are **type constraints** and **`dynamic` blocks**. They are usually taught apart. They belong together, because a good module uses the first to describe what the second will iterate over.
+
+Only the first is tied to a module boundary. A module is simply where both pressures happen to show up at once, which is why the chapter is framed around one. §4 returns to this with a root configuration that has no caller and still cannot be written without a `dynamic` block.
 
 ---
 
