@@ -78,3 +78,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Providers Within Modules (why the rule exists; inheritance asymmetry) | 2026-08-08 | [tf-modules-providers](tf-modules-providers.md) |
 | Module Composition (dependency inversion, object-typed inputs, data-only modules) | 2026-08-08 | [tf-modules-composition](tf-modules-composition.md) |
 | Publishing Modules (thin — the requirements live under Registry Publishing) | 2026-08-08 | [tf-modules-publish](tf-modules-publish.md) |
+| Refactor modules (`moved` deep reference — instance keys, module split, chaining) | 2026-08-08 | [tf-modules-refactoring](tf-modules-refactoring.md) |

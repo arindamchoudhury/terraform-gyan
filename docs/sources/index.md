@@ -74,6 +74,7 @@ Log of all captured sources, organised by course.
 | [Providers Within Modules (Configuration Language)](terraform-docs/tf-modules-providers.md) | documentation | 2026-08-08 | modules, providers, provider-inheritance, configuration_aliases, providers-argument, required_providers, legacy-modules, destroy-ordering | [url](https://developer.hashicorp.com/terraform/language/modules/develop/providers) |
 | [Module Composition (Configuration Language)](terraform-docs/tf-modules-composition.md) | documentation | 2026-08-08 | modules, composition, dependency-inversion, object-types, structural-typing, preconditions, multi-cloud, data-only-modules | [url](https://developer.hashicorp.com/terraform/language/modules/develop/composition) |
 | [Publishing Modules (Configuration Language)](terraform-docs/tf-modules-publish.md) | documentation | 2026-08-08 | modules, publishing, registry, versioning, module-sources, standard-module-structure | [url](https://developer.hashicorp.com/terraform/language/modules/develop/publish) |
+| [Refactor modules (Configuration Language)](terraform-docs/tf-modules-refactoring.md) | documentation | 2026-08-08 | moved-block, refactoring, resource-addresses, instance-keys, count, for_each, module-split, shim-module | [url](https://developer.hashicorp.com/terraform/language/modules/develop/refactoring) |
 
 ## 2. OpenTofu Docs
 
