@@ -129,7 +129,20 @@ What happens next depends on how the module was written, and neither branch is g
 
 If it fills in what is missing, assuming `tcp` and assuming `0.0.0.0/0`, the apply succeeds and opens a port to the internet that the caller believed was internal. Nobody finds out, because as far as Terraform is concerned nothing went wrong.
 
-If it fills in nothing, it fails, which is the better branch. The failure is still late and in the wrong place. Rejecting bad input at the door is the one job a type constraint has, and `list(any)` accepts every list ever written, so the string version walks straight past the boundary unremarked. The error then waits for whichever expression first tries to read a field off a string. Reproduced in a single file on Terraform 1.15.8:
+If it fills in nothing, it fails, which is the better branch. The failure is still late and in the wrong place. Rejecting bad input at the door is the one job a type constraint has, and `list(any)` accepts every list ever written, so the string version walks straight past the boundary unremarked. The error then waits for whichever expression first tries to read a field off a string. Stripped of the module and the provider, the whole thing fits in one file:
+
+```hcl
+variable "ingress_rules" {
+  type    = list
+  default = ["443", "80"]
+}
+
+output "ports" {
+  value = [for r in var.ingress_rules : r.port]
+}
+```
+
+`terraform plan` on Terraform 1.15.8 gives:
 
 ```text
 Error: Unsupported attribute
