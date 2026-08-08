@@ -179,6 +179,7 @@ nav = [
                 { "2. Use modules" = "sources/terraform-tutorials/tut-module-use.md" },
                 { "3. Create a module" = "sources/terraform-tutorials/tut-module-create.md" },
                 { "4. Object attributes" = "sources/terraform-tutorials/tut-module-object-attributes.md" },
+                { "5. Share modules in the private registry" = "sources/terraform-tutorials/tut-module-private-registry-share.md" },
             ]},
         ]},
         { "Terraform Registry" = [

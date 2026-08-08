@@ -213,7 +213,7 @@ The apply sequence is worth reading as a diff, not as output:
 
 ## Next steps
 
-Stated takeaways: grouped the file-related attributes into one object variable, added CORS through a list of objects, and — the recurring argument — objects "let you update the module without changing its required input variables". Onward pointers are the dynamic-expressions tutorial, the Module Creation recommended pattern, and the optional-object-attributes documentation. Next in the collection is sharing modules in the private registry.
+Stated takeaways: grouped the file-related attributes into one object variable, added CORS through a list of objects, and — the recurring argument — objects "let you update the module without changing its required input variables". Onward pointers are the dynamic-expressions tutorial, the Module Creation recommended pattern, and the optional-object-attributes documentation. Next in the collection is sharing modules in the private registry — captured as [[tut-module-private-registry-share]].
 
 ---
 Related: fourth in the Modules collection, after [[tut-module]], [[tut-module-use]] and [[tut-module-create]] — this is module-interface *design*, where the previous one was module mechanics. Reference for the type machinery: [[tf-expr-type-constraints]] (the `optional()` one- vs two-argument rule, typed nulls, top-down defaults) and [[tf-expr-dynamic-blocks]]. `count` as a zero-or-one guard and the object-discard footgun are both measured in Ch 12 ([[ch12-dynamic-blocks-complex-types]]). The unexpressed ordering edge connects to [[tf-meta-depends-on]] and [[tut-dependencies]]. S3 defaults background: [[tut-module-create]]. Feeds learning-path **I5** (authoring modules — its clearest interface-design hands-on) and reinforces **I3**.

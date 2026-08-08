@@ -99,6 +99,7 @@ Log of all captured sources, organised by course.
 | [Use registry modules in configuration (Modules)](terraform-tutorials/tut-module-use.md) | documentation | 2026-08-08 | modules, module-block, source, version, module-outputs, count-on-module, terraform-get, registry | [url](https://developer.hashicorp.com/terraform/tutorials/modules/module-use) |
 | [Build and use a local module (Modules)](terraform-tutorials/tut-module-create.md) | documentation | 2026-08-08 | modules, local-modules, module-authoring, module-structure, provider-inheritance, module-outputs, terraform-get, s3 | [url](https://developer.hashicorp.com/terraform/tutorials/modules/module-create) |
 | [Customize modules with object attributes (Modules)](terraform-tutorials/tut-module-object-attributes.md) | documentation | 2026-08-08 | modules, object-attributes, optional, list-of-objects, dynamic-blocks, module-api, cors, s3 | [url](https://developer.hashicorp.com/terraform/tutorials/modules/module-object-attributes) |
+| [Share modules in the private registry (Modules)](terraform-tutorials/tut-module-private-registry-share.md) | documentation | 2026-08-08 | modules, private-registry, hcp-terraform, publishing, semver, vcs, tag-based-publishing, branch-based-publishing | [url](https://developer.hashicorp.com/terraform/tutorials/modules/module-private-registry-share) |
 
 ## 4. Terraform Registry
 
