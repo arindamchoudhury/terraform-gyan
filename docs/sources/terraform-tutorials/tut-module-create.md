@@ -290,7 +290,7 @@ Destroy complete! Resources: 26 destroyed.
 
 ## Next steps
 
-Stated takeaways: created a local module, referenced it from the root configuration, configured it with input variables, and exposed data through outputs. Onward pointers are the module-design patterns guide, the object-attributes tutorial (next in the collection), and the module documentation.
+Stated takeaways: created a local module, referenced it from the root configuration, configured it with input variables, and exposed data through outputs. Onward pointers are the module-design patterns guide, the object-attributes tutorial (next in the collection, captured as [[tut-module-object-attributes]]), and the module documentation.
 
 ---
 Related: third in the collection after [[tut-module]] and [[tut-module-use]] — this is the author's side of the interface those two consume. Provider inheritance connects to [[tf-meta-providers]] and to [[tut-for-each]]'s harder constraint on `count`/`for_each` modules. The `depends_on` usage is the exception case for [[tf-meta-depends-on]] / [[tut-dependencies]]. Variable and output mechanics: [[tf-input-variables]], [[tf-outputs]], [[tf-block-output]]. Files-not-to-commit overlaps [[tf-style-guide]] and [[tf-manage-sensitive-data]]. Feeds learning-path **I5** (authoring modules) as its first hands-on, and **I4** by closing the use/author loop.
