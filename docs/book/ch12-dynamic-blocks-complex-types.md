@@ -253,30 +253,7 @@ Two things happened without a word of complaint. The `list(any)` constraint **un
 
     HashiCorp's Type Constraints page states the rule plainly, in a sentence worth reading twice: *"values with additional attributes are also acceptable, but the extra attributes are discarded during type conversion."* The behavior is intentional. It exists so that a whole resource object can satisfy a narrow constraint, which is genuinely useful. The cost is that it cannot tell that use from a misspelling.
 
-!!! warning "A misspelled attribute is discarded like any other, and `optional()` decides whether anyone notices"
-    Take the misspelling the box above ends on. A caller writes `enable_https = true`. The module declared `enabled_https`, one letter apart. Because the caller's spelling is not in the `object(...)` constraint, it is an undeclared attribute, so it is discarded exactly like the extra attribute above.
-
-    Silent discard is not the same as an unnoticed mistake, though, and what decides between them is how the correctly-spelled attribute was declared:
-
-    - If `enabled_https` is **required**, the value that survives the discard is missing a required attribute, and Terraform rejects the call by name. Measured on 1.15.8:
-
-        ```
-        Error: Invalid value for input variable
-
-        The given value is not suitable for module.typo_optional.var.cfg declared
-        at mod-optional\main.tf:3,1-15: attribute "enabled_https" is required.
-        ```
-
-    - If `enabled_https` is **`optional(bool, false)`**, nothing is missing. The default fills the hole, the apply succeeds, and the module quietly does the opposite of what the caller asked. Measured on the same version, the module receives:
-
-        ```
-        {
-          "enabled_https" = false
-          "name" = "a"
-        }
-        ```
-
-    So the two halves of this chapter combine into a footgun neither has alone. The object constraint removes the caller's attribute; `optional()` removes the evidence. That is not an argument against `optional()`, which is genuinely useful. It is a reason to keep an eye on which attributes of a widely-used module interface are optional, because those are the ones where a caller's typo can pass review, pass `validate`, pass `plan`, and provision the wrong thing.
+    A misspelled attribute is undeclared too, so it takes the same exit. Whether the caller ever learns of it is decided by something this chapter has not covered yet, and §3 comes back to it.
 
 !!! info "OpenTofu — it warns, and Terraform does not"
     Same configuration, same values, different diagnostics. OpenTofu **1.12.4** reports the dropped attribute; Terraform **1.15.8** does not.
@@ -509,6 +486,32 @@ module "buckets" {
 ```
 
 With `legacy_filenames = true` the caller's names win. With `false`, both arms deliver `null`, the `optional()` defaults take over, and the module behaves as though the attributes were never written.
+
+### The typo that §2 left hanging
+
+§2 ended its discard discussion on an open question. An `object(...)` constraint deletes undeclared attributes silently, and a misspelled attribute is undeclared, so it goes the same way. What it did not yet have the vocabulary to say is what decides whether the caller finds out. It is `optional()`.
+
+A caller writes `enable_https = true`. The module declared `enabled_https`, one letter apart. The caller's spelling is discarded either way. What happens to the *declared* spelling is what differs:
+
+- If `enabled_https` is **required**, the value that survives the discard is missing a required attribute, and Terraform rejects the call by name. Measured on 1.15.8:
+
+    ```
+    Error: Invalid value for input variable
+
+    The given value is not suitable for module.typo_optional.var.cfg declared
+    at mod-optional\main.tf:3,1-15: attribute "enabled_https" is required.
+    ```
+
+- If `enabled_https` is **`optional(bool, false)`**, nothing is missing. The default fills the hole, the apply succeeds, and the module quietly does the opposite of what the caller asked. Measured on the same version, the module receives:
+
+    ```
+    {
+      "enabled_https" = false
+      "name" = "a"
+    }
+    ```
+
+So the two halves of this chapter combine into a footgun neither has alone. The object constraint removes the caller's attribute; `optional()` removes the evidence. That is not an argument against `optional()`, which is genuinely useful. It is a reason to keep an eye on which attributes of a widely-used module interface are optional, because those are the ones where a caller's typo can pass review, pass `validate`, pass `plan`, and provision the wrong thing.
 
 ---
 
