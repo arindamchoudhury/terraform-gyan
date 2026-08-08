@@ -15,7 +15,7 @@ By the end you can:
 
 ---
 
-## 1. A module has two interfaces, and this chapter is about both
+## 1. Two interfaces: the shape coming in, and the blocks going out
 
 Chapter 6 gave you input variables. Chapter 10 gave you `count` and `for_each`. Put them together and you can write a module that takes some values and stamps out N copies of a resource.
 
@@ -23,7 +23,9 @@ That is not enough to write a *good* module, because it only covers one directio
 
 A reusable module has an interface on the way **in**: the shape of the data a caller must supply. It has another on the way **out**: the shape of the configuration it produces for the provider. Both of those get harder the moment the module needs to be flexible.
 
-Take the standard example. You want a security group module. Callers need to specify their own inbound rules, and different callers need different numbers of them. One team needs HTTPS only. Another needs HTTPS, HTTP, and Postgres from a specific CIDR. A third needs those plus SSH, but only in the development account.
+A module is where both pressures show up at once, which is why this chapter is framed around one. Neither tool is a module feature. A **type constraint** does live at a boundary, because `type =` is only legal in the three places listed in §2, and two of them are the module's own edges. A **`dynamic` block** has no such restriction at all: it works in any resource, data, provider, or provisioner block, in a root configuration with no `variable` in sight. What forces you to reach for it is not being a module. It is not knowing the block count when you write the file, which happens whenever the count comes from somewhere you do not control: a caller's variable, a data source, a remote state lookup. The caller is simply the case that forces it every single time, so it makes the cleanest example.
+
+Take the standard one. You want a security group module. Callers need to specify their own inbound rules, and different callers need different numbers of them. One team needs HTTPS only. Another needs HTTPS, HTTP, and Postgres from a specific CIDR. A third needs those plus SSH, but only in the development account.
 
 Neither half of that is solvable with what you have so far.
 
