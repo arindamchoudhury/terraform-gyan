@@ -311,6 +311,27 @@ tuple required.
 
 `bad_unify` fails because `list(any)` still has to settle on one element type, and no single type holds both a string and a tuple. `tup` fails because a `tuple` constraint fixes the element count as well as the types, and its declaration allows exactly two while the default supplies three. The terse "tuple required" is Terraform saying the value cannot be made into *that* tuple.
 
+A missing object attribute is rejected the same way. Every attribute an `object(...)` constraint declares is **required**, unless it is wrapped in the `optional()` modifier that §3 covers:
+
+```hcl
+variable "rule" {
+  type    = object({ port = number, protocol = string })
+  default = { port = 443 }
+}
+```
+
+```text
+Error: Invalid default value for variable
+
+  on main.tf line 3, in variable "rule":
+   3:   default = { port = 443 }
+
+This default value is not compatible with the variable's type constraint:
+attribute "protocol" is required.
+```
+
+That completes the object rule, which is strict in both directions and loud in only one. An attribute the constraint does not declare is dropped without a word. An attribute it does declare cannot be left out.
+
 ### The fourth case: nothing happens at all
 
 Rejection is what most people picture a constraint doing, and it is the rarest of the three outcomes. A loose enough constraint produces none of them.
