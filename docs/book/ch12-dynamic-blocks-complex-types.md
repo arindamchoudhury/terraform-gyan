@@ -256,7 +256,7 @@ Two things happened without a word of complaint. The `list(any)` constraint **un
     A misspelled attribute is undeclared too, so it takes the same exit. Whether the caller ever learns of it is decided by something this chapter has not covered yet, and §3 comes back to it.
 
 !!! info "OpenTofu — it warns, and Terraform does not"
-    Same configuration, same values, different diagnostics. OpenTofu **1.12.4** reports the dropped attribute; Terraform **1.15.8** does not.
+    That discard is silent on Terraform. It is not silent on OpenTofu. Same `object({ name = string })` constraint, same caller passing `name` and `enable_https`, same resulting value, different diagnostics. OpenTofu **1.12.4** reports the dropped attribute and Terraform **1.15.8** says nothing. The lab names the module `typo`, because the mechanism that discards a spare attribute is the one that discards a misspelled one.
 
     ```
     Warning: Object attribute is ignored
