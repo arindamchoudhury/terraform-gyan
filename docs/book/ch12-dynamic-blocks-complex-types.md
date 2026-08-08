@@ -25,39 +25,7 @@ A reusable module has an interface on the way **in**: the shape of the data a ca
 
 Take the standard example. You want a security group module. Callers need to specify their own inbound rules, and different callers need different numbers of them. One team needs HTTPS only. Another needs HTTPS, HTTP, and Postgres from a specific CIDR. A third needs those plus SSH, but only in the development account.
 
-Neither half of that is solvable with what you have so far.
-
-On the way in, `type = list` is not a description of a rule. It says "a list of something", and a bare `list` means `list(any)`, so both of these callers satisfy it:
-
-```hcl
-ingress_rules = ["443", "80"]
-
-ingress_rules = [
-  { port = 443, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
-  { port = 80, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
-]
-```
-
-Only the second can produce an `ingress` block. A security group rule is not a port. Look back at the resource above and every rule carries a `from_port`, a `to_port`, a `protocol`, and a set of `cidr_blocks`, all of which the module must hand to the provider. The first caller supplied one of those four. A module given `"443"` can either fail or start inventing the rest, and inventing means assuming `tcp` and assuming `0.0.0.0/0`. That assumption is how a module ends up opening a port to the internet that its caller believed was internal.
-
-The sharper problem is *when* you find out. The constraint is the module's chance to reject that input at the door, and `list(any)` declines to take it. Nothing complains at the boundary. The failure surfaces later and further in, at the point some expression tries to read a field off a string. Reproduced in a single file on Terraform 1.15.8:
-
-```text
-Error: Unsupported attribute
-
-  on main.tf line 7, in output "ports":
-   7:   value = [for r in var.ingress_rules : r.port]
-
-Can't access attributes on a primitive-typed value (string).
-```
-
-The message points at the line that *read* the attribute, not the line that supplied the bad value. Put that expression inside a module and the error names a file the caller may never have opened, leaving them to work backwards to their own `ingress_rules`. Worse, `terraform validate` passes that same configuration, because validation does not resolve what a caller will pass. The mistake survives validation and lands at plan time.
-
-You need to describe the *shape* of an element, not just that elements exist.
-
-The way out is the harder half, so it is worth walking into the wall deliberately.
-
-A security group holds its inbound rules as repeated `ingress` **blocks** inside the one resource:
+Start with the thing being aimed at. A security group holds its inbound rules as repeated `ingress` **blocks** inside the one resource, and written out by hand for two fixed rules it looks like this:
 
 ```hcl
 resource "aws_security_group" "app" {
@@ -79,7 +47,39 @@ resource "aws_security_group" "app" {
 }
 ```
 
-Two rules, so the block is written twice. Three rules, three times. The number of blocks is decided by **how many times you typed it**, which is fixed when you write the module. The caller's rule count is not known until they call it.
+That is the output side of the module, for one specific caller. The rest of this section is about the distance between it and a module that can serve all three callers above. Neither half of that distance is crossable with what you have so far.
+
+On the way in, `type = list` is not a description of a rule. It says "a list of something", and a bare `list` means `list(any)`, so both of these callers satisfy it:
+
+```hcl
+ingress_rules = ["443", "80"]
+
+ingress_rules = [
+  { port = 443, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
+  { port = 80, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
+]
+```
+
+Only the second can produce an `ingress` block. A security group rule is not a port. Count the arguments in the resource above and every rule carries four of them: a `from_port`, a `to_port`, a `protocol`, and a set of `cidr_blocks`. All four have to reach the provider. The first caller supplied one. A module given `"443"` can either fail or start inventing the rest, and inventing means assuming `tcp` and assuming `0.0.0.0/0`. That assumption is how a module ends up opening a port to the internet that its caller believed was internal.
+
+The sharper problem is *when* you find out. The constraint is the module's chance to reject that input at the door, and `list(any)` declines to take it. Nothing complains at the boundary. The failure surfaces later and further in, at the point some expression tries to read a field off a string. Reproduced in a single file on Terraform 1.15.8:
+
+```text
+Error: Unsupported attribute
+
+  on main.tf line 7, in output "ports":
+   7:   value = [for r in var.ingress_rules : r.port]
+
+Can't access attributes on a primitive-typed value (string).
+```
+
+The message points at the line that *read* the attribute, not the line that supplied the bad value. Put that expression inside a module and the error names a file the caller may never have opened, leaving them to work backwards to their own `ingress_rules`. Worse, `terraform validate` passes that same configuration, because validation does not resolve what a caller will pass. The mistake survives validation and lands at plan time.
+
+You need to describe the *shape* of an element, not just that elements exist.
+
+The way out is the harder half, so it is worth walking into the wall deliberately.
+
+Go back to that resource. Two rules, so the block is written twice. Three rules, three times. The number of blocks is decided by **how many times you typed it**, which is fixed when you write the module. The caller's rule count is not known until they call it.
 
 The obvious escape is `for_each`, from Chapter 10. It does not work here, and the reason is worth being precise about. `for_each` on the resource repeats the **resource**:
 
