@@ -276,7 +276,7 @@ HCP Terraform users also delete the `learn-terraform-module-use` workspace after
 
 ## Next steps
 
-Stated takeaways: using modules in configuration, managing module versions, configuring module input variables, and using module output values. The page points at the **Create and Use No-Code Modules** tutorial for HCP Terraform Standard Edition's private-registry path. The next tutorial in the collection builds a module for hosting a website in an S3 bucket.
+Stated takeaways: using modules in configuration, managing module versions, configuring module input variables, and using module output values. The page points at the **Create and Use No-Code Modules** tutorial for HCP Terraform Standard Edition's private-registry path. The next tutorial in the collection builds a module for hosting a website in an S3 bucket — captured as [[tut-module-create]].
 
 ---
 Related: continues [[tut-module]], which motivated modules without showing one. Same VPC-module territory as [[tf-aws-manage]], one level deeper — this one pins versions, wires module-to-module references, and re-exports outputs. `count` on a `module` block is the mechanism [[tut-for-each]] reaches for to multiply on two axes. The pinning advice is enforced by [[tf-expr-version-constraints]] and left unprotected by [[tf-dependency-lock]] (providers only). Output re-export connects to [[tf-outputs]] / [[tut-outputs]]; the splat form to [[tf-expr-splat]]. Feeds learning-path **I4** (using modules) directly, and **I5** by contrast — this is the consumer's view of an interface [[tut-module]] says you should design.
