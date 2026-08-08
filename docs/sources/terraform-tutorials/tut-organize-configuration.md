@@ -147,7 +147,7 @@ And the cost, in the page's own words:
 
 ## Next steps
 
-Stated takeaway: restructured a monolith managing multiple environments into directories or workspaces with their own state. Onward pointers are modules "to combat configuration drift", HCP Terraform for team state management, and remote backends with migration. Next in the collection is the module-creation recommended pattern.
+Stated takeaway: restructured a monolith managing multiple environments into directories or workspaces with their own state. Onward pointers are modules "to combat configuration drift", HCP Terraform for team state management, and remote backends with migration. Next in the collection is the module-creation recommended pattern — captured as [[tut-pattern-module-creation]].
 
 ---
 Related: seventh in the Modules collection, though it teaches no modules — it makes the case *for* them by showing what a flat configuration costs. The hidden-dependency demo is the practical companion to [[tut-dependencies]] and [[dependency-graph]]. Workspace mechanics and their documented limits: [[tf-state-workspaces]] and the topic page [[workspaces]]; the migration tax of splitting one state is [[tf-state-refactor]]. Directory-per-environment versus HCP-workspace-per-environment is [[tf-style-guide]]'s recommendation. S3 background: [[tut-module-create]]. Feeds learning-path **A7** (multi-environment patterns) primarily, **I6**/**I7** (state separation and the state operations it needs), and **E4** (repo architecture at scale).

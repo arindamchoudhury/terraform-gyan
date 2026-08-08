@@ -102,6 +102,7 @@ Log of all captured sources, organised by course.
 | [Share modules in the private registry (Modules)](terraform-tutorials/tut-module-private-registry-share.md) | documentation | 2026-08-08 | modules, private-registry, hcp-terraform, publishing, semver, vcs, tag-based-publishing, branch-based-publishing | [url](https://developer.hashicorp.com/terraform/tutorials/modules/module-private-registry-share) |
 | [Add public providers and modules to your private registry (Modules)](terraform-tutorials/tut-private-registry-add.md) | documentation | 2026-08-08 | modules, providers, private-registry, hcp-terraform, curation, no-code-modules, governance | [url](https://developer.hashicorp.com/terraform/tutorials/modules/private-registry-add) |
 | [Refactor monolithic Terraform configuration (Modules)](terraform-tutorials/tut-organize-configuration.md) | documentation | 2026-08-08 | code-organization, monolith, state-separation, workspaces, directories, hidden-dependency, blast-radius, multi-environment | [url](https://developer.hashicorp.com/terraform/tutorials/modules/organize-configuration) |
+| [Module creation — recommended pattern (Modules)](terraform-tutorials/tut-pattern-module-creation.md) | documentation | 2026-08-08 | modules, module-design, scoping, encapsulation, privileges, volatility, mvp, nested-modules, collaboration, governance | [url](https://developer.hashicorp.com/terraform/tutorials/modules/pattern-module-creation) |
 
 ## 4. Terraform Registry
 

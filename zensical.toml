@@ -182,6 +182,7 @@ nav = [
                 { "5. Share modules in the private registry" = "sources/terraform-tutorials/tut-module-private-registry-share.md" },
                 { "6. Add from the public registry" = "sources/terraform-tutorials/tut-private-registry-add.md" },
                 { "7. Refactor configuration" = "sources/terraform-tutorials/tut-organize-configuration.md" },
+                { "8. Create modules" = "sources/terraform-tutorials/tut-pattern-module-creation.md" },
             ]},
         ]},
         { "Terraform Registry" = [
