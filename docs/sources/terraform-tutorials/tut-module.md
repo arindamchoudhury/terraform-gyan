@@ -54,6 +54,35 @@ The minimal layout shown:
 
     **2. The file tree is rooted at `.`, but the prose that follows says "when you run terraform commands from within the `minimal-module` directory".** Stale reference — no `minimal-module` directory appears anywhere on the page.
 
+### Provider vs. module — why the two conventions look alike
+
+The conventions resemble each other because the module one *embeds the provider it targets*. The artifacts have nothing else in common.
+
+| | Provider | Module |
+|---|---|---|
+| Artifact | Compiled Go binary speaking Terraform's gRPC plugin protocol | Directory of `.tf` files; no binary, no code |
+| Supplies | Resource types and data sources (`aws_instance`, `aws_ami`) | A composition of resources that providers already supply |
+| Wraps | A vendor API (AWS, Cloudflare, Okta) | Nothing — pure HCL |
+| Declared by | `required_providers` | `module` block |
+| `init` installs to | `.terraform/providers/` | `.terraform/modules/` |
+| Version locking | `.terraform.lock.hcl`, checksummed, trust-on-first-use | `modules.json`, uncommitted, **not locked** |
+
+Repository names:
+
+- **Provider** — `terraform-provider-<NAME>`, e.g. `terraform-provider-aws`. The requirement is quoted exactly: *"all provider repositories on GitHub must match the pattern `terraform-provider-{NAME}`, and the repository must be public. Only lowercase repository names are supported."* ([Publishing Providers](https://developer.hashicorp.com/terraform/registry/providers/publishing), verified 2026-08-08.)
+- **Module** — `terraform-<PROVIDER>-<NAME>`, e.g. `terraform-aws-vpc`. The `<PROVIDER>` slot names *which provider the module drives*. So `terraform-aws-vpc` is a module, built on the `aws` provider, that manages a VPC.
+
+Read the tutorial's line literally and `provider` occupies the `<PROVIDER>` slot, producing `terraform-provider-vpc` — a provider repository, not a module.
+
+The provider also changes position between repository name and registry address, which is how the Registry keeps the two apart:
+
+| | Repository | Registry address | Referenced as |
+|---|---|---|---|
+| Provider | `terraform-provider-aws` | `hashicorp/aws` | `source = "hashicorp/aws"` |
+| Module | `terraform-aws-vpc` | `terraform-aws-modules/vpc/aws` | `source = "terraform-aws-modules/vpc/aws"` |
+
+A module address is `<NAMESPACE>/<NAME>/<PROVIDER>` — three parts, provider last. A provider address is `<NAMESPACE>/<NAME>` — two parts. That third segment is the discriminator.
+
 ## Calling modules
 
 Terraform commands only read the configuration files in **one** directory, normally the working directory. A `module` block is how that directory reaches others: Terraform loads and processes the called module's files when it hits the block. A module called by another configuration is a **child module** of it.
