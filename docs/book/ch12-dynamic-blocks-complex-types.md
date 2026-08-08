@@ -110,7 +110,7 @@ module "app_sg" {
 }
 ```
 
-`outputs.tf` is finished. The other two files each hold an open question. In `variables.tf`, what should `ingress_rules` be declared as, so that a caller cannot supply something the module chokes on later? In `main.tf`, how does a fixed body turn N elements into N blocks? Those are the way in and the way out, and they are the two halves of this chapter.
+In `variables.tf`, what should `ingress_rules` be declared as, so that a caller cannot supply something the module chokes on later? In `main.tf`, how does a fixed body turn N elements into N blocks? Those are the way in and the way out, and they are the two halves of this chapter.
 
 On the way in, `type = list` is not a description of a rule. It says "a list of something", and a bare `list` means `list(any)`, so both of these callers satisfy it:
 
@@ -127,7 +127,7 @@ Only the second can produce an `ingress` block. A security group rule is not a p
 
 What happens next depends on how the module was written, and neither branch is good.
 
-If it fills in what is missing, assuming `tcp` and assuming `0.0.0.0/0`, the apply succeeds and opens a port to the internet that the caller believed was internal. Nobody finds out, because as far as Terraform is concerned nothing went wrong.
+If it fills in what is missing, assuming `tcp` and assuming `0.0.0.0/0`, the apply succeeds and opens a port to the internet that the caller believed was internal.
 
 If it fills in nothing, it fails. That is the better branch and still not a good one, because `list` lets the value through and the failure happens somewhere else entirely, at whichever expression inside the module first asks a string for a field it does not have. §2 shows exactly what that costs.
 
