@@ -6,7 +6,7 @@
 > **Tags:** modules, private-registry, hcp-terraform, publishing, semver, vcs, tag-based-publishing, branch-based-publishing
 > **Type:** documentation
 
-Fifth page of the **Modules** collection, and the first that requires **HCP Terraform** — there is no Community Edition variant. Almost entirely a UI walkthrough: fork two repositories, tag a release, publish the module through the HCP registry, then consume it from a VCS-driven workspace. Both variants captured (`module-workflow:tag` and `module-workflow:branch`).
+Fifth page of the **Modules** collection, and the first that requires **HCP Terraform** — there is no Community Edition variant. Almost entirely a UI walkthrough: fork two repositories, tag a release, publish the module through the HCP registry, then consume it from a VCS-driven workspace. **Both variants captured and compared** — `module-workflow:tag` (`cache/web/tut-module-private-registry-share.txt`) and `module-workflow:branch` (`cache/web/tut-module-private-registry-share-branch.txt`). Everything below is the tag path unless marked otherwise; the two diverge only in the release step and the import step, and what the branch path drops is itself worth knowing.
 
 Scope of the private registry, stated up front:
 
@@ -49,6 +49,18 @@ Two things worth carrying:
 - **Module testing is branch-only.** That is a real constraint on the publishing workflow you pick, and it isn't mentioned on the tutorial page at all — only in the docs.
 
 The tutorial's own **Module Tag Prefix / Source Directory** aside is the monorepo hook: use them "when the repository contains multiple modules", which is the same ground the page's closing line points at ("You can also publish multiple modules from a single repository").
+
+### What the branch variant silently drops
+
+Switching the variant does not just swap one step — **the branch path removes the entire "tag a release" section**. No GitHub release, no tag, and therefore none of the semver rules. A reader who arrives on the branch variant never learns that release tags must be semver, that non-matching tags are ignored, or that the `v` prefix is optional. That is a content asymmetry rather than a formatting one: the same page teaches materially less on one of its two paths.
+
+It also leaves its own summary wrong. The branch variant's Next Steps still opens with:
+
+> Created and versioned a GitHub repository for use in the private registry
+
+On the branch path you never version the repository. You type `1.0.0` into HCP's **Module Version** field, and the repo carries no tag at all.
+
+Two smaller things in the branch variant's import step: the *Source Directory* sentence is truncated mid-instruction (*"Leave the Source Directory field."* — the word "empty" is missing), and it explains **Branch Name** and Source Directory as the monorepo controls, where the tag variant assigns that role to *Module Tag Prefix* and Source Directory.
 
 ## The import flow
 
