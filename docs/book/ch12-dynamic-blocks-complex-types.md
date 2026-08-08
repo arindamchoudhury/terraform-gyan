@@ -123,9 +123,13 @@ ingress_rules = [
 ]
 ```
 
-Only the second can produce an `ingress` block. A security group rule is not a port. Count the arguments in the resource above and every rule carries four of them: a `from_port`, a `to_port`, a `protocol`, and a set of `cidr_blocks`. All four have to reach the provider. The first caller supplied one. A module given `"443"` can either fail or start inventing the rest, and inventing means assuming `tcp` and assuming `0.0.0.0/0`. That assumption is how a module ends up opening a port to the internet that its caller believed was internal.
+Only the second can produce an `ingress` block. A security group rule is not a port. Count the arguments in the resource above and every rule carries four of them: a `from_port`, a `to_port`, a `protocol`, and a set of `cidr_blocks`. All four have to reach the provider, and the first caller supplied one of them.
 
-That is what a bad input does. There is a second problem, which is *when* anyone finds out about it. The constraint is the module's chance to reject the input at the door, and `list(any)` declines to take it. Nothing complains at the boundary. The failure surfaces later and further in, at the point some expression tries to read a field off a string. Reproduced in a single file on Terraform 1.15.8:
+What happens next depends on how the module was written, and neither branch is good.
+
+If it fills in what is missing, assuming `tcp` and assuming `0.0.0.0/0`, the apply succeeds and opens a port to the internet that the caller believed was internal. Nobody finds out, because as far as Terraform is concerned nothing went wrong.
+
+If it fills in nothing, it fails, which is the better branch. The failure is still late and in the wrong place. A type constraint is the module's chance to reject the input at the door, and `list(any)` declines to take it, so nothing complains at the boundary. The error waits for whichever expression first tries to read a field off a string. Reproduced in a single file on Terraform 1.15.8:
 
 ```text
 Error: Unsupported attribute
