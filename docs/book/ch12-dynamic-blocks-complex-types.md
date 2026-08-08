@@ -110,7 +110,7 @@ module "app_sg" {
 }
 ```
 
-Two questions are now open, one per file. What should `ingress_rules` be declared as in `variables.tf`, and how does `main.tf` turn N elements into N blocks?
+`outputs.tf` is finished. The other two files each hold an open question. In `variables.tf`, what should `ingress_rules` be declared as, so that a caller cannot supply something the module chokes on later? In `main.tf`, how does a fixed body turn N elements into N blocks? Those are the way in and the way out, and they are the two halves of this chapter.
 
 On the way in, `type = list` is not a description of a rule. It says "a list of something", and a bare `list` means `list(any)`, so both of these callers satisfy it:
 
