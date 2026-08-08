@@ -98,6 +98,7 @@ nav = [
                         { "Standard module structure" = "sources/terraform-docs/tf-modules-structure.md" },
                         { "Providers within modules" = "sources/terraform-docs/tf-modules-providers.md" },
                         { "Best practices for composing modules" = "sources/terraform-docs/tf-modules-composition.md" },
+                        { "Publish modules" = "sources/terraform-docs/tf-modules-publish.md" },
                     ]},
                 ]},
                 { "Expressions" = [
