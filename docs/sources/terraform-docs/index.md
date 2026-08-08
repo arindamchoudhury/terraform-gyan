@@ -76,3 +76,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Creating Modules (Develop modules overview — the abstraction test) | 2026-08-08 | [tf-modules-develop](tf-modules-develop.md) |
 | Standard Module Structure (README-as-visibility-marker, source-address rules) | 2026-08-08 | [tf-modules-structure](tf-modules-structure.md) |
 | Providers Within Modules (why the rule exists; inheritance asymmetry) | 2026-08-08 | [tf-modules-providers](tf-modules-providers.md) |
+| Module Composition (dependency inversion, object-typed inputs, data-only modules) | 2026-08-08 | [tf-modules-composition](tf-modules-composition.md) |
