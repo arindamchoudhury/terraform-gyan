@@ -131,9 +131,9 @@ If it fills in what is missing, assuming `tcp` and assuming `0.0.0.0/0`, the app
 
 If it fills in nothing, it fails. That is the better branch and still not a good one, because `list` lets the value through and the failure happens somewhere else entirely, at whichever expression inside the module first asks a string for a field it does not have. §2 shows exactly what that costs.
 
-You need to describe the *shape* of an element, not just that elements exist.
+What `variables.tf` needs is a declaration that describes the *shape* of an element, not merely that elements exist. That is a **type constraint**, and §2 is about writing one that a caller cannot slip a bare string past.
 
-The way out is the harder half, so it is worth walking into the wall deliberately.
+So much for the way in. `main.tf` is the harder of the two, and the quickest way to see why is to reach for the tools you already have and watch both of them miss.
 
 Go back to that resource. Two rules, so the block is written twice. Three rules, three times. The number of blocks is decided by **how many times you typed it**, which is fixed when you write the module. The caller's rule count is not known until they call it.
 
