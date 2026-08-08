@@ -151,7 +151,7 @@ AWS provider pinned `~> 4.0.0`, current 6.x — the same era as the rest of the 
 
 ## Next steps
 
-Stated takeaways: created and versioned a GitHub repository for the private registry, imported a module into the organization's registry, and built a root module that consumes it. Onward pointers are the private-registry documentation, the no-code modules tutorial, and publishing multiple modules from one repository. Next in the collection is adding modules from the public registry.
+Stated takeaways: created and versioned a GitHub repository for the private registry, imported a module into the organization's registry, and built a root module that consumes it. Onward pointers are the private-registry documentation, the no-code modules tutorial, and publishing multiple modules from one repository. Next in the collection is adding modules from the public registry — captured as [[tut-private-registry-add]].
 
 ---
 Related: fifth in the Modules collection, after [[tut-module-object-attributes]]. Corrects [[tut-module]]'s provider-vs-module naming error by stating the convention properly. The version-tag rule is the private-registry twin of the public-registry publishing bar recorded in [[tut-module]]; constraint syntax is [[tf-expr-version-constraints]], and the reason pinning matters at all is [[tf-dependency-lock]] (providers only — module selections are never locked). Style points against [[tf-style-guide]] and [[tf-input-variables]]. The workspace and VCS-driven run machinery is [[workspaces]]. Feeds learning-path **A4** (HCP Terraform — private module registry) primarily, and **I5** (authoring modules — the publish step after you have written one).

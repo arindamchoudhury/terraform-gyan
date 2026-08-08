@@ -41,3 +41,4 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Create a module (Build and use a local module) | 2026-08-08 | [tut-module-create](tut-module-create.md) |
 | Object attributes (Customize modules with object attributes) | 2026-08-08 | [tut-module-object-attributes](tut-module-object-attributes.md) |
 | Share modules in the private registry | 2026-08-08 | [tut-module-private-registry-share](tut-module-private-registry-share.md) |
+| Add from the public registry (Add public providers and modules) | 2026-08-08 | [tut-private-registry-add](tut-private-registry-add.md) |
