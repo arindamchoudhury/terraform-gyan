@@ -12,7 +12,10 @@ Terms are appended here as book chapters are written.
 | Write → Plan → Apply | The core Terraform workflow: define resources, generate an execution plan, then apply approved changes in dependency order. | [[terraform-intro]] |
 | State file | Terraform's record of real infrastructure; the source of truth it diffs against configuration to decide changes. | [[terraform-intro]] |
 | Resource graph | Dependency graph Terraform builds to create/modify non-dependent resources in parallel. | [[terraform-intro]] |
-| Module | Reusable, configurable collection of infrastructure; sourced from the Registry or authored locally. | [[terraform-intro]] |
+| Module | Reusable, configurable collection of infrastructure; sourced from the Registry or authored locally. Formally: any set of Terraform configuration files in a single directory. | [[terraform-intro]], [[tut-module]] |
+| Root module | The directory you run Terraform commands from. Every configuration has one, so every configuration is already a module. | [[tut-module]] |
+| Child module | A module called by another configuration via a `module` block; Terraform loads and processes its files on encountering the block. | [[tut-module]] |
+| No-code ready module | A module published to the HCP Terraform registry that teams without Terraform expertise provision through the HCP Terraform UI, within org standards and policies. | [[tut-module]] |
 | Immutable infrastructure | Approach of replacing rather than mutating resources, reducing upgrade/modification complexity. | [[terraform-intro]] |
 | Sentinel | HashiCorp's policy-as-code framework; enforces compliance/governance policies before Terraform applies changes. Available in Terraform Enterprise and HCP Terraform. | [[terraform-use-cases]] |
 | HCP Terraform Operator | Kubernetes Operator that manages cloud and on-prem infrastructure through a Kubernetes CRD plus HCP Terraform. | [[terraform-use-cases]] |

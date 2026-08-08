@@ -31,3 +31,9 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Page | Added | File |
 |---|---|---|
 | Lifecycle rules (Manage resource lifecycle) | 2026-08-03 | [tut-resource-lifecycle](tut-resource-lifecycle.md) |
+
+## Modules
+
+| Page | Added | File |
+|---|---|---|
+| Terraform modules (Modules overview) | 2026-08-08 | [tut-module](tut-module.md) |
