@@ -75,6 +75,7 @@ Log of all captured sources, organised by course.
 | [Module Composition (Configuration Language)](terraform-docs/tf-modules-composition.md) | documentation | 2026-08-08 | modules, composition, dependency-inversion, object-types, structural-typing, preconditions, multi-cloud, data-only-modules | [url](https://developer.hashicorp.com/terraform/language/modules/develop/composition) |
 | [Publishing Modules (Configuration Language)](terraform-docs/tf-modules-publish.md) | documentation | 2026-08-08 | modules, publishing, registry, versioning, module-sources, standard-module-structure | [url](https://developer.hashicorp.com/terraform/language/modules/develop/publish) |
 | [Refactor modules (Configuration Language)](terraform-docs/tf-modules-refactoring.md) | documentation | 2026-08-08 | moved-block, refactoring, resource-addresses, instance-keys, count, for_each, module-split, shim-module | [url](https://developer.hashicorp.com/terraform/language/modules/develop/refactoring) |
+| [`module` block reference (Configuration Language)](terraform-docs/tf-block-module.md) | documentation | 2026-08-08 | module-block, source, version, module-sources, subdirectory, depth, localterraform, ignore_nested_deprecations | [url](https://developer.hashicorp.com/terraform/language/block/module) |
 
 ## 2. OpenTofu Docs
 

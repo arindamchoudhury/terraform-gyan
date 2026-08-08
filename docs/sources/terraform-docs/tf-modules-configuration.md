@@ -45,8 +45,10 @@ An omitted `ref` means "whatever HEAD is today", which is the unpinned default w
 
 Supported for GitHub, Git, and BitBucket sources.
 
-!!! danger "`depth` and a SHA-pinned `ref` are mutually exclusive — verified in source"
-    Neither this page nor `Module Sources` says so, but a shallow clone **rejects** a commit-SHA `ref` outright. From `hashicorp/go-getter` **v1.8.6** — the version Terraform **1.15.8** vendors, confirmed from `go.mod` in the local checkout at the release commit — in `get_git.go`:
+!!! danger "`depth` and a SHA-pinned `ref` are mutually exclusive"
+    Neither this page nor `Module Sources` says so — but [[tf-block-module]] does, repeated under its GitHub, Git and BitBucket sources: *"you must specify a named branch or tag known to the remote repository. **You cannot use raw commit IDs.**"* Two how-to pages describe `depth` with no caveat while the reference page carries it.
+
+    The mechanism, from `hashicorp/go-getter` **v1.8.6** — the version Terraform **1.15.8** vendors, confirmed from `go.mod` in the local checkout at the release commit — in `get_git.go`:
 
     ```go
     if depth > 0 {
@@ -69,9 +71,9 @@ Supported for GitHub, Git, and BitBucket sources.
 
     The mechanism is that `--depth` is passed together with `--branch <ref>`, and `git clone --branch` accepts only a branch or tag. A full clone takes the other path — `if depth < 1 && originalRef != ""` — and does a separate `checkout`, which is what lets an arbitrary SHA work at all.
 
-    **So this is a direct trade against I4's supply-chain guidance.** SHA-pinning a third-party Git module is the answer to mutable tags; adding `depth=1` to speed up a large repository forces you back to a tag or branch. You can have the immutable pin or the shallow clone, not both. Neither docs page connects them.
+    **So this is a direct trade against I4's supply-chain guidance.** SHA-pinning a third-party Git module is the answer to mutable tags; adding `depth=1` to speed up a large repository forces you back to a tag or branch. You can have the immutable pin or the shallow clone, not both. **No page connects the two**, which is why it is easy to add `depth` as an optimization and only discover the cost when the pin fails.
 
-    ⚠️ Read from the vendored library source, not reproduced against a live repository.
+    ⚠️ Mechanism read from the vendored library source, not reproduced against a live repository.
 
 ## Variables in `source` and `version`
 

@@ -101,6 +101,7 @@ nav = [
                         { "Publish modules" = "sources/terraform-docs/tf-modules-publish.md" },
                         { "Refactor modules" = "sources/terraform-docs/tf-modules-refactoring.md" },
                     ]},
+                    { "module block reference" = "sources/terraform-docs/tf-block-module.md" },
                 ]},
                 { "Expressions" = [
                     { "Overview" = "sources/terraform-docs/tf-expressions.md" },
