@@ -103,6 +103,7 @@ Log of all captured sources, organised by course.
 | [Add public providers and modules to your private registry (Modules)](terraform-tutorials/tut-private-registry-add.md) | documentation | 2026-08-08 | modules, providers, private-registry, hcp-terraform, curation, no-code-modules, governance | [url](https://developer.hashicorp.com/terraform/tutorials/modules/private-registry-add) |
 | [Refactor monolithic Terraform configuration (Modules)](terraform-tutorials/tut-organize-configuration.md) | documentation | 2026-08-08 | code-organization, monolith, state-separation, workspaces, directories, hidden-dependency, blast-radius, multi-environment | [url](https://developer.hashicorp.com/terraform/tutorials/modules/organize-configuration) |
 | [Module creation — recommended pattern (Modules)](terraform-tutorials/tut-pattern-module-creation.md) | documentation | 2026-08-08 | modules, module-design, scoping, encapsulation, privileges, volatility, mvp, nested-modules, collaboration, governance | [url](https://developer.hashicorp.com/terraform/tutorials/modules/pattern-module-creation) |
+| [Use configuration to move resources (Modules)](terraform-tutorials/tut-move-config.md) | documentation | 2026-08-08 | moved-block, refactoring, state, module-extraction, resource-addresses, rename, terraform-1.3 | [url](https://developer.hashicorp.com/terraform/tutorials/modules/move-config) |
 
 ## 4. Terraform Registry
 

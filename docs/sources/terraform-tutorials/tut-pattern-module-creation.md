@@ -168,7 +168,7 @@ And three governance patterns:
 
 ## Next steps
 
-Pointers are the Terraform modules documentation, the *Reuse Configuration with Modules* tutorial collection, and the no-code modules tutorial. Next in the collection is moving resources.
+Pointers are the Terraform modules documentation, the *Reuse Configuration with Modules* tutorial collection, and the no-code modules tutorial. Next in the collection is moving resources — captured as [[tut-move-config]], which closes the collection.
 
 ---
 Related: eighth in the Modules collection, and the design theory behind it — [[tut-module-create]] and [[tut-module-object-attributes]] are the mechanics, this is the scoping. The Privileges and Volatility axes are the module-level statement of the blast-radius lesson [[tut-organize-configuration]] demonstrates. Publishing workflow choice and the registry: [[tut-module-private-registry-share]]; curation-versus-enforcement: [[tut-private-registry-add]]. The unpinned-transitive-dependency hazard in external nested modules extends [[tf-dependency-lock]] (providers only) and [[tf-expr-version-constraints]]. Structure and naming overlap [[tf-style-guide]]. Feeds learning-path **I5** (authoring modules — its design section), **A4**/**A5** (registry tooling and Sentinel enforcement), **A7** (the same axes at state granularity), and **E6** (platform engineering — producer/consumer teams, devolved security, code community).
