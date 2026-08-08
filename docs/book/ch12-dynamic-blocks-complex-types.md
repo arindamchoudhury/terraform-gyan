@@ -275,19 +275,31 @@ Two things happened without a word of complaint. The `list(any)` constraint **un
 
     Measured boundary, because it is narrower than it first looks. OpenTofu warns when the extra attribute is written in a **module call** or in a **variable `default`**. It stays silent when the same value arrives from a **`.tfvars` file**, which is where a lot of real input comes from. Do not treat it as complete coverage. Both measurements are in `labs/chapter12/lab4`.
 
-The third outcome, rejection, happens only when no conversion exists at all:
+The third outcome, rejection, happens only when no conversion exists at all. Both of these declare a constraint their own default cannot satisfy:
 
+```hcl
+variable "bad_unify" {
+  type    = list(any)
+  default = ["a", [], "b"]
+}
+
+variable "tup" {
+  type    = tuple([string, number])
+  default = ["a", 1, true]
+}
 ```
+
+`terraform validate` on **1.15.8** rejects both:
+
+```text
 Error: Invalid default value for variable
 
-  on main.tf line 4, in variable "bad_unify":
-   4:   default = ["a", [], "b"]
+  on main.tf line 3, in variable "bad_unify":
+   3:   default = ["a", [], "b"]
 
 This default value is not compatible with the variable's type constraint: all
 list elements must have the same type.
-```
 
-```
 Error: Invalid default value for variable
 
   on main.tf line 8, in variable "tup":
@@ -297,7 +309,7 @@ This default value is not compatible with the variable's type constraint:
 tuple required.
 ```
 
-The first fails because no single type holds both a string and a tuple. The second fails because a `tuple` constraint fixes the element count, and three values cannot satisfy a two-element tuple.
+`bad_unify` fails because `list(any)` still has to settle on one element type, and no single type holds both a string and a tuple. `tup` fails because a `tuple` constraint fixes the element count as well as the types, and its declaration allows exactly two while the default supplies three. The terse "tuple required" is Terraform saying the value cannot be made into *that* tuple.
 
 ### The fourth case: nothing happens at all
 
