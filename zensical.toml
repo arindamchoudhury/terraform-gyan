@@ -184,6 +184,7 @@ nav = [
                 { "7. Refactor configuration" = "sources/terraform-tutorials/tut-organize-configuration.md" },
                 { "8. Create modules" = "sources/terraform-tutorials/tut-pattern-module-creation.md" },
                 { "9. Move resources" = "sources/terraform-tutorials/tut-move-config.md" },
+                { "10. No-code modules" = "sources/terraform-tutorials/tut-no-code-provisioning.md" },
             ]},
         ]},
         { "Terraform Registry" = [

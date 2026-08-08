@@ -45,3 +45,4 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Refactor configuration (Refactor monolithic Terraform configuration) | 2026-08-08 | [tut-organize-configuration](tut-organize-configuration.md) |
 | Create modules (Module creation — recommended pattern) | 2026-08-08 | [tut-pattern-module-creation](tut-pattern-module-creation.md) |
 | Move resources (Use configuration to move resources) | 2026-08-08 | [tut-move-config](tut-move-config.md) |
+| No-code modules (Create and use no-code modules) | 2026-08-08 | [tut-no-code-provisioning](tut-no-code-provisioning.md) |

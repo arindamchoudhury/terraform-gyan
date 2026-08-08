@@ -200,7 +200,7 @@ Two details:
 
 ## Next steps
 
-Stated takeaway: built infrastructure, refactored it into modules, and used `moved` to update resource addresses safely. Onward pointers are the `moved` reference docs (including `for_each`/`count` usage), the local-module tutorial, the state-management tutorial, and the resource-lifecycle tutorial. This is the last page of the Modules collection; the sidebar's next entry is no-code modules.
+Stated takeaway: built infrastructure, refactored it into modules, and used `moved` to update resource addresses safely. Onward pointers are the `moved` reference docs (including `for_each`/`count` usage), the local-module tutorial, the state-management tutorial, and the resource-lifecycle tutorial. This is the last tutorial in the Modules collection proper; the sidebar's next entry is no-code modules, captured as [[tut-no-code-provisioning]].
 
 ---
 Related: closes the Modules collection begun at [[tut-module]]. It is the operational answer to [[tut-pattern-module-creation]]'s scoping advice — rescoping a module is a state operation, not just an edit. Names the fix [[tut-count]] needed and never mentioned. Contrast [[tf-state-refactor]]'s imperative `state mv` and remove-and-import flows; contrast [[tf-block-removed]] for dropping resources rather than relocating them. Addresses-as-identity is [[tf-state-purpose]] and [[tf-cmd-state-list]]. Feeds learning-path **I7** (state operations — its hands-on for `moved`) and **A8** (refactoring at scale), and completes **I5**'s module-API-evolution story alongside `deprecated`.
