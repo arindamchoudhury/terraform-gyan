@@ -125,7 +125,7 @@ ingress_rules = [
 
 Only the second can produce an `ingress` block. A security group rule is not a port. Count the arguments in the resource above and every rule carries four of them: a `from_port`, a `to_port`, a `protocol`, and a set of `cidr_blocks`. All four have to reach the provider. The first caller supplied one. A module given `"443"` can either fail or start inventing the rest, and inventing means assuming `tcp` and assuming `0.0.0.0/0`. That assumption is how a module ends up opening a port to the internet that its caller believed was internal.
 
-The sharper problem is *when* you find out. The constraint is the module's chance to reject that input at the door, and `list(any)` declines to take it. Nothing complains at the boundary. The failure surfaces later and further in, at the point some expression tries to read a field off a string. Reproduced in a single file on Terraform 1.15.8:
+That is what a bad input does. There is a second problem, which is *when* anyone finds out about it. The constraint is the module's chance to reject the input at the door, and `list(any)` declines to take it. Nothing complains at the boundary. The failure surfaces later and further in, at the point some expression tries to read a field off a string. Reproduced in a single file on Terraform 1.15.8:
 
 ```text
 Error: Unsupported attribute
