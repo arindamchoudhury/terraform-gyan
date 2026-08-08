@@ -23,6 +23,8 @@ That is not enough to write a *good* module, because it only covers one directio
 
 A reusable module has an interface on the way **in**: the shape of the data a caller must supply. It has another on the way **out**: the shape of the configuration it produces for the provider. Both of those get harder the moment the module needs to be flexible.
 
+"The way out" here is the resource configuration the module generates, not its `output` blocks. Chapter 6 covered those, and they return values to the caller rather than to the provider.
+
 Take the standard example. You want a security group module. Callers need to specify their own inbound rules, and different callers need different numbers of them. One team needs HTTPS only. Another needs HTTPS, HTTP, and Postgres from a specific CIDR. A third needs those plus SSH, but only in the development account.
 
 Start with the thing being aimed at. A security group holds its inbound rules as repeated `ingress` **blocks** inside the one resource, and written out by hand for two fixed rules it looks like this:
@@ -47,7 +49,7 @@ resource "aws_security_group" "app" {
 }
 ```
 
-That is the output side of the module, for one specific caller. The rest of this section is about the distance between it and a module that can serve all three callers above. Neither half of that distance is crossable with what you have so far.
+That is a plain resource block with the rule count baked into it, and it is exactly what one of those three callers needs. The rest of this section is about the distance between it and a single module that can serve all three. Neither half of that distance is crossable with what you have so far.
 
 On the way in, `type = list` is not a description of a rule. It says "a list of something", and a bare `list` means `list(any)`, so both of these callers satisfy it:
 
