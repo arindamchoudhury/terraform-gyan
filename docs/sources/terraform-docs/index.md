@@ -71,3 +71,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `terraform show` command (`-json`, schema precondition) | 2026-07-30 | [tf-cmd-show](tf-cmd-show.md) |
 | `terraform state list` command (`-id` reverse lookup) | 2026-07-30 | [tf-cmd-state-list](tf-cmd-state-list.md) |
 | `terraform state show` command (PowerShell quoting corrected) | 2026-07-30 | [tf-cmd-state-show](tf-cmd-state-show.md) |
+| Modules overview (section index, Develop/Distribute/Provision) | 2026-08-08 | [tf-modules](tf-modules.md) |

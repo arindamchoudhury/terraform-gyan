@@ -90,6 +90,9 @@ nav = [
                     { "Use outputs" = "sources/terraform-docs/tf-outputs.md" },
                     { "output block reference" = "sources/terraform-docs/tf-block-output.md" },
                 ]},
+                { "Modules" = [
+                    { "Overview" = "sources/terraform-docs/tf-modules.md" },
+                ]},
                 { "Expressions" = [
                     { "Overview" = "sources/terraform-docs/tf-expressions.md" },
                     { "Types and values" = "sources/terraform-docs/tf-expr-types.md" },
