@@ -253,10 +253,10 @@ Two things happened without a word of complaint. The `list(any)` constraint **un
 
     HashiCorp's Type Constraints page states the rule plainly, in a sentence worth reading twice: *"values with additional attributes are also acceptable, but the extra attributes are discarded during type conversion."* The behavior is intentional. It exists so that a whole resource object can satisfy a narrow constraint, which is genuinely useful. The cost is that it cannot tell that use from a misspelling.
 
-!!! warning "Whether the typo *hurts* depends on `optional()`"
-    It is worth being precise here, because the discard being silent does not by itself mean the mistake goes unnoticed. What decides that is how the correctly-spelled attribute was declared.
+!!! warning "A misspelled attribute is discarded like any other, and `optional()` decides whether anyone notices"
+    Take the misspelling the box above ends on. A caller writes `enable_https = true`. The module declared `enabled_https`, one letter apart. Because the caller's spelling is not in the `object(...)` constraint, it is an undeclared attribute, so it is discarded exactly like the extra attribute above.
 
-    A caller writes `enable_https = true`. The module declared `enabled_https`. The misspelled attribute is discarded either way. Then:
+    Silent discard is not the same as an unnoticed mistake, though, and what decides between them is how the correctly-spelled attribute was declared:
 
     - If `enabled_https` is **required**, the value that survives the discard is missing a required attribute, and Terraform rejects the call by name. Measured on 1.15.8:
 
