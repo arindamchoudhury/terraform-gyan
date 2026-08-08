@@ -73,7 +73,15 @@ Supported for GitHub, Git, and BitBucket sources.
 
     **So this is a direct trade against I4's supply-chain guidance.** SHA-pinning a third-party Git module is the answer to mutable tags; adding `depth=1` to speed up a large repository forces you back to a tag or branch. You can have the immutable pin or the shallow clone, not both. **No page connects the two**, which is why it is easy to add `depth` as an optimization and only discover the cost when the pin fails.
 
-    ⚠️ Mechanism read from the vendored library source, not reproduced against a live repository.
+    **Reproduced against a live repository 2026-08-08** on Terraform **1.15.8**, against a local `git init` repo with two annotated tags. `?ref=v0.0.2&depth=1` installs normally; the same address with a full commit SHA fails at `init`:
+
+    ```
+    fatal: Remote branch de618717fa8d7d55935738330b562ec2a53c79d7 not found in
+    upstream origin
+     (note that setting 'depth' requires 'ref' to be a branch or tag name)
+    ```
+
+    Lab: `labs/chapter13/lab3` Part C, Book Ch 13.
 
 ## Variables in `source` and `version`
 

@@ -26,6 +26,7 @@ nav = [
         { "10. Meta-arguments: count, for_each, depends_on" = "book/ch10-meta-arguments.md" },
         { "11. The lifecycle meta-argument" = "book/ch11-lifecycle.md" },
         { "12. Dynamic blocks & complex types" = "book/ch12-dynamic-blocks-complex-types.md" },
+        { "13. Using modules" = "book/ch13-using-modules.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },

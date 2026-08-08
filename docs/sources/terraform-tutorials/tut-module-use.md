@@ -218,6 +218,15 @@ vpc_public_subnets = [
 - Installed modules land in **`.terraform/modules/`** inside the working directory.
 - **Local modules are symlinked**, not copied. So edits to a local module take effect immediately, with no re-init and no re-`get`.
 
+!!! warning "“Symlinked” does not match what 1.15.8 does — measured 2026-08-08"
+    Measured on Terraform **1.15.8** on Windows with two `module` blocks pointing at one relative local path: `.terraform/modules/` contained **only `modules.json`**. No symlink and no copy. `modules.json` records the relative source path directly:
+
+    ```json
+    { "Key": "raw", "Source": "./modules/data-bucket", "Dir": "modules/data-bucket" }
+    ```
+
+    The conclusion the page draws is unaffected and was verified separately — editing a local module and re-running `plan` with no `init` and no `get` picks the change up, and **both callers move at once**. Read the bullet as "referenced in place" rather than "symlinked". Lab: `labs/chapter13/lab1`, Book Ch 13 §7.
+
 ```
 .terraform/modules/
 ├── ec2_instances

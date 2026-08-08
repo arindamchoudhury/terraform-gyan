@@ -56,6 +56,7 @@ Three ideas TUR Ch4 states better than anywhere else in these notes:
 
 ## When to read which
 
+- The consumer's side end to end, with measurements? → [Book Ch 13 — Using modules](../book/ch13-using-modules.md).
 - Quick "what is a module and why"? → [[terraform-intro]].
 - The `module` block mechanics in context? → TID Ch2 §2.8.
 - Full treatment (flavors, the variable trio, types, validation, publishing)? → [TID Ch3](../books/tid/chapters/03-variables-modules.md).

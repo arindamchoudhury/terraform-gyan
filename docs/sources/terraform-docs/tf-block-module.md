@@ -87,7 +87,9 @@ Query parameters, also repeated per source:
 
     Worth noting explicitly because [[tf-modules-configuration]] and `Module Sources` both describe `depth` without this caveat. It is documented — just not where a reader following the how-to pages would find it, and **no page connects it to the SHA-pinning advice** in learning-path **I4**. See `cache/search/git-module-shallow-clone-vs-sha-pin.md`.
 
-    **But "The default is 1" cannot be right.** If `depth` defaulted to 1, every Git source would be a shallow clone and a SHA `ref` would never work — yet SHA refs are documented as supported on the same page. The vendored `go-getter` v1.8.6 gates shallow cloning on `depth > 0` and takes the full-clone-then-`checkout` branch when `depth < 1`, so an **absent** `depth` produces a full clone. Read the sentence as "1 is the value to use when you set it", not as the parameter's default. ⚠️ Inferred from the library source, not reproduced against a live repository.
+    **But "The default is 1" cannot be right.** If `depth` defaulted to 1, every Git source would be a shallow clone and a SHA `ref` would never work — yet SHA refs are documented as supported on the same page. The vendored `go-getter` v1.8.6 gates shallow cloning on `depth > 0` and takes the full-clone-then-`checkout` branch when `depth < 1`, so an **absent** `depth` produces a full clone. Read the sentence as "1 is the value to use when you set it", not as the parameter's default.
+
+    **The SHA restriction is now reproduced** (2026-08-08, Terraform 1.15.8, local `git init` repo): a tag `ref` with `depth=1` installs, a full-SHA `ref` with `depth=1` fails with `(note that setting 'depth' requires 'ref' to be a branch or tag name)`. Lab: `labs/chapter13/lab3` Part C, Book Ch 13. The "default is 1" reading remains an inference from the library source rather than a measurement.
 
 ## Non-VCS sources
 
