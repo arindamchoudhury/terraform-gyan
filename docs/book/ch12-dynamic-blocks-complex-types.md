@@ -129,31 +129,7 @@ What happens next depends on how the module was written, and neither branch is g
 
 If it fills in what is missing, assuming `tcp` and assuming `0.0.0.0/0`, the apply succeeds and opens a port to the internet that the caller believed was internal. Nobody finds out, because as far as Terraform is concerned nothing went wrong.
 
-If it fills in nothing, it fails, which is the better branch. The failure is still late and in the wrong place. Rejecting bad input at the door is the one job a type constraint has, and `list(any)` accepts every list ever written, so the string version walks straight past the boundary unremarked. The error then waits for whichever expression first tries to read a field off a string. Stripped of the module and the provider, the whole thing fits in one file:
-
-```hcl
-variable "ingress_rules" {
-  type    = list
-  default = ["443", "80"]
-}
-
-output "ports" {
-  value = [for r in var.ingress_rules : r.port]
-}
-```
-
-`terraform plan` on Terraform 1.15.8 gives:
-
-```text
-Error: Unsupported attribute
-
-  on main.tf line 7, in output "ports":
-   7:   value = [for r in var.ingress_rules : r.port]
-
-Can't access attributes on a primitive-typed value (string).
-```
-
-The message points at the line that *read* the attribute, not the line that supplied the bad value. Put that expression inside a module and the error names a file the caller may never have opened, leaving them to work backwards to their own `ingress_rules`. Worse, `terraform validate` passes that same configuration, because validation does not resolve what a caller will pass. The mistake survives validation and lands at plan time.
+If it fills in nothing, it fails. That is the better branch and still not a good one, because `list` lets the value through and the failure happens somewhere else entirely, at whichever expression inside the module first asks a string for a field it does not have. §2 shows exactly what that costs.
 
 You need to describe the *shape* of an element, not just that elements exist.
 
@@ -335,6 +311,40 @@ tuple required.
 ```
 
 The first fails because no single type holds both a string and a tuple. The second fails because a `tuple` constraint fixes the element count, and three values cannot satisfy a two-element tuple.
+
+### The fourth case: nothing happens at all
+
+Rejection is what most people picture a constraint doing, and it is the rarest of the three outcomes. A loose enough constraint produces none of them.
+
+That is §1's `type = list` on `ingress_rules`. A caller passing `["443", "80"]` loses no element, has nothing discarded, and is rejected over nothing. The two strings already share a type, so the only conversion is the tuple-to-list one every list constraint performs, and it changes nothing the module can see. The value arrives intact and unusable.
+
+Stripped of the module and the provider, the whole failure fits in one file:
+
+```hcl
+variable "ingress_rules" {
+  type    = list
+  default = ["443", "80"]
+}
+
+output "ports" {
+  value = [for r in var.ingress_rules : r.port]
+}
+```
+
+`terraform plan` on **1.15.8** gives:
+
+```text
+Error: Unsupported attribute
+
+  on main.tf line 7, in output "ports":
+   7:   value = [for r in var.ingress_rules : r.port]
+
+Can't access attributes on a primitive-typed value (string).
+```
+
+Two details in that error are the whole argument for writing the element type out. It names the line that *read* the attribute rather than the line that supplied the value, so the same mistake inside a module points at a file the caller may never have opened. And `terraform validate` passes this configuration, because validation does not resolve what a caller will pass, so the error waits for `plan`.
+
+A constraint that described the element would have converted, discarded, or rejected at the boundary, and the diagnostic would have named the caller's own value. `list(any)` did none of the three.
 
 ### Choosing the constraint: collection or structural
 
