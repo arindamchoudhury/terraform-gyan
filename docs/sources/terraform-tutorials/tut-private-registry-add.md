@@ -87,7 +87,7 @@ Six UI screenshots on the page, including a VPC module detail view pinned at **3
 
 ## Next steps
 
-Stated takeaway: search, review, add, and remove providers and modules so the private registry becomes "the source for Terraform configuration components for your organization". Onward pointers are the private-registry documentation, the private-module publishing tutorial ([[tut-module-private-registry-share]]), the no-code modules tutorial, and **cross-organization module sharing**. Next in the collection is refactoring configuration.
+Stated takeaway: search, review, add, and remove providers and modules so the private registry becomes "the source for Terraform configuration components for your organization". Onward pointers are the private-registry documentation, the private-module publishing tutorial ([[tut-module-private-registry-share]]), the no-code modules tutorial, and **cross-organization module sharing**. Next in the collection is refactoring configuration — captured as [[tut-organize-configuration]].
 
 ---
 Related: sixth in the Modules collection, the counterpart to [[tut-module-private-registry-share]] — that one publishes your own module, this one curates someone else's. The evaluation criteria it lists are the practical answer to [[tut-module]]'s "use the public Terraform Registry to find useful modules". Curation not being enforcement is the boundary between **A4** and **A5**; the actual controls on module versions are the exact-pin and policy layers noted in **I4**, since [[tf-dependency-lock]] never locks modules. Feeds learning-path **A4** (private registry) primarily, with the enforcement caveat belonging to **A5** and the no-code-on-public-modules point to **E6**.

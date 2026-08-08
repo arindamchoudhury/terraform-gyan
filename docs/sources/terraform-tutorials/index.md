@@ -42,3 +42,4 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Object attributes (Customize modules with object attributes) | 2026-08-08 | [tut-module-object-attributes](tut-module-object-attributes.md) |
 | Share modules in the private registry | 2026-08-08 | [tut-module-private-registry-share](tut-module-private-registry-share.md) |
 | Add from the public registry (Add public providers and modules) | 2026-08-08 | [tut-private-registry-add](tut-private-registry-add.md) |
+| Refactor configuration (Refactor monolithic Terraform configuration) | 2026-08-08 | [tut-organize-configuration](tut-organize-configuration.md) |
