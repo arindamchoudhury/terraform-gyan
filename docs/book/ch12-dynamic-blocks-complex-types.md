@@ -51,6 +51,66 @@ resource "aws_security_group" "app" {
 
 That is a plain resource block with the rule count baked into it, and it is exactly what one of those three callers needs. The rest of this section is about the distance between it and a single module that can serve all three. Neither half of that distance is crossable with what you have so far.
 
+Move it into a module and the two interfaces stop being an abstraction. They become two files:
+
+```text
+modules/security-group/
+├── variables.tf    # the way in
+├── main.tf         # the way out
+└── outputs.tf      # values returned to the caller
+```
+
+`outputs.tf` is the part that needs nothing from this chapter:
+
+```hcl
+output "security_group_id" {
+  value = aws_security_group.app.id
+}
+```
+
+`variables.tf` is where a caller's rules arrive, and a first attempt looks reasonable enough:
+
+```hcl
+variable "name" {
+  type = string
+}
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "ingress_rules" {
+  type = list
+}
+```
+
+`main.tf` is where it stalls:
+
+```hcl
+resource "aws_security_group" "app" {
+  name   = var.name
+  vpc_id = var.vpc_id
+
+  # One ingress block per element of var.ingress_rules.
+  # Nothing so far in this book can write that.
+}
+```
+
+A caller then supplies the values that the hardcoded version had baked in:
+
+```hcl
+module "app_sg" {
+  source = "./modules/security-group"
+
+  name   = "app"
+  vpc_id = aws_vpc.main.id
+
+  ingress_rules = [ /* ... */ ]
+}
+```
+
+Two questions are now open, one per file. What should `ingress_rules` be declared as in `variables.tf`, and how does `main.tf` turn N elements into N blocks?
+
 On the way in, `type = list` is not a description of a rule. It says "a list of something", and a bare `list` means `list(any)`, so both of these callers satisfy it:
 
 ```hcl
@@ -420,7 +480,7 @@ Now the other half. A `dynamic` block generates repeated nested blocks from a co
 
 ```hcl
 resource "aws_security_group" "app" {
-  name   = "app"
+  name   = var.name
   vpc_id = var.vpc_id
 
   dynamic "ingress" {
