@@ -31,7 +31,8 @@ Start with the thing being aimed at. A security group holds its inbound rules as
 
 ```hcl
 resource "aws_security_group" "app" {
-  name = "app"
+  name   = "app"
+  vpc_id = "vpc-0a1b2c3d4e5f67890"
 
   ingress {
     from_port   = 443
@@ -49,7 +50,7 @@ resource "aws_security_group" "app" {
 }
 ```
 
-That is a plain resource block with the rule count baked into it, and it is exactly what one of those three callers needs. The rest of this section is about the distance between it and a single module that can serve all three. Neither half of that distance is crossable with what you have so far.
+Every value in there is baked in, the VPC and the rule count alike. That block is exactly what one of those three callers needs and no use to the other two. The rest of this section is about the distance between it and a single module that can serve all three. Neither half of that distance is crossable with what you have so far.
 
 Move it into a module and the two interfaces stop being an abstraction. They become two files:
 
