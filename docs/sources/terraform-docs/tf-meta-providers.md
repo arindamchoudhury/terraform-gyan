@@ -54,6 +54,8 @@ Supplying a `providers` argument "cancels the default behavior", so that "the ch
 
     So this reference page still carries the un-narrowed phrasing. Treat the per-provider reading as correct, and treat `providers = {}` as a no-op rather than an inheritance kill switch. Recorded in [[tf-provider-block]] and cached at `cache/search/implied-empty-default-provider.md`.
 
+    **Confirmed 2026-08-08:** the narrowed wording is live on the other page — *"Setting a `providers` argument within a module block overrides the default inheritance behavior **for that provider**"* ([[tf-modules-providers]]). The two reference pages disagree in the docs as they stand, and that one is correct.
+
 ## When to specify `providers`
 
 Two conditions, per the page:
@@ -134,7 +136,7 @@ That naming is not just documentation. The child has to declare those same alias
 
 ## Information for module developers
 
-The page defers all module-author guidance to [Providers Within Modules](https://developer.hashicorp.com/terraform/language/modules/develop/providers) — a page in the **Develop modules** sidebar group, not yet captured.
+The page defers all module-author guidance to [Providers Within Modules](https://developer.hashicorp.com/terraform/language/modules/develop/providers) — a page in the **Develop modules** sidebar group, now captured as [[tf-modules-providers]]. It supplies the *why* behind the no-provider-blocks rule (a provider configuration must outlive every resource it manages, so a module carrying both would remove them simultaneously), the inheritance asymmetry (default configurations inherit, aliased ones never do, requirements never do), and the static resource-to-provider association that stops `count`/`for_each` module calls from varying their providers per instance.
 
 ---
 Related: [[tf-meta-arguments]] — the index page, whose three-sentence summary this expands; its applicability table omits the Stacks blocks listed here. · [[tf-provider-block]] — the `provider` blocks and `configuration_aliases` on the receiving side, plus the implied-empty-default trap this page never mentions. · [[tf-providers]] — the provider hub over declare and configure. · [[modules]] — the module topic page, which records the `module` block's three meta arguments from TID Ch2–Ch3. · [[ot-provider-for-each]] — OpenTofu passes provider *instances* into modules from a `for_each`, generalizing the fixed alias-to-alias map here.
