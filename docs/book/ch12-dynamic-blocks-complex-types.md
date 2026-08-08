@@ -23,7 +23,7 @@ That is not enough to write a *good* module, because it only covers one directio
 
 A reusable module has an interface on the way **in**: the shape of the data a caller must supply. It has another on the way **out**: the shape of the configuration it produces for the provider. Both of those get harder the moment the module needs to be flexible.
 
-A module is where both pressures show up at once, which is why this chapter is framed around one. Neither tool is a module feature. A **type constraint** does live at a boundary, because `type =` is only legal in the three places listed in §2, and two of them are the module's own edges. A **`dynamic` block** has no such restriction at all: it works in any resource, data, provider, or provisioner block, in a root configuration with no `variable` in sight. Writing a module is not what forces you to reach for it. Ignorance of the block count is. You need a `dynamic` block exactly when you cannot say, at the moment you write the file, how many times the block should appear. That happens whenever the count comes from somewhere you do not control: a caller's variable, a data source, a remote state lookup. The caller is simply the case that forces it every single time, so it makes the cleanest example.
+A module is where both pressures show up at once, which is why this chapter is framed around one. Only one of the two answers is genuinely a boundary feature, though, and §4 comes back to how little the module actually matters to the other.
 
 Take the standard one. You want a security group module. Callers need to specify their own inbound rules, and different callers need different numbers of them. One team needs HTTPS only. Another needs HTTPS, HTTP, and Postgres from a specific CIDR. A third needs those plus SSH, but only in the development account.
 
@@ -434,6 +434,53 @@ flowchart LR
 | **`labels`** | no | A list of strings giving the generated blocks' own labels, in order. |
 
 `dynamic` is supported inside `resource`, `data`, `provider`, and `provisioner` blocks.
+
+### It is not a module feature
+
+Every example so far has read `var.ingress_rules`, and §1 built the whole case around a module with callers. That is the motivation, not the rule, and the two are easy to weld together by accident.
+
+A **type constraint** really is a boundary feature. `type =` is legal in the three places §2 listed, and two of them are a module's own edges, so a constraint has nowhere else to live.
+
+A **`dynamic` block** has no such restriction. The four containers above are resources, data sources, providers, and provisioners. None of them requires a `variable` block, a caller, or a `module` block anywhere in the configuration. A root configuration you apply directly can use one:
+
+```hcl
+# root main.tf, applied directly. No variables, no modules, nothing calls this.
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "tag:Tier"
+    values = ["private"]
+  }
+}
+
+data "aws_subnet" "private" {
+  for_each = toset(data.aws_subnets.private.ids)
+  id       = each.value
+}
+
+resource "aws_security_group" "db" {
+  name = "db"
+
+  dynamic "ingress" {
+    for_each = data.aws_subnet.private
+    content {
+      description = "Postgres from ${ingress.key}"
+      from_port   = 5432
+      to_port     = 5432
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value.cidr_block]
+    }
+  }
+}
+```
+
+One ingress rule per private subnet. The `dynamic` block is not a convenience here, it is the only option, and no caller is involved. The subnet count is not written anywhere in the file. It is whatever the account and region return when the data source reads them at plan time, and it changes when somebody adds a subnet.
+
+That is the actual trigger. Writing a module is not what forces you to reach for a `dynamic` block. Ignorance of the block count is. You need one exactly when you cannot say, at the moment you write the file, how many times the block should appear.
+
+Contrast a hardcoded `local` holding three rules. A `dynamic` block over it works and reads better than three pasted blocks, but you could count those rules by hand and type them out. There, `dynamic` is a convenience. The data source above admits no such alternative.
+
+Ignorance of the count has three common sources: a caller's variable, a data source, and a remote state lookup. The caller is the only one that forces the issue on *every* call rather than sometimes, which is why §1 used a module and why the rest of this chapter keeps doing so.
 
 ### The iterator is named after the label
 
