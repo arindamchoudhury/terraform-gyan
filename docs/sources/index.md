@@ -69,6 +69,7 @@ Log of all captured sources, organised by course.
 | [`terraform state show` command](terraform-docs/tf-cmd-state-show.md) | documentation | 2026-07-30 | cli, state-show, resource-addressing, for-each, quoting, powershell, human-readable | [url](https://developer.hashicorp.com/terraform/cli/commands/state/show) |
 | [Modules overview (Configuration Language)](terraform-docs/tf-modules.md) | documentation | 2026-08-08 | modules, root-module, child-module, module-sources, registry, module-workflow | [url](https://developer.hashicorp.com/terraform/language/modules) |
 | [Use modules in your configuration (Configuration Language)](terraform-docs/tf-modules-configuration.md) | documentation | 2026-08-08 | modules, module-block, source, version, git-ref, shallow-clone, const, removed-block, replace | [url](https://developer.hashicorp.com/terraform/language/modules/configuration) |
+| [Creating Modules (Configuration Language)](terraform-docs/tf-modules-develop.md) | documentation | 2026-08-08 | modules, module-design, abstraction, composition, module-structure, refactoring, no-code-modules | [url](https://developer.hashicorp.com/terraform/language/modules/develop) |
 
 ## 2. OpenTofu Docs
 
