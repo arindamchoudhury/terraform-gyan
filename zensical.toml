@@ -95,6 +95,7 @@ nav = [
                     { "Use modules" = "sources/terraform-docs/tf-modules-configuration.md" },
                     { "Develop modules" = [
                         { "Overview" = "sources/terraform-docs/tf-modules-develop.md" },
+                        { "Standard module structure" = "sources/terraform-docs/tf-modules-structure.md" },
                     ]},
                 ]},
                 { "Expressions" = [

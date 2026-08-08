@@ -70,6 +70,7 @@ Log of all captured sources, organised by course.
 | [Modules overview (Configuration Language)](terraform-docs/tf-modules.md) | documentation | 2026-08-08 | modules, root-module, child-module, module-sources, registry, module-workflow | [url](https://developer.hashicorp.com/terraform/language/modules) |
 | [Use modules in your configuration (Configuration Language)](terraform-docs/tf-modules-configuration.md) | documentation | 2026-08-08 | modules, module-block, source, version, git-ref, shallow-clone, const, removed-block, replace | [url](https://developer.hashicorp.com/terraform/language/modules/configuration) |
 | [Creating Modules (Configuration Language)](terraform-docs/tf-modules-develop.md) | documentation | 2026-08-08 | modules, module-design, abstraction, composition, module-structure, refactoring, no-code-modules | [url](https://developer.hashicorp.com/terraform/language/modules/develop) |
+| [Standard Module Structure (Configuration Language)](terraform-docs/tf-modules-structure.md) | documentation | 2026-08-08 | modules, module-structure, readme, license, nested-modules, examples, registry, conventions | [url](https://developer.hashicorp.com/terraform/language/modules/develop/structure) |
 
 ## 2. OpenTofu Docs
 

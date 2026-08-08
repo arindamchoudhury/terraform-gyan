@@ -74,3 +74,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Modules overview (section index, Develop/Distribute/Provision) | 2026-08-08 | [tf-modules](tf-modules.md) |
 | Use modules in your configuration (`ref`, `depth`, `const`, `-replace`) | 2026-08-08 | [tf-modules-configuration](tf-modules-configuration.md) |
 | Creating Modules (Develop modules overview — the abstraction test) | 2026-08-08 | [tf-modules-develop](tf-modules-develop.md) |
+| Standard Module Structure (README-as-visibility-marker, source-address rules) | 2026-08-08 | [tf-modules-structure](tf-modules-structure.md) |
