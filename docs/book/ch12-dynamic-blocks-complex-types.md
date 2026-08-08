@@ -137,16 +137,26 @@ That leaves `main.tf`, the harder of the two files. Two tools you already have l
 
 Go back to that resource. Two rules, so the block is written twice. Three rules, three times. The number of blocks is decided by **how many times you typed it**, which is fixed when you write the module. The caller's rule count is not known until they call it.
 
-The obvious escape is `for_each`, from Chapter 10. It does not work here, and the reason is worth being precise about. `for_each` on the resource repeats the **resource**:
+The obvious escape is `for_each`, from Chapter 10:
 
 ```hcl
 resource "aws_security_group" "app" {
-  for_each = var.ingress_rules      # three rules...
+  for_each = var.ingress_rules
   # ...
 }
 ```
 
-That gives you three security groups with one rule each. What you wanted was one security group with three rules. `for_each` varies the number of *resources*, and here the thing that has to vary is inside one.
+`for_each` varies the number of **resources**, so at best that is three security groups holding one rule each, and what was wanted is one holding three. Here it does not even reach that, because `for_each` takes a map or a set of strings and a list of rule objects is neither. Measured on 1.15.8:
+
+```text
+Error: Invalid for_each argument
+
+The given "for_each" argument value is unsuitable: the "for_each" argument
+must be a map, or set of strings, and you have provided a value of type list
+of object.
+```
+
+Convert the rules to a map and the error goes away, which is the trap. The configuration then works and still builds the wrong thing. The count that has to vary is inside one resource, and `for_each` cannot reach inside one.
 
 The other instinct is to assign the rules the way you would assign anything else:
 
