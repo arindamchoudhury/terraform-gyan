@@ -37,3 +37,4 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 | Page | Added | File |
 |---|---|---|
 | Terraform modules (Modules overview) | 2026-08-08 | [tut-module](tut-module.md) |
+| Use modules (Use registry modules in configuration) | 2026-08-08 | [tut-module-use](tut-module-use.md) |

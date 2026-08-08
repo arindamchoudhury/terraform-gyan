@@ -176,6 +176,7 @@ nav = [
             ]},
             { "Modules" = [
                 { "1. Terraform modules" = "sources/terraform-tutorials/tut-module.md" },
+                { "2. Use modules" = "sources/terraform-tutorials/tut-module-use.md" },
             ]},
         ]},
         { "Terraform Registry" = [

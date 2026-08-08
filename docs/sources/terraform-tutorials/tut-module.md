@@ -6,7 +6,7 @@
 > **Tags:** modules, root-module, child-module, encapsulation, re-use, module-sources, best-practices
 > **Type:** documentation
 
-First page of the **Modules** collection, and the only conceptual one — no code to run, no repo to clone. It sets up the rest of the collection ([Use modules](https://developer.hashicorp.com/terraform/tutorials/modules/module-use) is next). Read it as the *why*; the module block mechanics live in [[tf-aws-manage]] and the version-pinning rules in [[tf-expr-version-constraints]].
+First page of the **Modules** collection, and the only conceptual one — no code to run, no repo to clone. It sets up the rest of the collection ([[tut-module-use]] is next). Read it as the *why*; the module block mechanics live in [[tf-aws-manage]] and the version-pinning rules in [[tf-expr-version-constraints]].
 
 ## The problem modules solve
 
@@ -108,4 +108,4 @@ These overlap [[tf-style-guide]]'s Modules section, which is more prescriptive w
 The stated takeaways are the three sections above: what problems modules solve, the structure of a module, and best practices for using and creating them. The page points at a separate no-code module tutorial and its reference docs for that path. The next tutorial builds and applies a configuration that uses Registry modules.
 
 ---
-Related: opens the Modules collection, whose next page ("Use modules") is not yet captured. Motivation for [[tf-aws-manage]], which is where a `module` block, `module.<name>.<output>` references, and `module.vpc.*` state addressing first appear in practice. Pins and sources are governed by [[tf-expr-version-constraints]]; note that [[tf-dependency-lock]] does **not** lock module versions. [[tf-style-guide]] restates these best practices as concrete conventions. The "modules solve duplication across environments" claim is qualified by [[tut-for-each]]'s own warning against `for_each` over independently-lifecycled environments. Feeds learning-path **I4** (using modules) and **I5** (authoring modules).
+Related: opens the Modules collection that [[tut-module-use]] continues with the first real `module` block. Motivation for [[tf-aws-manage]], which is where a `module` block, `module.<name>.<output>` references, and `module.vpc.*` state addressing first appear in practice. Pins and sources are governed by [[tf-expr-version-constraints]]; note that [[tf-dependency-lock]] does **not** lock module versions. [[tf-style-guide]] restates these best practices as concrete conventions. The "modules solve duplication across environments" claim is qualified by [[tut-for-each]]'s own warning against `for_each` over independently-lifecycled environments. Feeds learning-path **I4** (using modules) and **I5** (authoring modules).

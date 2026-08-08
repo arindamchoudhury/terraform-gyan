@@ -96,6 +96,7 @@ Log of all captured sources, organised by course.
 | [Manage resource lifecycle (State)](terraform-tutorials/tut-resource-lifecycle.md) | documentation | 2026-08-03 | lifecycle, prevent_destroy, create_before_destroy, ignore_changes, drift, deposed, plan-symbols, state | [url](https://developer.hashicorp.com/terraform/tutorials/state/resource-lifecycle) |
 | [Manage similar resources with `for_each` (Configuration Language)](terraform-tutorials/tut-for-each.md) | documentation | 2026-08-01 | for_each, each.key, each.value, module-wrapping, count-and-for-each, provider-inheritance, for-expressions | [url](https://developer.hashicorp.com/terraform/tutorials/configuration-language/for-each) |
 | [Modules overview (Modules)](terraform-tutorials/tut-module.md) | documentation | 2026-08-08 | modules, root-module, child-module, encapsulation, re-use, module-sources, best-practices | [url](https://developer.hashicorp.com/terraform/tutorials/modules/module) |
+| [Use registry modules in configuration (Modules)](terraform-tutorials/tut-module-use.md) | documentation | 2026-08-08 | modules, module-block, source, version, module-outputs, count-on-module, terraform-get, registry | [url](https://developer.hashicorp.com/terraform/tutorials/modules/module-use) |
 
 ## 4. Terraform Registry
 
