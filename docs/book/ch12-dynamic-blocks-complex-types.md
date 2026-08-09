@@ -675,11 +675,11 @@ resource "aws_security_group" "db" {
 
 One ingress rule per private subnet. The `dynamic` block is not a convenience here, it is the only option, and no caller is involved. The subnet count is not written anywhere in the file. It is whatever the account and region return when the data source reads them at plan time, and it changes when somebody adds a subnet.
 
-That is the actual trigger. Writing a module is not what forces you to reach for a `dynamic` block. Ignorance of the block count is. You need generation of some kind exactly when you cannot say, at the moment you write the file, how many times the thing should appear. Whether that generation is a `dynamic` block or a separate resource with `for_each` is a second question, and §8 answers it.
+That is the actual trigger. Writing a module is not what forces you to reach for a `dynamic` block. A block count that does not exist yet is. You need generation of some kind exactly when you cannot say, at the moment you write the file, how many times the thing should appear. Whether that generation is a `dynamic` block or a separate resource with `for_each` is a second question, and §8 answers it.
 
 Contrast a hardcoded `local` holding three rules. A `dynamic` block over it works and reads better than three pasted blocks, but you could count those rules by hand and type them out. There, `dynamic` is a convenience. The data source above admits no such alternative.
 
-Ignorance of the count has three common sources: a caller's variable, a data source, and a remote state lookup. The caller is the only one that forces the issue on *every* call rather than sometimes, which is why §1 used a module and why the rest of this chapter keeps doing so.
+A count you cannot write down has three common sources: a caller's variable, a data source, and a remote state lookup. The caller is the only one that forces the issue on *every* call rather than sometimes, which is why §1 used a module and why the rest of this chapter keeps doing so.
 
 ### The iterator is named after the label
 
