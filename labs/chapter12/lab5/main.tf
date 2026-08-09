@@ -15,6 +15,9 @@
 #                                                  #    -> + rule (known after apply)
 #   for_each = {}                                  # -> no rule block at all
 #
+# The count of elements is the whole story, and null is not a special case:
+#   null -> 0 blocks, [] -> 0, [null] -> 1, [null, null] -> 2.
+#
 #   tflocal destroy -auto-approve
 #
 # The contrast is in contrast.tf.resource: the same three values are hard errors

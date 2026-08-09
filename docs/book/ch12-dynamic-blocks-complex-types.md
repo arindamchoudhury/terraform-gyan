@@ -813,6 +813,8 @@ Only the length matters. An empty collection generates no block at all, which is
 | `[aws_s3_bucket.b.id]` (unknown element, known length) | one block | `Invalid for_each argument` — *"known only after apply"* |
 | `split(",", aws_s3_bucket.b.id)` (unknown length) | plan renders `+ rule (known after apply)` | same error |
 
+Read the first row carefully: `[null]` generates **one** block, not zero. The null is the element, not the collection, and a one-element tuple has length one whatever is in it. Emptiness is the only thing that produces no block. `null`, `[]`, `[null]` and `[null, null]` give 0, 0, 1 and 2 blocks respectively — the count of elements, every time. This is also why the splat idiom below works: `var.logging[*]` on a null yields the **empty** tuple, not `[null]`.
+
 The asymmetry has a reason, and it is the same reason that runs through Chapter 10. A resource's `for_each` value **becomes part of the instance address** — `aws_s3_bucket.r["a"]` — so Terraform has to know it before apply, has to be able to print it, and cannot let it be `null`. HashiCorp's [for_each](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) page states the consequence under Limitations on values: *"Terraform uses the value in `for_each` to identify the resource instance and always discloses it in UI output."* A dynamic block's `for_each` names nothing. It decides how many copies of one argument block to emit, and the last row is what that costs when even the count is unknown: Terraform defers the whole set of blocks rather than failing.
 
 !!! tip "Which literal to use for the toggle"
