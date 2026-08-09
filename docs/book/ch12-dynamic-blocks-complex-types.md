@@ -503,7 +503,7 @@ This is why the docs can promise something about `optional()` that they cannot p
 
 ### Defaults apply top-down
 
-When optional attributes nest, the outer default is applied first, and then the inner defaults are applied to the result. That ordering is what makes an empty default object useful:
+When optional attributes nest, the outer default is applied first, and then the inner defaults are applied to the result. That ordering is what makes an empty default object useful. This declaration and the next one both live in `./modules/buckets`, the module being called:
 
 ```hcl
 variable "buckets" {
@@ -537,7 +537,7 @@ Reverse the order and `{}` would stay empty. The top-down rule is what turns `op
 
 ### Leaving one attribute unset, conditionally
 
-Because a non-null default is substituted for an explicit `null`, `null` becomes usable as "let the default apply". That gives a clean conditional:
+Because a non-null default is substituted for an explicit `null`, `null` becomes usable as "let the default apply". That gives a clean conditional. This one is the other side of the boundary, the calling module rather than `./modules/buckets`:
 
 ```hcl
 module "buckets" {
@@ -555,7 +555,7 @@ module "buckets" {
 }
 ```
 
-With `legacy_filenames = true` the caller's names win. With `false`, both arms deliver `null`, the `optional()` defaults take over, and the module behaves as though the attributes were never written.
+With `legacy_filenames = true` the names written here in the `module` block win, and `./modules/buckets` receives `INDEX.HTM` and `ERROR.HTM`. With `false`, both arms deliver `null`, the `optional()` defaults declared inside the module take over, and it behaves as though the attributes were never written.
 
 ### The typo that §2 left hanging
 
