@@ -478,7 +478,7 @@ variable "site" {
 
 The modifier takes the attribute's type, and optionally a default. With no default, an absent attribute becomes `null`. Note that this is a **typed** null, not an untyped hole. It prints as `tostring(null)`, because the constraint still knows what the attribute would have been.
 
-`optional(type, default)` graduated from experiment to stable in **Terraform 1.3**. It is available in every version this book targets and in OpenTofu.
+`optional(type, default)` graduated from experiment to stable in **Terraform 1.3**. Every transcript here runs on **1.15.8**, and OpenTofu forked from Terraform 1.5.x, so both tools have had it since well before the versions this chapter measures.
 
 ### The asymmetry worth memorising
 
