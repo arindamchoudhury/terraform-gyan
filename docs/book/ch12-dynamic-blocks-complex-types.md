@@ -683,8 +683,6 @@ A count you cannot write down has three common sources: a caller's variable, a d
 
 ### The iterator is named after the label
 
-This is the part everyone looks up, every time.
-
 A `dynamic` block does not use `each` or `count`. It **invents a new temporary variable named after its own label**. Inside `dynamic "ingress"`, that variable is `ingress`. Inside `dynamic "setting"`, it is `setting`.
 
 The variable has exactly two attributes:
