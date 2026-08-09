@@ -742,7 +742,42 @@ data "testing_assertions" "terraform_disco" {
 }
 ```
 
-Each map entry becomes a labeled block, with the label taken from the map key. It is a **list** because a block type can require more than one label, supplied in order.
+`[equal.key]` is three separate things stacked in one short expression, and it is worth taking them apart.
+
+`equal` is the iterator. It is named after the block label on `dynamic "equal"`, by the rule the previous section gave. It is not a keyword and not a reference to anything declared elsewhere in the configuration.
+
+`.key` is the map key of the current element, because `local.test_assertions` is a map. If `for_each` were fed a set instead, `.key` would hand back the whole element and the generated label would be an object rendered as a string, which is the failure the warning above describes.
+
+The square brackets make it a **list** because a block type can require more than one label. `equal` requires one, so the list holds one element. A block type taking two would get `labels = [thing.key, "fixed"]`, supplied in schema order.
+
+Given this input:
+
+```hcl
+locals {
+  test_assertions = {
+    modules_url = { statement = "modules.v endpoint", got = "...", want = "..." }
+    login_url   = { statement = "login.v endpoint", got = "...", want = "..." }
+  }
+}
+```
+
+Terraform generates two labeled blocks, in sorted key order:
+
+```hcl
+equal "login_url" {
+  statement = "login.v endpoint"
+  got       = "..."
+  want      = "..."
+}
+
+equal "modules_url" {
+  statement = "modules.v endpoint"
+  got       = "..."
+  want      = "..."
+}
+```
+
+The part worth carrying away is that the iterator is live in `labels`, not only inside `content`. That is what makes each generated block's label differ per iteration rather than repeating one fixed string. `equal.key` and `equal.value.statement` are the same temporary variable read twice, once for the block's name and once for its body.
 
 ---
 
