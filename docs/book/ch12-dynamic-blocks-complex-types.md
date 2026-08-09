@@ -636,11 +636,11 @@ flowchart LR
 
 ### It is not a module feature
 
-Every example so far has read `var.ingress_rules`, and §1 built the whole case around a module with callers. That is the motivation, not the rule, and the two are easy to weld together by accident.
+Every example so far has read `var.ingress_rules`, and §1 built the whole case around a module with callers. That is where a `dynamic` block pays off. It is not where one is allowed, and the difference is worth stating outright, because a feature met only in module examples starts to look like a module feature.
 
-A **type constraint** really is a boundary feature. `type =` is legal in the three places §2 listed, and two of them are a module's own edges, so a constraint has nowhere else to live.
+A **type constraint** does mostly sit on a boundary. Two of the three places §2 listed are edges of a configuration: an input variable is where a value arrives, and a module output is where one leaves. The third place is `convert()`, an ordinary function call in the middle of an expression, so even constraints are not strictly boundary-only.
 
-A **`dynamic` block** has no such restriction. The four containers above are resources, data sources, providers, and provisioners. None of them requires a `variable` block, a caller, or a `module` block anywhere in the configuration. A root configuration you apply directly can use one:
+A **`dynamic` block** has no connection to a boundary at all. The four containers above are resources, data sources, providers, and provisioners. None of them requires a `variable` block, a caller, or a `module` block anywhere in the configuration. A root configuration you apply directly can use one:
 
 ```hcl
 # root main.tf, applied directly. No variables, no modules, nothing calls this.
