@@ -950,7 +950,9 @@ Renaming the outer one reads better than renaming the inner one, because the inn
 
 Two limits, one of which produces a genuinely unhelpful error.
 
-**It cannot generate meta-argument blocks.** `lifecycle` and `provisioner` are processed before it is safe to evaluate expressions, so they cannot be produced by something that requires evaluation. HashiCorp's dynamic blocks page states this outright.
+**It cannot generate meta-argument blocks.** `lifecycle` and `provisioner` are processed before it is safe to evaluate expressions, so they cannot be produced by something that requires evaluation. HashiCorp's [Dynamic Blocks](https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks) page states this outright, in the anatomy prose that follows the iterator-object list, and gives the reason in the same breath: *"A `dynamic` block can only generate arguments that belong to the resource type, data source, provider or provisioner being configured. It is not possible to generate meta-argument blocks such as `lifecycle` and `provisioner` blocks, since Terraform must process these before it is safe to evaluate expressions."*
+
+Read the reason rather than the list. It is not that those two block types are special-cased out; it is that they are consumed at a stage where no expression has been evaluated yet, so there is nothing for a `for_each` to have iterated. That also tells you the rule is about *when* a block is processed, not about how many there are, which is why no `count`-like workaround exists.
 
 What it does not tell you is that Terraform does not explain itself when you try. Measured on **1.15.8** and identical on **OpenTofu 1.12.4**:
 
@@ -977,6 +979,19 @@ Blocks of type "nonexistent" are not expected here.
 The two are the same error. Nothing distinguishes "this block type does not exist" from "this block type exists and may never be generated". A reader who hits the second one will go looking for a misspelling that is not there. Knowing the rule in advance is the only thing that saves the time.
 
 **It cannot generate arguments.** A `dynamic` block produces blocks, not `name = value` assignments. If the thing you want to repeat is an argument, the answer is a `for` expression building a collection, not a `dynamic` block.
+
+That reads as a contradiction of the sentence quoted two paragraphs up, and it is worth resolving rather than stepping around. The page's *"can only generate arguments"* uses "arguments" in the loose sense of "things the schema declares", and its point is the **belong to** half: whatever you generate has to be part of the configured object's own schema. The strict sense is the one that matters at the keyboard. `dynamic "tags"` will not produce `tags = { ... }`, because that is an assignment and no amount of iteration turns a `content` body into one. `tags` is a real argument of `aws_s3_bucket`, declared in the schema and spelled correctly, and it still fails the same way everything else in this section does, measured on 1.15.8:
+
+```
+Error: Unsupported block type
+
+  on tags.tf line 3, in resource "aws_s3_bucket" "t":
+   3:   dynamic "tags" {
+
+Blocks of type "tags" are not expected here.
+```
+
+Three different mistakes, one error message. A meta-argument block, a misspelling, and an argument that is not a block all arrive as `Unsupported block type`.
 
 ---
 
