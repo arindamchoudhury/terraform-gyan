@@ -1052,7 +1052,7 @@ tflocal destroy -auto-approve
     Do not share a lab directory between the two tools. `.terraform.lock.hcl` is keyed by the fully-qualified provider address, so OpenTofu rejects Terraform's lock file with `Inconsistent dependency lock file`. Use a separate directory, or `tofu init -upgrade`.
 
 !!! warning "Emulation is not AWS"
-    A green `apply` here proves your **HCL, module wiring, and version resolution** are correct. It does not prove the configuration behaves identically on real AWS. One fidelity gap showed up while writing this lab: the emulator does not persist bucket tags, so a configuration with tagged buckets replans the same tag change forever. That is the emulator, not Terraform. Validate any load-bearing configuration against real free-tier AWS before trusting it.
+    A green `apply` here proves your **HCL, module wiring, and version resolution** are correct. It does not prove the configuration behaves identically on real AWS. One fidelity gap showed up while writing this lab, on the Floci 1.5.34 image it was captured against: the emulator dropped tags set at bucket creation, so a configuration with tagged buckets replanned the same tag change forever. That was the emulator, not Terraform, and it is fixed in the 1.6.0 image the compose file now pins (Chapter 11's Part D traces it). The lesson outlives the bug: when a plan will not converge on an emulator, suspect the emulator's coverage of that one attribute before suspecting Terraform, and validate any load-bearing configuration against real free-tier AWS.
 
 ---
 

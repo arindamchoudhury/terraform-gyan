@@ -6,7 +6,8 @@ See also [[ministack-facts]] and [[localstack-facts]] — all three share port 4
 below) and covers `iam:*`/`sts:*` actions that Robotocore cannot, so the book does not need it.
 
 _Last verified: 2026-07-09; IAM enforcement added 2026-07-12; floci-cli internals + health-path
-(`/_floci/health` native, `/_localstack/health` alias) verified 2026-07-15 (github.com/floci-io/floci-cli)._
+(`/_floci/health` native, `/_localstack/health` alias) verified 2026-07-15 (github.com/floci-io/floci-cli);
+image bumped to **1.6.0** and the S3 creation-tag fix verified on it 2026-08-09._
 
 ## What it is
 
@@ -22,7 +23,10 @@ AWS-Console-style local UI), `floci-cli`, and a Testcontainers module. **No auth
   compat **alias** — verified 2026-07-15 that both return **200** with an **identical** JSON body
   (`{"edition":"community","version":"1.5.31","original_edition":"floci-always-free","services":{…}}`).
 - **69 AWS services** (README, verified 2026-07-11) (S3, SQS, SNS, DynamoDB, Lambda, RDS, ECS, EKS, IAM, STS, events, APIs,
-  containers, databases, messaging, security, billing). 100% SDK compatibility claimed.
+  containers, databases, messaging, security, billing). 100% SDK compatibility claimed. The **1.6.0**
+  health endpoint lists **72**, all `running`: that release adds MWAA (backed by real Airflow with the
+  `LocalExecutor`), CloudWatch RUM, and a Bedrock proxy that forwards to an OpenAI-compatible API for
+  real LLM responses. None of the three is needed by a book lab.
 - **EC2 mock is usable — verified 2026-07-09.** Unlike LocalStack's free Community tier (where EC2
   is a shallow mock; see [[localstack-facts]]), Floci mocks EC2 deep enough that the full
   Terraform hello-world shape applies clean via `tflocal`: `data.aws_ami` (Canonical Ubuntu
@@ -91,7 +95,7 @@ docker-compose:
 ```yaml
 services:
   floci:
-    image: floci/floci:1.5.34        # pinned, not :latest — see the note below
+    image: floci/floci:1.6.0         # pinned, not :latest — see the note below
     ports:
       - "127.0.0.1:4566:4566"
     volumes:
@@ -227,13 +231,15 @@ control configuration before being recorded here.
 
 | Gap | Detail | Found in |
 |---|---|---|
-| **S3 bucket tags are dropped at create** — ❌ **diverges from AWS**, fixed upstream but **not yet released** (see below) | `aws_s3_bucket` with a `tags` map applies cleanly, but the tags never reach the object. State records `tags = {}` and **every subsequent plan proposes to add them again** — a perpetual diff. A control bucket with no `lifecycle` block behaves identically. Tags set afterwards through `put-bucket-tagging` **do** persist. Real AWS accepts these tags (citation below), so this is a genuine fidelity gap, not a provider quirk. Full mechanism below. Measured 2026-08-03, TF 1.15.8, AWS provider 6.57.1. | Book Ch 11 lab, Part D |
+| **S3 bucket tags dropped at create** — ✅ **fixed in 1.6.0**; ❌ diverged from AWS up to 1.5.34 (see below) | On **1.6.0 and later** an `aws_s3_bucket` with a `tags` map behaves as on AWS: state records the tags and the plan straight after apply is empty. Re-measured 2026-08-09 on the 1.6.0 image, TF 1.15.8, AWS provider 6.58.0. **Up to 1.5.34** the tags never reached the object: state recorded `tags = {}` and every subsequent plan proposed to add them again, a perpetual diff, with a control bucket carrying no `lifecycle` block behaving identically. Tags set afterwards through `put-bucket-tagging` always persisted. Full mechanism below. | Book Ch 11 lab, Part D |
 | **DynamoDB duplicate table names are refused** — ✅ **matches AWS** | Not a gap; recorded as *working* fidelity. `CreateTable` on an existing name returns `ResourceInUseException: Table already exists` with HTTP 400, which is what makes the `create_before_destroy` collision lab reproducible and what makes its lesson transfer to real AWS. Verified against the AWS API reference (citation below). Measured 2026-08-03. | Book Ch 11 lab, Parts C and C2 |
 
 ### The bucket-tag gap, traced end to end
 
-Worth writing out because the obvious guesses are all wrong, and because it shows which API the AWS
-provider actually uses for bucket tags.
+Fixed in **1.6.0**. Kept in full because the obvious guesses are all wrong, because it shows which API
+the AWS provider actually uses for bucket tags, and because anyone on an older pinned image still
+meets it. Everything in this subsection describes **1.5.34 and earlier**; the fix is recorded at the
+end.
 
 **What the provider sends.** AWS provider 6.57.1 does not call `PutBucketTagging` for an
 `aws_s3_bucket`. It puts the tags in the **`CreateBucket` request body**, from `TF_LOG=trace`:
@@ -280,26 +286,53 @@ same operation returns the tag, which is why out-of-band drift *is* visible to T
 implements `handlePutBucketTagging` and the S3 Control read; it just has no path from
 `CreateBucket` into the tag store.
 
-**Practical rule for labs:** do not use `aws_s3_bucket` `tags` as the thing a lab measures. Set tags
-through the tagging API, or use a resource type whose tags land.
+**Practical rule for labs, on 1.5.34 and earlier:** do not use `aws_s3_bucket` `tags` as the thing a
+lab measures. Set tags through the tagging API, or use a resource type whose tags land. The rule is
+retired on 1.6.0.
 
-#### Status: fixed upstream, unreleased as of 2026-08-05
+#### Status: shipped in 1.6.0 (2026-08-06), verified here
 
 [floci-io/floci#2115](https://github.com/floci-io/floci/pull/2115) parses the creation-time `<Tag>`
 pairs and routes them through the existing `s3Service.putBucketTagging`. It was **merged
 2026-08-05**, approved by the maintainer (`hectorvent`) after checking the wire shape against
 botocore's `service-2.json`, which declares `CreateBucketConfiguration.Tags` as a `TagSet` list with
-`locationName: Tag`. That is the shape traced above.
+`locationName: Tag`. That is the shape traced above. It shipped in release **1.6.0**, published
+2026-08-06, as the changelog line *"fix(s3): apply `CreateBucketConfiguration` tags on bucket
+creation (#2115)"*. `labs/docker-compose.yml` now pins `floci/floci:1.6.0`, and
+`/_floci/health` on that image reports `"version": "1.6.0"` with 72 services running.
 
-**No release contains it yet.** The latest release is **1.5.34** (2026-07-29), which is what
-`labs/docker-compose.yml` pins and what every measurement here was taken on. Everything above stays
-accurate for 1.5.34 and for any earlier image.
+**Verified on the released image, 2026-08-09.** Both halves of the trace above were re-run.
 
-**When a release ships with it, re-measure before editing anything.** The fix is merged, not
-verified here against a released image. What should change: state records the tag after the first
-apply, the plan straight after apply is empty, and `get-bucket-tagging` returns the tag. That would
-retire the practical rule above and remove the standing diff that Ch 11's Part D currently warns
-about.
+The write path, with the exact `CreateBucket` body the provider sends, and both read paths:
+
+```bash
+curl -s -X PUT http://localhost:4566/probe-bucket \
+  --data '<CreateBucketConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Tags><Tag><Key>owner</Key><Value>data-team</Value></Tag></Tags></CreateBucketConfiguration>'
+# HTTP 200
+
+curl -s "http://localhost:4566/probe-bucket?tagging"
+# <Tagging …><TagSet><Tag><Key>owner</Key><Value>data-team</Value></Tag></TagSet></Tagging>
+
+curl -s "http://localhost:4566/v20180820/tags/arn%3Aaws%3As3%3Aus-east-1%3A000000000000%3Abucket%2Fprobe-bucket" \
+     -H "x-amz-account-id: 000000000000"
+# <ListTagsForResourceResult …><Tags><Tag><Key>owner</Key><Value>data-team</Value></Tag></Tags></…>
+```
+
+`GetBucketTagging` and the S3 Control `ListTagsForResource` read the same store, so the operation the
+provider actually uses now finds the creation-time tags.
+
+End to end on Ch 11's `labs/chapter11/lab4` (Terraform 1.15.8, AWS provider 6.58.0):
+
+| Step | 1.5.34 | 1.6.0 |
+|---|---|---|
+| `plan` straight after `apply` | `~ tags` proposing `+ "owner" = "data-team"` | `No changes.` |
+| `state show` after `apply` | `tags = {}` | `"owner" = "data-team"` |
+| Out-of-band `put-bucket-tagging`, then `plan` | `~ "owner" = "platform-team" -> "data-team"` | same |
+| Same drift with `ignore_changes = [tags]`, then `apply` | `0 changed`, state keeps `platform-team` | same |
+| Forced replacement with the drift and `ignore_changes` in place | plan reverts to `data-team`; applied result unreliable | plan reverts, and state after apply reads `data-team` |
+
+The last row is the one the fix unlocks: the "creates honour the configured value" lesson is now
+observable on the emulator, not just in the plan text.
 
 Two related items the review surfaced, both still open:
 

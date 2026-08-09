@@ -2,6 +2,8 @@
 #
 #   tflocal init
 #   tflocal apply -auto-approve
+#   tflocal plan                        # empty on emulator 1.6.0+ (older images
+#                                       # dropped creation-time tags — see Ch11 Part D)
 #   # drift the tag outside Terraform:
 #   awslocal s3api put-bucket-tagging --bucket ch11-drift \
 #     --tagging 'TagSet=[{Key=owner,Value=platform-team}]'

@@ -220,7 +220,7 @@ Better than a one-off `docker run`: this book ships a ready `labs/docker-compose
 # labs/docker-compose.yml
 services:
   floci:
-    image: floci/floci:1.5.34        # swap: ministackorg/ministack | localstack/localstack:stable
+    image: floci/floci:1.6.0         # swap: ministackorg/ministack | localstack/localstack:stable
     container_name: floci-lab
     ports:
       - "127.0.0.1:4566:4566"
@@ -275,10 +275,10 @@ curl -s http://localhost:4566/_floci/health
 
 ```json
 {
-  "services": { "s3": "running", "dynamodb": "running", "iam": "running", "...": "70 of them" },
+  "services": { "s3": "running", "dynamodb": "running", "iam": "running", "...": "72 of them" },
   "edition": "community",
   "original_edition": "floci-always-free",
-  "version": "1.5.34"
+  "version": "1.6.0"
 }
 ```
 

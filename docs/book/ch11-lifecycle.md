@@ -1169,30 +1169,27 @@ Read the table's own block and there is nothing to find. Clean up with `tflocal 
 ```shell
 tflocal init
 tflocal apply -auto-approve
+tflocal plan                        # No changes.
+```
+
+Run that plan immediately after the apply, before drifting anything, and it is empty: state records `owner = "data-team"`, which is what the configuration asks for. So every line the drift step produces below is the drift, and nothing else.
+
+!!! info "On an emulator image older than 1.6.0, that first plan is not empty"
+    Up to and including Floci **1.5.34** the emulator dropped tags set at creation, and this lab started with a standing `+ "owner" = "data-team"` diff layered on top of everything below. Worth knowing, because a lab whose first plan is dirty reads like a Terraform bug when it is not one.
+
+    The cause was on the write path. AWS provider 6.57.1 does not call `PutBucketTagging` for an `aws_s3_bucket`; it sends the tags inside the **`CreateBucket` request body**, as `<CreateBucketConfiguration><Tags>…</Tags></CreateBucketConfiguration>`. `S3Controller.createBucket` parsed that body for `LocationConstraint` and nothing else, then called `S3Service.createBucket(bucketName, region)`, a method with no parameter for tags. The request succeeded, so nothing errored, and state recorded `tags = {}`. The emulator did have a bucket-tag store and a working `handlePutBucketTagging`; the create path simply had no wire into it, which is why tags set *afterwards* through `put-bucket-tagging` always persisted and the drift step always worked.
+
+    [floci-io/floci#2115](https://github.com/floci-io/floci/pull/2115) connected the creation-time tags to that existing store, and it shipped in **1.6.0** on 2026-08-06 as *"fix(s3): apply `CreateBucketConfiguration` tags on bucket creation"*. `labs/docker-compose.yml` pins 1.6.0. Verified on that image, on Terraform 1.15.8 with AWS provider 6.58.0, on 2026-08-09: the first plan after apply reports `No changes.`, and `terraform state show` reads `"owner" = "data-team"`. Full trace in [Floci Facts](../research-cache/floci-facts.md).
+
+    One detail from that trace is useful beyond the bug. The provider reads bucket tags back through the **S3 Control** `ListTagsForResource` operation, not `GetBucketTagging` — the latter appears zero times in the apply or plan trace. When bucket tags look wrong on any emulator, that is the operation to check.
+
+Now drift the tag out of band and plan again:
+
+```shell
 awslocal s3api put-bucket-tagging --bucket ch11-drift \
   --tagging 'TagSet=[{Key=owner,Value=platform-team}]'
 tflocal plan
 ```
-
-!!! warning "The emulator does not persist bucket tags set at creation"
-    Run `tflocal plan` immediately after that first apply, before touching anything, and it is **not** empty. Measured on the default Floci image with a control bucket that has no `lifecycle` block at all:
-
-    ```
-      # aws_s3_bucket.control will be updated in-place
-      ~ tags = {
-          + "owner" = "data-team"
-        }
-
-    Plan: 0 to add, 1 to change, 0 to destroy.
-    ```
-
-    The control behaves the same way, so this is the emulator and not `ignore_changes`. Traced to the source: AWS provider 6.57.1 sends bucket tags inside the **`CreateBucket` request body**, as `<CreateBucketConfiguration><Tags>…</Tags></CreateBucketConfiguration>`, and Floci's `S3Controller.createBucket` parses that body for `LocationConstraint` and nothing else, then calls `S3Service.createBucket(bucketName, region)` — a method with no parameter for tags (read at tag **1.5.33**, the running image). The emulator does have a bucket-tag store and a working `handlePutBucketTagging`; the create path just has no wire into it. The request succeeds, so nothing errors.
-
-    The read-back runs through the **S3 Control** `ListTagsForResource` operation rather than `GetBucketTagging`, and it returns an empty tag set, which is what puts `tags = {}` in state. Tags set afterwards through `put-bucket-tagging` **do** persist and the same read finds them, which is why the drift step works. Full trace in [Floci Facts](../research-cache/floci-facts.md).
-
-    The effect on this exercise: the standing diff you are about to suppress is partly the emulator's own, not purely the out-of-band change. Everything the rule does is still visible. On real AWS the starting state would read `data-team` rather than empty — AWS's `CreateBucket` reference documents the `Tags` array the provider is sending, so this is Floci's gap and not the provider's.
-
-    **This is being fixed.** [floci-io/floci#2115](https://github.com/floci-io/floci/pull/2115) wires the creation-time tags into the existing tag store, and was merged on 2026-08-05. No release carries it yet: the latest is 1.5.34, which is what `labs/docker-compose.yml` pins and what everything above was measured on. If you are running a later image and your first plan comes back empty, the fix has shipped and this warning no longer applies to you.
 
 ```
   # aws_s3_bucket.reports will be updated in-place
@@ -1222,7 +1219,7 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
     }
 ```
 
-The configuration still says `data-team`. State and reality say `platform-team`. Nothing is broken; the two are allowed to disagree now, and the standing diff from the warning above is gone with it. Clean up with `tflocal destroy -auto-approve` after restoring `main.tf`.
+The configuration still says `data-team`. State and reality say `platform-team`. Nothing is broken; the two are allowed to disagree now, and the plan is empty again with the drift left in place. Clean up with `tflocal destroy -auto-approve` after restoring `main.tf`.
 
 !!! note "`awslocal` is the wrapper; the long form works too"
     `awslocal <cmd>` is `aws --endpoint-url http://localhost:4566 <cmd>` with throwaway credentials preset. If you skipped the wrapper in Chapter 1, use the long form with `AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1` in the environment.
@@ -1259,12 +1256,12 @@ replace_triggered_by.
 Finish with `tflocal destroy -var revision=2 -auto-approve`.
 
 !!! warning "Emulation is not AWS"
-    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. Both of this lab's emulator-dependent behaviours were checked against the AWS API references, and they land on opposite sides:
+    A green apply here proves your HCL and your understanding of the workflow. It does not prove AWS fidelity. Both of this lab's emulator-dependent behaviours were checked against the AWS API references, and on the pinned 1.6.0 image both now match:
 
     - **Parts C and C2 transfer.** AWS's [CreateTable](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html) states that "table names must be unique within each Region" and lists "You attempted to recreate an existing table" under `ResourceInUseException`. The emulator returns the same exception with the same HTTP 400, so the collision you just triggered is the one real AWS would give you.
-    - **Part D does not, in one respect.** AWS's [CreateBucket](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) documents a `Tags` array inside `CreateBucketConfiguration` — "an array of tags that you can apply to the bucket that you're creating" — so on real AWS the provider's tags land at creation and the starting state reads `data-team`. Floci at 1.5.34 ignores that element, which is why the emulator starts empty. A merged fix is waiting on a release, as Part D notes.
+    - **Part D transfers as of emulator 1.6.0.** AWS's [CreateBucket](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html) documents a `Tags` array inside `CreateBucketConfiguration` — "an array of tags that you can apply to the bucket that you're creating" — so on real AWS the provider's tags land at creation and the starting state reads `data-team`. Floci ignored that element up to 1.5.34 and honours it from 1.6.0, which is the version the compose file pins. On an older image the starting state is empty instead, as Part D's note explains.
 
-    That is the shape of the risk in general. An emulator can be exact on the constraint your lab depends on and silently absent on the feature next to it, and only the API reference tells you which. Validate anything load-bearing against real free-tier AWS before trusting it.
+    The general risk has not gone away, and Part D is what it looks like. An emulator can be exact on the constraint your lab depends on and silently absent on the feature next to it; only the API reference tells you which, and only a pinned image tells you which build you are reading. Validate anything load-bearing against real free-tier AWS before trusting it.
 
 !!! note "If every provider suddenly fails to load"
     On a machine where security software intercepts loopback TLS, every Terraform command that loads a provider can fail with `Failed to load plugin schemas`. That is the plugin mTLS channel being intercepted, not a problem with the provider or the emulator. Exclude `terraform.exe` and `.terraform/providers/**` from the security product's *network/SSL inspection*. As a scoped fallback for one command, `TF_DISABLE_PLUGIN_TLS=1` works, but never set it persistently: it makes the Terraform-to-plugin channel plaintext for every provider, and credentials cross that channel.
@@ -1294,7 +1291,7 @@ Finish with `tflocal destroy -var revision=2 -auto-approve`.
 2. **Predict.** A plan shows `+/-` for a resource whose name is fixed by the configuration. Will the apply succeed? What determines the answer, and where would you check?
 3. **Apply.** Take Part B's configuration and add a third bucket that the *config* bucket depends on. Predict whether it acquires `create_before_destroy`, then check the state file. Explain the direction propagation travels.
 4. **Apply.** Reproduce Part C's collision, then fix it. Build the table's name from a `random_id` suffix — and notice the trap before you run it: a plain `random_id` keeps its value across applies, so the replacement asks for the *same* name and collides exactly as before. The suffix has to be regenerated by the same change that forces the replacement, which is what `random_id`'s `keepers` argument is for. Wire `keepers = { hash_key = var.hash_key }`, confirm the apply now succeeds, and say what became of the old table.
-5. **Apply.** Using Part D's bucket, drift the tag out of band and then force a replacement by changing the bucket name, with `ignore_changes = [tags]` still in place. Predict the plan first, then read the `tags` line in it and explain why the drifted value loses. Do not expect the applied result to match on the emulator — read Part D's warning and say which of the two you would trust.
+5. **Apply.** Using Part D's bucket, drift the tag out of band and then force a replacement by changing the bucket name, with `ignore_changes = [tags]` still in place. Predict the plan first, then read the `tags` line in it and explain why the drifted value loses. Check the applied result too: `terraform state show` should come back with the *configured* value, not the drifted one.
 6. **Extend.** Build the two-tool comparison from section 8 for real: one configuration with `prevent_destroy = var.protect`, validated under both `terraform` and `tofu`. Then convert it to a form that works on both tools, and say what you gave up.
 
 ---
