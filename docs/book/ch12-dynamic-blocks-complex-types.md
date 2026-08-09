@@ -499,7 +499,7 @@ Measured on **1.15.8**, passing an explicit `null` to all three:
 This is why the docs can promise something about `optional()` that they cannot promise about a variable default. HashiCorp's Type Constraints page puts it as a guarantee: an optional attribute with a non-null default *"is guaranteed to never have the value null within the receiving module."* Your code does not need a null check on it. That is a real simplification, and it comes from the substitution happening in both cases rather than one.
 
 !!! note "The corollary, which is easy to miss"
-    `optional(string)` **without** a default has no such guarantee. It is `null` whenever the caller omits it. Only the two-argument form buys you the never-null promise.
+    `optional(string)` **without** a default has no such guarantee. It is `null` when the caller omits it, and still `null` when the caller passes `null` explicitly, since there is no default to substitute in either case. Only the two-argument form buys you the never-null promise.
 
 ### Defaults apply top-down
 
