@@ -177,7 +177,7 @@ So the repetition has to come from something that operates on blocks rather than
 
 The two answers are **type constraints** and **`dynamic` blocks**. They are usually taught apart. They belong together, because a good module uses the first to describe what the second will iterate over.
 
-Only the first is tied to a module boundary. A module is simply where both pressures happen to show up at once, which is why the chapter is framed around one. §4 returns to this with a root configuration that has no caller and still cannot be written without a `dynamic` block.
+Only the first is tied to a module boundary. A module is simply where both pressures happen to show up at once, which is why the chapter is framed around one. §4 returns to this with a root configuration that has no caller and still has to generate its blocks.
 
 ---
 
