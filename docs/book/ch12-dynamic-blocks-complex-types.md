@@ -397,6 +397,41 @@ variable "ingress_rules" {
 
 Every element is checked. A caller who forgets `port` gets an error naming the attribute. A caller who passes `port = "443"` gets it converted to a number. A caller who passes nothing else gets three defaults.
 
+What no constraint checks is how many elements arrive. That variable accepts zero rules as readily as fifty. No collection constructor takes a count, and the only type that fixes one is `tuple`, which does it by pinning every position's type as well. The `tup` example earlier in this section is that rejection, and its "tuple required" is all the caller gets. For a rule list you want a count rule and a message, which means a `validation` block:
+
+```hcl
+variable "ingress_rules" {
+  type    = list(object({ port = number }))
+  default = []
+
+  validation {
+    condition     = length(var.ingress_rules) > 0
+    error_message = "ingress_rules must contain at least one rule."
+  }
+}
+```
+
+Chapter 6 introduced `validation` for a value's content. Used on `length()` it covers the arity the type system cannot express: a minimum, a maximum, or a range. It also fires in a different phase from everything else in this section, which is worth knowing before you rely on it. A type constraint that its own default cannot satisfy is caught by `terraform validate`, as the `tup` transcript above shows. A `validation` block on that same default is not. Measured on **1.15.8**:
+
+```text
+$ terraform validate
+Success! The configuration is valid.
+
+$ terraform plan
+Error: Invalid value for variable
+
+  on main.tf line 1:
+   1: variable "ingress_rules" {
+    ├────────────────
+    │ var.ingress_rules is empty list of object
+
+ingress_rules must contain at least one rule.
+
+This was checked by the validation rule at main.tf:5,3-13.
+```
+
+An empty default sitting three lines above the rule that forbids it, and `validate` still passes. This is the same lesson as the `list(any)` error in the previous subsection, from the other direction: `validate` checks what it can see statically, and a great deal of what a module promises its callers is not that.
+
 !!! warning "`list(any)` unifies, it does not mix"
     `any` in an element slot does not mean "each element can be whatever it likes". Terraform must still find **one** element type, so it looks for a type every element converts to.
 
