@@ -380,7 +380,7 @@ The pair that gets confused is `map` and `object`, because both are keyed by str
 
 Sets have a similar catch on the way through a constraint. Converting a list or tuple to a `set` discards duplicates and loses ordering. A `set` constraint on a module input therefore throws away the caller's ordering permanently. Use `list` when order carries meaning, such as a sequence of rules evaluated top to bottom.
 
-Converting back out of a set gives an order you did not choose. For a set **of strings** that order is lexicographical, which is at least predictable. For a set of anything else there is no rule you can rely on, and that is the case you will actually meet, because many provider schemas declare a repeated nested block as a set of objects. The lab declares its rules as 443, 80, 5432 and the plan renders them 80, 443, 5432 — not lexicographical, not the input order, just the provider's. Part A shows the transcript.
+Converting back out of a set gives an order you did not choose. For a set **of strings** that order is lexicographical, which is at least predictable. For a set of anything else there is no rule you can rely on, and that is the case you will actually meet, because many provider schemas declare a repeated nested block as a set of objects. Part A of this chapter's lab declares its rules as 443, 80, 5432 and the plan renders them 80, 443, 5432. Not lexicographical, not the input order, just the provider's.
 
 For module inputs the practical rule is short. Use `object` inside a `list` or `map` whenever an element has more than one field. That is the shape this entire chapter runs on:
 
