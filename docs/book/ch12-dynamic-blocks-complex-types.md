@@ -675,7 +675,7 @@ resource "aws_security_group" "db" {
 
 One ingress rule per private subnet. The `dynamic` block is not a convenience here. Hand-written `ingress` blocks cannot express this at all, and no caller is involved. The subnet count is not written anywhere in the file. It is whatever the account and region return when the data source reads them at plan time, and it changes when somebody adds a subnet.
 
-That is the actual trigger. Writing a module is not what forces you to reach for a `dynamic` block. A block count that does not exist yet is. If you cannot write down how many copies you need at the moment you write the file, something has to produce them for you. Whether that something is a `dynamic` block or a separate resource with `for_each` is a second question, and §8 answers it.
+That is the actual trigger. Writing a module is not what forces you to reach for a `dynamic` block. A count that does not exist yet is. If you cannot write down how many copies you need at the moment you write the file, something has to produce them for you. Whether that something is a `dynamic` block or a separate resource with `for_each` is a second question, and §8 answers it.
 
 Contrast a hardcoded `local` holding three rules. A `dynamic` block over it works and reads better than three pasted blocks, but you could count those rules by hand and type them out. There, `dynamic` is a convenience. The data source above admits no such alternative.
 
