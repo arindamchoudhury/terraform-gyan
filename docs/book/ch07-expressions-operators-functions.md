@@ -1254,6 +1254,109 @@ The reshape itself, in the console — a list indexed by position becomes a map 
 !!! warning "Why not just `for_each = toset(var.buckets)` or a `count`?"
     Because both make deletion dangerous. A `count` over the list addresses instances by **position**, so removing the middle element reindexes every later one and Terraform destroys and recreates resources that didn't change (Ch 5 §5.7, Ch 10). Keying by a **stable string** via the `for`-built map means removing one entry touches only that one resource. This is the whole reason the milestone insists on a *keyed map*, not a list. The `for_each` mechanics themselves are Ch 10.
 
+### One level deeper: `flatten` and `setproduct`
+
+The milestone reshapes a flat list. Two shapes defeat it, and each has one function that rescues it.
+
+**Nesting.** A `for` expression inside another `for` expression produces a list *of lists*, and `for_each` wants one element per instance, not one list per group. [`flatten`](https://developer.hashicorp.com/terraform/language/functions/flatten) replaces every nested list element with a flat sequence, recursively:
+
+```
+> flatten([["a", "b"], ["c"], []])
+[
+  "a",
+  "b",
+  "c",
+]
+> flatten([[["deep"]]])
+[
+  "deep",
+]
+> flatten(["a", ["b"]])
+[
+  "a",
+  "b",
+]
+```
+
+Note the second and third calls. It descends all the way down rather than one level, and it does not mind unwrapped elements sitting beside wrapped ones.
+
+That makes the group-and-members shape workable. A map of groups, each holding a list, becomes one element per (group, member) pair:
+
+```hcl
+locals {
+  groups = {
+    web = [80, 443]
+    db  = [5432]
+  }
+
+  pairs = flatten([
+    for group, ports in local.groups : [
+      for port in ports : {
+        group = group
+        port  = port
+      }
+    ]
+  ])
+
+  by_key = { for p in local.pairs : "${p.group}-${p.port}" => p }
+}
+```
+
+```
+> local.pairs
+[
+  {
+    "group" = "db"
+    "port" = 5432
+  },
+  {
+    "group" = "web"
+    "port" = 80
+  },
+  {
+    "group" = "web"
+    "port" = 443
+  },
+]
+> keys(local.by_key)
+[
+  "db-5432",
+  "web-443",
+  "web-80",
+]
+```
+
+`db` comes first because iterating a map visits keys in sorted order, and `web-443` precedes `web-80` because those are strings. Neither ordering matters once `by_key` exists, which is the point of building it: the second step is the milestone's own reshape, applied to the flattened list, and it is what makes each pair independently addressable.
+
+**Combinations.** When the elements come from two independent collections rather than a nesting, [`setproduct`](https://developer.hashicorp.com/terraform/language/functions/setproduct) builds every pairing — the Cartesian product:
+
+```hcl
+locals {
+  envs = setproduct(["dev", "prod"], ["us-east-1", "eu-west-1"])
+}
+```
+
+```
+> [for p in local.envs : "${p[0]}-${p[1]}"]
+[
+  "dev-us-east-1",
+  "dev-eu-west-1",
+  "prod-us-east-1",
+  "prod-eu-west-1",
+]
+```
+
+Each element is a **tuple**, one entry per argument collection, in argument order. So you index it positionally, `p[0]` and `p[1]`, rather than by name. Two arguments is the minimum; one is an error:
+
+```
+Call to function "setproduct" failed: at least two arguments are required.
+```
+
+!!! tip "Which one you need is a question about the input, not the output"
+    Both end at the same place, a flat collection ready to key. Reach for `flatten` when the pairing is **already in your data** and merely nested, so the inner loop reads a member list belonging to its group. Reach for `setproduct` when the pairing does **not exist yet** and every combination is wanted, so neither collection knows about the other. Building a nested `for` in order to flatten a product you could have asked `setproduct` for is the common way to write this twice as long.
+
+Chapter 10 is where the keyed map this produces meets `for_each` and becomes resource instances. Chapter 12 §5 points the same two functions at a `dynamic` block's `for_each` instead, which is this reshape aimed at blocks rather than instances.
+
 ---
 
 ## 🧪 Lab: reshape a list into a keyed map and provision from it

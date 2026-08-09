@@ -861,7 +861,7 @@ Nothing collides in that snippet even though three things are called `logging`. 
 !!! tip "Shaping `for_each` before it reaches the block"
     `for_each` accepts any collection or structural value, so a `for` expression or a splat can reshape a collection on the way in. When the blocks come from a nested structure or from combinations across several structures, derive the flat collection first.
 
-    `flatten` collapses nesting into one list. `setproduct` builds every combination of two collections. Both are the standard answer to "I have a map of groups each holding a list, and I need one block per (group, item) pair". Section 6 shows the alternative, which is to nest the dynamic blocks instead.
+    `flatten` collapses nesting into one list, and it is the answer to "I have a map of groups each holding a list, and I need one block per (group, item) pair". `setproduct` builds every combination of two collections, for when the pairing does not exist in the input yet. Chapter 7 §8 works both through, including why `setproduct`'s elements are indexed `p[0]`/`p[1]` rather than by name. Section 6 shows the alternative, which is to nest the dynamic blocks instead.
 
 !!! info "OpenTofu — provider-defined functions in `for_each` needed 1.12"
     If the expression feeding `for_each` calls a **provider-defined** function, OpenTofu rejected it before **1.12.0**. The fix is listed under that release's bug fixes: *"`for_each` arguments in `dynamic` blocks can now call provider-defined functions."* ([opentofu#3429](https://github.com/opentofu/opentofu/issues/3429))
