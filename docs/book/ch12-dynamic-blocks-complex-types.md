@@ -838,6 +838,11 @@ dynamic "logging" {
 
 That reads better than `var.logging == null ? [] : [var.logging]` and means the same thing. It is the idiom to reach for when the variable is a nullable object.
 
+Nothing collides in that snippet even though three things are called `logging`. The `dynamic` label names the block type, the iterator takes its name from the label, and `var.logging` is a variable — a different namespace, reached through the `var.` prefix. Bare `logging.value` inside `content` is always the iterator.
+
+!!! note "The `logging` block itself is on its way out"
+    The idiom is current; the block used to illustrate it is not. On `aws_s3_bucket` with AWS provider 6.58.0 a `logging` block still validates, with `logging is deprecated. Use the aws_s3_bucket_logging resource instead.` That replacement takes `target_bucket` as a plain argument rather than a nested block, so there is nothing left for a `dynamic` block to generate: the "optional or absent" decision moves up to whether the resource is declared at all, which is `count` or `for_each` on the resource. Section 8's "The case where the provider moved on" is the general version of this: the same migration away from inline blocks that took the security group's `ingress` also takes the bucket's `logging`. Read the example for its shape, and expect to apply it to a provider that still models the optional thing as a block.
+
 !!! tip "Shaping `for_each` before it reaches the block"
     `for_each` accepts any collection or structural value, so a `for` expression or a splat can reshape a collection on the way in. When the blocks come from a nested structure or from combinations across several structures, derive the flat collection first.
 
