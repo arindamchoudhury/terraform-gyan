@@ -632,7 +632,18 @@ flowchart LR
 | **`iterator`** | no | Renames the temporary variable. Defaults to the label. |
 | **`labels`** | no | A list of strings giving the generated blocks' own labels, in order. |
 
-`dynamic` is supported inside `resource`, `data`, `provider`, and `provisioner` blocks.
+`dynamic` is supported inside `resource`, `data`, `provider`, and `provisioner` blocks, and nowhere else. It is not a top-level construct like `resource` or `variable`. It is a block the enclosing block's schema has to expect, which means a `dynamic` block written at the top level of a file is rejected before anything inside it is considered — not for the label, the `for_each`, or the `content`, but for being where it is:
+
+```
+Error: Unsupported block type
+
+  on bare.tf line 6:
+   6: dynamic "logging" {
+
+Blocks of type "dynamic" are not expected here.
+```
+
+That is the same error §7 gets for generating an unsupported block type, and it is worth recognising in both places. From here on, any snippet in this chapter that opens with `dynamic "..."` at the left margin is an **excerpt from inside one of those four containers**, shown without its enclosing block to keep the point in view. None of them applies on its own.
 
 ### It is not a module feature
 
@@ -828,10 +839,14 @@ variable "logging" {
   default = null
 }
 
-dynamic "logging" {
-  for_each = var.logging[*]         # [] when null, [obj] when set
-  content {
-    target_bucket = logging.value.target_bucket
+resource "aws_s3_bucket" "reports" {
+  bucket = "reports"
+
+  dynamic "logging" {
+    for_each = var.logging[*]       # [] when null, [obj] when set
+    content {
+      target_bucket = logging.value.target_bucket
+    }
   }
 }
 ```
