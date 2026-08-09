@@ -804,6 +804,20 @@ dynamic "ingress" {
 
 Only the length matters. An empty collection generates no block at all, which is different from generating an empty one.
 
+"Anything" is meant literally, and it is worth seeing how far it goes, because the same values are errors one meta-argument over. Measured on Terraform 1.15.8 with AWS provider 6.58.0 against `labs/chapter12/lab5`, swapping only the `for_each` expression:
+
+| `for_each` | dynamic block | the same value on a resource's `for_each` |
+|---|---|---|
+| `[null]` | one block | `Invalid for_each set argument` — *"`for_each` sets must not contain null values"* |
+| `[sensitive(1)]` | one block | `Invalid for_each argument` — *"Sensitive values, or values derived from sensitive values, cannot be used as `for_each` arguments"* |
+| `[aws_s3_bucket.b.id]` (unknown element, known length) | one block | `Invalid for_each argument` — *"known only after apply"* |
+| `split(",", aws_s3_bucket.b.id)` (unknown length) | plan renders `+ rule (known after apply)` | same error |
+
+The asymmetry has a reason, and it is the same reason that runs through Chapter 10. A resource's `for_each` value **becomes part of the instance address** — `aws_s3_bucket.r["a"]` — so Terraform has to know it before apply, has to be able to print it, and cannot let it be `null`. HashiCorp's [for_each](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) page states the consequence under Limitations on values: *"Terraform uses the value in `for_each` to identify the resource instance and always discloses it in UI output."* A dynamic block's `for_each` names nothing. It decides how many copies of one argument block to emit, and the last row is what that costs when even the count is unknown: Terraform defers the whole set of blocks rather than failing.
+
+!!! tip "Which literal to use for the toggle"
+    Since the value is free, pick one that says *toggle* to the next reader. `[1]` is the common idiom and reads as "one of these". Avoid `[true]`, which invites the misreading that Terraform is interpreting the boolean, and avoid `[var.something]`, which invites the misreading that the value reaches the block body.
+
 **The splat.** When the block should appear exactly when an optional input was supplied, splat does the null check for you. Chapter 7 §8 introduced the behavior: `[*]` on a non-list wraps it in a one-element tuple, and on `null` it yields an **empty** tuple.
 
 ```hcl
@@ -1337,6 +1351,66 @@ mod-optional\main.tf:3,1-15: attribute "enabled_https" is required.
 ```
 
 One word of difference in the module's declaration, and the same typo goes from shipped to rejected by name. Restore the file with `git checkout mod-optional/main.tf` when you are done.
+
+### Part E — how little the toggle's value matters
+
+`labs/chapter12/lab5` is one bucket and one `aws_s3_bucket_lifecycle_configuration` whose single `rule` block comes from a `dynamic` block. Each probe is a one-line edit to `for_each`, then a plan. This is where section 5's table was measured.
+
+```shell
+cd labs/chapter12/lab5
+tflocal init
+tflocal plan                          # for_each = [1]
+```
+
+Change the line to `[null]`, then to `[sensitive(1)]`, then to `[aws_s3_bucket.b.id]`. All three plan clean and all three generate exactly one block:
+
+```
+      + rule {
+```
+
+Now take the length away as well, with `for_each = split(",", aws_s3_bucket.b.id)`. Still no error, but the plan can no longer show you the block:
+
+```
+  + resource "aws_s3_bucket_lifecycle_configuration" "l" {
+      + bucket                                 = (known after apply)
+      + id                                     = (known after apply)
+
+      + rule (known after apply)
+    }
+```
+
+Then hand the same three values to a resource's `for_each` and watch every one of them fail:
+
+```shell
+cp contrast.tf.resource contrast.tf
+tflocal plan
+```
+
+```
+Error: Invalid for_each argument
+
+  on contrast.tf line 6, in resource "aws_s3_bucket" "r":
+   6:   for_each = toset([aws_s3_bucket.b.id]) # known only after apply
+    ├────────────────
+    │ aws_s3_bucket.b.id is a string, known only after apply
+```
+
+Swap the comment marker to the next line for the sensitive case:
+
+```
+Sensitive values, or values derived from sensitive values, cannot be used as
+for_each arguments. If used, the sensitive value could be exposed as a
+resource instance key.
+```
+
+And to the third for the null one, which fails under a differently-named error, `Invalid for_each set argument`:
+
+```
+The given "for_each" argument value is unsuitable: "for_each" sets must not
+contain null values.
+```
+
+Three values, three refusals, all of them accepted a few lines up in the same file. Clean up with `rm contrast.tf` and `tflocal destroy -auto-approve`.
 
 !!! warning "Emulation is not AWS"
     A green `apply` here proves your **HCL, expressions, and workflow** are correct. It does not prove the configuration behaves identically on real AWS. The emulator mocks the API surface, not every semantic, and the EC2 surface Part A uses is mocked more shallowly than S3. Validate any load-bearing configuration against real free-tier AWS before trusting it.
