@@ -15,10 +15,11 @@
 #                                                  #    -> + rule (known after apply)
 #   for_each = {}                                  # -> no rule block at all
 #
+# Every probe is answered by `plan`. Nothing here is ever applied, so there is
+# nothing to destroy afterwards.
+#
 # The count of elements is the whole story, and null is not a special case:
 #   null -> 0 blocks, [] -> 0, [null] -> 1, [null, null] -> 2.
-#
-#   tflocal destroy -auto-approve
 #
 # The contrast is in contrast.tf.resource: the same three values are hard errors
 # on a *resource's* for_each, because those values become instance addresses.

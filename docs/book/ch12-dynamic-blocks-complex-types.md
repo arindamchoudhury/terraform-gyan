@@ -1041,9 +1041,9 @@ Inline blocks are still supported, so existing modules are not broken. But the l
 
 ## 🧪 Lab: drive nested blocks from a typed variable
 
-You will build the milestone module, nest a `dynamic` block inside another, and then watch Terraform refuse to generate the two block types it reserves for itself. The last part needs no provider at all.
+Five parts. You will build the milestone module (A), nest a `dynamic` block inside another (B), watch Terraform refuse to generate the block types it reserves for itself (C), see what a type constraint quietly did to the input on its way in (D), and find out how little the toggle's element value matters (E). **Parts C and D need no provider and no emulator** — they run on `terraform_data`, which is built into the CLI, so they work even if the container will not start.
 
-Everything runs against the free local **AWS emulator** from [Chapter 1's lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker).
+Parts A, B and E run against the free local **AWS emulator** from [Chapter 1's lab setup](ch01-iac-fundamentals.md#lab-setup-a-free-local-aws-docker), and only A and B create anything: E is plans all the way down.
 
 **Start the emulator** (from the repo root; skip if already running):
 
@@ -1052,7 +1052,7 @@ docker compose -f labs/docker-compose.yml up -d      # start the emulator on :45
 curl -s http://localhost:4566/_floci/health          # wait until the services read "running"
 ```
 
-Every transcript below was captured on **Terraform 1.15.8** with **AWS provider 6.58.0** against Floci. Long outputs are trimmed to the lines that carry the point, and nothing is paraphrased.
+Every transcript below was captured on **Terraform 1.15.8** with **AWS provider 6.58.0**, against the Floci image `labs/docker-compose.yml` pins. Long outputs are trimmed to the lines that carry the point, and nothing is paraphrased.
 
 !!! info "OpenTofu — Parts A and B were re-run and match"
     Both parts were run again under **OpenTofu 1.12.4** (AWS provider 6.57.1, which is what `~> 6.0` resolves to on OpenTofu's registry). Every result in this section reproduced: the same three generated blocks with the same `optional()` defaults, the same reordering through the provider set, the same sorted-key order from the map, and the same 55-second create. There is no divergence to report for block generation, so read the transcripts as applying to both tools.
@@ -1447,7 +1447,7 @@ The given "for_each" argument value is unsuitable: "for_each" sets must not
 contain null values.
 ```
 
-Three values, three refusals, all of them accepted a few lines up in the same file. Clean up with `rm contrast.tf` and `tflocal destroy -auto-approve`.
+Three values, three refusals, all of them accepted a few lines up in the same file. Clean up with `rm contrast.tf`. This part never applies anything, so there is nothing to destroy — every probe is answered by `plan`, which is the cheapest place to ask a question about generation.
 
 !!! warning "Emulation is not AWS"
     A green `apply` here proves your **HCL, expressions, and workflow** are correct. It does not prove the configuration behaves identically on real AWS. The emulator mocks the API surface, not every semantic, and the EC2 surface Part A uses is mocked more shallowly than S3. Validate any load-bearing configuration against real free-tier AWS before trusting it.
