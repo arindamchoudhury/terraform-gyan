@@ -199,7 +199,9 @@ Anywhere else, `string` and `list(string)` are not meaningful expressions.
 
 HashiCorp's [Type Constraints](https://developer.hashicorp.com/terraform/language/expressions/type-constraints) page splits the syntax in two. A **type keyword** is a bare unquoted symbol naming one static type: `string`, `bool`, `number`, `any`. A **type constructor** is a symbol followed by parentheses carrying an argument: `list(string)`, `object({ name = string })`.
 
-The distinction matters when the parentheses are missing. A constructor without its argument represents a *kind* of similar types rather than one type. Writing `type = list` is legal and means `list(any)`, which is almost never what you meant. Write the element type.
+The distinction matters when the parentheses are missing. Two constructors tolerate that. `list` is shorthand for `list(any)` and `map` for `map(any)`, both kept for compatibility with configurations written before Terraform 0.12. `any` is not a type. It is a placeholder for a type yet to be decided, so `list(any)` accepts any element type as long as every element is the same type. That is almost never what you meant. Write the element type.
+
+`set`, `object`, and `tuple` have no shorthand. Dropping the argument is an error: `The set type constructor requires one argument specifying the element type.`
 
 ### What a constraint actually does
 
