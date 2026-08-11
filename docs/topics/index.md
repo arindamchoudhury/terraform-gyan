@@ -5,7 +5,7 @@ Cross-source notes synthesizing multiple sources on the same topic.
 ## Active topic pages
 <!-- Topic pages with ≥2 sources -->
 
-- [IaC fundamentals](iac-fundamentals.md) — [[terraform-intro]], TID Ch1
+- [IaC fundamentals](iac-fundamentals.md) — [[terraform-intro]], TID Ch1, TUR Ch1
 - [Core workflow (Write/Plan/Apply)](core-workflow.md) — [[terraform-intro]], TID Ch1
 - [Providers](providers.md) — [[terraform-intro]], TID Ch1 + Ch2
 - [Modules](modules.md) — [[terraform-intro]], TID Ch2 §2.8 + Ch3, [[tf-aws-manage]]

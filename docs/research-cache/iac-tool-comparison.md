@@ -1,6 +1,24 @@
 # IaC/config-mgmt tool comparison — verified facts
 
-**Checked:** 2026-07-03 (Libcloud added 2026-07-04)
+**Checked:** 2026-07-03 (Libcloud added 2026-07-04; landscape-since-2022 section added 2026-08-11)
+
+## What changed in the landscape since TUR Ch1 (June 2022)
+
+Verified 2026-08-11 while writing the TUR Ch1 note, whose comparison tables are all dated June 2022.
+
+| Fact | Verified value | Source |
+|---|---|---|
+| HashiCorp relicensing | MPL 2.0 → **BUSL 1.1 on 2023-08-10**, across Terraform, Vault, Consul, Boundary, Nomad, Waypoint, **Packer**, Vagrant. Terraform effective from 1.6. | [HashiCorp announcement](https://www.globenewswire.com/news-release/2023/08/10/2723189/0/en/HashiCorp-adopts-the-Business-Source-License-for-future-releases-of-its-products.html), [InfoQ](https://www.infoq.com/news/2023/08/hashicorp-adopts-bsl/) |
+| OpenTF → OpenTofu | Manifesto 2023-08-15; fork announced 2023-08-25; now a Linux Foundation project under MPL 2.0. | same |
+| Terraform Cloud rename | **HCP Terraform as of 2024-04-22**; functionality unchanged, `app.terraform.io` sources still valid. | [HCP Terraform docs](https://developer.hashicorp.com/terraform/cloud-docs) |
+| Chef ownership | Acquired by **Progress Software, September 2020**. | [Progress press release](https://www.globenewswire.com/de/news-release/2020/09/08/2089870/0/en/Progress-Announces-Acquisition-of-Chef.html) |
+| Puppet ownership | Acquired by **Perforce, 2022**. Nov 2024: new binaries/packages move to a private controlled location, commercial licence beyond 25 nodes. | [The New Stack](https://thenewstack.io/openvox-the-community-driven-fork-of-puppet-has-arrived/) |
+| Puppet community fork | **OpenVox**, first release **2025-01-21** by Vox Pupuli; Perforce refused use of the Puppet name. Soft fork, aims to stay downstream-compatible. | [InfoWorld](https://www.infoworld.com/article/3809889/puppet-open-source-fork-openvox-arrives.html) |
+| Ansible ownership | Red Hat acquired Ansible 2015; IBM acquired Red Hat 2019. With the HashiCorp deal closing 2025-02-27, **Terraform and Ansible share an owner (IBM)**. | [Red Hat](https://www.redhat.com/en/ibm), [[version-facts]] |
+| CoreOS rkt | **CNCF archived 2019-08-16** (adoption moved to containerd/CRI-O); GitHub repo archived 2020-02-24. | [CNCF](https://www.cncf.io/blog/2019/08/16/cncf-archives-the-rkt-project/) |
+| Apache Mesos | Nearly retired April 2021; **retired August 2025**, Attic move completed October 2025. | [Apache Attic](https://attic.apache.org/projects/mesos.html) |
+| Pulumi DIY state locking | No longer paid-only: *"A basic file-based locking system is enabled by default for all DIY backends."* | [Pulumi — Using a DIY Backend](https://www.pulumi.com/docs/iac/operations/stack-management/using-a-diy-backend/) |
+| Pulumi DIY checkpointing | Still limited: DIY backends keep history in `.pulumi/history/` but *"cannot transparently recover from certain kinds of partial failures"* because blob storage protocols are non-transactional. | [Pulumi — State and Backends](https://www.pulumi.com/docs/iac/concepts/state-and-backends/) |
 
 ## Terraform vs Ansible
 

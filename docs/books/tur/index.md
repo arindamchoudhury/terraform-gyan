@@ -9,7 +9,7 @@ The second book on this site, alongside [Terraform in Depth](../tid/index.md). T
 
 | Status | Chapter | Topic page(s) |
 | ------ | ------- | ------------- |
-| ⬜ todo | 1. Why Terraform | — |
+| ✅ done | 1. Why Terraform | [IaC fundamentals](../../topics/iac-fundamentals.md) |
 | ⬜ todo | 2. Getting Started with Terraform | — |
 | ⬜ todo | 3. How to Manage Terraform State | — |
 | ✅ done | 4. How to Create Reusable Infrastructure with Terraform Modules | [Modules](../../topics/modules.md) |
