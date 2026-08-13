@@ -15,6 +15,14 @@ arrived later) are marked. Companion to the
     OpenTofu too. This page covers what OpenTofu added **after** the fork.
     Current stable: **1.12.4** (1.12.0 released 2026-05-14).
 
+!!! note "Want the exhaustive version?"
+    This page lists the *headline* feature per release. For every feature,
+    enhancement, and patch-release change from `1.6` through the unreleased
+    `1.13`, derived directly from each version branch's `CHANGELOG.md`, see the
+    [OpenTofu Release Feature Map](opentofu-release-feature-map.md). It also
+    traces how single capabilities (state encryption, targeting, testing,
+    installation) were widened release by release.
+
 ---
 
 ## Chronological timeline

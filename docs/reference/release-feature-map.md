@@ -16,7 +16,10 @@ or documentation. Where a feature landed in a *patch* release rather than the
 
     For the condensed "what should I actually use" view, see
     [Terraform Feature History](feature-history.md). For the fork's timeline,
-    see [OpenTofu Feature History](opentofu-feature-history.md).
+    see [OpenTofu Feature History](opentofu-feature-history.md) and its
+    changelog-derived counterpart,
+    [OpenTofu Release Feature Map](opentofu-release-feature-map.md), which
+    picks up at the 1.5.x fork point.
 
     Verified 2026-08-13 against the version branches at that date. Terraform
     1.15.8 is the newest stable release; 1.16.0-rc1 (August 12, 2026) is a

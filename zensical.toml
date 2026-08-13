@@ -249,6 +249,7 @@ nav = [
         { "Feature history" = "reference/feature-history.md" },
         { "OpenTofu feature history" = "reference/opentofu-feature-history.md" },
         { "Release feature map" = "reference/release-feature-map.md" },
+        { "OpenTofu release feature map" = "reference/opentofu-release-feature-map.md" },
         { "Glossary" = "reference/glossary.md" },
         { "Resources" = "reference/resources.md" },
     ]},
