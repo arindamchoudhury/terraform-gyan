@@ -34,6 +34,14 @@ a *patch* release are called out, since those are easy to miss.
     Support windows stated in the changelogs: 1.11.x until **2026-08-01**,
     1.12.x until **2027-02-01**, 1.13.x until **2027-08-01**.
 
+    **Release dates here are git tag dates**, because OpenTofu's changelog
+    headings carry no dates (unlike Terraform's, where the date is in the
+    heading and is what the Terraform page quotes). A tag can precede the
+    announcement by a day: 1.10.0 is tagged 2025-06-24 and the release blog is
+    dated 2025-06-23. Treat these as accurate to the day, not the hour, and do
+    not compare an OpenTofu tag date against a Terraform changelog date when a
+    difference of one day would change the conclusion.
+
     For the condensed view and the Terraform comparison, see
     [OpenTofu Feature History](opentofu-feature-history.md).
 
@@ -72,7 +80,7 @@ no changelog.
 |---|---|
 | 1.7 | **`removed` block** for dropping resources or modules from state without destroying them. **Provider-defined functions** via `provider::<name>::<fn>()`. |
 | 1.8 | **Variables and locals in module sources and backend configurations** (with limitations), the "early evaluation" work. **`.tofu` file extension** for OpenTofu-specific overrides of `.tf` files. |
-| 1.9 | **`for_each` on `provider` blocks**, so one aliased provider configuration can have many dynamically-chosen instances and each resource instance can select among them. Variable `validation` conditions can reference vars, data, and other objects. |
+| 1.9 | **`for_each` on `provider` blocks**, so one aliased provider configuration can have many dynamically-chosen instances and each resource instance can select among them. The trap, stated in OpenTofu's own error text rather than in the changelog: do not drive a resource's `for_each` and its provider's `for_each` from the same collection, because removing one element then destroys the resource instance and the provider instance needed to destroy it in the same plan. The provider's collection has to be able to outlive the resource's. Variable `validation` conditions can reference vars, data, and other objects. |
 | 1.10 | **`deprecated` on input variables and output values**, warning at the call site. **Short-circuiting `&&` and `\|\|`**. `element` accepts negative indices. `moved` supports cross-type moves with automatic state migration. `removed` blocks can carry `lifecycle` and `provisioner` configuration. `module` `version` accepts `null`. |
 | 1.11 | **Ephemeral values**: ephemeral input variables, output values, ephemeral resource types, and write-only attributes. **`enabled` meta-argument** in the `lifecycle` block, as a zero-or-one alternative to `count`/`for_each`. Warning when an object constructor names an attribute absent from the target type. |
 | 1.12 | **Dynamic `prevent_destroy`**: the argument can refer to other symbols in the module, such as input variables. **`destroy = false`** in `lifecycle`, forgetting an object instead of destroying it. **`const = true`** on input variables, requiring a statically-evaluable value. **`language` block**, a general way to declare version constraints that separates OpenTofu's from other software's. `replace_triggered_by` fires when a referenced resource is *replaced*, not only updated. Comparing a complex value to `null` yields a sensitive result only if the whole object is sensitive, which makes such comparisons usable in `enabled`. |
@@ -130,8 +138,9 @@ no changelog.
 !!! info "Terraform — S3-native locking arrived there first"
     It is easy to read OpenTofu as having led on this, since both projects
     shipped it in a release numbered 1.10. The dates say otherwise. Terraform
-    1.10.0 introduced S3-native locking on **2024-11-26** and made it GA in
-    1.11.0 on **2025-02-27**; OpenTofu 1.10.0 shipped on **2025-06-24**.
+    1.10.0 introduced S3-native locking on **November 27, 2024** and made it GA
+    in 1.11.0 on **February 27, 2025**; OpenTofu 1.10.0 shipped in **June
+    2025**, roughly seven months after Terraform's first shipped it.
 
 !!! warning "The 1.10 `pg` backend is not mixable"
     The 1.10 changelog states that its `pg` backend must not share a database
@@ -486,18 +495,27 @@ Terraform.
     sections alone.
 
 !!! info "Where OpenTofu leads and where it follows"
-    Led: state encryption (1.7), early evaluation (1.8), provider `for_each`
-    and `-exclude` (1.9), OCI registries, OpenTelemetry, and short-circuit
-    operators (1.10), `enabled` (1.11), dynamic `prevent_destroy`,
-    `destroy = false`, and `-json-into` (1.12).
+    Ordered by release date rather than by version number, since the two
+    projects share a numbering scheme but not a schedule.
 
-    Followed: the test framework (1.6, from Terraform 1.6), mocks and overrides
-    (1.8, from Terraform 1.7), provider-defined functions and `removed` (1.7,
-    from Terraform 1.8 and 1.7), cross-object variable validation (1.9, from
-    Terraform 1.9), `deprecated` variables and outputs (1.10, ahead of
-    Terraform 1.15), ephemeral values and write-only attributes (1.11, from
-    Terraform 1.10 and 1.11), and `import` `identity` (1.12, from Terraform
-    1.12).
+    **Led:** state encryption (1.7), early evaluation (1.8), provider
+    `for_each` and `-exclude` (1.9), OCI registries, OpenTelemetry, and
+    short-circuit operators (1.10), **`deprecated` variables and outputs**
+    (1.10, June 2025, about ten months before Terraform 1.15), `enabled`
+    (1.11), dynamic `prevent_destroy`, `destroy = false`, and `-json-into`
+    (1.12).
+
+    **Followed:** the test framework (1.6, from Terraform 1.6), `removed` (1.7,
+    from Terraform 1.7), mocks and overrides (1.8, from Terraform 1.7),
+    cross-object variable validation (1.9, from Terraform 1.9), S3-native state
+    locking (1.10, from Terraform 1.10 and 1.11), ephemeral values and
+    write-only attributes (1.11, from Terraform 1.10 and 1.11), and `import`
+    `identity` (1.12, from Terraform 1.12, which shipped exactly a year
+    earlier to the day).
+
+    **Effectively simultaneous:** provider-defined functions, in Terraform
+    1.8.0 on 2024-04-10 and OpenTofu 1.7.0 on 2024-04-30. Twenty days apart is
+    parallel development, not one project following the other.
 
 ## Sources
 
