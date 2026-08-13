@@ -127,6 +127,12 @@ no changelog.
 | 1.11 | S3 backend can tag state and lock objects, and supports the `eusc-de-east-1` AWS European Sovereign Cloud region. AzureRM gains `use_cli`, `use_aks_workload_identity`, `client_id_file_path`, `client_secret_file_path`, and `client_certificate`, while `endpoint`/`msi_endpoint` are deprecated and ignored. |
 | 1.12 | S3 backend discovers credentials issued by `aws login`. AzureRM supports Azure DevOps/Pipelines workload identity federation, plus customer-provided and customer-managed keys for server-side encryption. **`local` backend writes pretty-printed JSON**, so state tracked in version control diffs readably. |
 
+!!! info "Terraform — S3-native locking arrived there first"
+    It is easy to read OpenTofu as having led on this, since both projects
+    shipped it in a release numbered 1.10. The dates say otherwise. Terraform
+    1.10.0 introduced S3-native locking on **2024-11-26** and made it GA in
+    1.11.0 on **2025-02-27**; OpenTofu 1.10.0 shipped on **2025-06-24**.
+
 !!! warning "The 1.10 `pg` backend is not mixable"
     The 1.10 changelog states that its `pg` backend must not share a database
     with the `pg` backend from earlier versions, because the locking
@@ -159,7 +165,7 @@ no changelog.
 
 ## Part 2 — Per-release catalogue
 
-### 1.6.0 (January 2024)
+### 1.6.0 (January 9, 2024)
 
 The fork's first release. Baseline is Terraform 1.5.x, with some upstream 1.6
 work merged in before divergence.
@@ -187,7 +193,7 @@ block `id` accepting plan-time-known expressions.
 Patch additions: run blocks referencing earlier runs' module outputs (1.6.1)
 and their outputs inside a `locals` block (1.6.2).
 
-### 1.7.0 (April 2024)
+### 1.7.0 (April 30, 2024)
 
 The release that established OpenTofu as more than a drop-in replacement.
 
@@ -211,7 +217,7 @@ The release that established OpenTofu as more than a drop-in replacement.
 - S3 backend `use_legacy_workflow` defaults to `false` and is deprecated.
 - 1.7.4 makes `generate-config-out` emit `jsonencode(...)` for JSON strings.
 
-### 1.8.0 (2024)
+### 1.8.0 (July 29, 2024)
 
 - **Early evaluation**: variables and locals allowed in **module sources and
   backend configurations**, with limitations. This is the feature Terraform did
@@ -226,7 +232,7 @@ The release that established OpenTofu as more than a drop-in replacement.
 - Provider functions included in `tofu providers schema`.
 - **Breaking:** S3 backend `use_legacy_workflow` removed.
 
-### 1.9.0 (January 2025)
+### 1.9.0 (January 9, 2025)
 
 - **`for_each` on `provider` blocks.** An aliased provider configuration gets
   multiple dynamically-chosen instances, and each resource instance can select
@@ -247,7 +253,7 @@ The release that established OpenTofu as more than a drop-in replacement.
   submodules.
 - AzureRM backend `timeout_seconds`.
 
-### 1.10.0 (2025)
+### 1.10.0 (June 24, 2025)
 
 The broadest release. Registry, backend, and language work all landed together.
 
@@ -279,7 +285,7 @@ The broadest release. Registry, backend, and language work all landed together.
   database with older versions, and Windows "symlink" now means true symbolic
   links only (junctions excluded).
 
-### 1.11.0 (2025)
+### 1.11.0 (December 9, 2025)
 
 - **Ephemeral values**: ephemeral input variables and outputs, ephemeral
   resource types, and write-only attributes. Parity with Terraform 1.10 and
@@ -311,7 +317,7 @@ The broadest release. Registry, backend, and language work all landed together.
   at plan time.
 - macOS 12 Monterey or later required; SHA-1 TLS signatures rejected.
 
-### 1.12.0 (2026)
+### 1.12.0 (May 14, 2026)
 
 - **Dynamic `prevent_destroy`.** The argument can reference other symbols in the
   module, including input variables. Terraform still requires a literal.
