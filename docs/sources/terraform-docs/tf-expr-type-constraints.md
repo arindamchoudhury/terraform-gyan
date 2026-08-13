@@ -35,11 +35,10 @@ One element type, given as the constructor argument. All elements must be the sa
 
 - **`list(...)`** — sequence indexed by consecutive whole numbers from zero. Bare `list` = `list(any)` (compat shorthand; prefer the full form).
 - **`map(...)`** — values identified by string labels. Bare `map` = `map(any)`. Define with `{}`, `:`, `=`. `{ "foo": "bar" }` and `{ foo = "bar" }` are the same map. Quote keys that start with a number, contain spaces, or have special characters. Commas required between pairs on a single line; multi-line pairs go on new lines.
-
-  !!! note "`terraform fmt` and map delimiters"
-      Colons are valid key/value delimiters but `terraform fmt` ignores them. It does vertically align equals signs.
-
 - **`set(...)`** — collection of unique values, no secondary identifiers, no ordering.
+
+!!! note "`terraform fmt` and map delimiters"
+    Colons are valid key/value delimiters but `terraform fmt` ignores them. It does vertically align equals signs.
 
 ### Structural types
 

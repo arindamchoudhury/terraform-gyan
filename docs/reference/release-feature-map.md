@@ -63,7 +63,7 @@ the history of one capability.
 | 1.6 | Terraform tracks *partial* knowledge about unknown values (possible collection length, whether an unknown can be null), so some operations on unknowns can now produce known results. `try`/`can` give more consistent results with unknown arguments. |
 | 1.9 | Variable `validation` conditions become general expressions and can reference other variables, data sources, and locals. |
 | 1.10 | **Ephemeral values.** Input variables and outputs can be `ephemeral`; ephemeral resources are re-read each phase and never persisted. `ephemeralasnull` function. `element` accepts negative indices. |
-| 1.12 | Logical binary operators (`&&`, `\|\|`) short-circuit. |
+| 1.12 | Logical binary operators (`&&`, <code>&#124;&#124;</code>) short-circuit. |
 | 1.15 | `output` blocks accept an explicit `type` constraint. `deprecated` attribute on `variable` and `output` blocks, producing warnings at the call site. Variables and locals usable in module `source` and `version`, with **`const = true`** on a variable requiring the assigned value to be statically evaluable. (`const` is **not in the changelog**; it is in the variable block schema at `internal/configs/named_values.go`, first tagged `v1.15.0`.) `convert` function for precise inline type conversion. |
 | 1.16-rc1 | `lifecycle` gains `destroy = false`. `contains()` can test for `null`. Providers can expose nested blocks as computed values. |
 
