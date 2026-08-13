@@ -13,6 +13,14 @@ version), that is called out explicitly.
     [Version & Certification Facts](../research-cache/version-facts.md) and the
     [feature → learning-path coverage matrix](../research-cache/feature-coverage-matrix.md).
 
+!!! note "Want the exhaustive version?"
+    This page lists the *headline* feature per release. For every feature,
+    enhancement, and patch-release addition from `0.5` through `1.16-rc1`,
+    derived directly from each version branch's `CHANGELOG.md`, see the
+    [Release Feature Map](release-feature-map.md). It also traces how single
+    capabilities (testing, import, secrets, state locking) were widened release
+    by release.
+
 ---
 
 ## Chronological timeline
