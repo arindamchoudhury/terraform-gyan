@@ -479,7 +479,7 @@ Better to guard against accidental destruction with `ignore_changes`. (`prevent_
     OpenTofu directly fixes the `prevent_destroy` limitation the book calls out:
 
     - **Dynamic `prevent_destroy`** (OT 1.12) — bind it to a **variable/expression**, so you *can* enable it for prod and disable it for dev. Terraform still requires a literal. See [[ot-dynamic-prevent-destroy]].
-    - **`destroy = false`** (OT 1.12) — makes OpenTofu **stop managing** a resource without deleting the real thing. Normally, when Terraform decides a resource should go away, it destroys the actual cloud object. With `destroy = false`, OpenTofu just forgets the resource (drops it from state) and leaves the running object alone. Same outcome as Terraform's `removed` block (§2.9), but written as one line inside the resource's `lifecycle` instead of a separate top-level block.
+    - **`destroy = false`** (OT 1.12) — makes OpenTofu **stop managing** a resource without deleting the real thing. Normally, when Terraform decides a resource should go away, it destroys the actual cloud object. With `destroy = false`, OpenTofu just forgets the resource (drops it from state) and leaves the running object alone. Same outcome as Terraform's `removed` block (§2.9), but written as one line inside the resource's `lifecycle` instead of a separate top-level block. ⏳ **Converging:** Terraform **1.16** adds the identical resource-level argument, so this stops being a divergence once 1.16 is stable (rc1 as of 2026-08-13). Through 1.15 the `removed` block remains Terraform's only route.
     - **`enabled`** (OT 1.11) — a `lifecycle` argument that toggles a resource on/off, cleaner than the `count = 0` idiom.
 
     `create_before_destroy`, `ignore_changes`, and `replace_triggered_by` behave identically in both tools.
@@ -598,7 +598,7 @@ moved {
 ```
 
 !!! info "OpenTofu — all three identical, plus one shortcut"
-    `import`, `moved`, and `removed` all work the **same** in OpenTofu (same syntax; `import` supports `id`/`identity`, `count`/`for_each`). OpenTofu adds one alternative to the `removed` block: put **`destroy = false`** directly in a *resource's* `lifecycle` (OT 1.12) to forget it from state without destroying the real object — see §2.7.2. Verified against OpenTofu docs; see [[version-facts]].
+    `import`, `moved`, and `removed` all work the **same** in OpenTofu (same syntax; `import` supports `id`/`identity`, `count`/`for_each`). OpenTofu adds one alternative to the `removed` block: put **`destroy = false`** directly in a *resource's* `lifecycle` (OT 1.12) to forget it from state without destroying the real object — see §2.7.2. ⏳ Terraform **1.16** adds the same argument, closing this gap. Verified against OpenTofu docs; see [[version-facts]], [[release-feature-map]].
 
 ---
 
