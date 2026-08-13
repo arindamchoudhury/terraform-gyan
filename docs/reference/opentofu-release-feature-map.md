@@ -479,12 +479,22 @@ Terraform routinely lands a block's schema one release before announcing it,
 behind `AllowExperimentalFeatures`. `action`, `list`, and `terraform query`
 all appeared that way in 1.13 and became stable in 1.14.
 
-OpenTofu's config parser does not do this. On `main`, `parser_config.go` has
-**zero** `allowExperiments` uses beyond sniffing the experiments attribute
-itself, and the same held at 1.11 when `enabled` and `ephemeral` shipped. A
-block appearing in an OpenTofu release is a block usable in that release, which
-makes dating an OpenTofu feature from the source considerably simpler than for
-Terraform.
+OpenTofu's config parser does not do this. At **1.11**, when `enabled` and
+`ephemeral` shipped, `parser_config.go` used `allowExperiments` in exactly one
+place — `sniffActiveExperiments`, which reads the opt-in list — and gated **no
+block** behind it. Both features were usable on release day.
+
+On `main` the mechanism is gone from `internal/configs` altogether: no
+`allowExperiments` identifier survives anywhere in that package, removed by
+commit `551579f5eb` ("configs: New-style core version constraints, etc"), the
+same commit that introduced the `language` block. The `experiments` attribute
+name is still accepted in the schema and then ignored, with the source
+explaining that OpenTofu "cannot predict what any future experiment or
+language" will need.
+
+So a block appearing in an OpenTofu release is a block usable in that release,
+which makes dating an OpenTofu feature from the source considerably simpler
+than for Terraform.
 
 !!! note "One sweep result that is not a removal"
     The diff reports `dynamic` disappearing at 1.7. It is a file-move artifact:
