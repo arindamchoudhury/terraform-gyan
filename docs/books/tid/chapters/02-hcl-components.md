@@ -327,7 +327,7 @@ The `terraform` block is the container for Terraform-specific settings:
 Both configure where **state** is stored so a team can share one workspace. If neither is set, Terraform uses the **local backend** (state as a JSON file on disk) — fine for dev, never for production.
 
 - **`backend`** — the long-standing block; supports S3, GCS, AzureRM, Consul, and more. Includes the "enhanced" `remote` backend that adds functionality beyond state storage (deep dive in Ch6).
-- **`cloud`** — newer block, used *instead of* `backend`, for HCP Terraform / self-hosted Terraform Enterprise. Currently HCP-Terraform-only, though other providers might adopt it later.
+- **`cloud`** — newer block, used *instead of* `backend`, for HCP Terraform / self-hosted Terraform Enterprise. Ch2 presents it as HCP-Terraform-only with others possibly adopting it later; **the book's own Ch6 overtakes that** — §6.4 describes the block as a standard third parties implement and names **Scalr and Env0** as having adopted it ([Ch6 notes](06-state-management.md)). Read the Ch2 framing as the introductory version.
 
 !!! note "Backends are hardcoded into Terraform"
     Unlike providers, you **can't write a custom backend** directly. The escape hatch is the generic **`http` backend** — implement a simple REST API and Terraform will use it. Rarely needed. Only *one* of `backend` or `cloud` may be set.
@@ -335,7 +335,7 @@ Both configure where **state** is stored so a team can share one workspace. If n
 !!! info "OpenTofu differences — state & backends"
     Three divergences here (see [[version-facts]]):
 
-    - **`cloud` block is Terraform-only** — it targets HCP Terraform, which OpenTofu has no equivalent of. OpenTofu projects use `backend`.
+    - **`cloud` block — correction (2026-08-13): OpenTofu has one too.** This note previously said the block was Terraform-only and that OpenTofu projects must use `backend`. That is wrong. `internal/configs/cloud.go` exists in OpenTofu, `parser_config.go` decodes a `cloud` block from the schema, and the 1.6 changelog discusses its behaviour. The real divergence is smaller and is about defaults: Terraform's `cloud` block defaults the hostname to `app.terraform.io`, while **OpenTofu requires `hostname` to be set explicitly** and errors with *"Hostname is required for the cloud backend"* (`internal/cloud/backend.go`) if it is not. So OpenTofu can drive HCP Terraform or any TFE-compatible endpoint; what it will not do is silently assume HashiCorp's SaaS. What OpenTofu genuinely lacks is a hosted service of its own, not the block.
     - **State encryption is OpenTofu-only** (OT 1.7) — encrypt state *and* plan files at rest natively. Terraform has no built-in equivalent. This is the biggest backend-chapter gap between the tools.
     - **Early variable evaluation** (OT 1.8) — OpenTofu can reference `var`/`local` **inside** `backend` blocks (resolved at `tofu init`). Terraform requires backend config to be literals. See [[ot-early-eval-backend]].
 
