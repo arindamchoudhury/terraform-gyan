@@ -9,6 +9,12 @@ Derived directly from the per-branch `CHANGELOG.md` files in
 unreleased 1.13), not from release notes or blog posts. Features that landed in
 a *patch* release are called out, since those are easy to miss.
 
+!!! warning "The changelog is not complete"
+    Several real components are announced by no changelog entry at all. They
+    are collected in [Part 3](#part-3-what-the-changelog-does-not-say), built
+    by diffing the configuration schemas and the encryption registry across
+    release tags rather than by reading release notes.
+
 !!! note "Where the history starts"
     OpenTofu forked from Terraform at **1.5.x** in 2023, so everything in
     Terraform up to and including 1.5 is inherited and is *not* re-listed here.
@@ -48,6 +54,17 @@ has been widened every release since.
 | 1.10 | **External programs as key providers.** PBKDF2 key provider supports chaining via `chain`. |
 | 1.11 | New **`azure_vault`** key provider. Input variable values can be supplied during apply (when non-ephemeral values match the plan) specifically so variables can configure encryption settings. |
 | 1.13 (unreleased) | `gcp_kms` accepts `additional_authenticated_data`; AWS KMS accepts `encryption_context`; OpenBao accepts `associated_data`. |
+
+Registered components per release, from `default_registry.go` rather than from
+the changelogs. The `unencrypted` method and the `external` *method* appear in
+no changelog.
+
+| Release | Key providers | Methods |
+|---|---|---|
+| 1.7 | `pbkdf2`, `aws_kms`, `gcp_kms`, `openbao` | `aesgcm`, **`unencrypted`** |
+| 1.10 | adds `external` | adds **`external`** |
+| 1.11 | adds `azure_vault` | unchanged |
+| 1.12, `main` | unchanged | unchanged |
 
 ### Configuration language
 
@@ -348,6 +365,103 @@ The broadest release. Registry, backend, and language work all landed together.
 
 ---
 
+---
+
+## Part 3 — What the changelog does not say
+
+Found the same way as the Terraform page's Part 3: diffing the HCL schemas in
+`internal/configs` across every release tag from `v1.6.0` to `v1.12.0` plus
+`main`, then checking each new name against the changelogs. For OpenTofu the
+sweep was also pointed at `internal/encryption`, since the flagship feature's
+key providers and methods are registered in code rather than declared in a
+schema.
+
+The sweep confirms the changelog on `removed` and `encryption` (1.7), the
+mock and override vocabulary `defaults`/`outputs`/`values` (1.8), `deprecated`
+(1.10), `enabled` and `ephemeral` (1.11), and `const` and `identity` (1.12).
+It turns up the following, which no changelog mentions.
+
+### Encryption components that were never announced
+
+| Component | Since | What it is |
+|---|---|---|
+| **`unencrypted` method** | 1.7.0 | A registered encryption *method* that performs no encryption. The escape hatch for migrating state back out of encryption, and the thing you pair with a fallback block during rollout. Registered in `default_registry.go` from the first encryption release, mentioned in no changelog. |
+| **`external` *method*** | 1.10.0 | Distinct from the external *key provider*. The 1.10 changelog announces "external programs as key providers" only; an external encryption method was registered in the same release. |
+
+!!! note "Two entries in the tree are not features"
+    The `static` and `xor` key providers appear under
+    `internal/encryption/keyprovider/` from 1.7 and 1.9 respectively, but
+    neither is registered in `default_registry.go`, so neither is reachable
+    from configuration. They are compliance-test fixtures. The same goes for
+    `dual_custody_test.go`, which is a test rather than a shipped feature.
+
+    The user-reachable set as of `main` is therefore: key providers `pbkdf2`,
+    `aws_kms`, `gcp_kms`, `azure_vault`, `openbao`, `external`; methods
+    `aesgcm`, `external`, `unencrypted`.
+
+### The `language` block is half inert
+
+The 1.12 changelog describes the `language` block as a way to declare version
+constraints separately from other software. Only part of it does that.
+
+```hcl
+language {
+  edition = tofu2024              # reserved, does nothing
+  compatible_with "opentofu" {    # the part that works
+    # version constraint
+  }
+}
+```
+
+`compatible_with` takes the software name as a label, and blocks naming
+software other than OpenTofu are ignored, which is the mechanism the changelog
+is describing. `edition` is a placeholder: the only accepted keyword is
+`tofu2024`, which is also the default. It exists so that a future edition
+switch gives a useful error on older CLIs rather than "unsupported argument".
+
+This mirrors Terraform's inert `language = TF2021` argument almost exactly.
+The two differ in placement, since Terraform's is an argument inside the
+`terraform` block and OpenTofu's is an argument inside a new top-level block.
+
+!!! info "OpenTofu accepts Terraform's `language` argument and ignores it"
+    `terraform { language = ... }` is still in OpenTofu's schema, so a
+    configuration carrying it parses. OpenTofu then discards it completely,
+    with the source giving the reason: it cannot predict how a future
+    Terraform edition would use that argument. There is also a dedicated error
+    for anyone who writes a `TF`-prefixed keyword into OpenTofu's own
+    `language` block, telling them the module may be intended for other
+    software.
+
+### No pluggable state stores
+
+Terraform has carried a `state_store` block for pluggable state storage in its
+parser since 1.13, experiment-gated. **OpenTofu has no equivalent** anywhere in
+`internal/configs` as of `main`. Backends remain a fixed built-in set. Worth
+tracking, because it is the one place where Terraform has in-flight
+architectural work with no OpenTofu counterpart.
+
+### OpenTofu does not ship gated plumbing early
+
+Terraform routinely lands a block's schema one release before announcing it,
+behind `AllowExperimentalFeatures`. `action`, `list`, and `terraform query`
+all appeared that way in 1.13 and became stable in 1.14.
+
+OpenTofu's config parser does not do this. On `main`, `parser_config.go` has
+**zero** `allowExperiments` uses beyond sniffing the experiments attribute
+itself, and the same held at 1.11 when `enabled` and `ephemeral` shipped. A
+block appearing in an OpenTofu release is a block usable in that release, which
+makes dating an OpenTofu feature from the source considerably simpler than for
+Terraform.
+
+!!! note "One sweep result that is not a removal"
+    The diff reports `dynamic` disappearing at 1.7. It is a file-move artifact:
+    `internal/configs/util.go` and `module_merge_body.go`, which held the
+    literal, were removed in that release. `dynamic` blocks are unaffected. Any
+    schema sweep needs this check before a disappearance is reported as a
+    removal.
+
+---
+
 ## Reading notes
 
 !!! note "OpenTofu's changelog convention differs from Terraform's"
@@ -384,6 +498,14 @@ The broadest release. Registry, backend, and language work all landed together.
 Generated from `git show origin/v<X.Y>:CHANGELOG.md` for every version branch of
 [opentofu/opentofu](https://github.com/opentofu/opentofu) (`v1.6` through
 `v1.12`) plus `origin/main` for the unreleased 1.13, fetched 2026-08-13.
+
+Part 3 comes from a different method: dumping every `Name:`/`Type:` schema
+literal in `internal/configs/*.go` at each release tag and diffing consecutive
+versions, plus listing the key providers and methods actually registered in
+`internal/encryption/default_registry.go` per tag, so that unregistered
+directories under `internal/encryption/keyprovider/` are not mistaken for
+shipped features.
+
 Per-release links:
 [v1.12](https://github.com/opentofu/opentofu/blob/v1.12/CHANGELOG.md),
 [v1.11](https://github.com/opentofu/opentofu/blob/v1.11/CHANGELOG.md),

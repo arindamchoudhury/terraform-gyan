@@ -827,11 +827,14 @@ Terraform versions would produce a useful error rather than "unsupported
 argument" once editions actually exist. Still inert in 1.16.0-rc1, where
 `firstEdition` is unchanged.
 
-!!! info "OpenTofu — `language` means something different there"
-    OpenTofu 1.12 added a `language` **block**, a working mechanism for
-    declaring version constraints that separates OpenTofu's from other
-    software's. Terraform's `language` **argument** is an unrelated reserved
-    keyword that does nothing. Same word, different constructs.
+!!! info "OpenTofu — the same reservation, in a different place"
+    OpenTofu 1.12 added a top-level `language` **block** whose `edition`
+    argument is reserved and inert in exactly the same way, accepting only the
+    keyword `tofu2024`. The working part of that block is its nested
+    `compatible_with` block, which declares version constraints per named
+    software. OpenTofu also still accepts Terraform's
+    `terraform { language = ... }` argument and then ignores it outright,
+    because it cannot predict how a future Terraform edition would use it.
 
 ### Plumbing arrives one release before the announcement
 
@@ -852,6 +855,12 @@ been in the parser since **1.13.0** and remains gated behind
 changelog, not even in the EXPERIMENTS sections that list deferred actions and
 `test cleanup`. Worth watching as the likely successor to the fixed set of
 built-in backends.
+
+!!! info "OpenTofu — no equivalent"
+    OpenTofu has nothing corresponding to `state_store` anywhere in
+    `internal/configs`. Backends remain a fixed built-in set there. This is the
+    one place where Terraform has in-flight architectural work with no OpenTofu
+    counterpart.
 
 ---
 
