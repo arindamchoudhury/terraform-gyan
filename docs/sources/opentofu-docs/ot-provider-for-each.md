@@ -59,9 +59,16 @@ resource "aws_vpc" "private" {
 
 ## The removal gotcha (important)
 
-> ⚠️ A resource's `for_each` must be a **subset** of the provider's `for_each`, never identical.
+> ⚠️ A resource's `for_each` **should** be a subset of the provider's `for_each`, and must never be the *same collection*.
 
 OpenTofu needs a resource's provider instance to survive **at least one more plan/apply round** after the resource instance is removed, so it can destroy it. If the provider and resource share the same `for_each` collection, removing a key produces `Error: Provider instance not present` — the resource can no longer be destroyed until you re-add the key.
+
+!!! note "Wording tightened 2026-08-13, and the mechanism verified in source"
+    This line previously read "must be a subset … **never identical**". The docs say *should* be a subset, not must, and the real constraint is about **destroy ordering** rather than set arithmetic: the provider's collection has to be able to outlive the resource's. Two identical-but-independent collections are not themselves illegal; driving both from one variable is what makes an element removal delete the resource instance and its provider instance in the same plan.
+
+    `Provider instance not present` is confirmed as the real diagnostic summary (`internal/tofu/node_resource_abstract_instance.go`, three call sites), and its detail text states the rule directly: *"To successfully remove an instance of a resource it must be possible to remove the corresponding element from the resource's `for_each` collection while retaining the corresponding element in the provider's `for_each` collection."* The same file handles the mirror case of adding `for_each` to a provider that already has single-instance resources in state.
+
+    **This note had the mechanism right all along** — the paragraph below it explains the extra plan/apply round correctly. What propagated into the learning path and topic pages was the headline sentence stripped of that reasoning, which turned a lifecycle constraint into an apparent static rule. Both have since been corrected against this page.
 
 **Fix:** keep the provider on the full set and give the resource a subtracted set:
 

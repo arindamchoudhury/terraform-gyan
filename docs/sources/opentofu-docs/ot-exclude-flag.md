@@ -16,6 +16,9 @@ OpenTofu-only (since 1.9): `-exclude` is the **inverse of `-target`** — plan/a
 
 **Mutually exclusive:** positive targeting (`-target`, `-target-file`) cannot be combined with negative targeting (`-exclude`, `-exclude-file`) in one command.
 
+!!! note "Version boundary, verified in source 2026-08-13"
+    `-exclude` is **1.9**; the `-target-file` / `-exclude-file` pair is **1.10**. The exclusivity check was widened to match: at 1.9 it guarded only the two direct flags (*"-target and -exclude flags cannot be used together. Please remove one of the flags"*), and 1.10 extended it to the two families on the same commit that added the file variants (`556ba25638`, first released in v1.10.0), with the message becoming *"The target and exclude planning options are mutually-exclusive. Each plan must use either only the target options or only the exclude options."* It fails at argument parsing, before any planning. Source: `internal/command/arguments/extended.go`.
+
 ## Why `-exclude` over `-target`
 
 When **one** resource/module is broken but you want to apply everything else, `-exclude` is far safer than enumerating every *other* resource with `-target`.

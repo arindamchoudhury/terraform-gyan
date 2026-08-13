@@ -180,7 +180,7 @@ Usable in `resource` blocks.
 
 > "Set to `false` to remove a resource from state without destroying the actual infrastructure resource. You can only use this rule in `removed` block."
 
-Confirms [[tf-block-removed]] from the `lifecycle` side, and marks the boundary against OpenTofu, where `destroy = false` is legal on the **resource's own** `lifecycle` ([[ot-dynamic-prevent-destroy]]).
+Confirms [[tf-block-removed]] from the `lifecycle` side, and marks the boundary against OpenTofu, where `destroy = false` is legal on the **resource's own** `lifecycle` ([[ot-dynamic-prevent-destroy]]). ⏳ That boundary is closing: Terraform **1.16** adds the same resource-level argument (rc1 as of 2026-08-13), so the seven-rule list this page documents becomes eight ([[release-feature-map]]).
 
 ## "Supported constructs" is an empty section
 
