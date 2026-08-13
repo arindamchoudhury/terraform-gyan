@@ -10,9 +10,10 @@ or documentation. Where a feature landed in a *patch* release rather than the
 `x.y.0` minor, that is called out, because those are easy to miss.
 
 !!! note "Scope and companion pages"
-    This page is exhaustive on *language, CLI, workflow, and backend* features.
-    It deliberately skips bug fixes, provider/resource additions from the
-    pre-0.10 monolith era, and internal SDK changes.
+    This page is exhaustive on *language, CLI, workflow, and backend* features,
+    covering **0.1.0 (July 2014) through 1.16.0-rc1**. It deliberately skips bug
+    fixes, provider/resource additions from the pre-0.10 monolith era, and
+    internal SDK changes.
 
     For the condensed "what should I actually use" view, see
     [Terraform Feature History](feature-history.md). For the fork's timeline,
@@ -26,13 +27,11 @@ or documentation. Where a feature landed in a *patch* release rather than the
     release candidate and its contents may still change.
 
 !!! warning "The changelog is not complete"
-    Reconciling this page against [feature-history](feature-history.md) on
-    2026-08-13 turned up three real features that **no changelog entry
-    announces**, found only by reading the source: the `const` variable
-    attribute (1.15), vertical cycle-error rendering (1.16), and Local Values
-    (0.10.3, mentioned only in that patch release). They are included below and
-    marked. Treat a changelog-derived catalogue as a floor, not a ceiling, and
-    check the repository when a feature seems to have appeared from nowhere.
+    Several real features are announced by no changelog entry at all. They are
+    collected in [Part 3](#part-3-what-the-changelog-does-not-say), which was
+    built by diffing the configuration-language schemas across every release
+    tag rather than by reading release notes. Treat a changelog-derived
+    catalogue as a floor, not a ceiling.
 
 ---
 
@@ -46,6 +45,10 @@ the history of one capability.
 
 | Version | Enhancement |
 |---|---|
+| 0.2 | HCL replaces the original C configuration library with a stricter pure-Go implementation. |
+| 0.3 | **Modules.** `create_before_destroy`. `count` accepts interpolations, and `count.index` and `path.*` become referenceable. |
+| 0.3.7 | Interpolation syntax formalised; interpolations may nest. |
+| 0.4 | `self.*` references inside provisioners. Arithmetic inside interpolations. |
 | 0.7 | Lists and maps become first-class variable types and can be passed between modules. Data sources introduced as a new primitive. |
 | 0.8 | Conditional (ternary) values. `depends_on` can reference a whole module. `output` supports `depends_on`. Terraform version constraints declarable in configuration. |
 | 0.12 | **HCL2.** First-class expressions (no more interpolation-only `"${...}"`), `for` expressions, `dynamic` blocks, generalised splat operator, `null` as an "unset" value, rich/nested types with type constraints on variables, resources and modules usable as object values, string templates with conditionals and iteration. |
@@ -68,6 +71,9 @@ the history of one capability.
 
 | Version | Functions added |
 |---|---|
+| 0.2 | `concat` |
+| 0.3.5 | `element` |
+| 0.4 | `format`, `replace`, `split` |
 | 0.6 | `keys`, `values` |
 | 0.7 | `sort`, `distinct`, `list`, `map` |
 | 0.10 | `contains` |
@@ -94,6 +100,7 @@ the history of one capability.
 
 | Version | Enhancement |
 |---|---|
+| 0.4 | `terraform taint` marks an instance for destroy-and-recreate on the next plan. The only recreation lever until `-replace` in 0.15.2. |
 | 0.7 | `terraform state` command family introduced for manual state surgery. |
 | 0.13 | `terraform state replace-provider`, for re-pointing existing instances at a new provider source address. |
 | 1.1 | **`moved` block.** Address changes recorded in source code and applied automatically during plan, so module consumers no longer run `terraform state mv`. |
@@ -154,6 +161,9 @@ the history of one capability.
 
 | Version | Enhancement |
 |---|---|
+| 0.3 | State file format changes from binary to **JSON**, with automatic upgrade of existing files. |
+| 0.3.5 | **Remote state**, over HTTP, in Consul, or in HashiCorp's Atlas. |
+| 0.4 | `terraform_remote_state` reads another run's outputs. State is saved continuously during apply, so a crash is much less likely to corrupt it. |
 | 0.5 | `s3` remote state. |
 | 0.6 | `swift` remote state. HTTP remote state gains `skip_cert_verification`; S3 gains `encrypt`. |
 | 0.7 | `gcs` and `azure` remote state providers. |
@@ -178,6 +188,8 @@ the history of one capability.
 
 | Version | Enhancement |
 |---|---|
+| 0.2 | `~/.terraformrc` (or `%APPDATA%/terraform.rc`) configures custom providers and provisioners. |
+| 0.3 | Plugins loaded from `~/.terraform.d/plugins`, alongside the executable directory. |
 | 0.10 | **Providers split out of the Terraform binary.** Released independently, versioned, constrained in configuration, and installed automatically by `terraform init`. `terraform init -upgrade`. |
 | 0.11 | `module` blocks gain `version` and `providers` arguments. |
 | 0.12 | Provider index moves to `registry.terraform.io`. Plugin wire protocol changes, so 0.11-era plugins are incompatible. |
@@ -196,6 +208,7 @@ the history of one capability.
 
 | Version | Enhancement |
 |---|---|
+| 0.3 | Terraform prompts interactively for required variables and provider configuration that have not been set. |
 | 0.6 | Plan reports a count of resources to change, create, and destroy. |
 | 0.10 | `-target` can reach resources in descendant modules. `.auto.tfvars` files load automatically. |
 | 0.11 | `terraform apply` waits for interactive approval unless given a plan file. |
@@ -241,6 +254,8 @@ the history of one capability.
 
 | Command | Since |
 |---|---|
+| `terraform init`, `terraform destroy` | 0.3 |
+| `terraform taint`, `terraform remote` (`config`/`push`/`pull`) | 0.4 |
 | `terraform state` (family) | 0.7 |
 | `terraform console` | 0.8 |
 | `terraform workspace` (renamed from `terraform env`) | 0.10 |
@@ -256,6 +271,67 @@ the history of one capability.
 ---
 
 ## Part 2 — Per-release catalogue
+
+### 0.1.0 (July 28, 2014)
+
+Initial public release. Providers for AWS, DigitalOcean, Heroku, Consul, and
+DNSimple; `plan`, `apply`, `refresh`, `show`, `output`, `graph`; the
+`local-exec`, `remote-exec`, and `file` provisioners.
+
+### 0.2.0 (August 28, 2014)
+
+- **HCL replaces the original C configuration library** with a pure-Go
+  reimplementation. Deliberately less flexible than what it replaced:
+  semicolons are gone, keys can no longer be double-quoted strings, and
+  JSON-style maps are invalid outside JSON.
+- `concat` function.
+- `~/.terraformrc` (or `%APPDATA%/terraform.rc`) for configuring custom
+  providers and provisioners.
+- New `google` and `mailgun` providers.
+
+### 0.3.0 (October 14, 2014)
+
+The release that introduced most of the structural vocabulary still in use.
+
+- **Modules.** Configuration becomes modular, with sources on GitHub,
+  BitBucket, Git/Hg repositories, HTTP URLs, and file paths, downloaded and
+  updated automatically.
+- **`terraform init`**, initialising a configuration from an existing module.
+- **`terraform destroy`.**
+- **State file format becomes JSON** instead of binary, with automatic upgrade
+  of old files.
+- **`create_before_destroy`** as a replacement option.
+- **`count` accepts interpolations**, and `${count.index}` becomes available.
+- **`path.*`** interpolations, including `path.module`.
+- Terraform prompts for required variables and provider configuration when they
+  are not set.
+- Plugins loaded from `~/.terraform.d/plugins`.
+- Trailing commas allowed on the final element of a list.
+
+### 0.3.5 (December 9, 2014)
+
+- **Remote state**, stored over HTTP, in Consul, or in HashiCorp's Atlas.
+- `element()` function.
+
+### 0.3.7 (February 19, 2015)
+
+- Interpolation syntax formalised and documented.
+- **Nested interpolations**, so `foo ${bar("${baz}")}` becomes valid.
+
+### 0.4.0 (April 2, 2015)
+
+- **`terraform_remote_state`**, reading another run's outputs as inputs.
+- **`terraform taint`**, marking a resource for destroy-and-recreate on the next
+  plan. (Superseded much later by `apply -replace` in 0.15.2.)
+- **Self-variables** in provisioners, such as `${self.private_ip_address}`.
+- **Continuous state saving during apply**, so a panic or a killed process is
+  much less likely to corrupt state.
+- **Math in interpolations**, such as `${count.index+1}`.
+- Functions `format`, `replace`, `split`.
+- `terraform.tfvars.json` auto-loaded alongside `terraform.tfvars`.
+- `push`/`pull` consolidated under `terraform remote`, with the old behaviour
+  becoming `terraform remote config`.
+- Period-prefixed `.tf` files are now ignored.
 
 ### 0.5.0 (May 7, 2015)
 
@@ -720,6 +796,65 @@ protocol 6 support (1.0.3).
 
 ---
 
+---
+
+## Part 3 — What the changelog does not say
+
+Found by diffing the HCL block and attribute schemas in `internal/configs`
+across every release tag from `v0.12.0` to `v1.15.0`, then checking each new
+name against the changelogs. The sweep confirms most entries (`removed` at 1.7,
+`ephemeral` at 1.10, `identity` and `parallel` at 1.12, and the whole test-file
+vocabulary at 1.6 and 1.7 all line up), and turns up the following, which no
+changelog mentions.
+
+### Undocumented but usable
+
+| Feature | Since | What it is |
+|---|---|---|
+| **`const = true`** on `variable` blocks | 1.15.0 | Requires the assigned value to be compatible with static evaluation. The counterpart to dynamic module sources, shipped in the same release but never announced. `internal/configs/named_values.go`. |
+| **`ignore_nested_deprecations`** on `module` blocks | 1.15.0 | A consumer-side opt-out from deprecation warnings raised by a module author's `deprecated` variables and outputs. |
+| **Vertical cycle errors** | 1.16 | `Error: Cycle:` renders one node per line, ordered by reference rather than graph traversal, from a consistent starting node. Commit `4c4adca78b`. |
+| **Local Values** (`locals`) | 0.10.3 | Announced only inside a patch release section, not as a headline feature. |
+
+### Reserved but inert
+
+**`language = TF2021`** in the `terraform` block, since **0.15**.
+
+The schema has accepted a `language` argument since 0.15, but the only valid
+value is the keyword `TF2021`, which is also the default. It is a placeholder
+for a future "language editions" mechanism, reserved early so that older
+Terraform versions would produce a useful error rather than "unsupported
+argument" once editions actually exist. Still inert in 1.16.0-rc1, where
+`firstEdition` is unchanged.
+
+!!! info "OpenTofu — `language` means something different there"
+    OpenTofu 1.12 added a `language` **block**, a working mechanism for
+    declaring version constraints that separates OpenTofu's from other
+    software's. Terraform's `language` **argument** is an unrelated reserved
+    keyword that does nothing. Same word, different constructs.
+
+### Plumbing arrives one release before the announcement
+
+The `action` and `action_trigger` block schemas, the `.tfquery.hcl` parser
+(`internal/configs/query_file.go`), the `list` block, and the `terraform query`
+command all exist in **1.13.0**, gated behind `AllowExperimentalFeatures` and
+so reachable only in alpha builds. All of them became ungated and were
+announced in **1.14**.
+
+The changelog is therefore accurate about *availability* while the source shows
+*arrival*. When dating a feature, decide which of the two the claim needs.
+
+### Still experimental, still unannounced
+
+**`state_store`**, a block inside `terraform` for pluggable state storage, has
+been in the parser since **1.13.0** and remains gated behind
+`AllowExperimentalFeatures` through **1.16.0-rc1**. It has never appeared in a
+changelog, not even in the EXPERIMENTS sections that list deferred actions and
+`test cleanup`. Worth watching as the likely successor to the fixed set of
+built-in backends.
+
+---
+
 ## Reading notes
 
 !!! note "Features often land in patch releases"
@@ -741,8 +876,17 @@ protocol 6 support (1.0.3).
 
 Generated from `git show origin/v<X.Y>:CHANGELOG.md` for every version branch of
 [hashicorp/terraform](https://github.com/hashicorp/terraform) (`v0.11` through
-`v1.16`), fetched 2026-08-13. The `v0.11` branch changelog covers 0.5.0 through
-0.11.15; releases before 0.5.0 are not recorded there and are omitted.
+`v1.16`), fetched 2026-08-13.
+
+The `v0.11` branch changelog only reaches back to 0.5.0. **Releases 0.1.0
+through 0.4.2 were recovered from `git show v0.4.2:CHANGELOG.md`**, the last tag
+whose changelog still carried the project's opening history.
+
+Part 3 comes from a different method: dumping every `Name:`/`Type:` schema
+literal in `internal/configs/*.go` (`configs/*.go` before 1.0) at each release
+tag, diffing consecutive versions, and checking each newly-appearing name
+against the changelogs and against `AllowExperimentalFeatures` gating.
+
 Per-release links: [v1.15](https://github.com/hashicorp/terraform/blob/v1.15/CHANGELOG.md),
 [v1.14](https://github.com/hashicorp/terraform/blob/v1.14/CHANGELOG.md),
 [v1.13](https://github.com/hashicorp/terraform/blob/v1.13/CHANGELOG.md),
@@ -763,4 +907,5 @@ Per-release links: [v1.15](https://github.com/hashicorp/terraform/blob/v1.15/CHA
 [v0.14](https://github.com/hashicorp/terraform/blob/v0.14/CHANGELOG.md),
 [v0.13](https://github.com/hashicorp/terraform/blob/v0.13/CHANGELOG.md),
 [v0.12](https://github.com/hashicorp/terraform/blob/v0.12/CHANGELOG.md),
-[v0.11 and earlier](https://github.com/hashicorp/terraform/blob/v0.11/CHANGELOG.md).
+[v0.11 and earlier](https://github.com/hashicorp/terraform/blob/v0.11/CHANGELOG.md),
+[v0.4.2 (0.1.0–0.4.2)](https://github.com/hashicorp/terraform/blob/v0.4.2/CHANGELOG.md).
