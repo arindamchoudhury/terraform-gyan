@@ -857,6 +857,8 @@ Three of this chapter's four rules were re-run under **OpenTofu 1.12.4** against
 
     **OpenTofu 1.12.4**: `Success! The configuration is valid.` **Terraform 1.15.8**: `Error: Unsupported argument — An argument named "destroy" is not expected here.`
 
+    ⏳ **This divergence is closing.** Terraform **1.16** adds the same resource-level `lifecycle { destroy = false }`, so the error above is specific to 1.15.8 and will not reproduce on 1.16. As of this writing 1.16 is at **rc1**, so the measurement stands for every stable release — but if you are reading on 1.16 or later, expect `Success!` from both tools and treat the `removed` block as the compatible choice rather than the only one.
+
 !!! info "OpenTofu — `enabled` (1.11)"
     Chapter 10 left the `count = var.enabled ? 1 : 0` idiom as the only way to make a single resource optional in Terraform, with the cost that the address gains a permanent `[0]`. OpenTofu's replacement is an argument **inside the `lifecycle` block**, not a top-level meta-argument:
 
