@@ -29,7 +29,7 @@ Ch1's five-box flow is the overview; **Ch5** is the mechanics ([TID Ch5](../book
 
 - **Three planning modes** — **default** (reconcile), **destroy** (`-destroy`, all `-`), **refresh-only** (`-refresh-only`, state-only, ignores code edits). Every default/destroy plan **starts with a refresh**; destroy walks the DAG in **reverse**.
 - **Two apply paths** — `terraform apply` with **no** plan file runs its own plan + asks to confirm; `terraform apply plan.tfplan` applies a **saved** plan with no re-prompt (the automation pattern). `terraform destroy` = `terraform apply -destroy`.
-- **`-replace`** supersedes deprecated `taint` for forced recreation; **`-target`** is an antipattern for exceptional recovery only.
+- **`-replace`** (0.15.2) supersedes deprecated `taint` (0.4.0, April 2015) for forced recreation — six years apart, which is why so much older material still teaches `taint`; **`-target`** is an antipattern for exceptional recovery only. OpenTofu 1.9 adds an inverse, **`-exclude`**, which Terraform has no equivalent for and which cannot be combined with `-target` in the same run ([[opentofu-release-feature-map]]).
 
 ## Sources
 

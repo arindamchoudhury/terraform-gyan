@@ -70,6 +70,13 @@ Richer views, at the cost of runtime implementation detail:
 
 On a cycle, Terraform refuses to plan at all: `Error: Cycle: terraform_data.a, terraform_data.b`. The error names the cycle's *members*; `-draw-cycles` shows which *edges* close the loop, which is what you need on a large graph.
 
+!!! info "Terraform 1.16 renders the cycle vertically (rc1, not yet stable)"
+    Through 1.15 the members print on **one line**, which is readable for the two-node case above and unreadable for a loop spanning a dozen nodes. That is the reason the `-draw-cycles` detour below exists at all.
+
+    From 1.16 the same error prints **one node per line**, ordered by **reference** rather than graph-traversal order, and starting from a consistent node so repeated runs agree. Same error, same fix, just legible. `-draw-cycles` still wins when you need the *edges* rather than the members.
+
+    Not in any changelog — commit `4c4adca78b` on the `v1.16` branch, found by reading the tree rather than the release notes. (See [[release-feature-map]].)
+
 !!! warning "`-draw-cycles` needs an explicit `-type=`"
     Passing it alone is **silently ignored** — no warning, exit 0. Worse, the default resources-only graph renders only one of the two cycle edges, so the cycle is invisible rather than merely unhighlighted. Verified on v1.15.6. Always write `terraform graph -type=plan -draw-cycles`.
 

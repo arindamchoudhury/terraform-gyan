@@ -237,6 +237,11 @@ The first two watch a *planned action*; the third watches a *value*. Inside a `c
 
 **`action_trigger`** — invoke provider **actions** (Terraform 1.14) on lifecycle events. `events` and `actions` are required; `condition` gates the run.
 
+!!! info "Terraform 1.16 widens `action_trigger` (rc1, not yet stable)"
+    Three additions worth knowing before you build on the 1.14 shape. **`on_failure`** takes `halt`, `taint`, or `continue`, so a failing action no longer has one fixed consequence. **`before_destroy` and `after_destroy`** join the event list, which the 1.14 set omitted. And an action configuration can read a **`caller`** symbol holding the object value of the resource that triggered it, removing the need to pass attributes in by hand. Separately, `-invoke` can now be combined with `-target` to name *which* instance is calling when several resources trigger the same action.
+
+    Dating note: the `action` and `action_trigger` **schemas existed in 1.13**, behind `AllowExperimentalFeatures`, so alpha builds accepted them a release before 1.14 made them usable. Cite 1.14 for availability. (See [[release-feature-map]].)
+
 ```hcl
 lifecycle {
   action_trigger {
@@ -256,7 +261,7 @@ Only four events exist — `before_create`, `after_create`, `before_update`, `af
     OpenTofu directly lifts the `prevent_destroy` limitation TID calls out:
 
     - **Dynamic `prevent_destroy`** (OT 1.12) — bind it to a variable or expression, so prod and dev *can* differ. Terraform still requires a literal. See [[ot-dynamic-prevent-destroy]].
-    - **`destroy = false`** (OT 1.12) — stop managing a resource without deleting the real object, written as one line inside the **resource's** `lifecycle`. Terraform's nearest equivalent is a separate `removed` block that *also* carries `lifecycle { destroy = false }` — and note that a Terraform `removed` block **without** that line destroys the object. See [[tf-block-removed]].
+    - **`destroy = false`** (OT 1.12) — stop managing a resource without deleting the real object, written as one line inside the **resource's** `lifecycle`. Through Terraform 1.15 the nearest equivalent is a separate `removed` block that *also* carries `lifecycle { destroy = false }` — and note that a Terraform `removed` block **without** that line destroys the object. ⚠️ **This one is converging: Terraform 1.16 adds the same resource-level `lifecycle { destroy = false }`**, so it stops being a divergence once 1.16 is stable (rc1 as of 2026-08-13). See [[tf-block-removed]], [[release-feature-map]].
     - **`enabled`** (OT 1.11) — a first-class on/off switch, cleaner than the `count = var.x ? 1 : 0` idiom that forces `[0]` addressing and index churn. It is an argument **inside the `lifecycle` block**, not a seventh top-level meta-argument, and a disabled resource evaluates to `null` rather than an empty collection. Verified on OpenTofu 1.12.4: [[opentofu-enabled-argument]]. Terraform has no equivalent.
 
     `create_before_destroy`, `ignore_changes`, and `replace_triggered_by` behave identically in both tools.

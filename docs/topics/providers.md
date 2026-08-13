@@ -14,6 +14,11 @@ A provider is the plugin layer that lets Terraform talk to a specific vendor's A
 - **Declare vs. configure** (TID Ch2 §2.4) — the split HCDocs's intro glosses: `required_providers` (inside `terraform`) declares *what to install* + version constraint; the separate `provider` block *configures* it (auth + scoping). Provider blocks are **root-module only**. If you omit `required_providers`, Terraform *infers* the provider from the resource name prefix under the `hashicorp` namespace (`aws_instance` → `hashicorp/aws`) — convenient but discouraged, since you lose version pinning.
 - **Aliases = multiple connections** (TID Ch2 §2.4.4) — like multiple SDK clients: one default `provider` block plus named `alias` blocks (`alias = "west"`), and data/resource blocks pick one via the `provider` meta argument. This is the Terraform-CLI equivalent of what OpenTofu generalizes further with [[ot-provider-for-each]].
 
+!!! danger "OpenTofu provider `for_each` — the provider's collection must outlive the resources'"
+    OpenTofu 1.9 lets an aliased `provider` block take `for_each`, one instance per element. The trap is the obvious usage: driving both the provider and its resources from the same `var.regions` map. Remove an element and the same plan deletes the resource instance **and** the provider instance required to destroy it, so OpenTofu errors and makes you re-add the element, destroy, then remove it again.
+
+    This is a **destroy-ordering constraint**, not the static "resource `for_each` must be a subset of the provider's" rule it is often summarised as. OpenTofu states it directly: *"To successfully remove an instance of a resource it must be possible to remove the corresponding element from the resource's `for_each` collection while retaining the corresponding element in the provider's."* Adding `for_each` to a provider that already has single-instance resources in state fails the same way. Source: `internal/tofu/node_resource_abstract_instance.go`. (See [[opentofu-release-feature-map]], [[ot-provider-for-each]].)
+
 !!! note "Why the vendor / provider distinction exists"
     Terraform has **no formal `vendor` object** — "vendor" is TID's teaching word for the real-world service; only **provider** is a language construct. The two are kept conceptually separate because they aren't the same thing and don't map one-to-one:
 
