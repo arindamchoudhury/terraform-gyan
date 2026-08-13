@@ -25,6 +25,15 @@ or documentation. Where a feature landed in a *patch* release rather than the
     1.15.8 is the newest stable release; 1.16.0-rc1 (August 12, 2026) is a
     release candidate and its contents may still change.
 
+!!! warning "The changelog is not complete"
+    Reconciling this page against [feature-history](feature-history.md) on
+    2026-08-13 turned up three real features that **no changelog entry
+    announces**, found only by reading the source: the `const` variable
+    attribute (1.15), vertical cycle-error rendering (1.16), and Local Values
+    (0.10.3, mentioned only in that patch release). They are included below and
+    marked. Treat a changelog-derived catalogue as a floor, not a ceiling, and
+    check the repository when a feature seems to have appeared from nowhere.
+
 ---
 
 ## Part 1 — Feature threads
@@ -52,7 +61,7 @@ the history of one capability.
 | 1.9 | Variable `validation` conditions become general expressions and can reference other variables, data sources, and locals. |
 | 1.10 | **Ephemeral values.** Input variables and outputs can be `ephemeral`; ephemeral resources are re-read each phase and never persisted. `ephemeralasnull` function. `element` accepts negative indices. |
 | 1.12 | Logical binary operators (`&&`, `\|\|`) short-circuit. |
-| 1.15 | `output` blocks accept an explicit `type` constraint. `deprecated` attribute on `variable` and `output` blocks, producing warnings at the call site. Variables and locals usable in module `source` and `version`. `convert` function for precise inline type conversion. |
+| 1.15 | `output` blocks accept an explicit `type` constraint. `deprecated` attribute on `variable` and `output` blocks, producing warnings at the call site. Variables and locals usable in module `source` and `version`, with **`const = true`** on a variable requiring the assigned value to be statically evaluable. (`const` is **not in the changelog**; it is in the variable block schema at `internal/configs/named_values.go`, first tagged `v1.15.0`.) `convert` function for precise inline type conversion. |
 | 1.16-rc1 | `lifecycle` gains `destroy = false`. `contains()` can test for `null`. Providers can expose nested blocks as computed values. |
 
 ### Built-in functions
@@ -310,6 +319,8 @@ possible.
 - `.auto.tfvars` files auto-loaded in lexicographic order.
 - `contains` function.
 - S3 backend `workspace_key_prefix`.
+- **Local Values** (the `locals` block), letting an expression be named once and
+  reused. Introduced in the patch release **0.10.3**, not 0.10.0.
 
 ### 0.11.0 (November 16, 2017)
 
@@ -697,6 +708,11 @@ protocol 6 support (1.0.3).
 - **`terraform console -scope=<module address>`.**
 - `state show -json` and `workspace list -json`.
 - `contains()` can test for `null`.
+- **Readable cycle errors.** `Error: Cycle:` now renders one node per line
+  instead of a single long line, ordered by reference rather than graph
+  traversal, and from a consistent starting node. Same error and same fix, but
+  legible when the loop spans many nodes. Not in the changelog; commit
+  `4c4adca78b`, present on `v1.16`.
 - Policy plugin credentials resolved from the configured `cloud`/`remote`
   backend; policy evaluation summary printed for plan and apply.
 - Tests report which resources were left behind under `skip_cleanup`.
@@ -710,8 +726,9 @@ protocol 6 support (1.0.3).
     The `x.y.0` changelog is not the whole story. `for_each` on resources
     (0.12.6), `try`/`can` (0.12.20), `terraform login` (0.12.21), network
     mirrors (0.13.2), `output -raw` (0.14.3), `-replace` (0.15.2), and
-    `-refresh-only` (0.15.4) all arrived mid-series. If a feature seems to
-    predate the minor release you associate it with, check the patch releases.
+    `-refresh-only` (0.15.4) all arrived mid-series, as did the `locals` block
+    (0.10.3). If a feature seems to predate the minor release you associate it
+    with, check the patch releases.
 
 !!! note "The compatibility promise is about configurations, not flags"
     From 1.0 onward, existing configurations keep working, but individual CLI

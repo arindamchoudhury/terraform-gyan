@@ -46,7 +46,7 @@ headline release.
 | Version | Released | Headline features | Notes |
 |---|---|---|---|
 | **0.11** | 2017 | Last release before HCL2. Interpolation-only syntax (`"${...}"` everywhere), no `for_each`, no rich types. | Everything below 0.12 is now historical; upgrade tooling (`0.12upgrade`) existed to migrate. |
-| **0.12** | May 2019 | **HCL2**: first-class expressions, rich types (`list`, `map`, `object`, `tuple`), `for` expressions, **`dynamic` blocks**, conditional/ternary, `templatefile()` function. | The big language rewrite. `template_file` data source (external provider) effectively superseded by the built-in `templatefile()`. |
+| **0.12** | May 2019 | **HCL2**: first-class expressions, rich types (`list`, `map`, `object`, `tuple`), `for` expressions, **`dynamic` blocks**, `null` as "unset", `templatefile()` function. The conditional/ternary operator dates to **0.8**; 0.12 generalised it to results of any type and made only the taken branch raise runtime errors. | The big language rewrite. `template_file` data source (external provider) effectively superseded by the built-in `templatefile()`. |
 | **0.13** | Aug 2020 | **`required_providers` with source addresses** (third-party/community providers auto-installed from the registry); `count`/`for_each`/`depends_on` on **module** blocks; custom provider namespaces. | Made the community provider ecosystem possible. |
 | **0.14** | Dec 2020 | **Dependency lock file** (`.terraform.lock.hcl`); `sensitive = true` on variables and outputs; concise plan diffs. | Lock file is now a committed-to-VCS staple. |
 | **0.15** | Apr 2021 | Final pre-1.0 breaking changes: removed quoted type constraints (`"string"` → `string`), `list()`/`map()` → `tolist()`/`tomap()`; **experimental** `terraform test` first appears; **`-refresh-only` plan/apply mode** (0.15.4). | These were intended as the last breaking changes before 1.0. |
@@ -60,33 +60,37 @@ line. Each minor release is additive.
 |---|---|---|---|
 | **1.0** | Jun 2021 | Stability & compatibility promise for the 1.x series (not a feature release — Terraform was already production-grade). | — |
 | **1.1** | Dec 2021 | **`moved` block** — refactor resource/module addresses declaratively instead of `terraform state mv`; **`cloud` block** for native Terraform Cloud/HCP integration; **`nullable`** variable argument. | Reduces need for manual `state mv`. `cloud` block is the modern alternative to a `remote` backend for HCP. |
-| **1.2** | May 2022 | **`precondition` / `postcondition`** custom-condition blocks; **`replace_triggered_by`** lifecycle argument; cloud-run OPA output in CLI. | — |
+| **1.2** | May 2022 | **`precondition` / `postcondition`** custom-condition blocks; **`replace_triggered_by`** lifecycle argument; **`TF_TOKEN_<hostname>`** credentials; post-plan **run tasks** shown during cloud runs (OPA output came in 1.4). | — |
 | **1.3** | Sep 2022 | **Optional object-type attributes with defaults** (`optional(type, default)`) graduate from experimental; `moved` extended to third-party modules. | — |
-| **1.4** | Mar 2023 | **`terraform_data`** built-in managed resource. | **Replaces `null_resource`** (no more `hashicorp/null` provider needed for the common cases). |
+| **1.4** | Mar 2023 | **`terraform_data`** built-in managed resource; **`terraform metadata functions -json`**; OPA policy evaluation shown during cloud runs. | **Replaces `null_resource`** (no more `hashicorp/null` provider needed for the common cases). |
 | **1.5** | Jun 2023 | **`import` block** (config-driven import) + **`-generate-config-out`** codegen; **`check` block** (standalone assertions); new functions **`strcontains()`** and **`plantimestamp()`**. **License change: MPL → BSL 1.1** — this triggered the OpenTofu fork. | `import` block reduces reliance on the imperative `terraform import` command. |
 | **1.6** | Oct 2023 | **`terraform test` framework GA** (`.tftest.hcl`, `run` blocks, assertions). | **Replaces the experimental test feature** from 0.15. |
 | **1.7** | Jan 2024 | **Test mocking** (`mock_provider`, `override_resource`/`override_data`); **`removed` block** (config-driven remove — drop from state without destroying); **`for_each` on `import` blocks** (loop imports over a map). | `removed` block replaces the "comment out + `state rm`" workaround. |
-| **1.8** | Apr 2024 | **Provider-defined functions** (`provider::name::fn()`) — providers can ship their own functions; built-in provider functions **`encode_tfvars`**, **`decode_tfvars`**, **`encode_expr`** (`provider::terraform::…`). | — |
+| **1.8** | Apr 2024 | **Provider-defined functions** (`provider::name::fn()`) — providers can ship their own functions; built-in provider functions **`encode_tfvars`**, **`decode_tfvars`**, **`encode_expr`** (`provider::terraform::…`); **cross-type `moved`** (a provider can declare it converts from another resource type); **`issensitive()`**. | — |
 | **1.9** | Jun 2024 | **Cross-object variable validation** (a `validation` condition can now reference other variables, data sources, locals); **`templatestring()`** function. | Removes the old "validation can only reference the variable itself" limitation. |
-| **1.10** | Nov 2024 | **Ephemeral resources** + ephemeral values, including **ephemeral input variables and outputs** — data that is never written to plan or state. | New primitive for short-lived secrets/tokens. |
+| **1.10** | Nov 2024 | **Ephemeral resources** + ephemeral values, including **ephemeral input variables and outputs** — data that is never written to plan or state; **`terraform modules -json`**; **S3-native state locking introduced** (alongside DynamoDB, GA in 1.11). | New primitive for short-lived secrets/tokens. |
 | **1.11** | Feb 2025 | **Write-only arguments** (`*_wo` + `*_wo_version`) — send secrets to a provider without persisting them in state; **S3-native state locking GA** (lock file in the bucket). | **Deprecates DynamoDB-based S3 locking** (`dynamodb_table`); marked for removal in a future minor. |
 | **1.12** | 2025 | **OCI Object Storage backend**; `terraform test -parallelism` + per-run parallel annotations; **import block `identity`** attribute (mutually exclusive with `id`); short-circuiting logical operators. | — |
 | **1.13** | Aug 2025 | **Terraform Stacks in the CLI** (`terraform stacks` command, previously HCP-only); **`terraform rpcapi`** command GA (for tooling/integrators); test enhancements — **external variables inside `.tftest.hcl`** and cross-run output references, parallel teardown; much faster evaluation of high-cardinality `count`/`for_each`. | — |
 | **1.14** | 2025 | **List resources** (`*.tfquery.hcl`) + **`terraform query`** command; **`actions` block** — provider-defined operations outside the CRUD lifecycle (e.g. invoke a Lambda, trigger a CDN invalidation); test-framework output improvements. | — |
 | **1.15** | Apr 2026 | **Dynamic module sources** (variables in `source`/`version`) + **`const` variable attribute**; **`deprecated` attribute** on `variable`/`output`; **`convert()`** function; **`type` constraint on `output`**; functions usable inside `mock_data`/`override_resource`; S3 backend `aws login` credentials; Windows ARM64 builds. | `deprecated` gives module authors a first-class way to sunset variables/outputs. Closes several long-standing gaps to OpenTofu. |
 
-!!! note "1.16 (unreleased, in development)"
-    On `main` as of this check — **not yet a stable release**, subject to change.
+!!! note "1.16 (release candidate, not yet stable)"
+    **1.16.0-rc1** shipped 2026-08-12; treat everything here as provisional and
+    confirm against the release notes once 1.16.0 GAs.
     Notable entries in the 1.16 changelog: **`import` blocks inside modules**;
     a **`store` block in `terraform_data`** for ephemeral/sensitive values;
+    **`lifecycle { destroy = false }`**, matching OpenTofu 1.12;
     providers can use **nested blocks as computed values**; action-trigger
     **`on_failure` modes** (`halt`/`taint`/`continue`) plus a `caller` symbol and
-    before/after-destroy action events; **`workspace list -json`**; JSON output
-    for `terraform state show`; `contains()` can now test for `null`; Linux
-    s390x builds. Also **readable cycle errors**: the `Error: Cycle:` message
-    becomes one node per line, ordered by reference rather than graph traversal,
-    from a consistent starting node — same error and same fix, just legible on a
-    loop spanning many nodes. Confirm against the release notes once 1.16.0 GAs.
+    before/after-destroy action events; **`terraform graph -format=mermaid`**;
+    **`terraform console -scope=<module address>`**; **`workspace list -json`**;
+    JSON output for `terraform state show`; `contains()` can now test for
+    `null`; Linux s390x builds. Also **readable cycle errors**: the
+    `Error: Cycle:` message becomes one node per line, ordered by reference
+    rather than graph traversal, from a consistent starting node. Same error and
+    same fix, just legible on a loop spanning many nodes. That last one is in no
+    changelog entry; it is commit `4c4adca78b` on the `v1.16` branch.
 
 ---
 
@@ -102,13 +106,20 @@ full per-version OpenTofu catalogue, see
 | **1.7** | **State encryption** (client-side, with external key providers) | None in Terraform CLI as of 1.15 |
 | **1.9** | **Provider `for_each`** (multiple provider instances from a collection) | None as of 1.15 |
 | **1.8** | **Early variable / `.tfvars` evaluation** (variables usable in `backend`, module sources) | Partially addressed by TF 1.15 `const` + dynamic module sources |
-| **1.9** | **`-exclude`** flag (and `-exclude-file`) — inverse of `-target` | None as of 1.15 |
+| **1.9** | **`-exclude`** flag, the inverse of `-target` (the `-target-file` / `-exclude-file` pair followed in **1.10**) | None as of 1.15 |
+| **1.8** | **`.tofu` file extension**, for OpenTofu-specific overrides of `.tf` files | None; no equivalent mechanism |
+| **1.9** | **`-show-sensitive`**, unmasking sensitive values in `plan`, `apply`, and other data-returning commands | None as of 1.15 |
 | **1.10** | **OCI registries** for modules *and* providers; experimental **OpenTelemetry tracing** | Terraform 1.12 added an OCI **backend**, not OCI registries; no OTel in Terraform |
+| **1.10** | **Short-circuiting `&&` / `\|\|`** | Yes, Terraform 1.12 (OpenTofu shipped it first) |
+| **1.10** | **`pg` backend stores multiple states per database** (`table_name`, `index_name`) | None |
 | **1.11** | **Ephemeral resources / write-only arguments** (parity with TF 1.10/1.11) | Yes — TF 1.10 / 1.11 |
 | **1.11** | **`enabled`** — an argument in the `lifecycle` block (OpenTofu-only convenience) | None; use `count = var.x ? 1 : 0` |
 | **1.12** | **Dynamic `prevent_destroy`** (expression, not just literal) | Terraform requires a literal |
-| **1.12** | **`destroy = false`** lifecycle arg (drop from state without destroying) | Use the `removed` block instead |
+| **1.12** | **`destroy = false`** lifecycle arg (drop from state without destroying) | Terraform **1.16** adds the same `lifecycle` argument; before that, use the `removed` block |
 | **1.12** | **`-json-into=FILE`** (JSON stream to file, human UI stays on stdout) | None (`-json` replaces stdout) |
+| **1.12** | **`language` block**, separating OpenTofu version constraints from other software's | None; `required_version` only |
+| **1.12** | **`const = true`** on input variables (statically-evaluable values) | Yes, Terraform 1.15 (undocumented in its changelog) |
+| **1.12** | `local` backend writes **pretty-printed JSON** state, so version-controlled state diffs readably | None |
 | **1.12** | Concurrent provider installation; full cross-platform provider checksums at `init` | — |
 
 !!! note "Which to pick for new work"
@@ -135,7 +146,7 @@ full per-version OpenTofu catalogue, see
 | `terraform taint` / `untaint` commands | **`terraform apply -replace=ADDR`** (recreation shown in plan first) | ~0.15.2 |
 | `terraform refresh` command | **`-refresh-only`** on `plan`/`apply` (the command is an alias for `apply -refresh-only -auto-approve`, with no way to disable the auto-approve) | 0.15.4 |
 | Imperative `terraform import` command (as the only path) | **`import` block** (config-driven) | 1.5 |
-| "Comment out + `terraform state rm`" workaround | **`removed` block** | 1.7 (TF) / `destroy = false` in OpenTofu 1.12 |
+| "Comment out + `terraform state rm`" workaround | **`removed` block**, or `lifecycle { destroy = false }` | 1.7 (TF `removed`) / OpenTofu 1.12 and Terraform 1.16 (`destroy = false`) |
 | DynamoDB table for S3 state locking (`dynamodb_table`) | **S3-native lock file** (`use_lockfile`) | 1.11 (GA); DynamoDB marked for removal |
 | Storing secrets in provider args (persisted to state) | **Write-only arguments** (`*_wo`) / **ephemeral** values | 1.10–1.11 |
 
@@ -158,10 +169,18 @@ OpenTofu release notes (1.7–1.12), and the project's own
 Verified 2026-07-05 (re-audited against per-release notes — added import
 `for_each` (1.7), ephemeral variables/outputs (1.10), and the `strcontains`/
 `plantimestamp` functions (1.5)). Pre-1.0 feature attributions cross-checked
-against the HashiCorp release history and *Terraform in Depth* Ch1–2. The 1.16
-(unreleased) entry is drawn from the `main` branch
-[CHANGELOG](https://github.com/hashicorp/terraform/blob/main/CHANGELOG.md) and
-will change before GA.
+against the HashiCorp release history and *Terraform in Depth* Ch1–2.
+
+**Reconciled 2026-08-13** against the changelog-derived
+[Release Feature Map](release-feature-map.md) and
+[OpenTofu Release Feature Map](opentofu-release-feature-map.md), reading every
+version branch's `CHANGELOG.md`. Four attributions were corrected here: OPA
+output in cloud runs moved from 1.2 to **1.4** (1.2 shipped post-plan run
+tasks); the conditional/ternary operator moved off the 0.12 line, since it
+dates to **0.8** and 0.12 only generalised it; OpenTofu `-target-file` /
+`-exclude-file` moved from 1.9 to **1.10**; and the `destroy = false` rows
+updated now that Terraform **1.16** has the argument too. The 1.16 entry is
+drawn from the `v1.16` branch at **rc1** and will change before GA.
 
 **Scope:** this lists the *headline* language/CLI/workflow feature per release.
 Each minor also adds a handful of built-in functions and small CLI flags that
