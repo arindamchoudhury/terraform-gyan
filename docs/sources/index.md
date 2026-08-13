@@ -137,3 +137,11 @@ Tools that sit next to Terraform rather than inside it. See the [course overview
 | Title | Type | Added | Tags | URL |
 |---|---|---|---|---|
 | [pyinfra](tools/pyinfra.md) | repository | 2026-07-17 | config-management, ansible-alternative, provisioners, terraform-output, inventory, a1 | [url](https://github.com/pyinfra-dev/pyinfra) |
+
+## 7. Terraform Best Practices
+
+Anton Babenko's community book at [terraform-best-practices.com](https://www.terraform-best-practices.com/). Not a HashiCorp publication — see the [course overview](terraform-best-practices/index.md) for the caveats.
+
+| Title | Type | Added | Tags | URL |
+|---|---|---|---|---|
+| [Code styling](terraform-best-practices/code-styling.md) | documentation | 2026-08-13 | style, formatting, fmt, pre-commit, editorconfig, terraform-docs, comments | [url](https://www.terraform-best-practices.com/code-styling) |

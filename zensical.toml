@@ -210,6 +210,10 @@ nav = [
             { "Overview" = "sources/infisical-blog/index.md" },
             { "1. A Guide to Terraform Secrets Management" = "sources/infisical-blog/infisical-terraform-secrets.md" },
         ]},
+        { "Terraform Best Practices" = [
+            { "Overview" = "sources/terraform-best-practices/index.md" },
+            { "Code styling" = "sources/terraform-best-practices/code-styling.md" },
+        ]},
         { "Tools" = [
             { "Overview" = "sources/tools/index.md" },
             { "1. pyinfra" = "sources/tools/pyinfra.md" },
