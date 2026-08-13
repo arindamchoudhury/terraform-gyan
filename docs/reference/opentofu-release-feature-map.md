@@ -468,10 +468,18 @@ The two differ in placement, since Terraform's is an argument inside the
 ### No pluggable state stores
 
 Terraform has carried a `state_store` block for pluggable state storage in its
-parser since 1.13, experiment-gated. **OpenTofu has no equivalent** anywhere in
-`internal/configs` as of `main`. Backends remain a fixed built-in set. Worth
-tracking, because it is the one place where Terraform has in-flight
-architectural work with no OpenTofu counterpart.
+parser since 1.13, experiment-gated. **OpenTofu declares no `state_store`
+block**: `internal/configs` on `main` has nothing corresponding, and backends
+remain a fixed built-in set.
+
+State that precisely, because a bare grep misleads here. OpenTofu's vendored
+`internal/tfplugin6` **does** carry `ValidateStateStoreConfig` and
+`ConfigureStateStore`, since both tools speak the same tfplugin6 plugin
+protocol and the generated stubs arrive with it. The *wire protocol* therefore
+has the state-store RPCs on both sides; what only Terraform has is a
+configuration block that reaches them. Worth tracking as the one place
+Terraform has in-flight architectural work with no OpenTofu counterpart at the
+language level.
 
 ### OpenTofu does not ship gated plumbing early
 
