@@ -106,10 +106,28 @@ no changelog.
 
 | Version | Enhancement |
 |---|---|
-| 1.9 | **`-exclude`**, the inverse of `-target`: name what to skip, and OpenTofu skips it plus everything depending on it. |
-| 1.10 | **`-target-file` and `-exclude-file`** read address lists from a file, so routinely-used targets can live in version control. OpenTofu starts recommending `-exclude` in unknown-value `count`/`for_each` errors. |
+| 1.9 | **`-exclude`**, the inverse of `-target`: name what to skip, and OpenTofu skips it plus everything depending on it. Combining it with `-target` in one command is an error, not a merge. |
+| 1.10 | **`-target-file` and `-exclude-file`** read address lists from a file, so routinely-used targets can live in version control. The mutual-exclusion check widens from the two flags to the two **families**, so `-target-file` with `-exclude` is rejected too. OpenTofu starts recommending `-exclude` in unknown-value `count`/`for_each` errors. |
 | 1.11 | The `-exclude` recommendation is extended to provider-reported unknown-value planning failures. |
 | 1.11.2 | That recommendation is **reverted**. Providers were found to report unknown-value failures spuriously, so OpenTofu cannot tell when the suggestion applies. `-exclude` is still a valid manual workaround. |
+
+!!! note "Targeting and excluding cannot be mixed"
+    Verified in source rather than taken from the docs. In **1.9**, combining
+    `-target` with `-exclude` fails at argument parsing with "Invalid
+    combination of arguments" and the detail *"-target and -exclude flags
+    cannot be used together. Please remove one of the flags"*
+    (`internal/command/arguments/extended.go`).
+
+    **1.10 widened the guard to the whole families**, since it had to once the
+    file variants existed. Any of `-target` or `-target-file` combined with any
+    of `-exclude` or `-exclude-file` is rejected, and the message became *"The
+    target and exclude planning options are mutually-exclusive. Each plan must
+    use either only the target options or only the exclude options."* The
+    widening rode in on the same commit that added the file options
+    (`556ba25638`, first released in v1.10.0).
+
+    So a plan is either target-scoped or exclude-scoped. There is no way to
+    combine an allow-list and a deny-list in one run.
 
 ### Testing
 
