@@ -1,58 +1,20 @@
-import glob as _glob
 import os
+import sys
 import threading
 from livereload import Server
 
-import zensical.config as _zc
-
-
-# slug -> "/rel/path/" index, rebuilt once per build() via _refresh_slug_index().
-# Avoids a recursive glob per wikilink (was O(links x tree) every build).
-_slug_index = {}
-
-
-def _refresh_slug_index(docs_dir):
-    index = {}
-    for path in _glob.glob(os.path.join(docs_dir, "**", "*.md"), recursive=True):
-        slug = os.path.splitext(os.path.basename(path))[0].lower()
-        rel = os.path.relpath(path, docs_dir).replace("\\", "/")
-        # First match wins, matching the previous glob[0] behaviour.
-        index.setdefault(slug, "/" + rel[:-3] + "/")
-    _slug_index.clear()
-    _slug_index.update(index)
-
-
-def _make_wikilink_resolver(docs_dir):
-    # Resolve [[slug]] via the prebuilt slug index so notes can live in
-    # course subdirectories without breaking cross-references on reorg.
-    def build_url(label, base, end):
-        slug = label.strip().replace(" ", "-").lower()
-        return _slug_index.get(slug, f"/sources/{slug}/")
-    return build_url
-
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts"))
+import wikilinks as _wikilinks
 
 _docs_dir = os.path.join(os.path.dirname(os.path.abspath("zensical.toml")), "docs")
 
-# Patch the module-level build_url in the wikilinks extension directly.
-# Passing build_url via the config dict is unreliable — Zensical may not
-# forward callables through its config pipeline. Patching the module function
-# guarantees it's picked up regardless of how the extension is initialised.
-import markdown.extensions.wikilinks as _wikilinks_ext
-_wikilinks_ext.build_url = _make_wikilink_resolver(_docs_dir)
-
-# Add [[slug]] wikilink support to the default extension set. zensical.toml
-# defines no markdown_extensions of its own, so this dict is what every build
-# resolves to. build_url stays out of this config on purpose: zensical pickles
-# mdx_configs to hash it, and a closure isn't picklable — the module-global
-# patch above carries the resolver instead.
-# The ```mermaid fence needs no patch. DEFAULT_MARKDOWN_EXTENSIONS already
-# registers pymdownx.superfences with a mermaid custom fence.
-# Must happen before importing zensical.build so the patch is in effect when
-# Rust calls back into parse_zensical_config().
-_zc.DEFAULT_MARKDOWN_EXTENSIONS["wikilinks"] = {
-    "base_url": "/sources/",
-    "end_url": "/",
-}
+# Installs the [[slug]] resolver and registers the extension. Shared with
+# scripts/build_site.py so the preview and the published site render links the
+# same way. Must run before importing zensical.build: Zensical's Rust side calls
+# back into parse_zensical_config(), which reads DEFAULT_MARKDOWN_EXTENSIONS.
+# The ```mermaid fence needs no patch — the defaults already register
+# pymdownx.superfences with a mermaid custom fence.
+_wikilinks.install(_docs_dir)
 
 from zensical import build as _zensical_build
 
@@ -66,7 +28,7 @@ _build_lock = threading.Lock()
 
 def _do_build():
     """The actual build, called after the debounce window expires."""
-    _refresh_slug_index(_docs_dir)
+    _wikilinks.refresh(_docs_dir)  # pick up notes added since the last build
     _zensical_build(_CONFIG_FILE, {"clean": False, "strict": False})
 
 

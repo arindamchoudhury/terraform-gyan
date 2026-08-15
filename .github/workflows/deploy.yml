@@ -48,8 +48,13 @@ jobs:
           print("Published nav:", [next(iter(it)) for it in cfg["project"]["nav"]])
           PY
 
+      # Not a bare `zensical build`: that leaves [[slug]] references as literal
+      # text, since the resolver lives in scripts/wikilinks.py rather than in
+      # zensical.toml. build_site.py installs it, so the published pages render
+      # links exactly as the local preview does. A slug matching no page renders
+      # as plain text and fails the build.
       - name: Build site
-        run: zensical build          # outputs ./site
+        run: python scripts/build_site.py          # outputs ./site
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

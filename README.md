@@ -22,12 +22,28 @@ Serves <http://localhost:8000> and live-reloads on edits under `docs/`.
 
 `serve.py` needs `zensical` and `livereload` installed. It listens on `$PORT`, falling back to 8000, because port 8000 is routinely taken by Docker on this machine. `.claude/launch.json` sets `autoPort: true`, so the launcher assigns a free port and passes it through `PORT`.
 
+## Building for a reader
+
+**A bare `zensical build` does not resolve `[[slug]]` references** — it leaves them as literal text. The resolver lives in `scripts/wikilinks.py`, not in `zensical.toml`, because Zensical pickles `mdx_configs` to hash them and a function is not picklable. Anything whose output a person will read goes through:
+
+```bash
+python scripts/build_site.py [--clean]
+```
+
+That installs the resolver, builds, and **exits non-zero if any `[[slug]]` matched no page**. Both `serve.py` and the deploy workflow use it, so the published site and the local preview render links identically. Keep `zensical build` for throwaway checks only.
+
+Slug resolution has two outcomes:
+
+| `[[slug]]` | Renders as |
+|---|---|
+| a `<slug>.md` exists anywhere under `docs/` | `<a class="wikilink">` pointing at that page |
+| nothing matches (typo, or a topic page still on the backlog) | `<span class="wikilink-missing">` — plain text, and the build fails |
+
+The plain-text fallback is deliberate: the stock extension always emits an anchor, so a mistyped slug used to ship as a silent 404 pointing at `/sources/<slug>/`.
+
 ## `serve.py` is not just a file server
 
-It installs two things a plain `zensical build` does not have:
-
-1. **The `[[slug]]` wikilink resolver.** Notes cross-reference each other by slug alone, so a note can move between course directories without breaking links. `serve.py` scans `docs/` for `<slug>.md` and patches `markdown.extensions.wikilinks.build_url` to resolve against that index. Without the patch, `[[slug]]` renders as literal text.
-2. **A debounced rebuild** (5 s of quiet) plus a guard around livereload's file watcher — Docker Desktop's bind mount intermittently raises `OSError: [Errno 5]` from `stat()` on files that are readable on the host, and unguarded that kills the whole polling pass.
+Beyond installing the resolver, it adds **a debounced rebuild** (5 s of quiet, and the slug index refreshes each time so new notes resolve without a restart) plus a **guard around livereload's file watcher** — Docker Desktop's bind mount intermittently raises `OSError: [Errno 5]` from `stat()` on files that are readable on the host, and unguarded that kills the whole polling pass.
 
 ## Check for broken links
 
@@ -41,24 +57,23 @@ Walks the built site, resolves every internal href against the page that carries
 python -c "from zensical import build; build('zensical.toml', {'clean': True})"
 ```
 
-**Why this exists:** Zensical's own `page does not exist` warning covers markdown links (`[text](../other.md)`) but not hrefs produced by the wikilinks extension. A mistyped `[[slug]]` silently falls back to `/sources/<slug>/` and ships as a 404 that no build reports. Three of those were live in the TID chapters before the script existed.
+**Why this exists:** Zensical's own `page does not exist` warning covers markdown links (`[text](../other.md)`) but not hrefs produced by the wikilinks extension. Three dead wikilinks were live in the TID chapters before the script existed. `build_site.py` now catches unresolvable slugs at build time, so this script is the backstop for the other half — links whose target *slug* exists but whose *page* does not.
 
-The check is only meaningful against a site built **with** the wikilink resolver — a plain `zensical build` leaves the links as text, so there is nothing to check.
+Run it against output built by `build_site.py`; a plain `zensical build` leaves the links as text, so there is nothing to check.
 
 ## Publishing
 
-`.github/workflows/deploy.yml` builds on every push to `master` and deploys to GitHub Pages. Two things it does differently from a local build:
+`.github/workflows/deploy.yml` builds on every push to `master` and deploys to GitHub Pages, via `scripts/build_site.py` so published links behave exactly like local ones.
 
-- **The nav is trimmed** to `Learning Path` and `Book`. The committed `zensical.toml` keeps the full nav for local use; CI rewrites a copy in its own checkout.
-- **It runs plain `zensical build`**, so the wikilink resolver is absent and `[[slug]]` references reach the published pages as literal text.
-
-Those two interact: resolving wikilinks in CI without also publishing their targets would trade literal text for dead links, since most link targets sit in the nav sections CI drops.
+The one difference from a local build: **the nav is trimmed** to `Learning Path` and `Book`. The committed `zensical.toml` keeps the full nav for local use; CI rewrites a copy inside its own checkout. Note what this does *not* do — **every page under `docs/` is still built and deployed**, including notes, topics and research-cache (verified: identical 183-page output either way). The trim only decides what appears in the sidebar, which is why resolving wikilinks in CI produces working links rather than 404s.
 
 ## Other scripts
 
 | Script | Purpose |
 |---|---|
-| `scripts/fetch_page.py` | Fetch a JavaScript-rendered page and cache its text under `cache/web/` |
+| `scripts/build_site.py` | Build with the wikilink resolver installed — used locally and by CI |
+| `scripts/wikilinks.py` | The `[[slug]]` index and the python-markdown patch behind it |
 | `scripts/check_links.py` | Broken-internal-link check over the built site |
+| `scripts/fetch_page.py` | Fetch a JavaScript-rendered page and cache its text under `cache/web/` |
 
 `cache/` and `site/` are gitignored scratch.
