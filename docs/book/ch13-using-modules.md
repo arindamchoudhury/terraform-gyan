@@ -146,7 +146,7 @@ Which inputs a module accepts is not your decision. The reference is blunt about
 !!! info "`ignore_nested_deprecations` — the consumer's opt-out, new in 1.15"
     A module author can mark a variable or an output `deprecated`, which raises a warning in every configuration that still uses it. Setting `ignore_nested_deprecations = true` on the `module` block silences those warnings for that call and everything nested below it. Default is `false`.
 
-    Use it to keep a noisy CI log readable while an upgrade is scheduled, not to make the notice go away permanently. The `deprecated` argument itself is Chapter 14.
+    Use it to keep a noisy CI log readable while an upgrade is scheduled, not to make the notice go away permanently. Marking something `deprecated` in the first place is the author's half of this, and Chapter 14 covers it.
 
 ---
 
@@ -718,7 +718,7 @@ The **resources** tab is the one to open first. It tells you what the module wil
 !!! warning "Curating a module in a private registry is a recommendation, not a control"
     HCP Terraform lets you add public modules to your organisation's private registry, and the word "approved" gets attached to the result. The mechanism does not support that reading. The registry *"stores a pointer"* to the public module, the source address in configurations is unchanged, and removing a curated entry does not stop anyone: *"Users in the organization can still use the removed provider or module without changing their configurations."*
 
-    Curation is a bookmark list with documentation attached. Enforcement is policy on the plan, which is Chapter 22. Curating a public module does buy one real capability: on HCP Terraform Standard and Premium you can enable no-code provisioning on it, which turns a community module into something a team with no Terraform knowledge can provision through the UI. That is Chapter 31's territory.
+    Curation is a bookmark list with documentation attached. Enforcement happens on the plan instead, through policy, which Chapter 22 covers. Curating a public module does buy one real capability: on HCP Terraform Standard and Premium you can enable no-code provisioning on it, which turns a community module into something a team with no Terraform knowledge can provision through the UI. That is Chapter 31's territory.
 
 ---
 
