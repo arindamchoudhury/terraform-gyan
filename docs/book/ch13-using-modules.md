@@ -305,11 +305,22 @@ The second cost is shallow clones, and no documentation page connects it to the 
 !!! danger "`depth` and a SHA `ref` are mutually exclusive"
     `?depth=1` is the documented way to avoid cloning a large repository's entire history. The [`module` block reference](https://developer.hashicorp.com/terraform/language/block/module) carries the restriction: *"you must specify a named branch or tag known to the remote repository. You cannot use raw commit IDs."* The two how-to pages that describe `depth` do not mention it.
 
-    The mechanism is in `hashicorp/go-getter` **v1.8.6**, the version Terraform **1.15.8** vendors. When `depth > 0` it passes `--depth` together with `--branch <ref>`, and `git clone --branch` accepts only a branch or a tag. A full clone takes a different path and does a separate `checkout`, which is what lets an arbitrary SHA work at all.
+    The mechanism is in `hashicorp/go-getter` **v1.8.6**, the version Terraform **1.15.8** vendors (confirmed in `go.mod` at the `v1.15.8` tag). `GitGetter.clone` in `get_git.go` is explicit:
+
+    ```go
+    if depth > 0 {
+        args = append(args, "--depth", strconv.Itoa(depth))
+        args = append(args, "--branch", ref)      // ← always paired
+    }
+    ```
+
+    `git clone --branch` accepts only a branch or a tag, never a raw commit. The full-clone path then takes a different route — *"if we didn't add --depth and --branch above then we will now be on the remote repository's default branch"* — and runs a separate `checkout`, which is what lets an arbitrary SHA work at all.
 
     Reproduced against a real repository in Part C of this chapter's lab, with the error quoted in full.
 
-    The same page's summary block claims `depth` defaults to `1`. That cannot be right. If it did, every Git source would be a shallow clone and a SHA `ref` would never work, yet SHA refs are documented as supported on the same page. An omitted `depth` produces a full clone. Read the sentence as "1 is the value to use when you set it".
+    The same page's summary block claims `depth` defaults to `1`. **It does not**, and this is now settled from the source rather than argued from the contradiction. The shallow path is gated on `depth > 0` and the checkout path on `depth < 1`, so an omitted `depth` arrives as the zero value and produces a **full clone**. Read the documented sentence as "1 is the value to use when you set it".
+
+    Worth knowing when you hit this: go-getter recognises the mistake and says so. If the clone fails while `depth > 0` and the ref matches `^[0-9a-fA-F]{7,40}$`, it appends *"(note that setting 'depth' requires 'ref' to be a branch or tag name)"* to the error — which is the line the lab captures in Part C. It is a heuristic on the shape of the ref, not a guarantee, so a branch whose name happens to look like hex would get the same note.
 
 **How to choose.** A third-party module you do not control: SHA-pin, and accept manual upgrades, because a mutable tag under someone else's control is a genuine exposure. A module in your own organisation with tag-protection rules enabled: pin the tag and keep the automation, because you control whether the tag can move. Either way it is a decision, not a default.
 
