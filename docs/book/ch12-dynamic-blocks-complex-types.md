@@ -811,6 +811,8 @@ arguments. If used, the sensitive value could be exposed as a resource instance 
 The reason is in the last sentence. A resource `for_each` key becomes part of the instance
 **address** — `aws_instance.web["prod-db"]` — and addresses are printed in plans, listed by
 `terraform state list`, and stored unredacted in state. A sensitive value cannot be an address.
+[Ch 10](ch10-meta-arguments.md) §4 covers that restriction and its two siblings — keys must also be
+known at plan time and must not come from impure functions — in full.
 
 A `dynamic` block's `for_each` has no such problem, because it produces **values inside an
 attribute**, not addresses. The same sensitive variable drives it fine:

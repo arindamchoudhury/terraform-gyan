@@ -452,6 +452,49 @@ Keys are how Terraform names instances, so they are constrained more tightly tha
 
 **Keys must be known before any remote operation.** The *Limitations on values* section puts it as: the keys of the map, or all values in a set of strings, must be known values, or Terraform "returns an error message that `for_each` has dependencies that cannot be determined before apply and that a `-target` may be needed." Treat that `-target` suggestion as a diagnostic rather than advice. It is an escape hatch, not a workflow.
 
+The corollary is the more useful half, and the page buries it: **only the keys have to be known — the values may be entirely unknown.** That is what decides whether a `for_each` driven by another resource's output compiles at all, and it is a question of *shape*, not of waiting. A set puts the unknown value in the key position, so it fails:
+
+```hcl
+resource "terraform_data" "set_form" {
+  for_each = toset([terraform_data.src.id])   # the unknown IS the key
+  input    = each.key
+}
+```
+
+```
+Error: Invalid for_each argument
+    │ terraform_data.src.id is a string, known only after apply
+
+The "for_each" set includes values derived from resource attributes that cannot be
+determined until apply, and so Terraform cannot determine the full set of keys that
+will identify the instances of this resource.
+```
+
+The same unknown value in a map, under keys you wrote yourself, plans without complaint:
+
+```hcl
+resource "terraform_data" "map_form" {
+  for_each = { web = terraform_data.src.id, api = terraform_data.src.id }
+  input    = each.value                       # unknown value, known key
+}
+```
+
+```
+  # terraform_data.map_form["api"] will be created
+      + input  = (known after apply)
+  # terraform_data.map_form["web"] will be created
+      + input  = (known after apply)
+
+Plan: 3 to add, 0 to change, 0 to destroy.
+```
+
+Both instance addresses are fixed at plan time — `["web"]` and `["api"]` — which is all Terraform needed. What goes *inside* each instance can stay unresolved until apply, exactly as it does for any ordinary argument.
+
+!!! tip "The error tells you this, one paragraph below the part people read"
+    The diagnostic above continues: *"When working with unknown values in `for_each`, it's better to use a map value where the keys are defined statically in your configuration and where only the values contain apply-time results."* Only after that does it mention `-target`. So the reshape is the documented fix and `-target` is the fallback, which is the reverse of how the pair is usually quoted. Measured on **1.15.8** and identical on **OpenTofu 1.12.4**, which prints the same two sentences with its own name substituted.
+
+    In practice this means naming your instances after something you control — an environment name, a service name, a key from a `variable` — and letting the resource attribute be the value. If you genuinely cannot name them without the unknown value, that is the signal to split the apply, not to reach for `-target`.
+
 **Keys cannot come from impure functions.** HashiCorp's [`for_each` reference](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each), under *Limitations on values*, names three of them:
 
 > "Keys in the `for_each` argument cannot be the result of or rely on the result of impure functions, including `uuid`, `bcrypt`, or `timestamp`, because Terraform defers evaluating impure functions during the main evaluation step."
