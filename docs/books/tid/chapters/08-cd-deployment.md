@@ -451,7 +451,9 @@ Ch7's worked example blocked expensive GPU instance types. But **modules do not 
 
 That makes **deployment-time policy strictly more powerful**, and it is why most CD platforms ship a policy engine — and why most of them chose the **same** one, OPA with Rego. Policies written for one platform largely port to another; the cost is learning Rego.
 
-HCP Terraform was the outlier with **Sentinel** and its own language, but **in 2023 HashiCorp added native OPA support**. The chapter's conclusion follows: standardise on OPA, because it is used far beyond the Terraform ecosystem.
+HCP Terraform was the outlier with **Sentinel** and its own language, but **in 2023 HashiCorp added native OPA support**. Confirmed: HashiCorp's ["Native OPA Support in Terraform Cloud Is Now Generally Available"](https://www.hashicorp.com/en/blog/native-opa-support-in-terraform-cloud-is-now-generally-available) puts **GA in January 2023**, after a public beta at HashiConf Global **2022** — so the date holds, and OPA runs *alongside* Sentinel rather than replacing it.
+
+The chapter's conclusion follows: standardise on OPA, because it is used far beyond the Terraform ecosystem.
 
 ### 8.6.7 Infrastructure cost estimates
 
@@ -499,11 +501,13 @@ The critique is structural rather than about the number: it penalises resource *
 
     | Tier | Per resource / month | Rated hourly |
     |---|---|---|
-    | Essentials | **$0.10** | $0.00013 |
-    | Standard | **$0.47** | $0.00064 |
-    | Premium | **$0.99** | $0.00135 |
+    | Essentials | from **$0.10** | $0.00013 |
+    | Standard | from **$0.47** | $0.00064 |
+    | Premium | from **$0.99** | $0.00135 |
 
-    The book's ~$7.25 for 72 resources lines up with the Essentials rate (72 × $0.10 = $7.20). On **Standard** the same VPC is about **$33.84/month**, and on Premium about **$71**. So the criticism has not aged — it has scaled. The free tier now caps at **500 managed resources** ([[version-facts]]).
+    Read those as **floors**, not rates: the page words every one as *"Starting at $X per month per resource"*, so anything derived from them is a minimum.
+
+    The book's ~$7.25 for 72 resources lines up with the Essentials floor (72 × $0.10 = $7.20). At the **Standard** floor the same VPC is **at least ~$34/month**, and at Premium **at least ~$71**. So the criticism has not aged — it has scaled. The free tier caps at **500 managed resources** ([[version-facts]]; the public pricing page does not state a free-tier limit, so that figure rests on the earlier capture rather than on this check).
 
 Its genuine standouts: **built-in cost estimation**, and deep CLI integration — with the `cloud` backend configured, developers trigger runs on HCP Terraform straight from the CLI, which runs remotely with the configured secrets.
 
