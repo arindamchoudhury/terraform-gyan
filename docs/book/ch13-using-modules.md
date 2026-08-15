@@ -96,7 +96,7 @@ Neither subdirectory was read. Broken syntax in an unreferenced directory is not
 
 ## 2. The `module` block
 
-The calling convention is small enough to state in one sentence. A `module` block takes `source`, optionally `version`, up to four meta-arguments, and one 1.15 opt-out. **Every other argument in the block is an input variable for the module.**
+The calling convention is small enough to state in one sentence. A `module` block takes `source`, optionally `version`, up to four meta-arguments (`count`, `for_each`, `depends_on`, `providers`), and `ignore_nested_deprecations`, which 1.15 added to silence deprecation warnings raised from inside the module. **Every other argument in the block is an input variable for the module.**
 
 ```hcl
 module "logs" {
