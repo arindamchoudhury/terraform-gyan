@@ -96,7 +96,14 @@ HCL's native-syntax spec, §Collection Values:
 
 > "Tuple and object values can in turn be converted to list, set and map values with other operations, which behaves as defined by the syntax-agnostic HCL information model."
 
-So this is a **language-spec guarantee**, not a Terraform quirk or an accident of the parser. It holds for OpenTofu identically — both consume the same `hcl/v2` (TF go.mod: `github.com/hashicorp/hcl/v2 v2.24.0`).
+So this is a **language-spec guarantee**, not a Terraform quirk or an accident of the parser. It holds for OpenTofu identically, but **not for the reason this note originally gave**.
+
+!!! warning "Corrected 2026-08-15 — the two tools do not share an HCL build"
+    This paragraph previously read "both consume the same `hcl/v2`". They do not. Terraform pins
+    upstream `github.com/hashicorp/hcl/v2 v2.24.0`; OpenTofu requires `v2.20.1` and then
+    `replace`s it with **its own fork**, `github.com/opentofu/hcl/v2 v2.20.2-0.20251021132045-587d123c2828`.
+    The conclusion above survives because it rests on `hclsyntax/spec.md`, which both implement —
+    spec-level claims transfer, implementation-level ones do not. See [[hcl-library-facts]].
 
 ### The two families are defined by the spec, verbatim
 
