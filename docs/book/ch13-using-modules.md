@@ -29,7 +29,9 @@ So you copy the directory. That solves it for today, and what you have actually 
 - **Every update has to land in each copy.** Fix the bucket policy in staging and production still has the old one, until somebody notices. This is the drift that shows up during an incident rather than during review.
 - **Sharing between teams degenerates into copy-paste.** The tutorial's phrase for that is *"error prone and hard to maintain"*, and the copy stops tracking the original the moment it is pasted.
 
-The function analogy is the right one, and it is the frame *Terraform: Up & Running* runs its whole module chapter on. In a general-purpose language you extract repeated code into a function and call it from several places. Here you extract it into a module and call it from several places.
+General-purpose languages settled this a long time ago. When the same code shows up in three places, you extract it into a function, give it parameters for the parts that differ, and call it from all three. Terraform's equivalent is the module: extract the repeated configuration into its own directory, give it variables for the parts that differ, and call it from all three configurations.
+
+That is the analogy to hold, and it is the frame *Terraform: Up & Running* runs its whole module chapter on. It survives being taken item by item, which is more than most analogies manage.
 
 | Function concept | Terraform mechanism |
 |---|---|
