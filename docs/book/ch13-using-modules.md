@@ -18,9 +18,9 @@ By the end you can:
 
 ## 1. The problem, and the thing you already have
 
-You need staging and production. They are near-identical, with production running larger and more of everything.
+You need staging and production. Both stand up the same network, the same application servers behind the same load balancer, and the same bucket for logs. They differ in three values: staging runs one `t2.micro` where production runs five `t3.large`, and every resource carries `environment = "staging"` instead of `environment = "prod"`.
 
-Chapter 6 already handles the size difference: declare the instance count and the machine type as variables, pass one set of values for staging and another for production. Parameterising a single configuration is a solved problem. Reusing it is not. The moment staging and production are separate configurations, or another team wants the same bucket setup, or the same three resources show up in a fifth project, variables have nothing to offer — they vary the values inside one configuration, not the configuration itself.
+Chapter 6 already handles that: `instance_type`, `instance_count` and `resource_tags` become variables, and you keep a `staging.tfvars` beside a `prod.tfvars`. Parameterising a single configuration is a solved problem. Reusing it is not. The moment staging and production are separate configurations, or another team wants the same bucket setup, or the same three resources show up in a fifth project, variables have nothing to offer — they vary the values inside one configuration, not the configuration itself.
 
 So you copy the directory. That solves it for today, and what you have actually bought is a duplicate. Every fix now has to be made twice, and the two copies drift apart in exactly the ways nobody notices until an incident. HashiCorp's [Modules overview tutorial](https://developer.hashicorp.com/terraform/tutorials/modules/module) lists the failure modes plainly: navigating the files gets harder, a change in one section has unintended consequences elsewhere, duplication across environments means every update lands in each copy, and sharing between teams degenerates into copy-paste, which it calls *"error prone and hard to maintain"*.
 
