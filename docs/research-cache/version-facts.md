@@ -21,6 +21,21 @@ _Last verified: 2026-08-15 (OpenTofu bumped 1.12.4 → 1.12.5; Terraform re-conf
     `repos/opentofu`, and `repos/terraform` carries no stable tag above `v1.15.8` (its 1.16 line
     stops at `v1.16.0-rc1`).
 
+!!! note "OpenTofu 1.13.0 is open in `main` — check it before writing an “OpenTofu lacks X” claim"
+    Verified 2026-08-15 against a freshly fetched `origin/main` (`3561785c`, 2026-08-14). The
+    CHANGELOG's top section is **`## 1.13.0 (Unreleased)`**, and nothing in it is tagged — so features
+    landing there are real code and **not installable**. Two that close known gaps:
+
+    - **`convert(value, type)`** ([opentofu#4449](https://github.com/opentofu/opentofu/pull/4449)),
+      closing [opentofu#2630](https://github.com/opentofu/opentofu/issues/2630). Terraform-only until
+      1.13 ships.
+    - **`assume…` functions**, hinting the eventual type of an unknown value so more can be resolved at
+      plan time. Same PR. **No Terraform equivalent.**
+
+    Also in 1.13: Windows ARM64 support, and the **removal** of the `winrm` provisioner connection type
+    (deprecated in 1.12). The gate that matters: `git tag --contains <commit>` returning nothing means
+    unreleased, however current `main` looks.
+
 **Terraform ↔ OpenTofu divergence.** OpenTofu forked at Terraform 1.5.x and shipped features Terraform's
 open-source CLI lacked: **state encryption**, **provider `for_each`**, **early variable/`.tfvars` evaluation**,
 the **`-exclude` flag**, and (1.12) **dynamic `prevent_destroy`**. **Terraform 1.15 (2026-04-29) closed some of
