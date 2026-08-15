@@ -223,6 +223,67 @@ example_object = { name = "web", port = 443 }       # object({name=string, port=
 
 The map-vs-object distinction is the subtle one: a **map** allows any keys but forces one value type (ideal for tags, where keys are arbitrary); an **object** fixes the set of keys but lets each hold a different type (ideal for a structured config). Terraform silently drops object keys not in the constraint; a map keeps whatever keys you give it.
 
+### Strings have a second form: the heredoc
+
+The table above says "Unicode text", which undersells it, because a string that has to contain
+newlines — a startup script, a policy document, a config file you are about to hand to a provider —
+does not want to be one long `"...\n..."` line. HCL's second string form is the **heredoc**, opened
+with `<<` and a delimiter of your choice and closed by that delimiter alone on its own line:
+
+```hcl
+locals {
+  motd = <<EOT
+Welcome to the platform.
+Ask in #infra before changing anything.
+EOT
+}
+```
+
+Convention is an all-caps delimiter beginning `EO` — `EOT` for "end of text" is the one you will see
+most. The plain `<<` form keeps every character between the markers exactly as written, leading
+whitespace included, which is a problem the moment the heredoc sits inside an indented block.
+
+The **`<<-` form** exists for that. It removes indentation from the content, and the precise rule
+matters more than the shorthand summary suggests. HCL's
+[native syntax specification](https://github.com/hashicorp/hcl/blob/main/hclsyntax/spec.md) states
+it as finding "the minimum number of leading spaces" across the content lines and removing "that
+number of prefix spaces" from all of them. It is a **common** amount removed, not all indentation,
+and one line sets the amount for every line. Measured on Terraform 1.15.8:
+
+```hcl
+locals {
+  mixed = <<-EOT
+    alpha
+      beta
+    gamma
+    EOT
+}
+# → "alpha\n  beta\ngamma\n"   the shared four spaces went, beta keeps its extra two
+```
+
+Which gives the trap. One line indented less than the rest drops the common amount to *its*
+indentation, so every other line keeps whatever it had:
+
+```hcl
+locals {
+  ruined = <<-EOT
+    alpha
+beta
+    gamma
+    EOT
+}
+# → "    alpha\nbeta\n    gamma\n"   one flush-left line, and nothing is stripped anywhere
+```
+
+The closing delimiter may be indented however you like — all the examples here indent it, and it is
+matched regardless. And a backslash inside a heredoc is a literal backslash: the escape sequences
+`\n`, `\t` and friends are defined for *quoted* strings only, so `a\tb` in a heredoc is the four
+characters you typed. (Measured identically under OpenTofu 1.12.4.)
+
+Heredocs also carry interpolation and the `%{ ... }` template directives, which is
+[Chapter 7](ch07-expressions-operators-functions.md)'s subject — here the point is only that the
+form exists and what the `-` does.
+
 **Two special types:**
 
 **`any`** — a placeholder that accepts any type; it's what you get when a `variable` has no `type` at all. "Any" describes the *whole* value — a `list`/`map` still resolves to one shared element type:

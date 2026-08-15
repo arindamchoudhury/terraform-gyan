@@ -96,7 +96,10 @@ syntax exists in the language.
 introduces no escapes at all. This **confirms** the claim already in Ch 7 that a backslash inside a
 heredoc is literal.
 
-**`<<-` strips the minimum indentation, not all of it.** Verbatim: "any literal string at the start
+**`<<-` strips the minimum indentation, not all of it** — measured 2026-08-15 and now written up in
+[Ch 4](../book/ch04-hcl-language-basics.md), including the consequence that a single flush-left line
+drops the common amount to zero and strips nothing anywhere. Identical under Terraform 1.15.8 and
+OpenTofu 1.12.4. Verbatim: "any literal string at the start
 of each line is analyzed to find the minimum number of leading spaces, and then that number of
 prefix spaces is removed from all line-leading literal strings. The final closing marker may also
 have an arbitrary number of spaces preceding it on its line." Note *spaces*, and note *literal

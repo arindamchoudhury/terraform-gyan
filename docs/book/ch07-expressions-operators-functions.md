@@ -906,7 +906,7 @@ String literals are the most-used and most complex literal. Two forms, both supp
 "Hello, ${var.name}!"        # → "Hello, Juan!"
 ```
 
-**Heredocs** hold multi-line strings. The indented form `<<-` trims the common leading whitespace so the block can sit inside indented HCL:
+**Heredocs** hold multi-line strings ([Ch 4](ch04-hcl-language-basics.md) introduced the form). The indented form `<<-` removes the **minimum** number of leading spaces found across the content lines — a common amount, not all indentation — so the block can sit inside indented HCL:
 
 ```hcl
 user_data = <<-EOT
@@ -915,7 +915,7 @@ user_data = <<-EOT
 EOT
 ```
 
-Convention: an all-caps delimiter starting `EO` (`EOT` = "end of text"). Backslash escapes are **not** interpreted in heredocs — the backslash is literal.
+Convention: an all-caps delimiter starting `EO` (`EOT` = "end of text"). Backslash escapes are **not** interpreted in heredocs — the backslash is literal, because the spec defines `\n`, `\t`, `\"` and the Unicode escapes for *quoted* templates only. Ch 4 measures both that and the "one under-indented line strips nothing" consequence of the minimum rule.
 
 **Directives — `%{ ... }`** add conditionals and loops inside a template. Use the `~` strip marker to drop the surrounding whitespace so the output stays clean:
 
