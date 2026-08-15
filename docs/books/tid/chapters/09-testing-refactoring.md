@@ -4,7 +4,7 @@
 >
 > The chapter Ch7 and Ch8 both defer to. It opens with *why* — including an argument you rarely see in a technical book, that a test suite buys **psychological safety** — then works through the theory of testing IaC (what to test, why infrastructure is unlike a Python library, unit vs integration), the practices that make it survivable (examples as test fixtures, randomised names, timeouts, account nuking), and then both frameworks in depth: **Terratest** in Go and the **native `terraform test`** framework in HCL. It closes on **refactoring** — internal versus external, renaming resources and variables without breaking users, and how to plan and ship a major version.
 >
-> 📌 **The testing framework has moved a long way since this was written, and one cited tool is dead.** Terraform **1.12** added **parallel test runs**, which undercuts the CI workaround in §9.4.6 (the book states the framework "only runs one test at a time"). **Mocks are 1.7 on Terraform but 1.8 on OpenTofu**, so the book's matrix comment is wrong for one engine. The `rebuy-de/aws-nuke` in Listing 9.5 is **archived**. And the Copilot material (§9.3.7, §9.4.7) is a 2023 snapshot that has not aged. Each is flagged in place; versions in [[ci-quality-tooling-versions]] and [[version-facts]].
+> 📌 **The testing framework has moved a long way since this was written, and one cited tool is dead.** Terraform **1.12** added **parallel test runs**, which undercuts the CI workaround in §9.4.6 (the book states the framework "only runs one test at a time"). **Mocks are 1.7 on Terraform but 1.8 on OpenTofu**, so the book's matrix comment is wrong for one engine. The `rebuy-de/aws-nuke` in Listing 9.5 is **archived** (use [`cloud-nuke`](https://github.com/gruntwork-io/cloud-nuke)). And the Copilot material (§9.3.7, §9.4.7) is a 2023 snapshot that has not aged. Each is flagged in place; versions in [[ci-quality-tooling-versions]] and [[version-facts]].
 
 > 🔗 **See also:** owns learning-path **A2** (testing Terraform) and feeds **I5** (authoring modules), **A3** (tests in CI) and **I4** (semver and breaking changes). Builds directly on [Ch7](07-code-quality-ci.md) (the makefile, `TF_ENGINE`, the CI matrix) and [Ch8](08-cd-deployment.md) (semver, OIDC for test credentials). Source-derived detail: [[terratest-facts]] and [[terraform-testing]]. Topic pages: `testing` on the [topics backlog](../../../topics/index.md), plus `refactoring`, which this chapter completes.
 
@@ -170,16 +170,28 @@ Teardown fails for reasons you do not control: Terraform crashes before writing 
 
 So the chapter keeps a way to **reset a test account entirely**, run on a schedule. The discovery trick is genuinely useful — search for **"*vendor* nuke"**:
 
-- AWS → `aws-nuke`
+- AWS and GCP → [`gruntwork-io/cloud-nuke`](https://github.com/gruntwork-io/cloud-nuke), or `ekristen/aws-nuke` for AWS alone
 - Azure → [`ekristen/azure-nuke`](https://github.com/ekristen/azure-nuke)
 
 !!! danger "Only ever point this at an isolated test account"
     The chapter's WARNING, and it deserves the emphasis: automatic deletion is dangerous. Run tests in a dedicated account, run reset scripts **only** against that account, and never test in production.
 
-!!! warning "The AWS tool the book names is archived — use the successor"
-    Listing 9.5 installs `rebuy-de/aws-nuke` by downloading a pinned release tarball. That repository is **archived** (last push 2024-10-15) and tagged `deprecated`; its homepage now points at **[`ekristen/aws-nuke`](https://github.com/ekristen/aws-nuke)** — the same maintainer as the `azure-nuke` the chapter already recommends.
+!!! warning "The AWS tool the book names is archived — two live replacements"
+    Listing 9.5 installs `rebuy-de/aws-nuke` by downloading a pinned release tarball. That repository is **archived** (last push 2024-10-15) and tagged `deprecated`, so the workflow as printed pins a dead project. Its homepage points at `ekristen/aws-nuke`, but that is not the only option, and probably not the best one here.
 
-    So the workflow as printed pins a dead project. Repoint it, and re-derive the download URL: the release asset naming differs between the two.
+    | | [`gruntwork-io/cloud-nuke`](https://github.com/gruntwork-io/cloud-nuke) | [`ekristen/aws-nuke`](https://github.com/ekristen/aws-nuke) |
+    |---|---|---|
+    | Latest | **v0.52.0** (2026-06-13) | **v3.66.0** (2026-07-16) |
+    | Scope | **AWS + GCP** in one binary | AWS only |
+    | Non-destructive preview | **`--dry-run`**, plus `inspect-aws` / `inspect-gcp` subcommands | config-driven |
+    | Licence | MIT | — |
+    | Lineage | **Gruntwork** — the authors of Terratest | direct successor to the archived repo |
+
+    **`cloud-nuke` is the better fit for this chapter**, for two reasons beyond being maintained. It is by **Gruntwork**, the same people as the Terratest this chapter spends §9.3 on, so a team already in that ecosystem adds no new vendor. And it ships a **genuinely non-destructive mode** — `--dry-run` and the `inspect-*` subcommands — which matters more here than anywhere else in the book: this is a tool whose failure mode is *deleting the wrong account*. Being able to prove what it would delete before letting it delete anything is the safeguard §9.2.5's own WARNING is asking for.
+
+    ⚠️ Scope, stated precisely because the name overpromises: `cloud-nuke` registers `aws`, `gcp`, `inspect-aws` and `inspect-gcp` subcommands — **there is no Azure support**, and its README documents only the AWS path even though the GCP command is real. So the chapter's Azure recommendation, [`ekristen/azure-nuke`](https://github.com/ekristen/azure-nuke), still stands on its own.
+
+    Either way the printed workflow needs more than a URL swap: the release asset naming and the invocation both differ from `aws-nuke`.
 
 Azure and GCP make this easier structurally — group resources under a resource group or project and delete the container. Where no reset path exists, inspect every failed run manually and **set budget alerts** on the account.
 
@@ -681,8 +693,9 @@ Mechanically: branch off the **tag** of the version you need to patch, and relea
 ## References
 
 - Terratest — <https://github.com/gruntwork-io/terratest> (read `modules/` for the helper index)
-- `ekristen/aws-nuke` — <https://github.com/ekristen/aws-nuke> (successor to the archived `rebuy-de/aws-nuke` the book cites)
-- `ekristen/azure-nuke` — <https://github.com/ekristen/azure-nuke>
+- `gruntwork-io/cloud-nuke` — <https://github.com/gruntwork-io/cloud-nuke> (AWS + GCP, `--dry-run` and `inspect-*`; the recommended replacement for the book's archived `rebuy-de/aws-nuke`)
+- `ekristen/aws-nuke` — <https://github.com/ekristen/aws-nuke> (AWS-only; direct successor to the archived repo)
+- `ekristen/azure-nuke` — <https://github.com/ekristen/azure-nuke> (Azure; `cloud-nuke` has no Azure support)
 - GitHub Copilot — <https://github.com/features/copilot>
 - Book's template org — <https://github.com/TerraformInDepth/>
 - Source-derived detail — [[terratest-facts]], [[terraform-testing]]
