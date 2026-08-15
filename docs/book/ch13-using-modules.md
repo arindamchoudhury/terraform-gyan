@@ -50,7 +50,11 @@ The third argument is the fifth cost on that list coming back around, and it is 
 
 Nothing so far has required a new kind of file, and that is not an accident. The definition is broader than most people expect. The same tutorial puts it structurally: *"A Terraform module is a set of Terraform configuration files in a single directory."* The [language reference's Modules overview](https://developer.hashicorp.com/terraform/language/modules) puts it semantically: *"A module is a collection of resources that Terraform manages together."*
 
-Both are official and both are true. The directory is the mechanism. The resources managed together are the thing. The structural definition is the one that produces the surprise: a directory with one `.tf` file in it is a module, so there is no "before modules" state you graduate out of. The typed variables and `dynamic` blocks from Chapter 12 were written in a directory, which means they were already a module. What this chapter adds is the block that calls one.
+Both are official and both are true. The directory is the mechanism. The resources managed together are the thing.
+
+The structural definition is the one that produces the surprise, and the count of files in the directory is not part of it. A lone `main.tf` is a module. So is the five-file layout from Chapter 4, where `terraform.tf`, `providers.tf`, `variables.tf`, `main.tf` and `outputs.tf` sit side by side. Terraform merges every `.tf` file in the directory into one configuration before evaluating anything, so splitting a module across files does not divide it, and combining them does not join two modules into one. The boundary is the directory, and nothing else draws it.
+
+There is therefore no "before modules" state you graduate out of. The typed variables and `dynamic` blocks from Chapter 12 were written in a directory, which means they were already a module. What this chapter adds is the block that calls one.
 
 Three names follow from that.
 
