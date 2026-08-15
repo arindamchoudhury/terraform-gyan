@@ -219,3 +219,7 @@ Terms are appended here as book chapters are written.
 | CAMS | The four values of DevOps — culture, automation, measurement, sharing. TUR narrows to automation, which is where IaC comes from. | TUR Ch1 |
 | Bus factor | The number of people a team can lose before it can no longer operate. IaC raises it by moving infrastructure knowledge out of one sysadmin's head into readable source files. | TUR Ch1 |
 | OpenVox | Community fork of Puppet, first released 2025-01-21 by Vox Pupuli, after Perforce moved Puppet's binaries to a private location and licensed use beyond 25 nodes. Same vendor-closes-community-forks pattern as Terraform → OpenTofu. | [[iac-tool-comparison]] |
+| Span | One timed unit of work in a trace, with a name, start/end time, and attributes. OpenTofu emits one per graph node (`Plan resource instance changes`), so a slow apply can be attributed to a specific resource instance. | [[ot-otel-tracing]] |
+| OTLP | OpenTelemetry Protocol — the wire format both CLIs export traces in. Two transports: gRPC (port 4317) and HTTP/protobuf (port 4318, the default). | [[otel-tracing-facts]] |
+| `TRACEPARENT` | W3C Trace Context env var naming the caller's trace. OpenTofu 1.10+ extracts it so a run nests inside the CI pipeline's trace; Terraform ignores it. | [[otel-tracing-facts]] |
+| OpenTelemetry Collector | Standalone process that receives, aggregates, and re-exports telemetry. Required by HCP Terraform agents (`-otlp-address`), optional for the CLIs, which can export straight to a backend. | [[otel-tracing-facts]] |

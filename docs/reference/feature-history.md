@@ -109,7 +109,7 @@ full per-version OpenTofu catalogue, see
 | **1.9** | **`-exclude`** flag, the inverse of `-target` (the `-target-file` / `-exclude-file` pair followed in **1.10**) | None as of 1.15 |
 | **1.8** | **`.tofu` file extension**, for OpenTofu-specific overrides of `.tf` files | None; no equivalent mechanism |
 | **1.9** | **`-show-sensitive`**, unmasking sensitive values in `plan`, `apply`, and other data-returning commands | None as of 1.15 |
-| **1.10** | **OCI registries** for modules *and* providers; experimental **OpenTelemetry tracing** | Terraform 1.12 added an OCI **backend**, not OCI registries; no OTel in Terraform |
+| **1.10** | **OCI registries** for modules *and* providers; experimental **OpenTelemetry tracing** | Terraform 1.12 added an OCI **backend**, not OCI registries. OTel: Terraform has the **same `OTEL_TRACES_EXPORTER=otlp` hook, undocumented**, covering only `init`-time work — the graph walk is untraced and `TRACEPARENT` is ignored ([[otel-tracing-facts]]) |
 | **1.10** | **Short-circuiting `&&` / <code>&#124;&#124;</code>** | Yes, Terraform 1.12 (OpenTofu shipped it first) |
 | **1.10** | **`pg` backend stores multiple states per database** (`table_name`, `index_name`) | None |
 | **1.11** | **Ephemeral resources / write-only arguments** (parity with TF 1.10/1.11) | Yes — TF 1.10 / 1.11 |

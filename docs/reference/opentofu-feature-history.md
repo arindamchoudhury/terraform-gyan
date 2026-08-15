@@ -78,7 +78,7 @@ still lacks:
 | Dynamic `prevent_destroy` | 1.12 | Literal only |
 | `destroy = false` lifecycle arg | 1.12 | Terraform **1.16** adds it; before that, the `removed` block |
 | `-json-into=FILE` | 1.12 | None (`-json` replaces stdout) |
-| OpenTelemetry tracing (experimental) | 1.10 | None |
+| OpenTelemetry tracing (experimental) | 1.10 | Undocumented equivalent, `init`-only spans, no `TRACEPARENT` ([[otel-tracing-facts]]) |
 | `.tofu` file extension (OpenTofu-specific overrides of `.tf`) | 1.8 | None |
 | `-show-sensitive` (unmask sensitive values) | 1.9 | None |
 | `pg` backend: multiple states per database | 1.10 | None |

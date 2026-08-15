@@ -165,6 +165,9 @@ nav = [
                 { "Backend Configuration" = "sources/opentofu-docs/ot-early-eval-backend.md" },
             ]},
             { "Command: plan" = "sources/opentofu-docs/ot-exclude-flag.md" },
+            { "OpenTofu Internals" = [
+                { "OpenTelemetry Tracing" = "sources/opentofu-docs/ot-otel-tracing.md" },
+            ]},
             { "Blog: OpenTofu 1.12 (dynamic prevent_destroy)" = "sources/opentofu-docs/ot-dynamic-prevent-destroy.md" },
         ]},
         { "HashiCorp Terraform Tutorials" = [

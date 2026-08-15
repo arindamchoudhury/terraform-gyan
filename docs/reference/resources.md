@@ -16,6 +16,7 @@ Resources cited across the [Learning Path](../learning-path.md). Books serve top
 | **Krausen** | Bryan Krausen — Terraform Associate course + practice exams | Video + practice | [krausen.io hands-on labs](https://krausen.io/course/hashicorp-certified-terraform-associate-hands-on-labs/) · [004 practice exams](https://www.udemy.com/course/terraform-associate-004-practice-exams/) |
 | **TPF** | Terraform Plugin Framework docs | Official docs | https://developer.hashicorp.com/terraform/plugin/framework |
 | **TG** | Terragrunt docs (Gruntwork) | Official docs | https://terragrunt.gruntwork.io/docs |
+| **OTel** | OpenTelemetry — OTLP exporter configuration spec (the env vars both CLIs delegate to) | Official spec | https://opentelemetry.io/docs/specs/otel/protocol/exporter/ |
 | **Infisical** | Infisical blog — secrets management (vendor; read product comparisons as marketing) | Vendor blog | [infisical.com/blog](https://infisical.com/blog) |
 
 > 📌 **TUR** targets Terraform ~1.1. Concepts remain the best available; verify newer syntax
