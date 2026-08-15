@@ -189,7 +189,9 @@ module "vpc" {
 }
 ```
 
-Order matters. The package address comes first, then `//`, then the sub-directory, and query parameters go **after** the sub-directory. Get that order wrong and the sub-directory is swallowed by the query string. Measured on 1.15.8 against the lab's local repository, with `?ref=v0.0.1//modules/data-bucket` written the wrong way round:
+The consequence is more interesting than the syntax. Terraform extracts the **entire package** to disk and then reads the module from the sub-directory. So a module inside a package can reference a sibling module in the same package by a local path, and that path resolves. That is what makes it possible to split a large module into pieces without publishing every piece separately.
+
+Order matters, though. The package address comes first, then `//`, then the sub-directory, and query parameters go **after** the sub-directory. Get that order wrong and the sub-directory is swallowed by the query string. Measured on 1.15.8 against the lab's local repository, with `?ref=v0.0.1//modules/data-bucket` written the wrong way round:
 
 ```
 │ Error: Failed to download module
@@ -200,8 +202,6 @@ Order matters. The package address comes first, then `//`, then the sub-director
 ```
 
 The `//` was URL-encoded into the `ref` value, so Terraform went looking for a Git revision named `v0.0.1//modules/data-bucket`. The error names the ref rather than the ordering, which is why the mistake takes longer to spot than it should.
-
-The consequence is more interesting than the syntax. Terraform extracts the **entire package** to disk and then reads the module from the sub-directory. So a module inside a package can reference a sibling module in the same package by a local path, and that path resolves. That is what makes it possible to split a large module into pieces without publishing every piece separately.
 
 !!! note "Same source, different labels is legal and sometimes necessary"
     You may point two `module` blocks at the identical `source`, as long as the labels differ. That is an ordinary way to get two of something with different inputs, and it is also the workaround when `count` or `for_each` will not do, because a multiplied module call cannot vary its provider configurations. Chapter 17 covers that constraint.
@@ -219,9 +219,19 @@ An HTTPS URL ending in a recognised archive extension skips the redirection and 
 
 ### Credentials
 
-Terraform runs `git clone` and uses the Git configuration already on your machine, including credentials and SSH keys. There is one constraint that is stated repeatedly in the reference and still gets missed, because it is never given a heading of its own: *"For Terraform operations in HCP Terraform, you can only authenticate using SSH keys."* A private Git module source that works locally over HTTPS with a token will fail in an HCP run.
+For Git sources, Terraform runs `git clone` and uses the Git configuration already on your machine, including its credentials and SSH keys. Nothing extra to configure, which is why the one exception catches people.
 
-S3 sources resolve credentials in a fixed order: the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables, then the default profile in `~/.aws/credentials`, then an EC2 instance profile. GCS sources use `GOOGLE_OAUTH_ACCESS_TOKEN`, `GOOGLE_APPLICATION_CREDENTIALS`, GCE default credentials, or `gcloud auth application-default login`.
+!!! warning "HCP Terraform accepts SSH keys only, for Git module sources"
+    The [`module` block reference](https://developer.hashicorp.com/terraform/language/block/module) states it, and repeats it, without ever giving it a heading: *"For Terraform operations in HCP Terraform, you can only authenticate using SSH keys."*
+
+    So a private Git module source that clones fine on your laptop over HTTPS with a personal access token fails in an HCP run. Convert the source to the SSH form and register the key with the workspace before moving a configuration into HCP Terraform.
+
+The object-store sources take their credentials from the environment rather than from anything in the configuration:
+
+| Source | Credentials |
+|---|---|
+| S3 | A fixed order: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, then the default profile in `~/.aws/credentials`, then an EC2 instance profile |
+| GCS | Any of `GOOGLE_OAUTH_ACCESS_TOKEN`, `GOOGLE_APPLICATION_CREDENTIALS`, GCE default credentials, or `gcloud auth application-default login` |
 
 ---
 
@@ -328,7 +338,7 @@ module "vpc" {
 }
 ```
 
-Omit `ref` and you get whatever the default branch's `HEAD` points at on the day `init` runs. That is the unpinned default, and it is worse than an unpinned registry module, because at least a registry version number is a number.
+Omit `ref` and you get whatever the default branch's `HEAD` points at on the day `init` runs. That is worse than an unpinned registry module. An unpinned registry source at least records the version it chose, so you can see after the fact that you moved from 4.11.0 to 5.15.4; an unpinned branch leaves you comparing commit hashes to work out whether anything changed at all.
 
 `ref` accepts anything `git checkout` accepts: a branch, a tag, or a commit SHA. The choice between the last two is a real trade, and it is the reason to prefer a registry source when you have one.
 
@@ -345,24 +355,27 @@ The first cost is automation. No update bot will move a SHA pin for you, confirm
 The second cost is shallow clones, and no documentation page connects it to the pinning advice.
 
 !!! danger "`depth` and a SHA `ref` are mutually exclusive"
-    `?depth=1` is the documented way to avoid cloning a large repository's entire history. The [`module` block reference](https://developer.hashicorp.com/terraform/language/block/module) carries the restriction: *"you must specify a named branch or tag known to the remote repository. You cannot use raw commit IDs."* The two how-to pages that describe `depth` do not mention it.
+    `?depth=1` is the documented way to avoid cloning a large repository's entire history, and it cannot be combined with the pin that made the SHA worth using. The [`module` block reference](https://developer.hashicorp.com/terraform/language/block/module) carries the restriction: *"you must specify a named branch or tag known to the remote repository. You cannot use raw commit IDs."* The two how-to pages that describe `depth` do not mention it, so the usual way to meet this rule is a failing `init`.
 
-    The mechanism is in `hashicorp/go-getter` **v1.8.6**, the version Terraform **1.15.8** vendors (confirmed in `go.mod` at the `v1.15.8` tag). `GitGetter.clone` in `get_git.go` is explicit:
+    Part C of this chapter's lab reproduces the failure against a real repository, with the error quoted in full.
 
-    ```go
-    if depth > 0 {
-        args = append(args, "--depth", strconv.Itoa(depth))
-        args = append(args, "--branch", ref)      // ← always paired
-    }
-    ```
+The mechanism is in `hashicorp/go-getter` **v1.8.6**, the version Terraform **1.15.8** vendors (confirmed in `go.mod` at the `v1.15.8` tag). `GitGetter.clone` in `get_git.go` is explicit:
 
-    `git clone --branch` accepts only a branch or a tag, never a raw commit. The full-clone path then takes a different route — *"if we didn't add --depth and --branch above then we will now be on the remote repository's default branch"* — and runs a separate `checkout`, which is what lets an arbitrary SHA work at all.
+```go
+if depth > 0 {
+    args = append(args, "--depth", strconv.Itoa(depth))
+    args = append(args, "--branch", ref)      // ← always paired
+}
+```
 
-    Reproduced against a real repository in Part C of this chapter's lab, with the error quoted in full.
+`git clone --branch` accepts only a branch or a tag, never a raw commit, and the two arguments are always appended together. The full-clone path takes a different route — *"if we didn't add --depth and --branch above then we will now be on the remote repository's default branch"* — and runs a separate `checkout`, which is what lets an arbitrary SHA work at all.
 
-    The same page's summary block claims `depth` defaults to `1`. **It does not**, and this is now settled from the source rather than argued from the contradiction. The shallow path is gated on `depth > 0` and the checkout path on `depth < 1`, so an omitted `depth` arrives as the zero value and produces a **full clone**. Read the documented sentence as "1 is the value to use when you set it".
+That same code settles a documentation defect. The reference's summary block claims `depth` defaults to `1`; it does not. The shallow path is gated on `depth > 0` and the checkout path on `depth < 1`, so an omitted `depth` arrives as the zero value and produces a **full clone**. Read the documented sentence as "1 is the value to use when you set it".
 
-    Worth knowing when you hit this: go-getter recognises the mistake and says so. If the clone fails while `depth > 0` and the ref matches `^[0-9a-fA-F]{7,40}$`, it appends *"(note that setting 'depth' requires 'ref' to be a branch or tag name)"* to the error — which is the line the lab captures in Part C. It is a heuristic on the shape of the ref, not a guarantee, so a branch whose name happens to look like hex would get the same note.
+!!! tip "The error tells you, if you read past the git output"
+    When a clone fails while `depth > 0` and the ref matches `^[0-9a-fA-F]{7,40}$`, go-getter appends *"(note that setting 'depth' requires 'ref' to be a branch or tag name)"* to the error. That is the last line of the transcript in Part C, underneath several lines of `git.exe exited with 128`.
+
+    It is a heuristic on the shape of the ref rather than a guarantee, so a branch whose name happens to look like hex gets the same note.
 
 **How to choose.** A third-party module you do not control: SHA-pin, and accept manual upgrades, because a mutable tag under someone else's control is a genuine exposure. A module in your own organisation with tag-protection rules enabled: pin the tag and keep the automation, because you control whether the tag can move. Either way it is a decision, not a default.
 
@@ -500,13 +513,13 @@ That pass-through is not boilerplate. Anything another system consumes, whether 
 
 ### Meta-arguments on a module call
 
-`count`, `for_each`, and `depends_on` work on a `module` block, and Chapter 10 covered their semantics. Three things are specific to modules.
+`count`, `for_each`, and `depends_on` work on a `module` block, and Chapter 10 covered their semantics. Three things change when the target is a module rather than a resource.
 
-`count` and `for_each` multiply the whole module. Every resource inside is created once per instance, and addresses gain the index at the module level: `module.app["web"].aws_instance.this[0]`.
+**They multiply the whole module.** Every resource inside is created once per instance, and addresses gain the index at the module level: `module.app["web"].aws_instance.this[0]`.
 
-`depends_on` on a module applies to every resource and data source inside it, which makes it the bluntest tool in the language. The cost Chapter 10 measured gets worse here, because more values become `(known after apply)` across a larger blast radius. The [`depends_on` reference](https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on) says so itself: this is *"especially likely when you use `depends_on` for modules"*.
+**`depends_on` applies to everything inside**, which makes it the bluntest tool in the language. The cost Chapter 10 measured gets worse here, because more values become `(known after apply)` across a larger blast radius. The [`depends_on` reference](https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on) says so itself: this is *"especially likely when you use `depends_on` for modules"*.
 
-A module that declares its own `provider` configuration cannot take `count`, `for_each`, **or** `depends_on`. Terraform rejects the call at `init` with a "legacy module" error. Chapter 10 measured that error; Chapter 17 covers passing provider configurations in with `providers = { ... }` instead.
+**A module with its own `provider` block takes none of the three.** Terraform rejects the call at `init` with a "legacy module" error. Chapter 10 measured that error; Chapter 17 covers passing provider configurations in with `providers = { ... }` instead.
 
 ### Replacing one resource inside a module
 
@@ -651,7 +664,7 @@ Modules declared by configuration:
 └── "logs"[registry.terraform.io/terraform-aws-modules/s3-bucket/aws] 4.11.0 (~> 4.1)
 ```
 
-Both the resolved version and the constraint that produced it. For a local module it shows the path, and for a Git module the full source address including the `ref`. There is a `-json` form for policy checks:
+That one line carries both the resolved version and the constraint that produced it. For a local module it shows the path, and for a Git module the full source address including the `ref`. There is a `-json` form for policy checks:
 
 ```json
 {"format_version":"1.0","modules":[{"key":"logs","source":"registry.terraform.io/terraform-aws-modules/s3-bucket/aws","version":"4.11.0"}]}
@@ -664,7 +677,7 @@ It also accepts `-var` and `-var-file`, which it needs now that a `source` can b
 
 ### Reviewing a module before you adopt it
 
-The public registry is *"created and maintained by HashiCorp, our partners, and the Terraform community"*. That mixed provenance is the reason to look before adopting. The [private-registry curation tutorial](https://developer.hashicorp.com/terraform/tutorials/modules/private-registry-add) lists what a registry entry gives you, and the list doubles as a review checklist:
+The [language reference's Modules overview](https://developer.hashicorp.com/terraform/language/modules) describes the public registry's contents as *"created and maintained by HashiCorp, our partners, and the Terraform community"*. That mixed provenance is the reason to look before adopting: the registry hosts modules, it does not vet them. The [private-registry curation tutorial](https://developer.hashicorp.com/terraform/tutorials/modules/private-registry-add) lists what a registry entry gives you, and the list doubles as a review checklist:
 
 - **Version and publication date** — whether it is actively maintained.
 - **The owner** — who is responsible for updates.
