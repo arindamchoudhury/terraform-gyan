@@ -292,6 +292,34 @@ module "app" {
 
 The `backend` can be `local` (a tfstate file on disk, as above) or `remote` (HCP Terraform, S3, Consul, etc.), with the connection details in `config`.
 
+!!! info "OpenTofu — an encrypted state cannot be read this way without the key"
+    OpenTofu can encrypt state at rest client-side, a feature Terraform's CLI does not have. That
+    turns this data source into the place where the two facts collide: `terraform_remote_state`
+    reads the producer's **state file**, so if that file is encrypted the consumer needs the
+    decryption configuration too, and a consumer that lacks it fails rather than degrading.
+
+    Measured against a state written by OpenTofu 1.12.4 with a `pbkdf2` key provider and the
+    `aes_gcm` method:
+
+    ```
+    # OpenTofu consumer, no encryption block
+    Error: Unsupported state file format
+    This state file is encrypted and can not be read without an encryption configuration
+
+    # Terraform 1.15.8 consumer
+    Error: Unsupported state file format
+    ```
+
+    Same wall, two different reasons. OpenTofu understands what it is looking at and wants the key;
+    Terraform has no encryption support at all, so it cannot read that file under any configuration.
+
+    Two consequences worth designing around. A **mixed estate** — some configurations on Terraform,
+    some on OpenTofu with encryption on — cannot share values through `terraform_remote_state` in
+    that direction. And the consumer needs access to the producer's **key material**, not just to
+    its state, which means turning encryption on quietly breaks every downstream reader until they
+    are given the key. Roll it out with a `fallback` block so readers keep working during the
+    migration; the encryption feature itself is E3's subject.
+
 !!! warning "It reads root outputs only — and it's a security boundary"
     `terraform_remote_state` exposes **only the root-level `output` values** of the source configuration, not its resources or module internals. To share a value, the source config must publish a matching `output`. And crucially: anyone who can read those outputs can read the *entire* state snapshot by direct backend requests — state stores every attribute in plaintext. Don't route sensitive data through it. The full treatment — the security case against it, and the `tfe_outputs` alternative on HCP Terraform — is Chapter 15 (I6, Remote state & backends). Here it's enough to know the mechanism: outputs in, no secrets.
 

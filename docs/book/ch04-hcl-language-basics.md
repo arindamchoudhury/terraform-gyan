@@ -18,8 +18,20 @@ This chapter closes that gap. HCL — **HashiCorp Configuration Language** — i
 
 That is the milestone: author a multi-file configuration by hand, choosing the right block type for each purpose, without copy-paste. Nothing here provisions anything new — it is pure language. The chapters that follow drill into individual blocks (`resource` in B5, `variable`/`output`/`locals` in B6, expressions in B7, `data` in B8). This chapter is the map of the whole language so those deep dives have a frame to hang on.
 
-!!! note "One language, two tools"
-    Everything in this chapter is byte-identical in Terraform and OpenTofu. HCL, the block types, the type system, and `fmt` are shared. OpenTofu forked the language, not rewrote it. The rare divergences (a `.tofu` file extension, early variable evaluation) belong to later chapters; the *syntax* is the same. Where this chapter says "Terraform," read "or OpenTofu."
+!!! note "One language, two tools — and two implementations of it"
+    Everything in this chapter behaves the same in Terraform and OpenTofu. The block types, the type
+    system and `fmt` are common ground: OpenTofu forked the language, it did not rewrite it. The rare
+    divergences (a `.tofu` file extension, early variable evaluation) belong to later chapters; the
+    *syntax* is the same. Where this chapter says "Terraform," read "or OpenTofu."
+
+    Worth stating precisely, because it is easy to over-claim: the two tools **do not link the same
+    HCL build**. Terraform 1.15.8 depends on upstream `github.com/hashicorp/hcl/v2` **v2.24.0**;
+    OpenTofu 1.12.4 requires v2.20.1 and replaces it with **its own fork** of the library. Both
+    implement the same published specification, which is why the syntax and semantics in this
+    chapter match — and it is the specification, not a shared binary, that guarantees it. So a claim
+    traced to HCL's spec transfers between the tools; a claim resting on an implementation detail or
+    an exact error message needs checking in both. Where this book makes a language claim precise
+    enough to matter, it says which tool it measured. (See [[hcl-library-facts]].)
 
 ## Everything is blocks and arguments
 

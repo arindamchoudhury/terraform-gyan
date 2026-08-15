@@ -2,14 +2,24 @@
 
 Verified facts captured during research. Refreshed by Phase 4 review passes.
 
-_Last verified: 2026-07-20._
+_Last verified: 2026-08-15 (OpenTofu bumped 1.12.4 → 1.12.5; Terraform re-confirmed at 1.15.8)._
 
 ## Tooling versions
 
 | Tool | Current stable | License | Notes |
 |------|----------------|---------|-------|
-| Terraform CLI | **1.15.8** (2026-07-08; 1.15.0 released 2026-04-29) | BSL 1.1 (source-available) | CLI free to provision your own infra under BSL |
-| OpenTofu | **1.12.4** (2026-07-13; 1.12.0 released 2026-05-14) | MPL 2.0 (open source) | Forked from Terraform 1.5.x; Linux Foundation project |
+| Terraform CLI | **1.15.8** (2026-07-08; 1.15.0 released 2026-04-29) | BSL 1.1 (source-available) | CLI free to provision your own infra under BSL. **1.16 is at `rc1`** — no `v1.16.0` tag exists, so treat 1.16 claims as provisional |
+| OpenTofu | **1.12.5** (2026-07-21; 1.12.0 released 2026-05-14) | MPL 2.0 (open source) | Forked from Terraform 1.5.x; Linux Foundation project |
+
+!!! note "Measured-on versions in the book are not currency claims"
+    Chapters state the binary a transcript was captured on — most say **1.15.8** and **1.12.4** — and
+    those stay as written when this table moves. A measurement is evidence about the version it ran
+    on. Re-measure when a claim is version-sensitive and the gap matters; do not silently relabel a
+    transcript with a newer number.
+
+    Tag dates confirmed against the local checkouts on 2026-08-15: `v1.12.5` is dated 2026-07-21 in
+    `repos/opentofu`, and `repos/terraform` carries no stable tag above `v1.15.8` (its 1.16 line
+    stops at `v1.16.0-rc1`).
 
 **Terraform ↔ OpenTofu divergence.** OpenTofu forked at Terraform 1.5.x and shipped features Terraform's
 open-source CLI lacked: **state encryption**, **provider `for_each`**, **early variable/`.tfvars` evaluation**,
