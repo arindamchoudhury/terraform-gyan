@@ -715,7 +715,7 @@ You are ready to advance when you can:
 ## Advanced
 
 **Goal:** Operate Terraform in production — tested, automated, governed, and secure — the level the Authoring & Operations Pro exam validates.
-**Estimated time:** ~60 hrs
+**Estimated time:** ~65 hrs
 
 ---
 
@@ -1003,7 +1003,7 @@ You are ready to advance when you can:
 4. **Interactive — restructure** (~1.5 hrs) — lay out one module consumed by isolated dev/prod stacks with separate state.
 
 !!! note "📌 Already captured — [[workspaces]]"
-    The two meanings of "workspace" are already written up in [[workspaces]], from TID Ch6 §6.4.5 + §6.4.7 and the official docs: the CLI-vs-HCP comparison table, where each backend stores per-workspace state, `terraform.workspace` at plan time, and the documented limit that workspaces "are not appropriate for system decomposition or deployments requiring separate credentials and access controls." What remains for A7 is the *decision* — TUR Ch3's file-layout-versus-workspace tradeoff — and the multi-account half from TUR Ch7.
+    The two meanings of "workspace" are already written up in [[workspaces]], from TID Ch6 §6.4.5 + §6.4.7 and the official docs: the CLI-vs-HCP comparison table, where each backend stores per-workspace state, `terraform.workspace` at plan time, and the documented limit that workspaces "are not appropriate for system decomposition or deployments requiring separate credentials and access controls." That second clause is the seam to **A9**, which picks up separate credentials and access controls as its own topic. What remains for A7 is the *decision* — TUR Ch3's file-layout-versus-workspace tradeoff — and the multi-account half from TUR Ch7.
 
 !!! note "📌 DRY across environments → Terragrunt (E4)"
     A7 covers isolation with **native Terraform** primitives — the scope the Pro exam tests. The DRY tooling that removes the copy-paste between per-env directories is **Terragrunt** (third-party, Gruntwork), deep-dived in **E4 — Large-scale state & repo architecture** below. Reach for it once you have many states and teams, not for a single dev/prod split.
@@ -1029,12 +1029,58 @@ You are ready to advance when you can:
 
 ---
 
+### ⬜ A9 — Multitenancy, teams & RBAC
+
+**What it is:** Serving several teams or tenants from one Terraform platform. The HCP Terraform access model — organization, project and workspace permission scopes, teams and team tokens, the four fixed workspace roles plus custom roles — and the cloud-side half, where each tenant's runs carry only that tenant's credentials.
+
+**Why you need it:** A7 isolates *environments*, this isolates *people*. State is where the boundary actually sits, because a workspace's state holds every secret its configuration touched, and the built-in read-only role can already read it in full.
+
+**How to learn it:**
+
+1. **Interactive — HCTut ["Manage permissions in HCP Terraform"](https://developer.hashicorp.com/terraform/tutorials/cloud/cloud-permissions)** (4 min stated; **Essentials** edition, organization-owner required) — create a `Dev-Team`, deliberately leave its organization-level permissions blank, grant it the fixed **Write** set on one workspace, then invite a user by email. It is a UI walkthrough with no HCL, and its one teaching point is the sequencing: *"The owners team … has every available permission in the organization, so it is important to create restricted team access before adding new members."* You need a second email address you control to finish the invite step.
+2. **Reference — HCDocs [permissions overview](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions) then the three role tables: [organization](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions/organization) · [project](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions/project) · [workspace](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions/workspace)** (~1 hr) — the role tables are ground truth for this topic. Read the overview first, because the effective-permissions rule it states governs how every table below it composes.
+3. **Reference — HCDocs ["Teams overview"](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/teams)** (~20 min) — the owners team (capped at five members on free organizations, never deletable, never empty), per-team API tokens not tied to a user, and the Teams / Team Members / Team Tokens / Team Access APIs. Those APIs have provider equivalents in `tfe_team`, `tfe_team_members` and `tfe_team_access`, which is how the access model itself becomes reviewable code instead of console clicks.
+4. **Book chapter — TUR Ch 10 § "A Workflow for Deploying Infrastructure Code" (pp. 390–404)** (~1 hr) — the pre-HCP form of the same problem, and the only book treatment that exists here. Covers the live-repo-versus-modules-repo split, one infrastructure team publishing versioned modules that every other team consumes "a bit like a service catalog", and four rules for a CI server that necessarily holds admin credentials: lock it down, keep it off the public internet, require a second person to approve, and hand the admin credentials to a separate locked-down worker exposing only `plan` and `apply` on specific repos and branches.
+5. **Interactive — build a two-tenant organization** (~2 hrs) — two projects with one team each, plus a custom auditor role that grants *Read outputs only* rather than state read. Verify from the second account that tenant B can reach none of tenant A's state, variables or outputs, then re-create the whole arrangement with the `tfe` provider.
+
+!!! danger "📌 Every built-in workspace role reads the entire state file"
+    In the workspace role table, **`Read state` is ✅ for Admin, Write, Plan and Read alike** — only `Read and write state` narrows to Admin and Write. So the least-privileged preset still hands a user every secret the configuration touched (**A6**), through the UI and through the state-versions API. The same holds one level up: project `Read state` is ✅ down to the project **Read** role.
+
+    The fix is a **custom role**, which can grant `Read outputs only` and stop there. Custom permissions can assign anything in the workspace table *except* the admin-only rows. This is the single most important thing on this page: if a tenant boundary is supposed to be a secrecy boundary, none of the four presets implement it.
+
+!!! warning "📌 Permissions are additive across scopes, and the most permissive one wins"
+    *"Each permission is additive, granting a user the highest level of permissions possible, regardless of which scope set that permission."* An organization-level **Manage all workspaces** silently overrides a carefully scoped workspace **Read**. The relationship is not symmetric: organization **View all workspaces** does *not* cut a team's workspace **Write** down to read-only. Treat organization scope as the floor a team can never fall below, and project or workspace scope as the ceiling. Granting broadly at the top and then "restricting" further down does nothing.
+
+!!! note "📌 The boundary leaks through everything integrated with it"
+    HCDocs is explicit that the model covers only what HCP Terraform manages, and names three leaks. A VCS-connected workspace inherits the repository's permissions, so anyone who can merge to its tracked branch can queue plans there *"regardless of whether they have explicit permission to queue plans or are even a member of your HCP Terraform organization"*, and with auto-apply enabled the merge applies them. An API-driven Slack bot lets anyone who can issue it commands act with the bot's permissions. A run task receives an access token good for the plan JSON and the callback, with a 10-minute lifetime. The governing sentence: *"An integrated system is able to delegate any level of access that it has been granted."*
+
+!!! note "📌 Two more ways tenant data escapes the role you granted"
+    **Sentinel mocks** are downloadable at workspace Write and above, and the docs describe that run data as *"detailed and may contain unredacted sensitive information"*. A mock download is a state read wearing a different name, which matters when you hand Write to a tenant on the assumption that Write means "can deploy".
+
+    **Secret teams** are invisible to workspace and project admins unless those admins are also organization owners. An admin auditing who can reach a workspace is therefore reading a list that may be incomplete by design.
+
+!!! note "📌 Projects are the tenant container; teams are the subject"
+    A project is *"a folder containing one or more workspaces, Stacks, or both"*, and its four roles (**Admin / Maintain / Write / Read**) apply to every workspace and Stack inside it. Grant per project rather than per workspace, or the model stops scaling at the tenant's tenth workspace. Only project **Admin** can update or delete the project, manage other teams' access, move workspaces between projects, manage variable sets, or manage run tasks. **Maintain** is the useful middle: full control of everything inside, including creating and deleting workspaces, with no authority over the project itself.
+
+    Team management requires **Essentials, Standard or Premium**. In **HCP Europe** organizations the subject is an HCP group rather than a team, HCP roles (Admin / Contributor / Viewer) grant HCP Terraform permissions automatically, and project permissions cannot be assigned in HCP Terraform at all. The least-privilege advice there is to add narrow HCP Terraform permissions instead of a broader HCP role.
+
+!!! warning "📌 RBAC governs who starts a run, not what the run may do"
+    A tenant's plan executes with the workspace's provider credentials, and those credentials answer to the cloud's IAM, not to HCP's permission model. Two tenants whose workspaces share one AWS role are one tenant with extra paperwork. The access model only becomes a tenant boundary when it is paired with per-tenant credentials (**A6**: dynamic credentials over OIDC, one cloud role per project), per-tenant `assume_role` in the provider configuration (**I8**), and policy sets scoped to the project rather than the organization (**A5**). Blast-radius isolation of the *state itself* is **A7**, and the module-consumption half is **A4** plus **E6**.
+
+!!! info "📌 OpenTofu — no control plane, so no RBAC to compare"
+    The OpenTofu CLI has no user model at all, so this topic has no OpenTofu counterpart the way `tofu workspace` counters `terraform workspace`. Multi-tenant access control lives entirely in whatever platform runs the CLI. **Terrakube** ([`terrakube-io/terrakube`](https://github.com/terrakube-io/terrakube), Apache-2.0) is the closest open-source workalike, with organizations, teams, workspaces, and both personal and team tokens; Atlantis plus the VCS host's own permissions covers the PR-gated half; the commercial platforms TID §8.7 compares (Env0, Spacelift, Scalr, Digger, Terrateam) each ship a different model. This is the same licensing split A7 records for workspaces, arriving one layer up.
+
+**Milestone:** You can run one organization serving two tenants where each tenant's team plans and applies only inside its own project, neither can read the other's state, variables or outputs, an auditor role sees outputs but never state, each project's runs authenticate as a different cloud role, and the whole arrangement is expressed as `tfe_team` / `tfe_team_access` configuration rather than console clicks.
+
+---
+
 ### ⬜ Advanced Checkpoint
 
 You are ready to advance when you can:
 - Ship tested modules (`terraform test`, conditions, checks) through a PR-gated CI/CD pipeline.
 - Run governed workflows in HCP Terraform with policy-as-code and OIDC (no static secrets).
 - Structure multi-env/multi-account infra with isolated state and refactor at scale without re-creation.
+- Serve two tenants from one platform where neither can read the other's state, and where each tenant's runs authenticate as its own cloud identity.
 
 **Certification target:** **Terraform Authoring & Operations Professional** — validates I5, A1–A8 (lifecycle, dynamic config, modules, providers, collaborative workflows, HCP). Lab-based; practice hands-on with **Pro** study path. Attempt after this checkpoint.
 
@@ -1269,7 +1315,7 @@ Beginner (B1–B9)        → ~30 hrs
     ↓
 Intermediate (I1–I8)    → ~45 hrs  →  [Terraform Associate 004]
     ↓
-Advanced (A1–A8)        → ~60 hrs  →  [Authoring & Operations Professional]
+Advanced (A1–A9)        → ~65 hrs  →  [Authoring & Operations Professional]
     ↓
 Expert (E1–E6)          → ~70 hrs
 ```
@@ -1288,11 +1334,17 @@ Expert (E1–E6)          → ~70 hrs
 - OpenTofu releases — `git ls-remote --tags` on `opentofu/opentofu`: current stable **1.12.5** (2026-07-21), 1.13 unreleased (checked 2026-08-15)
 - Course-catalog liveness checks 2026-08-15 — KodeKloud free labs, its Coursera mirror, Collabnix labs, `btkrausen/terraform-associate-labs`, the Rahul Oli video, and krausen.io/courses (old hands-on-labs URL now redirects)
 - *Terraform in Depth* (Manning) and *Terraform: Up & Running* 3rd ed (O'Reilly) — tables of contents
+- HCP Terraform permission model — https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions plus the [organization](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions/organization), [project](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions/project) and [workspace](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/permissions/workspace) references, and [Teams overview](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/teams) (fetched verbatim 2026-08-15 for **A9**; caches under `cache/web/`)
+- HCTut "Manage permissions in HCP Terraform" — https://developer.hashicorp.com/terraform/tutorials/cloud/cloud-permissions (fetched 2026-08-15)
+- Terrakube — https://terrakube.io/ and `terrakube-io/terrakube` (Apache-2.0, verified via the GitHub API 2026-08-15) — the open-source RBAC plane cited in A9's OpenTofu callout
+- *Terraform: Up & Running* Ch 10 "How to Use Terraform as a Team" — extracted to `docs/books/tur/pdf-cache/10-terraform-as-a-team.txt` and read for A9's book citation (2026-08-15)
 
 ---
 
 !!! note "Research log"
-    Newest entries first, though the run is not strictly sorted — some findings were written up after later ones. **Last updated: 2026-08-15 (structural review: dead link the fact-pass missed, a book citation that named no real chapter, and ten captured notes wired into topics).**
+    Newest entries first, though the run is not strictly sorted — some findings were written up after later ones. **Last updated: 2026-08-15 (new topic A9 — Multitenancy, teams & RBAC, built from the HCP permission references fetched verbatim).**
+
+> **2026-08-15** — **New topic: A9 — Multitenancy, teams & RBAC.** The path covered environment isolation (**A7**), policy (**A5**), secrets (**A6**) and self-service (**E6**), but nothing about serving mutually distrusting *people* from one platform. A7 even quoted the docs line that workspaces "are not appropriate for … deployments requiring separate credentials and access controls" and then dropped the second half of it; A9 is that half, and A7 now points at it. Built from the four HCP permission pages plus the Teams overview, fetched verbatim with `fetch_page.py` rather than summarized, which was the right call: **the finding that anchors the topic only exists in the role table.** `Read state` is ✅ for **all four** fixed workspace roles, Read included, so the least-privileged preset still exposes every secret the configuration touched, and only a **custom role** can narrow it to `Read outputs only`. Project roles repeat the pattern. Four more facts folded in as callouts: permissions are **additive with the most permissive winning**, so an organization-level grant silently overrides a scoped workspace role while the reverse does not hold; the boundary leaks through **VCS merge rights, API bots and run tasks** (10-minute tokens), with HashiCorp's own line that "an integrated system is able to delegate any level of access that it has been granted"; **Sentinel mocks** are a state read by another name, downloadable at Write and "may contain unredacted sensitive information"; and **secret teams** are invisible to workspace and project admins who are not organization owners, so an access audit can be incomplete by design. Book coverage checked before citing: neither book covers HCP RBAC, so A9 cites **TUR Ch 10 §"A Workflow for Deploying Infrastructure Code" (pp. 390–404)** for the pre-HCP form (live repo vs modules repo, and the four rules for a CI server holding admin credentials), extracting the chapter to `pdf-cache` to verify rather than trusting the TOC. TID Ch 10 "Advanced Terraform topics" was checked and rejected — it is naming, networking, provisioners, external/local providers and checks, with nothing on access control. OpenTofu divergence recorded as an absence: the CLI has no user model, so the RBAC plane is Terrakube (Apache-2.0, verified via the GitHub API), Atlantis, or one of the commercial platforms TID §8.7 compares. Advanced re-estimated **60 → 65 hrs**; checkpoint gains a tenant-isolation bullet.
 
 > **2026-08-15** — **Second review, structural rather than factual — and it caught what the fact pass had just missed.** The Phase 4 pass an hour earlier replaced the dead Krausen hands-on-labs URL in the Resources table but **not the two in-topic citations of the same URL** (B3 step 2, B9 step 1), which is the general failure of fixing a link where it is *listed* rather than where it is *used*. Both now point at the 004 exam-prep course, and the labels changed with them. **The worse find: A4's book citation named no real chapter.** It read "TID Ch on HCP", and *Terraform in Depth* has no HCP chapter. Verified against the book's own TOC: HCP Terraform is **Ch 8 §8.7 "CD platform overview" (p283)**, one of six platforms compared alongside Env0, Spacelift, Scalr, Digger and Terrateam. That comparison is the reason to read it, and the old citation hid it. Ch 11 "Alternative interfaces", the chapter one would guess, is about wrapping Terraform in a client library, JSON-instead-of-HCL, and CDKTF. **Ten captured notes were reachable from nowhere in the path** and are now wired where they belong: [[tf-destroy-resource]] → B3 (the three ways an object leaves your infrastructure), [[tf-block-locals]] → B6, [[tf-providers]] → B5 (Registry tiers, plugin cache, `.netrc`), [[dynamic-blocks-facts]] → I3, [[workspaces-facts]] → A7 (the licensing split — CLI workspaces exist in OpenTofu, the HCP workspace is proprietary, Terragrunt plus Atlantis covers the two halves), [[ot-dependency-lock]] → E3, and the four emulator notes into a new **B2** callout. That callout is the substantive addition: the labs and later topics have run against a local AWS emulator on `:4566` for weeks, but **the path never told a learner at B2 that no AWS account is required** — the exact point where "wire cloud credentials" stalls people. It names Floci (default, no token), MiniStack, LocalStack (now needs a free token) and the rejected Robotocore, and states the boundary, since emulator fidelity gaps surface as phantom diffs. **Checked and clean:** all 31 topics carry What/Why/How/Milestone, and all 491 `[[…]]` references resolve. **A non-finding worth recording so it is not re-investigated:** 14 further chapter notes look uncited but are **stubs** — TID Ch 7–12 say "Notes pending" and TUR Ch 2, 3, 5–10 say "⬜ Not yet read" — so the path is right not to cite them, and they are a *reading* backlog, not a wiring gap. No status changes.
 >
