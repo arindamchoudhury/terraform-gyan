@@ -42,7 +42,14 @@ And the distinction the chapter actually cares about: a **reusable module** is "
 
 > Providers should be configured only in root modules and not in reusable modules.
 
-Stated flatly in 2022, and the reason arrived later — the destroy-ordering argument in [[tf-modules-providers]], plus the `count`/`for_each`/`depends_on` conflict introduced in 0.13. This chapter predates the explanation but gets the rule right.
+Stated flatly in 2022, with no reason attached. The reason arrived later, and it has two layers that are easy to confuse. This chapter predates the explanation but gets the rule right.
+
+!!! danger "Why a reusable module must not carry its own provider block"
+    **The real reason is destroy ordering.** A provider configuration is used for *every* operation on its resources, refresh and destroy included, and Terraform records in state which configuration most recently applied each resource. That state record is what locates the provider once the `resource` block itself is gone from the configuration. Hence the constraint: *“a provider configuration must always stay present in the overall Terraform configuration for longer than all of the resources it manages”* ([[tf-modules-providers]]). A module holding both its resources and their `provider` block violates it, because deleting the `module` block removes the two simultaneously. State is left pointing at a configuration that no longer exists, and planning errors until it is reintroduced. Recovery order is reintroduce the provider, destroy the resources, then remove both.
+
+    **The `count`/`for_each`/`depends_on` conflict is the later, mechanical enforcement.** v0.13 added those three meta-arguments to `module` blocks, and their implementation conflicted with the legacy in-module `provider` pattern. A module carrying a nested provider configuration now fails at plan time with `Module "child" cannot be used with count because it contains a nested provider configuration`. The legacy pattern still works for module blocks that use none of the three. Every HashiCorp tutorial cites this conflict as *the* reason for the rule; it is the enforcement, not the cause.
+
+    The lifecycle half generalizes past modules. Never delete a `provider` block while anything in state still references it, module or not.
 
 The call syntax, and both environments using it identically:
 
@@ -346,3 +353,4 @@ Three things to carry forward when reading this chapter against a current Terraf
 ---
 
 *Related notes:* [Modules](../../../topics/modules.md) topic page · TID Ch3 [[03-variables-modules]] · [[tf-modules-develop]] and [[tf-modules-composition]] for the modern design guidance · [[tf-block-module]] for the `source` and `ref` specification · [[tut-module-create]] for the same refactor as a HashiCorp tutorial. Feeds learning-path **I4** (using modules) and **I5** (authoring modules).
+
