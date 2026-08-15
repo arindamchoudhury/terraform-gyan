@@ -133,7 +133,23 @@ The bonus: tying tests to examples means **your examples cannot silently rot**.
 
 Tests run concurrently because they are slow — and even a single-configuration suite runs concurrently the moment two people open pull requests.
 
-For ordinary software this is harmless; here, tests **create real resources**, and the collision point is **names that must be unique**. Worse, some resources hold the name after deletion — `aws_secretsmanager_secret` blocks reuse for **a full week** by default.
+For ordinary software this is harmless; here, tests **create real resources**, and the collision point is **names that must be unique**. Worse, some resources hold the name after deletion — the chapter's example is `aws_secretsmanager_secret`.
+
+!!! warning "Book defect — it is 30 days by default, not “a full week”, and there is an escape hatch"
+    The chapter says a deleted secret blocks reuse of its name for *"a full week by default"*. The provider documentation for `aws_secretsmanager_secret` says otherwise: `recovery_window_in_days` *"can be `0` to force deletion without recovery or range from `7` to `30` days. **The default value is `30`.**"*
+
+    So seven days is the **minimum** you can configure, not the default, and the real collision window is more than four times what the book states — which makes its own argument stronger, not weaker.
+
+    It also means the fix for test suites is better than randomised names alone. Set the window to zero in test configurations so the name frees immediately:
+
+    ```hcl
+    resource "aws_secretsmanager_secret" "test" {
+      name                    = "testing_${random_string.random.result}"
+      recovery_window_in_days = 0     # test-only: skip the recovery window entirely
+    }
+    ```
+
+    Never in production, obviously — that removes the undelete safety net.
 
 The fix is cheap:
 
