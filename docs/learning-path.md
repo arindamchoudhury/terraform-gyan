@@ -1,6 +1,7 @@
 # Learning Path: Terraform (and OpenTofu)
 
-> **Current stable versions:** Terraform CLI **1.15.8** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.4** (1.12.0 released 2026-05-14, MPL 2.0)
+> **Current stable versions:** Terraform CLI **1.15.8** (1.15.0 released 2026-04-29, BSL 1.1) · OpenTofu **1.12.5** (2026-07-21; 1.12.0 released 2026-05-14, MPL 2.0)
+> **Next releases:** Terraform **1.16** is at **rc1** — no `v1.16.0` tag exists, and `main` already carries 1.17 alphas, so treat 1.16 rows as provisional. OpenTofu **1.13** is unreleased.
 > **Local stack:** Terraform CLI + a cloud account (AWS recommended for cert alignment); OpenTofu optional as a drop-in.
 >
 > **How to read this page.** Topics are the primary unit. Each topic has a "How to learn it" section that
@@ -26,11 +27,11 @@
 | **OTDocs** | OpenTofu documentation | Official docs | https://opentofu.org/docs/ |
 | **Assoc** | Terraform Associate 004 study path | Official course | https://developer.hashicorp.com/terraform/tutorials/certification-004 |
 | **Pro** | Terraform Authoring & Operations Pro study path | Official course | https://developer.hashicorp.com/terraform/tutorials/pro-cert |
-| **KK** | KodeKloud — Terraform for Beginners / free labs (browser, no cloud account) | Interactive labs (free) | [free labs](https://kodekloud.com/free-labs/terraform) · [Coursera mirror (audit free)](https://www.coursera.org/learn/terraform-for-the-absolute-beginner) |
-| **FCC** | freeCodeCamp — HashiCorp Terraform Associate Certification Course | Video course (free, YouTube) | youtube.com (search "freeCodeCamp Terraform Associate") |
+| **KK** | KodeKloud — Terraform for Beginners / free labs (browser, no cloud account; **26 labs, 20–30 hrs**) | Interactive labs (free) | [free labs](https://kodekloud.com/free-labs/terraform) · [Coursera mirror (audit free)](https://www.coursera.org/learn/terraform-for-the-absolute-beginner) |
+| **FCC** | freeCodeCamp — HashiCorp Terraform Associate Certification Course (Andrew Brown / ExamPro). ⚠️ **003-era** — predates 004, so pair it with the 004 delta in the Certifications callout | Video course (free, YouTube) | [youtube.com/watch?v=V4waklkBC38](https://www.youtube.com/watch?v=V4waklkBC38) |
 | **CLX** | Collabnix — Terraform Hands-on Labs (init/plan/apply, beginner→advanced) | Interactive labs (free) | [collabnix.github.io/terraform](https://collabnix.github.io/terraform/) |
 | **TF2026** | Rahul Oli — *Terraform Complete Course in One Video: Beginner to Advanced* (YouTube, Apr 2026, 6h23m) | Video course | [youtu.be/l5qtFBsxZdk](https://youtu.be/l5qtFBsxZdk) |
-| **Krausen** | Bryan Krausen — Terraform Associate course + practice exams | Video + practice (paid) | [krausen.io hands-on labs](https://krausen.io/course/hashicorp-certified-terraform-associate-hands-on-labs/) · [004 practice exams](https://www.udemy.com/course/terraform-associate-004-practice-exams/) |
+| **Krausen** | Bryan Krausen — Terraform Associate **004** exam prep (video + labs + section quizzes + two full-length practice exams) and a standalone practice-exam course. Hosted on Udemy, sold through krausen.io | Video + practice (paid) | [004 exam prep](https://krausen.io/course/hashicorp-certified-terraform-associate-004-exam-prep-course/) · [004 practice exams](https://krausen.io/course/hashicorp-certified-terraform-associate-004-practice-exams/) |
 | **KL** | Krausen — *terraform-associate-labs* (free 004 labs, AWS/Azure/GitHub, runs in free Codespaces; tested TF 1.12.2) | Interactive labs (free, open-source) | [github.com/btkrausen/terraform-associate-labs](https://github.com/btkrausen/terraform-associate-labs) · local clone: `C:\opt\learn\terraform\repos\terraform-associate-labs` |
 | **TPF** | Terraform Plugin Framework docs | Official docs | https://developer.hashicorp.com/terraform/plugin/framework |
 | **TG** | Terragrunt docs (Gruntwork) | Official docs | https://terragrunt.gruntwork.io/docs |
@@ -46,11 +47,21 @@
 
 | Cert | Provider | Level | Topics tested | Fee | Format | When to attempt |
 |---|---|---|---|---|---|---|
-| **Terraform Associate (004)** | HashiCorp | Intermediate exit | IaC concepts · fundamentals (providers/state) · core workflow · HCL config language · modules (use + author) · state management · infrastructure maintenance · HCP Terraform | $70.50 | 1 hr, ~57 multiple-choice, valid 2 yrs; tests Terraform 1.12 | After Intermediate |
-| **Terraform Authoring & Operations Professional** | HashiCorp | Advanced exit | resource lifecycle · dynamic config & troubleshooting · collaborative workflows · modules · providers · HCP Terraform (MC only) | (see HashiCorp) | Lab-based (hands-on), AWS provider; Azure variant late 2026 | After Advanced |
+| **Terraform Associate (004)** | HashiCorp | Intermediate exit | IaC concepts · fundamentals (providers/state) · core workflow · HCL config language · modules (use + author) · state management · infrastructure maintenance · HCP Terraform | **$70.50 USD** (+ local taxes; **free retake not included**) | Online proctored, multiple choice, **1 hr**, credential valid **2 yrs**; tests Terraform **1.12** | After Intermediate |
+| **Terraform Authoring & Operations Professional** | HashiCorp | Advanced exit | resource lifecycle · dynamic config & troubleshooting · collaborative workflows · modules · providers · HCP Terraform | **$295 USD** (+ local taxes; **free retake included**) | Online proctored, **lab-based *and* multiple choice**, **4 hrs incl. a 15-min break**, US QWERTY keyboard only, valid **2 yrs**; tests Terraform **1.6**, AWS provider (Azure variant expected late 2026) | After Advanced |
 
-!!! note "004 replaces 003"
-    **004 replaces 003** (retired 2026-01-08). If you see 003 study material, the content is ~90% the same but use 004 resources where possible. The Pro exam assumes deep HCL + CLI fluency and real cloud experience.
+!!! note "004 replaces 003 — and here is exactly what 004 added"
+    **004 replaces 003** (retired 2026-01-08). If you see 003 study material, the content is ~90% the same but use 004 resources where possible. HashiCorp publishes the delta, so study these four objectives specifically when working from an older course:
+
+    - **4f** — `depends_on` and `create_before_destroy` lifecycle rules (path: **I1**, **I2**)
+    - **4g** — validate configuration using custom conditions (path: **A2**)
+    - **4h** — ephemeral values and write-only arguments (path: **A6**)
+    - **8c** — organize and use HCP Terraform workspaces and projects (path: **A4**)
+
+    Plus: the exam now tests **Terraform 1.12** and includes HCP Terraform content throughout. The Pro exam assumes deep HCL + CLI fluency and real cloud experience.
+
+!!! warning "HashiCorp does not publish a question count for 004"
+    This path used to state "~57 multiple-choice". The official exam-details table gives assessment type, format, duration, price, language and expiry — **no question count**. The 57 figure is the size of **ExamPro's free practice exam**, which circulates widely enough to get mistaken for the real thing. Plan against the **1 hour** limit, not a question count. Verified against the [certifications page](https://developer.hashicorp.com/certifications/infrastructure-automation), 2026-08-15.
 
 ---
 
@@ -683,7 +694,7 @@ You are ready to advance when you can:
 
 ---
 
-### ✅ Intermediate Checkpoint
+### ⬜ Intermediate Checkpoint
 
 You are ready to advance when you can:
 - Author and consume versioned, validated modules with clean input/output surfaces.
@@ -1011,7 +1022,7 @@ You are ready to advance when you can:
 
 ---
 
-### ✅ Advanced Checkpoint
+### ⬜ Advanced Checkpoint
 
 You are ready to advance when you can:
 - Ship tested modules (`terraform test`, conditions, checks) through a PR-gated CI/CD pipeline.
@@ -1235,7 +1246,7 @@ You are ready to advance when you can:
 
 ---
 
-### ✅ Expert Checkpoint
+### ⬜ Expert Checkpoint
 
 You have mastered Terraform when you can:
 - Build and ship a custom provider with the Plugin Framework.
@@ -1262,18 +1273,22 @@ Expert (E1–E6)          → ~70 hrs
 
 ## Sources consulted
 
-- HashiCorp Developer — Certifications / Infrastructure Automation — https://developer.hashicorp.com/certifications/infrastructure-automation
-- HashiCorp Developer — Terraform Associate 004 study path — https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004
-- HashiCorp Developer — Terraform Authoring & Operations Pro exam content — https://developer.hashicorp.com/terraform/tutorials/pro-cert/pro-review
+- HashiCorp Developer — Certifications / Infrastructure Automation — https://developer.hashicorp.com/certifications/infrastructure-automation (re-verified 2026-08-15, exam-details accordions expanded)
+- HashiCorp Developer — Terraform Associate 004 study path — https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004 (re-verified 2026-08-15)
+- HashiCorp Developer — Terraform Authoring & Operations Pro exam content — https://developer.hashicorp.com/terraform/tutorials/pro-cert/pro-review (re-verified 2026-08-15)
 - OpenTofu 1.12 release coverage (2026-05) — InfoQ
-- Terraform CLI release notes (1.15, 2026-04-29; current patch 1.15.7)
+- Terraform CLI releases — `git ls-remote --tags` on `hashicorp/terraform`: current stable **1.15.8**, 1.16 at rc1, 1.17 alphas on `main` (checked 2026-08-15)
+- OpenTofu releases — `git ls-remote --tags` on `opentofu/opentofu`: current stable **1.12.5** (2026-07-21), 1.13 unreleased (checked 2026-08-15)
+- Course-catalog liveness checks 2026-08-15 — KodeKloud free labs, its Coursera mirror, Collabnix labs, `btkrausen/terraform-associate-labs`, the Rahul Oli video, and krausen.io/courses (old hands-on-labs URL now redirects)
 - *Terraform in Depth* (Manning) and *Terraform: Up & Running* 3rd ed (O'Reilly) — tables of contents
 
 ---
 
 !!! note "Research log"
-    Newest entries first, though the run is not strictly sorted — some findings were written up after later ones. **Last updated: 2026-08-15.**
+    Newest entries first, though the run is not strictly sorted — some findings were written up after later ones. **Last updated: 2026-08-15 (Phase 4 review: certs, versions and course links re-verified against official sources; five corrections).**
 
+> **2026-08-15** — **Phase 4 review pass. Five things had drifted, and the worst of them was a number this path invented confidence about.** The path claimed the Associate 004 exam is "~57 multiple-choice". **HashiCorp publishes no question count** — the official exam-details table gives assessment type, format, duration (1 hr), price, language and expiry, and nothing else. The 57 comes from **ExamPro's free practice exam**, which circulates widely enough to be mistaken for the real thing, and the freeCodeCamp course this path cites is the ExamPro course, which is presumably how it got in. Replaced with a warning naming the provenance. **The other corrections:** OpenTofu stable is **1.12.5** (2026-07-21), not 1.12.4; the `Sources consulted` line still said Terraform's current patch was 1.15.7, now 1.15.8 — which is genuinely current, since `git ls-remote` shows **no `v1.16.0` tag** (rc1 only, with 1.17 alphas already on `main`), so every 1.16 row in this path stays provisional; the **Pro exam fee was unfilled** and is **$295 with a free retake included** against the Associate's $70.50 **without** one, plus it is **lab-based *and* multiple choice**, **4 hours including a 15-minute break**, US QWERTY only, and it still tests **Terraform 1.6** — three releases behind what the Associate tests; and **the Krausen hands-on-labs URL is dead**, redirecting to the course index, replaced with the current 004 exam-prep and 004 practice-exam pages. **Added rather than corrected:** HashiCorp's own 003→004 delta, which the path had summarised as "~90% the same" — the four new objectives are `4f` lifecycle rules (I1/I2), `4g` custom conditions (A2), `4h` ephemeral values and write-only arguments (A6), and `8c` HCP workspaces and projects (A4), so an older course leaves exactly those four holes. **A status-marker fix that mattered more than it looks:** the Intermediate, Advanced and Expert checkpoints were all marked ✅ while every topic under them is ⬜, which read as "levels complete". Only the Beginner checkpoint is genuinely passed. **Verified unchanged:** Terraform 1.15.8 stable, the 004 fee, duration, 2-year validity and its eight objective domains, the Pro exam's AWS-only scope with an Azure variant expected late 2026 (quoted verbatim from the page), TUR still at 3rd edition with no 4th announced, and the KodeKloud labs (26 labs, 20–30 hrs), its Coursera mirror, Collabnix, the `terraform-associate-labs` repo (still tested at TF 1.12.2) and the Rahul Oli video all live. Topic statuses match the book: 13 chapters, B1–B9 and I1–I4 ✅, next is **I5**.
+>
 > **2026-08-15** — **Observability with OpenTelemetry researched across all three layers, and the path's own claim about it was false.** E5 said "Terraform has no built-in OTel equivalent". It has one: `OTEL_TRACES_EXPORTER=otlp` enables an OTLP exporter in `telemetry.go`, and the reason nobody knows is that **it is undocumented** — a grep of the Terraform repo's `website/` for `opentelemetry` returns nothing, so the only public description is a source comment reading "BEWARE! This is not a committed external interface." The real divergence is depth. **OpenTofu 1.10+ traces the graph walk**: `Validation`/`Plan`/`Apply phase` spans, then one span per graph node (`Plan resource instance changes`, `Apply resource instance changes`, `Configure provider`) carrying `opentofu.resource_instance.address` and `opentofu.provider.source`, which is what makes "which resource is slow" answerable. **Terraform 1.15 has ~10 span sites**, all in `main`, `checkpoint.go`, and `internal/command` — module and provider install, backend init — and **no graph-walk spans at all**; the instrumented plan/apply code lives in `internal/stacks/stackruntime` and `internal/rpcapi`, which HCP Terraform drives over RPC, not the CLI. Three consequences worth carrying: OpenTofu reads **`TRACEPARENT`** (1.10) so a run nests inside a pipeline trace while Terraform ignores it ([#35444](https://github.com/hashicorp/terraform/issues/35444), open since 2024-07-10); Terraform exports spans through a **`SimpleSpanProcessor`** (synchronous, per span) where OpenTofu batches; and **Terraform's root span is named `terraform <full command line>`**, so `-var="password=…"` reaches the tracing backend, where OpenTofu's root span is just `tofu`. Version-gated with `git tag --contains`: init spans, node spans and `TRACEPARENT` all first ship in **v1.10.0**, `OTEL_SERVICE_NAME` in **v1.11.0**, and 1.13 (unreleased) adds `TRACEPARENT` propagation into `local-exec` children plus OTel library logs in `TF_LOG`. Two CI traps recorded in **A3**: a broken collector **fails the command** (both binaries exit 1 while the variable is set), and `autoexport`'s default protocol is `http/protobuf`/**4318**, so the OpenTofu docs' own `4317` example needs `OTEL_EXPORTER_OTLP_PROTOCOL=grpc` — the docs page contains both port numbers in different sections. **A4** gains the one layer that emits **metrics**: HCP Terraform agents (`-otlp-address`, `tfc-agent.*` metric families, per-run attributes like `workspace_name`/`run_id`), which neither CLI does. Two stale claims fixed in [[feature-history]] and [[opentofu-feature-history]] ("no OTel in Terraform" / "None"). Notes: [[ot-otel-tracing]], [[otel-tracing-facts]]. **E5 and E3 stay ⬜** — no chapter was written, so nothing flips.
 
 > **2026-08-13** — **[[code-styling]] captured (Anton Babenko's *Terraform Best Practices*), a new source folder, and it closes a real gap rather than restating one.** The coverage check was unambiguous: **`pre-commit`, `terraform-docs` and `.editorconfig` appear nowhere in the path** — absent, not name-dropped. The official [[tf-style-guide]] (cited in **B4**) gives the *rules*; this page gives the **toolchain that enforces them**, and the two barely overlap. Folded into three topics. **B4** gains a callout on style being tool-enforced rather than discipline-enforced: the `terraform_fmt` pre-commit hook, **`terraform fmt -check`** as a CI gate (exit 0 when clean, non-zero listing offenders — the difference between a gate and a no-op), and **`.editorconfig`** as the layer `fmt` cannot reach, since `fmt` never touches non-`.tf` files and a repo with a `Makefile` still needs tabs enforced. **A3** step 2 now specifies `-check` over bare `fmt` and pairs it with the local hook so the pipeline stops being where formatting is discovered. **I5** gains `terraform-docs` as the way a module README's input/output tables stay current, plus the registry trap that *"all links in `README.md` should be absolute"* — the Registry renders the README off-repo, so a relative link that works on GitHub resolves to nothing there. **One divergence recorded rather than adopted silently:** both sources prefer `#` over `//` and block comments, but the `# -----` / `######` section-header convention is the community book's own, absent from HashiCorp's guide and unenforced by any tool. ⚠️ Source caveats now on the course index: it is **not** a HashiCorp publication, its pages date themselves only as *"Last updated N ago"* (this one reads "1 year ago", so its pinned `rev: v1.99.4` is roughly mid-2025 and should be re-checked), and the page carries a visible `@todo` for module versions, releases and GH Actions — so that half is unwritten, not deliberately omitted. Nav mirrored at **rung 3** from the GitBook DOM; the book's structure is flat, ten top-level pages, so no groups were invented. No topic page yet — style/formatting now has two sources ([[tf-style-guide]] + this), so it goes to the topics backlog as promotable. Statuses unchanged: **B4** stays ✅, **A3** and **I5** stay ⬜.
