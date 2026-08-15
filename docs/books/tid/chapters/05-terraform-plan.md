@@ -6,7 +6,7 @@
 >
 > 📌 **Notes adapted where version-bound.** Book written 2025; current stable is Terraform CLI **1.15.7** / OpenTofu **1.12.3** — see [[version-facts]]. Version facts flagged inline: `-replace` (v0.15.2, supersedes deprecated `taint`), the `terraform graph` apply-mode change at v1.7.0, and the OpenTofu-only `-exclude` flag. Conceptual content — the DAG, plan/apply mechanics, the pitfalls — is unaffected.
 
-> 🔗 **See also:** deepens learning-path **B3** (init/plan/apply/destroy), **B7** (computed-value limits on expressions), **I1** (`count`/`for_each` must be known at plan time), **I2** (`ignore_changes` to stop replacements), and **E5** (`terraform graph` / DAG deep-dive). Builds on Ch4's [[dependency-graph]]; leads into Ch6 [[state-management]].
+> 🔗 **See also:** deepens learning-path **B3** (init/plan/apply/destroy), **B7** (computed-value limits on expressions), **I1** (`count`/`for_each` must be known at plan time), **I2** (`ignore_changes` to stop replacements), and **E5** (`terraform graph` / DAG deep-dive). Builds on Ch4's [[dependency-graph]]; leads into Ch6 [[06-state-management]].
 
 ---
 

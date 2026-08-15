@@ -6,7 +6,7 @@
 >
 > 📌 **Notes adapted where version-bound.** Book written 2025 (examples show state `version: 4`, `terraform_version: 1.5.4`); current stable is Terraform CLI **1.15.8** / OpenTofu **1.12.4** — see [[version-facts]]. Biggest correction: the book's Table 6.1 still says the **S3 backend requires DynamoDB for locking** — both tools now lock natively with `use_lockfile = true` (Terraform **1.10**, GA **1.11**; OpenTofu **1.10**), and `dynamodb_table` is deprecated **on Terraform only** (see §6.4.1). Block version-gates are flagged inline (`moved` 1.1, `removed` 1.7, `terraform_data` 1.4, `import` block 1.5). Conceptual content — why state exists, the JSON structure, drift, remote state — is unchanged.
 
-> 🔗 **See also:** owns learning-path **B9** (state fundamentals) and **I6**/**I7** (remote state, backends, state ops); touches **A6** (secrets in state), **I2** (`ignore_changes`, `replace_triggered_by`), **A1** (`terraform_data`/provisioners). Builds on Ch5's [[dependency-graph]] and [[core-workflow]]; the `import` block it defers to is Ch8. Topic pages: [[workspaces]], plus [[state-management]] (backlog) and [[secrets-and-state]] (backlog).
+> 🔗 **See also:** owns learning-path **B9** (state fundamentals) and **I6**/**I7** (remote state, backends, state ops); touches **A6** (secrets in state), **I2** (`ignore_changes`, `replace_triggered_by`), **A1** (`terraform_data`/provisioners). Builds on Ch5's [[dependency-graph]] and [[core-workflow]]; the `import` block it defers to is Ch8. Topic pages: [[workspaces]], plus `state` and `secrets-and-state`, both still on the [topics backlog](../../../topics/index.md) rather than written.
 
 ---
 
@@ -57,7 +57,7 @@ So evaluate a backend's **durability** (historic data loss, incident frequency, 
 
 State holds **every attribute of every resource**, including ones marked `sensitive`. A leaked state file exposes your whole architecture and its secrets. "Poor security" is concrete: state access without MFA (open to brute-force / credential stuffing), or a storage bucket misconfigured for public access — both are real incidents that have happened.
 
-Mitigations help but don't eliminate the risk: pull secrets from a manager like Vault where you can (many systems still need values passed directly), but a copy of state still maps your entire architecture to anyone who can read it. See [[secrets-and-state]].
+Mitigations help but don't eliminate the risk: pull secrets from a manager like Vault where you can (many systems still need values passed directly), but a copy of state still maps your entire architecture to anyone who can read it. The sources for this are [[tf-manage-sensitive-data]] and [[infisical-terraform-secrets]]; they are queued for a `secrets-and-state` topic page on the [topics backlog](../../../topics/index.md).
 
 ### 6.2.3 Availability
 
