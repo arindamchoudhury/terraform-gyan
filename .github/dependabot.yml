@@ -1,0 +1,60 @@
+# Keeps the SHA-pinned actions in .github/workflows/deploy.yml moving.
+#
+# Pinning by commit SHA is what makes an action immutable, but a pin with
+# nothing to advance it is just a frozen dependency. This is the other half of
+# that decision.
+#
+# Verified against GitHub's own documentation (data/reusables/actions/
+# dependabot-version-updates-actions-caveats.md), because the behaviour is
+# easy to get wrong in both directions:
+#
+#   * SHA pins ARE updated. "Dependabot only supports updates to Actions using
+#     the GitHub repository syntax, such as actions/checkout@v5 or
+#     actions/checkout@<commit>".
+#   * The trailing version comment is maintained, but only when it is on the
+#     SAME LINE: "Dependabot updates the version documentation of Actions when
+#     the comment is on the same line, such as actions/checkout@<commit>
+#     #<tag or link>". deploy.yml is written in exactly that form — do not move
+#     those comments onto their own line.
+#   * Because our SHAs each resolve to a release tag, updates track releases.
+#     "If the commit you use is not associated with any tag, Dependabot will
+#     update the Actions to the latest commit (which might differ from the
+#     latest release)."
+#
+# The cost of SHA pinning, worth knowing rather than discovering: it opts out
+# of vulnerability alerting. "Dependabot only creates alerts for vulnerable
+# actions that use semantic versioning and will not create alerts for actions
+# pinned to SHA values." So these PRs are the mechanism keeping the actions
+# current — there is no alert coming if one of them is found vulnerable.
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    # Must be "/" — this is where Dependabot looks for .github/workflows,
+    # not the path to the workflow directory itself.
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # One PR for all four actions rather than four. They are updated together
+    # in practice, and a single PR is one CI run and one review.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+
+# Not covered here, deliberately:
+#
+#   * pip — the workflow installs Zensical with a bare `pip install zensical
+#     tomli-w`, with no requirements file for Dependabot to read. Adding one
+#     would pin the site build; it would also mean the published site stops
+#     tracking Zensical releases, which is currently a feature given the tool
+#     is pre-1.0.
+#   * terraform — docs/examples/ and labs/ contain .tf files with deliberately
+#     pinned provider versions that match what the book chapters describe.
+#     Auto-bumping those would silently invalidate transcripts and measured
+#     claims in the text. Those upgrades belong to a chapter revision, not to
+#     a bot.
