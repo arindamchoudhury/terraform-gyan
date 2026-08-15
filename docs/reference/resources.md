@@ -40,5 +40,5 @@ in the book has moved.
 | **tenv** | Per-project version manager for Terraform, OpenTofu **and** Terragrunt; successor to `tfenv` | https://github.com/tofuutils/tenv |
 | **pre-commit** | Framework for declaring Git pre-commit hooks in a config file | https://pre-commit.com/ |
 | `pre-commit-terraform` | Published hooks for every tool above (Babenko); OpenTofu fork: `tofuutils/pre-commit-opentofu` | https://github.com/antonbabenko/pre-commit-terraform |
-| **Cookiecutter** | Templated project generator; bootstraps a module with the whole toolchain pre-configured | https://www.cookiecutter.io/ |
+| **Cookiecutter** | Jinja2-templated project generator; bootstraps a module with the whole toolchain pre-configured. (TID Ch7 cites `www.cookiecutter.io`, which does not resolve) | https://cookiecutter.readthedocs.io/en/stable/ |
 | **Terratest** | Go-based Terraform testing framework (Gruntwork); the alternative to native `terraform test` | https://terratest.gruntwork.io/ |

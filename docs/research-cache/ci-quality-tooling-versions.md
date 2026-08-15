@@ -13,7 +13,7 @@ _Last verified: **2026-08-15**, each against the project's own GitHub releases A
 | **TFLint** | (unpinned) | **v0.64.0** | 2026-07-17 | the linter binary itself |
 | `tflint-ruleset-aws` | `0.29.0` / `0.30.0` | **v0.48.0** | 2026-06-29 | book's two listings disagree with each other |
 | `tflint-ruleset-opa` | `0.6.0` | **v0.11.0** | 2026-07-20 | 0.11.0 added remote policy bundles (`bundle_url`) and `terraform.required_providers` |
-| **Checkov** | (unpinned) | **3.3.9** | 2026-08-02 | no `v` prefix on its tags |
+| **Checkov** | (unpinned) | **3.3.11** (PyPI) / 3.3.9 (GitHub releases) | 2026-08-02 (GH) | no `v` prefix on its tags. **PyPI runs ahead of the GitHub release feed** — `pip3 install checkov` is the install path the tool documents, so PyPI is the number that matters |
 | **Trivy** | (unpinned) | **v0.74.0** | 2026-08-14 | absorbed tfsec; the `aquasecurity/tfsec` repo now describes itself as "Tfsec is now part of Trivy" |
 | **terraform-docs** | (unpinned) | **v0.24.0** | 2026-05-10 | |
 | **tenv** | (unpinned) | **v4.15.1** | 2026-07-24 | book describes tenv at its 1.x/2.x shape |
@@ -37,8 +37,9 @@ The book's matrix tests engine versions `1.6`/`1.7`/`1.8` with Terraform `1.10` 
 
 OpenTofu **1.8.0** added the `.tofu` / `.tofu.json` file extensions, and `.tofu` **takes precedence
 over** a same-named `.tf` in the same directory. Verified from source rather than docs: the parser
-change is commit `ab289fc0` ("OpenTofu Specific Code Override: Add support to .tofu files", #1738,
-2024-06-24), and `git tag --contains` puts its earliest stable tag at **v1.8.0**. The documentation
+change is commit `ab289fc0` ("OpenTofu Specific Code Override: Add support to .tofu files",
+[opentofu#1738](https://github.com/opentofu/opentofu/pull/1738), 2024-06-24), and `git tag --contains`
+puts its earliest stable tag at **v1.8.0**. The documentation
 page landed later, in 1.10 — which is why secondary sources date the feature wrong.
 
 Third-party tooling has not followed:
@@ -48,6 +49,14 @@ Third-party tooling has not followed:
 | **TFLint** | **No, and declined** | [#2609](https://github.com/terraform-linters/tflint/issues/2609) closed `not_planned` on 2026-07-23. TFLint loads only `*.tf` / `*.tf.json` |
 | **Checkov** | **Not yet** | [PR #7401](https://github.com/bridgecrewio/checkov/pull/7401) adding `.tofu`/`.tofu.json` discovery is still **open** |
 | **terraform-docs** | **No** | [#811](https://github.com/terraform-docs/terraform-docs/issues/811) open (reopened); the implementing [PR #833](https://github.com/terraform-docs/terraform-docs/pull/833) closed unmerged |
+
+!!! danger "Don't repeat the `terraform-config-inspect` explanation — it is false"
+    The common account of *why* terraform-docs lags — "it parses with HashiCorp's `terraform-config-inspect`, which only updates when HashiCorp wants it to" — does not survive reading the `go.mod`. terraform-docs requires
+    **`github.com/terraform-docs/terraform-config-inspect`**, its own fork, pinned at `v0.0.0-20250408153412-5b88c7ed5b63`, plus `github.com/hashicorp/hcl/v2 v2.24.0`. The project controls its own parser, so no upstream dependency is blocking OpenTofu support.
+
+    Nor is there a verified replacement explanation. The nearest thing is [#845](https://github.com/terraform-docs/terraform-docs/issues/845), a *contributor* asking whether the project is still maintained and proposing a transfer to the Linux Foundation or a rename to "tofu-docs" — open since April 2025 with no maintainer response recorded. State the observable facts (issues open, PR unmerged, `for_each` bug open) and stop there.
+
+    This one came in from a search-result snippet and was written into the Ch7 note as fact before being checked — the reason this project's rule is to confirm against the source (repo, `go.mod`, changelog) before a claim reaches a chapter.
 
 The failure mode is the dangerous kind: **silence**. A module written entirely in `.tofu` files makes
 TFLint report zero issues and exit `0` without having parsed anything. In a mixed module it is worse
@@ -68,8 +77,22 @@ divergence from Terraform at the cost of your entire quality toolchain.
   tag **v1.6.0** in `repos/opentofu`. So the book's "OpenTofu may lag behind in features" is a claim
   about later additions, not about the framework existing. Detail belongs to Ch9 / [[terraform-testing]].
 
+## URLs the book cites that are dead
+
+- **`https://www.cookiecutter.io/`** (§7.2.1) — DNS does not resolve (`ENOTFOUND`). Cookiecutter lives at
+  [`cookiecutter/cookiecutter`](https://github.com/cookiecutter/cookiecutter), docs at
+  <https://cookiecutter.readthedocs.io/en/stable/>. Jinja2 confirmed as a hard dependency
+  (`Jinja2>=2.7,<4.0.0`) rather than assumed.
+
+Every other URL cited in the Ch7 note was fetched and confirmed live: trivy.dev ("The All-in-One Security
+Scanner", Aqua), checkov.io ("Policy-as-code for everyone", now Palo Alto Networks), terratest.gruntwork.io,
+pre-commit.com, and `TerraformInDepth/terraform-module-cookiecutter` (exists; "This CookieCutter Template
+generates Terraform Modules with all the best practices").
+
 ## Sources
 
 - GitHub releases API, one call per repo, 2026-08-15
+- `terraform-docs` `go.mod` @ `master`; PyPI JSON API for `checkov` and `cookiecutter`
+- `tflint-ruleset-terraform` `docs/rules/README.md` for preset membership
 - Local checkout `C:\opt\learn\terraform\repos\opentofu` @ `d529119` for the `.tofu` tag archaeology
 - `aquasecurity/tfsec` repository metadata (description: "Tfsec is now part of Trivy")

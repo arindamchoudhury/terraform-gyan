@@ -51,7 +51,9 @@ Configuring quality tools is boring and mostly identical between projects, which
 
 The cheapest version is a repository of boilerplate you copy — GitHub **Template Repositories** support this natively, and the book calls it a genuinely good first step. It stops being enough when the template needs *logic*: conditional files, generated names, per-provider configuration.
 
-That is where **[Cookiecutter](https://www.cookiecutter.io/)** comes in. Templates are Jinja-templated, so the generator can ask questions and branch on the answers. The chapter's worked case is `.tflint.hcl`, where the plugin block depends on which cloud you answered:
+That is where **[Cookiecutter](https://cookiecutter.readthedocs.io/en/stable/)** comes in. Templates are rendered with **Jinja2** (`Jinja2>=2.7,<4.0.0` is a hard dependency of the package), so the generator can ask questions and branch on the answers.
+
+> ⚠️ **Book defect** — the chapter cites Cookiecutter as `https://www.cookiecutter.io/`. That hostname **does not resolve** (DNS `ENOTFOUND`). The project lives at [`cookiecutter/cookiecutter`](https://github.com/cookiecutter/cookiecutter) on GitHub with docs on Read the Docs, linked above. The chapter's worked case is `.tflint.hcl`, where the plugin block depends on which cloud you answered:
 
 ```jinja
 plugin "terraform" {          # always on, so no conditional
@@ -321,6 +323,8 @@ plugin "terraform" {
 
 The author's recommendation is to switch to `preset = "all"`, specifically because the rules requiring **descriptions on variables and outputs** are not in `recommended` — and those descriptions are what `terraform-docs` (§7.6.1) turns into documentation. Presets compose in both directions: add rules on top of `recommended`, or disable them on top of `all`.
 
+That claim checks out against the ruleset's own docs, and the two rules have names worth knowing: **`terraform_documented_variables`** and **`terraform_documented_outputs`** are both absent from `recommended`. So is `terraform_comment_syntax`, which is why the book has to enable it explicitly in its next listing. (`terraform_module_pinned_source` and `terraform_module_version`, by contrast, *are* in `recommended`.)
+
 The cloud rulesets are maintained by the same team, and are large:
 
 | Plugin | Rule count (book's figures) |
@@ -588,7 +592,9 @@ The pair is the pattern the whole chapter uses: a **chore** target that changes 
 This is also where §7.3.3's advice pays off: enabling TFLint's `all` preset forces descriptions onto every variable and output, and those descriptions are precisely what lands in the generated table.
 
 !!! info "OpenTofu — terraform-docs has no OpenTofu support"
-    Beyond the `.tofu` extension gap in §7.2.4, terraform-docs also **breaks** on OpenTofu's provider `for_each` ([issue #895](https://github.com/terraform-docs/terraform-docs/issues/895), open). It parses with HashiCorp's `terraform-config-inspect`, so OpenTofu-only language features are structurally unlikely to arrive soon. An OpenTofu project using OpenTofu-specific syntax should expect to document by hand.
+    Beyond the `.tofu` extension gap in §7.2.4, terraform-docs also **breaks** on OpenTofu's provider `for_each` ([issue #895](https://github.com/terraform-docs/terraform-docs/issues/895), open). First-class `.tofu` support is [issue #811](https://github.com/terraform-docs/terraform-docs/issues/811) (open, reopened) and its implementing [PR #833](https://github.com/terraform-docs/terraform-docs/pull/833) was closed unmerged. An OpenTofu project using OpenTofu-specific syntax should expect to document by hand.
+
+    ⚠️ A widely repeated explanation for this — *"terraform-docs is stuck because it parses with HashiCorp's `terraform-config-inspect`"* — is **false**, and I had it in this note until I checked. Its `go.mod` requires **`github.com/terraform-docs/terraform-config-inspect`**, the project's own fork, alongside `hashicorp/hcl/v2`. They control the parser, so nothing structural blocks OpenTofu support. Don't substitute a different guess for it either: the nearest thing to a stated cause is [issue #845](https://github.com/terraform-docs/terraform-docs/issues/845), which is a *contributor* asking whether the project is still maintained and floating a transfer to the Linux Foundation, with no maintainer answer recorded.
 
 ### 7.6.2 `terraform fmt`
 
@@ -800,7 +806,7 @@ The chapter's own closing points, plus the two structural ideas that make the re
 
 ## References
 
-- Cookiecutter — <https://www.cookiecutter.io/>
+- Cookiecutter — <https://cookiecutter.readthedocs.io/en/stable/> (the book's `www.cookiecutter.io` does not resolve)
 - The author's template org — <https://github.com/TerraformInDepth/> (`terraform-module-cookiecutter`)
 - pre-commit framework — <https://pre-commit.com/>
 - `antonbabenko/pre-commit-terraform` — <https://github.com/antonbabenko/pre-commit-terraform>
