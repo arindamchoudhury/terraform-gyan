@@ -12,7 +12,7 @@
 | ✅ done | 6. State management | — (backlog: state-management, secrets-and-state) |
 | ✅ done | 7. Code quality and continuous integration | — (backlog: code-style-and-tooling, ci-quality-gates) |
 | ✅ done | 8. Continuous delivery and deployment | — (backlog: deployment-and-gitops, ci-quality-gates, secrets-and-state) |
-| ⬜ todo | 9. Testing and refactoring | — |
+| ✅ done | 9. Testing and refactoring | — (backlog: testing, refactoring) |
 | ⬜ todo | 10. Advanced Terraform topics | — |
 | ⬜ todo | 11. Alternative interfaces | — |
 | ⬜ todo | 12. Terraform providers | — |
