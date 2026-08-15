@@ -11,7 +11,7 @@
 | ✅ done | 5. The Terraform plan | [The dependency graph](../../topics/dependency-graph.md), [Core workflow](../../topics/core-workflow.md) |
 | ✅ done | 6. State management | — (backlog: state-management, secrets-and-state) |
 | ✅ done | 7. Code quality and continuous integration | — (backlog: code-style-and-tooling, ci-quality-gates) |
-| ⬜ todo | 8. Continuous delivery and deployment | — |
+| ✅ done | 8. Continuous delivery and deployment | — (backlog: deployment-and-gitops, ci-quality-gates, secrets-and-state) |
 | ⬜ todo | 9. Testing and refactoring | — |
 | ⬜ todo | 10. Advanced Terraform topics | — |
 | ⬜ todo | 11. Alternative interfaces | — |
