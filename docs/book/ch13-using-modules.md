@@ -16,31 +16,13 @@ By the end you can:
 
 ---
 
-## 1. Everything you have written is already a module
+## 1. The problem, and the thing you already have
 
-Chapter 12 left you able to write a configuration that takes typed inputs and generates the blocks a provider needs. That is a module worth reusing. This chapter is about the other side of the transaction: being the caller.
+You need staging and production. They are near-identical, with production running larger and more of everything.
 
-Start with the definition, because it is broader than most people expect. HashiCorp's [Modules overview tutorial](https://developer.hashicorp.com/terraform/tutorials/modules/module) puts it structurally: *"A Terraform module is a set of Terraform configuration files in a single directory."* The [language reference's Modules overview](https://developer.hashicorp.com/terraform/language/modules) puts it semantically: *"A module is a collection of resources that Terraform manages together."*
+Chapter 6 already handles the size difference: declare the instance count and the machine type as variables, pass one set of values for staging and another for production. Parameterising a single configuration is a solved problem. Reusing it is not. The moment staging and production are separate configurations, or another team wants the same bucket setup, or the same three resources show up in a fifth project, variables have nothing to offer — they vary the values inside one configuration, not the configuration itself.
 
-Both are official and both are true. The directory is the mechanism. The resources managed together are the thing. The structural definition is the one that produces the surprise: a directory with one `.tf` file in it is a module, so there is no "before modules" state you graduate out of.
-
-Three names follow from that.
-
-**Root module** — the directory you run `terraform` commands in. Its files are read directly, and it is the only place a `provider` block belongs.
-
-**Child module** — a module called from another one, through a `module` block.
-
-**Submodule** — a module shipped *inside* another module, conventionally in its `modules/` directory. It is coupled to its parent and is not usually consumed on its own. The `//` syntax in section 3 is how you would reach one anyway.
-
-A root module can call the same child several times, and a child can call children of its own. Nesting has no hard limit and does have a practical one: past two levels deep, working out which module set a given argument becomes genuinely hard.
-
-The mechanical fact underneath is the one to hold on to. Terraform reads the `.tf` files in **one** directory. It does not walk subdirectories, and it does not pick up a `modules/` folder because of its name. A `module` block is the only thing that makes Terraform read another directory at all.
-
-### The problem that makes you want one
-
-Chapter 6 gave you variables, so you can already parameterise a configuration. Suppose you now need staging and production, nearly identical, with production running larger and more of everything.
-
-Copy the directory and you have solved it for today. What you have actually bought is a duplicate. Every fix now has to be made twice, and the two copies drift apart in exactly the ways nobody notices until an incident. The Modules overview tutorial lists the failure modes plainly: navigating the files gets harder, a change in one section has unintended consequences elsewhere, duplication across environments means every update lands in each copy, and sharing between teams degenerates into copy-paste, which it calls *"error prone and hard to maintain"*.
+So you copy the directory. That solves it for today, and what you have actually bought is a duplicate. Every fix now has to be made twice, and the two copies drift apart in exactly the ways nobody notices until an incident. HashiCorp's [Modules overview tutorial](https://developer.hashicorp.com/terraform/tutorials/modules/module) lists the failure modes plainly: navigating the files gets harder, a change in one section has unintended consequences elsewhere, duplication across environments means every update lands in each copy, and sharing between teams degenerates into copy-paste, which it calls *"error prone and hard to maintain"*.
 
 The function analogy is the right one, and it is the frame *Terraform: Up & Running* runs its whole module chapter on. In a general-purpose language you extract repeated code into a function and call it from several places. Here you extract it into a module and call it from several places.
 
@@ -55,6 +37,24 @@ The function analogy is the right one, and it is the frame *Terraform: Up & Runn
 There is a second argument for modules that has nothing to do with tidiness, and it is the stronger one. Object storage has a large configuration surface, and misconfigured buckets are a recurring incident class. A module is where you encode the correct settings once, so that every caller gets them without deciding anything. The tutorial's worked example is one module for the organisation's public website buckets and another for its private logging buckets. When the correct settings change, they change in one place.
 
 There is a third benefit that this chapter cannot deliver on its own. A shared module in a registry is what lets a team with no Terraform expertise provision infrastructure inside your organisation's standards, either by calling the module or through HCP Terraform's no-code provisioning. That is the self-service argument, and it needs the registry side of the story. Chapter 21 covers HCP Terraform and Chapter 31 covers platform engineering and self-service.
+
+### Everything you have written is already a module
+
+Nothing so far has required a new kind of file, and that is not an accident. The definition is broader than most people expect. The same tutorial puts it structurally: *"A Terraform module is a set of Terraform configuration files in a single directory."* The [language reference's Modules overview](https://developer.hashicorp.com/terraform/language/modules) puts it semantically: *"A module is a collection of resources that Terraform manages together."*
+
+Both are official and both are true. The directory is the mechanism. The resources managed together are the thing. The structural definition is the one that produces the surprise: a directory with one `.tf` file in it is a module, so there is no "before modules" state you graduate out of. The typed variables and `dynamic` blocks from Chapter 12 were written in a directory, which means they were already a module. What this chapter adds is the block that calls one.
+
+Three names follow from that.
+
+**Root module** — the directory you run `terraform` commands in. Its files are read directly, and it is the only place a `provider` block belongs.
+
+**Child module** — a module called from another one, through a `module` block.
+
+**Submodule** — a module shipped *inside* another module, conventionally in its `modules/` directory. It is coupled to its parent and is not usually consumed on its own. The `//` syntax in section 3 is how you would reach one anyway.
+
+A root module can call the same child several times, and a child can call children of its own. Nesting has no hard limit and does have a practical one: past two levels deep, working out which module set a given value becomes genuinely hard.
+
+The mechanical fact underneath is the one to hold on to. Terraform reads the `.tf` files in **one** directory. It does not walk subdirectories, and it does not pick up a `modules/` folder because of its name. A `module` block is the only thing that makes Terraform read another directory at all.
 
 !!! note "Consuming and authoring are different skills, and this chapter is only the first"
     The language reference organises the whole modules section around three phases: **Develop** a module, **Distribute** it, then **Provision** with it. This chapter is Provision, the caller's side: finding a module, pinning it, passing it inputs, reading its outputs, and knowing what it installed.
