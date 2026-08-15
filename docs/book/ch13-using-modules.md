@@ -123,6 +123,30 @@ Which inputs a module accepts is not your decision. The reference is blunt about
 | S3 | `s3::https://bucket.s3.amazonaws.com/vpc.zip` | no | the object |
 | GCS | `gcs::https://www.googleapis.com/storage/v1/b/acme/o/vpc.zip` | no | the object |
 
+!!! info "OpenTofu — one more row: `oci://`"
+    OpenTofu can install a module from an **OCI registry** — the same container registries you
+    already run (ECR, Artifact Registry, ACR, GHCR, Docker Hub), reused for modules instead of
+    standing up a Terraform-specific one. The address form is
+    `oci://REGISTRY/REPOSITORY[//SUBDIR][?tag=TAG|?digest=DIGEST]`, and pinning by `digest` gives an
+    immutable reference in the way `?ref=<sha>` does for Git.
+
+    Terraform 1.15.8 does not accept the scheme at all. Measured, same `module` block in both tools:
+
+    ```
+    # terraform 1.15.8
+    Error: Failed to download module
+    "oci://ghcr.io/example/mod?tag=1.0.0": download not supported for scheme 'oci'
+
+    # tofu 1.12.4
+    Error: Failed to download module
+    ... configuring client for ghcr.io/example/mod: failed to contact OCI registry at "ghcr.io"
+    ```
+
+    The second error is a *network* failure against a repository that does not exist, which is the
+    tell: OpenTofu recognised the scheme and went looking. OCI module sources arrived in **OpenTofu
+    1.10**, alongside `oci_mirror` for distributing provider plugins the same way. Covered in the
+    path at **E3** and **E4**.
+
 Two entries in that table are worth spelling out because they are easy to miss.
 
 **A local path is not versioned, and that is the point.** The [`module` block reference](https://developer.hashicorp.com/terraform/language/block/module) states the rule directly: modules sourced from local file paths *"do not support `version` because they're loaded from the same source repository and always share the same version as their caller"*. Whatever the commit of the calling repository is, that is the version of the module.

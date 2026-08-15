@@ -40,6 +40,24 @@ flowchart LR
     P2 -- HTTPS API --> GCP["Google Cloud APIs"]
 ```
 
+!!! info "That gRPC arrow is encrypted, and it is why one class of local failure exists"
+    The channel between core and a provider is not a plain socket. Terraform generates a throwaway
+    certificate for each side at launch and requires **mutual TLS** on the connection, so core only
+    talks to the plugin it started and the plugin only answers core. The reason is what crosses the
+    link: your cloud credentials, every argument you passed, and every attribute read back,
+    including the sensitive ones.
+
+    It is worth knowing because it produces a failure that looks like a broken provider and is not.
+    Anything that intercepts loopback traffic — a corporate proxy, an endpoint-security agent
+    inspecting local connections — breaks the handshake, and every command that loads a provider
+    fails with `Failed to load plugin schemas … Plugin did not respond`, regardless of which
+    provider or which version. `TF_LOG=trace` shows the real cause underneath, an x509 verification
+    failure. The fix is to exclude the Terraform binary from that inspection; the diagnostic
+    shortcut is `TF_DISABLE_PLUGIN_TLS=1` for **one command**, which turns the encryption off and
+    confirms the interceptor is to blame. Terraform's own source marks that variable as not intended
+    for end users, and leaving it set means credentials cross the channel in the clear, so it
+    belongs in a diagnosis and never in a shell profile.
+
 This design is why one tool manages everything: core stays small and vendor-neutral, while each provider is a swappable plugin with its own release cadence, version numbers, and docs. Each of those is worth unpacking.
 
 **Swappable** means a provider is never compiled into the Terraform CLI. `terraform init` reads your `required_providers` and downloads each one as a separate binary into `.terraform/`. You can add, drop, or upgrade one provider without touching core or the others — bump `aws` from 5 to 6 while `google` stays put.

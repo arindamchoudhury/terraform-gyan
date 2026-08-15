@@ -231,6 +231,67 @@ The saved plan is a frozen artifact. `apply tfplan` executes precisely what you 
 !!! warning "A saved plan is frozen — you can't re-plan it"
     Every planning decision is baked into the file when you create it. So `apply tfplan` takes no planning options at all: the options that shape a plan (the escape hatches later in this chapter) are only accepted on an `apply` that plans for itself, never on one handed a saved plan. The saved plan is also perishable: it embeds specific resource states, so apply it soon. If the real infrastructure moves underneath it, `apply tfplan` can fail rather than apply a stale diff — which is the safe outcome.
 
+### What `plan` returns to the shell
+
+The plan you just read is for you. A pipeline needs the same answer as a **number**, and by default
+it does not get one. A plain `plan` exits `0` whether or not it found changes — measured on 1.15.8,
+with one `terraform_data` resource pending creation and then again with nothing to do:
+
+```shell
+terraform plan                 # 1 to add   → exit 0
+terraform plan                 # No changes → exit 0
+```
+
+Both zero. Anything scripted on top of that cannot tell "nothing to do" from "five things about to
+be destroyed". The flag that makes the distinction is **`-detailed-exitcode`**, which replaces the
+two-value convention with three:
+
+| Exit code | Meaning | Plain `plan` returns |
+|---|---|---|
+| `0` | succeeded, **no changes** | `0` |
+| `1` | **error** — the plan did not complete | `1` |
+| `2` | succeeded, **changes pending** | `0` |
+
+Measured across all three cases on Terraform **1.15.8**, and identical on **OpenTofu 1.12.4**. Note
+that `1` is the same either way; the flag only splits the success case in two.
+
+This is what makes a **drift-detection** job possible — plan on a schedule, treat `2` as "the world
+moved, tell someone" — and what makes a pull-request gate able to say "this PR changes
+infrastructure" without parsing English out of the log.
+
+!!! danger "`2` means success, and your shell disagrees"
+    Every trap here comes from the same fact: **the value meaning "there is work to do" is non-zero**,
+    so ordinary error handling treats a perfectly good plan as a failure. A CI step that runs
+    `terraform plan -detailed-exitcode` fails the build on any pending change, which is why people
+    reach for `|| true` — and that is where the second trap lives:
+
+    ```bash
+    terraform plan -detailed-exitcode || true
+    echo $? > code.txt        # WRONG: $? is now the exit code of `true`, always 0
+    ```
+
+    That pipeline can never fail, because the file always says `0`. Capture the code first, then
+    decide what to do with it:
+
+    ```bash
+    set +e
+    terraform plan -detailed-exitcode
+    code=$?
+    set -e
+    case $code in
+      0) echo "no changes" ;;
+      2) echo "changes pending" ;;
+      *) echo "plan failed"; exit 1 ;;
+    esac
+    ```
+
+    The mirror-image mistake is a script that opens with `set -e` and *does* capture correctly: under
+    `set -e`, the `2` aborts the script before the capture line ever runs, so the branch written to
+    handle "changes pending" is unreachable. Both failures are real, both have been shipped in
+    published Terraform CI harnesses, and both come from treating `2` as an error rather than as one
+    of two success values. Chapter 20 (A3) builds the full pipeline; the exit code is the piece
+    everything else in it is wired to.
+
 ## `terraform apply` — execute the diff
 
 `apply` makes the plan real. Run without a saved plan, it plans first, shows you the diff, and waits for a literal `yes` before doing anything:
