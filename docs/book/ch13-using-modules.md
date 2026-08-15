@@ -233,7 +233,7 @@ A version constraint is a string of comma-separated conditions, each an operator
 
 Pre-release versions such as `1.2.0-beta` are only ever selected by an exact `=`. No comparison or pessimistic operator will match one.
 
-The resolution rule matters as much as the syntax. Terraform uses the **newest installed** version that satisfies the constraint, and downloads the newest satisfying version only when nothing acceptable is installed. Held together with the absence of a module lock file, that sentence is the whole hazard.
+The resolution rule matters as much as the syntax. Terraform uses the **newest installed** version that satisfies the constraint, and downloads the newest satisfying version only when nothing acceptable is installed. Put that rule together with the absence of a module lock file and you have the whole hazard of this section.
 
 ### Measured: the same commit, two different modules
 
@@ -319,11 +319,15 @@ Omit `ref` and you get whatever the default branch's `HEAD` points at on the day
 
 `ref` accepts anything `git checkout` accepts: a branch, a tag, or a commit SHA. The choice between the last two is a real trade, and it is the reason to prefer a registry source when you have one.
 
-**A tag is a pointer, and pointers move.** *Terraform: Up & Running* recommends tags over branches and argues that *"Git tags are as stable as a commit"*. Against accidental drift that is correct, and the warning about branches is correct: a branch gives you a different commit every time you re-resolve. But a tag can be force-moved by anyone who controls the source repository, and your pin follows silently. Section 8's lab measures exactly that.
+**A tag is a pointer, and pointers move.** *Terraform: Up & Running* recommends tags over branches and argues that *"Git tags are as stable as a commit"*. Against accidental drift that is correct, and the warning about branches is correct: a branch gives you a different commit every time you re-resolve. But a tag can be force-moved by anyone who controls the source repository, and your pin follows silently. Part C of this chapter's lab measures exactly that.
 
 **A SHA cannot be moved by anyone.** That is the supply-chain-safe answer, and it mirrors the standard advice to pin GitHub Actions by digest. It costs you two things.
 
-The first cost is automation. No update bot will move a SHA pin for you, confirmed on both of the common ones. Renovate does not support it natively, and the maintainer's reason in [discussion #31006](https://github.com/renovatebot/renovate/discussions/31006) is architectural: its HCL parser strips comments, so there is nowhere to store the version-to-SHA annotation that its Docker and Actions digest pinning relies on. A global `pinDigests: true` actively breaks on Git-sourced Terraform modules ([issue #14790](https://github.com/renovatebot/renovate/issues/14790)), so set `"terraform": { "pinDigests": false }`. Dependabot has the same gap, tracked at [#10787](https://github.com/dependabot/dependabot-core/issues/10787) and [#10926](https://github.com/dependabot/dependabot-core/issues/10926); it considers semantic versions and skips SHA refs.
+The first cost is automation. No update bot will move a SHA pin for you, confirmed on both of the common ones:
+
+- **Renovate** does not support it natively. The maintainer's reason in [discussion #31006](https://github.com/renovatebot/renovate/discussions/31006) is architectural: its HCL parser strips comments, so there is nowhere to store the version-to-SHA annotation that its Docker and Actions digest pinning relies on.
+- **A global `pinDigests: true` actively breaks** on Git-sourced Terraform modules ([issue #14790](https://github.com/renovatebot/renovate/issues/14790)). Set `"terraform": { "pinDigests": false }` if you turn it on elsewhere.
+- **Dependabot** has the same gap, tracked at [#10787](https://github.com/dependabot/dependabot-core/issues/10787) and [#10926](https://github.com/dependabot/dependabot-core/issues/10926). It considers semantic versions and skips SHA refs.
 
 The second cost is shallow clones, and no documentation page connects it to the pinning advice.
 
@@ -414,7 +418,7 @@ Because these values are consumed at `init`, they can be supplied to `init` itse
 !!! info "OpenTofu — no `const` needed, because early evaluation is general"
     OpenTofu **1.8** added early variable and locals evaluation, which lets `source`, backend configuration, and state-encryption blocks reference `var` and `local` without any opt-in marker. Terraform's `const` is the narrower 1.15 answer to the same problem.
 
-    Measured on **OpenTofu 1.12.4** with this chapter's lab 3 configuration: the variable-composed Git source installs correctly **with or without** `const = true` on the variables. OpenTofu accepts the `const` argument rather than rejecting it, so a configuration written for Terraform 1.15 runs unchanged on OpenTofu. The reverse is not true. Strip `const` for OpenTofu and Terraform stops at `init`.
+    Measured on **OpenTofu 1.12.4** with this chapter's Part C configuration: the variable-composed Git source installs correctly **with or without** `const = true` on the variables. OpenTofu accepts the `const` argument rather than rejecting it, so a configuration written for Terraform 1.15 runs unchanged on OpenTofu. The reverse is not true. Strip `const` for OpenTofu and Terraform stops at `init`.
 
     The exam (004, Terraform 1.12) still assumes literal sources.
 
@@ -589,7 +593,7 @@ Changing `source` or `version` requires a re-`init`. Beyond that, one asymmetry 
 | `terraform init -upgrade` | re-resolves the constraint, downloads the newest match | re-clones and re-resolves the `ref` |
 | fresh directory, plain `init` | resolves as if nothing were installed | clones fresh |
 
-Both halves are measured. Section 4 has the registry numbers. The Git behaviour is measured in the lab, where a force-moved tag is invisible to a plain `init` and picked up immediately by `init -upgrade`.
+Both halves are measured. Section 4 has the registry numbers. The Git behaviour is measured in Part C of the lab, where a force-moved tag is invisible to a plain `init` and picked up immediately by `init -upgrade`.
 
 ---
 
@@ -599,7 +603,7 @@ Modules hide things. That is the feature, and it is also the review problem, and
 
 The registry-modules tutorial builds a VPC and two EC2 instances from two `module` blocks and roughly a dozen visible arguments. The apply reports **22 resources**. The page acknowledges it in passing: *"The vpc and ec2 modules define more resources than just the VPC and EC2 instances."*
 
-The same effect at a smaller scale, measured in this chapter's lab 2. One `module` block with three arguments, applied against the emulator:
+The same effect at a smaller scale, measured in Part B of this chapter's lab. One `module` block with three arguments, applied against the emulator:
 
 ```
 module.logs.data.aws_caller_identity.current
@@ -683,7 +687,7 @@ The fix is to separate the blueprint from the buildings. Module code lives in on
 
 Use semantic versioning for the tags, so the version number carries information: major for incompatible changes, minor for backward-compatible additions, patch for backward-compatible fixes. The registry requires that shape anyway.
 
-Two upgrades to that advice, which was written in 2022 against a friendlier threat model. Registry sources give you a real version number and both update bots understand it, so prefer a registry over raw Git where you have the option. And a Git tag is only as immutable as the repository's tag-protection rules, which the next section measures.
+Two upgrades to that advice, which was written in 2022 against a friendlier threat model. Registry sources give you a real version number and both update bots understand it, so prefer a registry over raw Git where you have the option. And a Git tag is only as immutable as the repository's tag-protection rules, which Part C of the lab measures.
 
 ---
 
@@ -1014,10 +1018,12 @@ No changes. Your infrastructure matches the configuration.
 **Now move the tag.** This is what a repository owner, a compromised account, or an over-enthusiastic release script can do:
 
 ```shell
-cd $TMPDIR/ch13-lab3/modules-repo
+cd "${TMPDIR:-/tmp}/ch13-lab3/modules-repo"     # PowerShell: cd "$env:TEMP\ch13-lab3\modules-repo"
 git tag -f -a v0.0.1 -m "someone force-moves the tag" HEAD
 cd -
 ```
+
+The path is the one `setup.sh` printed. It uses `${TMPDIR:-/tmp}`, so on a shell with `TMPDIR` unset the repository is under `/tmp`; `setup.ps1` uses `%TEMP%`.
 
 ```shell
 tflocal plan
@@ -1060,7 +1066,7 @@ Downloading git::file:///.../modules-repo?ref=v0.0.2&depth=1 for bucket...
 Now with a commit SHA:
 
 ```shell
-tflocal init -upgrade -var "module_ref=$(git -C $TMPDIR/ch13-lab3/modules-repo rev-parse HEAD)" -var 'module_depth=1'
+tflocal init -upgrade -var "module_ref=$(git -C "${TMPDIR:-/tmp}/ch13-lab3/modules-repo" rev-parse HEAD)" -var 'module_depth=1'
 ```
 
 ```
