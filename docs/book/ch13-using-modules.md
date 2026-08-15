@@ -64,7 +64,7 @@ Three names follow from that.
 
 **Submodule** — a module shipped *inside* another module, conventionally in its `modules/` directory. It is coupled to its parent and is not usually consumed on its own. The `//` syntax in section 3 is how you would reach one anyway.
 
-A root module can call the same child several times, and a child can call children of its own. Nesting has no hard limit and does have a practical one: past two levels deep, working out which module set a given value becomes genuinely hard.
+A root module can call the same child several times, and a child can call children of its own. Nesting has no hard limit, but it has a practical one: past two levels deep, working out which module set a given value becomes genuinely hard.
 
 The mechanical fact underneath is the one to hold on to. Terraform reads the `.tf` files in **one** directory. It does not walk subdirectories, and it does not pick up a `modules/` folder because of its name. A `module` block is the only thing that makes Terraform read another directory at all.
 
