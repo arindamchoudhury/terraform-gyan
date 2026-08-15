@@ -61,6 +61,22 @@ python -c "from zensical import build; build('zensical.toml', {'clean': True})"
 
 Run it against output built by `build_site.py`; a plain `zensical build` leaves the links as text, so there is nothing to check.
 
+## Check the Markdown source
+
+```bash
+python scripts/check_markdown.py --commits origin/master..HEAD
+```
+
+`check_links.py` walks the *built site*, so it only sees defects that survive rendering. This one reads the source and the commit messages, and catches what the other cannot:
+
+| Finding | Severity | Why |
+|---|---|---|
+| Bare `#123` in a **commit message** | error (fails the run) | GitHub autolinks it against **this** repo, so a citation of an upstream issue becomes a link into `terraform-gyan`'s own empty tracker. Use `owner/repo#123` |
+| Bare `#123` in a **Markdown file** | hygiene | *Not* a broken link — GitHub's docs state "Autolinked references are not created in wikis or files in a repository", and Zensical renders it as plain text. It is an unlinked number the reader cannot follow, so prefer `[#123](full-url)` |
+| `\"` in an admonition title | error | Zensical passes it through verbatim, so `!!! note "the \"nines\""` renders the backslashes. Use curly quotes |
+
+The bare-reference rule is easy to get backwards, so the severity split is deliberate: only the commit-message case is an actual broken link, and it is the only one that fails the run.
+
 ## Publishing
 
 `.github/workflows/deploy.yml` builds on every push to `master` and deploys to GitHub Pages, via `scripts/build_site.py` so published links behave exactly like local ones.
@@ -74,6 +90,7 @@ The one difference from a local build: **the nav is trimmed** to `Learning Path`
 | `scripts/build_site.py` | Build with the wikilink resolver installed — used locally and by CI |
 | `scripts/wikilinks.py` | The `[[slug]]` index and the python-markdown patch behind it |
 | `scripts/check_links.py` | Broken-internal-link check over the built site |
+| `scripts/check_markdown.py` | Source-level lint: unlinked issue citations, autolinking commit messages, admonition-title escapes |
 | `scripts/fetch_page.py` | Fetch a JavaScript-rendered page and cache its text under `cache/web/` |
 
 `cache/` and `site/` are gitignored scratch.
