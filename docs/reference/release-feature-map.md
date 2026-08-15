@@ -856,6 +856,16 @@ changelog, not even in the EXPERIMENTS sections that list deferred actions and
 `test cleanup`. Worth watching as the likely successor to the fixed set of
 built-in backends.
 
+The switch that reaches it is **`TF_ENABLE_PLUGGABLE_STATE_STORAGE`** — any
+non-empty value makes `init` set `EnablePssExperiment`
+(`internal/command/arguments/init.go:132`), introduced in commit `f494ff5540`
+and first tagged **v1.14.0**. It appears on no documentation page. Backend
+initialisation under it emits its own warnings, which describe the feature's
+maturity more candidly than anything published: for a builtin provider,
+*"Terraform is using a builtin provider for initializing state storage.
+Terraform will be less able to detect when state migrations are required in
+future init commands."* See [[terraform-env-vars]].
+
 !!! info "OpenTofu — no equivalent"
     OpenTofu has nothing corresponding to `state_store` anywhere in
     `internal/configs`. Backends remain a fixed built-in set there. This is the
