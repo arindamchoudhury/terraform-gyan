@@ -790,6 +790,86 @@ equal "modules_url" {
 
 The part worth carrying away is that the iterator is live in `labels`, not only inside `content`. That is what makes each generated block's label differ per iteration rather than repeating one fixed string. `equal.key` and `equal.value.statement` are the same temporary variable read twice, once for the block's name and once for its body.
 
+### Its `for_each` takes sensitive values — the resource meta-argument does not
+
+Two things spelled `for_each` behave differently here, and the difference is not arbitrary. Drive a
+**resource's** `for_each` from a sensitive collection and Terraform refuses outright, measured on
+1.15.8 with `variable "ports" { type = list(number), sensitive = true }`:
+
+```
+Error: Invalid for_each argument
+
+  on main.tf line 12, in resource "terraform_data" "r":
+  12:   for_each = toset([for p in var.ports : tostring(p)])
+    ├────────────────
+    │ var.ports has a sensitive value
+
+Sensitive values, or values derived from sensitive values, cannot be used as for_each
+arguments. If used, the sensitive value could be exposed as a resource instance key.
+```
+
+The reason is in the last sentence. A resource `for_each` key becomes part of the instance
+**address** — `aws_instance.web["prod-db"]` — and addresses are printed in plans, listed by
+`terraform state list`, and stored unredacted in state. A sensitive value cannot be an address.
+
+A `dynamic` block's `for_each` has no such problem, because it produces **values inside an
+attribute**, not addresses. The same sensitive variable drives it fine:
+
+```hcl
+variable "ports" {
+  type      = list(number)
+  default   = [80, 443]
+  sensitive = true
+}
+
+resource "aws_security_group" "web" {
+  name = "dyn-sensitive-demo"
+
+  dynamic "ingress" {
+    for_each = var.ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["10.0.0.0/8"]
+    }
+  }
+}
+```
+
+```
+  # aws_security_group.web will be created
+  + resource "aws_security_group" "web" {
+      + description            = "measuring dynamic for_each with a sensitive collection"
+      + ingress                = (sensitive value)
+      + name                   = "dyn-sensitive-demo"
+      ...
+```
+
+!!! warning "The sensitivity spreads to the whole generated attribute"
+    Look at what the plan hides. Not the port numbers — the entire `ingress` attribute, every
+    generated block and every field in them, including `protocol` and `cidr_blocks`, which were
+    written as literals in the configuration and are not secret by any reading.
+
+    That is the mechanism working as designed rather than a bug: HCL's `dynamic` implementation
+    transfers the marks from the `for_each` collection onto the values it generates, and the
+    generated blocks collapse into one attribute value, so the mark lands on all of it. The cost is
+    review-time visibility — a reviewer can no longer see which ports a change opens, only that the
+    set changed. If the collection is sensitive but the *shape* of the rules is not, consider
+    keeping the sensitive part in a separate non-generated argument, or accepting the values as
+    non-sensitive and marking only the genuinely secret field.
+
+Measured identically on **OpenTofu 1.12.4**.
+
+!!! info "Why the two `for_each`es follow different rules"
+    `dynamic` is not part of the HCL language proper. It lives in `ext/dynblock`, one of the
+    optional **extensions** a calling application can wire up, alongside `ext/tryfunc`, which is
+    where `try()` and `can()` come from. That is why HCL's own syntax specification never mentions
+    `dynamic`, and why its `for_each` obeys the extension's rules rather than the resource
+    meta-argument's. Accepting marked values, and transferring them to the generated blocks, was
+    added to that extension in **HCL v2.21.0**; Terraform 1.15.8 builds against v2.24.0. (See
+    [[hcl-library-facts]].)
+
 ---
 
 ## 5. Generating zero or one block

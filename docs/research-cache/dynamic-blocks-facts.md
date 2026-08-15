@@ -240,6 +240,31 @@ the same in both tools." The format and purpose do; a written lock file does not
 
 ---
 
+## Measured — sensitive `for_each`, resource vs `dynamic`
+
+Measured 2026-08-15 on Terraform **1.15.8** and OpenTofu **1.12.4**, both identical, against the
+Floci emulator.
+
+| Where `for_each` sits | Sensitive collection | Result |
+|---|---|---|
+| `resource` meta-argument | `variable "ports" { sensitive = true }` | **Error: Invalid for_each argument** — *"Sensitive values, or values derived from sensitive values, cannot be used as for_each arguments. If used, the sensitive value could be exposed as a resource instance key."* |
+| `dynamic` block | the same variable | **Accepted**, plan renders `+ ingress = (sensitive value)` |
+
+The asymmetry is principled: a resource `for_each` key becomes part of the instance **address**,
+which is printed in plans, listed by `terraform state list` and stored unredacted in state, whereas
+a `dynamic` block's iteration produces values **inside an attribute**.
+
+The cost, and the part worth teaching: the mark lands on the **whole generated attribute**, so
+`protocol` and `cidr_blocks` — literals in the configuration, secret by no reading — are hidden from
+the plan too. A reviewer can see that the rule set changed but not how.
+
+Provenance: accepting marked values in `for_each` and transferring the marks to generated blocks was
+added to HCL's `ext/dynblock` in **v2.21.0**; Terraform 1.15.8 builds against v2.24.0. `dynamic` is
+an HCL **extension**, not core language, which is why its `for_each` follows different rules from
+the resource meta-argument — see [[hcl-library-facts]].
+
+Written up in [Ch 12](../book/ch12-dynamic-blocks-complex-types.md) §4.
+
 ## Not verified
 
 - Nothing outstanding for this chapter.
