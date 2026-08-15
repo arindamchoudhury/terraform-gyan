@@ -22,9 +22,14 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      # Third-party actions are pinned by commit SHA, not by tag. A tag is
+      # mutable, so `@v7` is a promise from whoever controls that repository
+      # that they will not repoint it at code which runs with this job's token.
+      # The trailing comment is the human-readable version, and is what
+      # Dependabot rewrites when it bumps the SHA.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
@@ -56,11 +61,17 @@ jobs:
       - name: Build site
         run: python scripts/build_site.py          # outputs ./site
 
+      # include-hidden-files is required to keep v5 behaving like the v3 this
+      # replaced. v3 tarred the site excluding only .git and .github; v5 also
+      # excludes every dotfile unless this is set. The published site contains
+      # three of them — examples/.gitignore and two examples/**/.terraform.lock.hcl
+      # — which would have disappeared silently on the version bump.
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: ./site
+          include-hidden-files: "true"
 
       - name: Deploy to GitHub Pages
         id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
