@@ -27,7 +27,7 @@ Lazy branch evaluation arrived with the **0.12.0 HCL2 expression-engine rewrite*
 
 Evidence (via `gh` API, 2026-07-15):
 
-- Issue #15605 closed **2018-10-27**, milestone **v0.12.0**.
+- [terraform#15605](https://github.com/hashicorp/terraform/issues/15605) ("Interpolation should only evaluate one branch of a condition") closed **2018-10-27**, milestone **v0.12.0**.
 - Closing comment from core maintainer **apparentlymart**: *"I've just verified that this is now working correctly in v0.12.0-alpha1"* — with a `terraform console` test matching this file's:
 
     ```
@@ -58,8 +58,8 @@ Same session, same method (`terraform console` / `plan` on **Terraform 1.15.6**,
 
 | Claim | Verdict | Evidence |
 |---|---|---|
-| <code>&&</code>/<code>&#124;&#124;</code> short-circuit: OpenTofu **1.10**, Terraform **1.12.0** | **True** | OpenTofu operators docs ("v1.10 and later … short-circuiting"); TF v1.12 CHANGELOG (May 2025): *"Logical binary operators can now short-circuit"* (#36224). HashiCorp's operators **page does not document it** — cite the changelog. A skipped operand is **still statically validated**. |
-| The OpenTofu short-circuit issue is `opentofu#2084` | **FALSE — fabricated** | #2084 is *"`tofu init` should warn if a provider exists with a prefix"*. Unrelated. Cite the OpenTofu docs instead. |
+| <code>&&</code>/<code>&#124;&#124;</code> short-circuit: OpenTofu **1.10**, Terraform **1.12.0** | **True** | OpenTofu operators docs ("v1.10 and later … short-circuiting"); TF v1.12 CHANGELOG (May 2025): *"Logical binary operators can now short-circuit"* ([terraform#36224](https://github.com/hashicorp/terraform/pull/36224), "Update HCL", merged 2025-02-04). HashiCorp's operators **page does not document it** — cite the changelog. A skipped operand is **still statically validated**. |
+| The OpenTofu short-circuit issue is `opentofu#2084` | **FALSE — fabricated** | [opentofu#2084](https://github.com/opentofu/opentofu/issues/2084) is *"`tofu init` should warn if a provider exists with a prefix"* (closed, 1.10.0 milestone). Unrelated. Cite the OpenTofu docs instead. |
 | "All arguments to `try` must share a type" | **FALSE** | `try(tonumber("nope"), "a-string")` → `"a-string"`; `try(tonumber("nope"), [1,2])` → `[1,2]`. A blog claim, not a Terraform rule. |
 | Terraform ships "~150" functions | **FALSE — 119** | `terraform metadata functions -json` reports **238** entries = 119 real functions × 2, because each is also exposed as `core::<name>` (`core::max(1,9)` → 9). |
 | `keys(map_with_one_sensitive_element)` → `(sensitive value)` (HashiCorp docs example) | **FALSE on 1.15.6** | Returns the plain key list; `issensitive(keys(local.baz))` → `false`. Sensitivity is tracked **per value**: a map *containing* a sensitive element isn't itself sensitive. But when the **argument itself** is marked, propagation is blanket — even `length(sensitive({a="1"}))` → `(sensitive value)`. The docs' example is stale. |

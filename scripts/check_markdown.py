@@ -52,6 +52,9 @@ QUALIFIED_REF_RE = re.compile(r"[\w.-]+/[\w.-]+#\d+")
 # not part of a hex colour or a word.
 BARE_REF_RE = re.compile(r"(?<![&\w/-])#(\d{2,})\b")
 ADMONITION_ESCAPE_RE = re.compile(r'^\s*(!!!|\?\?\?|===)\s+.*\\"')
+# Escape hatch for text that must stay byte-exact — a quoted upstream changelog
+# line, for instance, where linking the number would corrupt the quotation.
+LINT_OK_RE = re.compile(r"<!--\s*lint-ok\b")
 
 
 def strip_noise(line):
@@ -76,7 +79,7 @@ def check_file(path):
                 elif marker == fence_marker:
                     in_fence = False
                 continue
-            if in_fence:
+            if in_fence or LINT_OK_RE.search(raw):
                 continue
 
             if ADMONITION_ESCAPE_RE.match(raw):

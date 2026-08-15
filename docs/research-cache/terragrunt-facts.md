@@ -98,7 +98,7 @@ Command tree, read from `internal/cli/commands/`:
 (`internal/cli/commands/shortcuts.go`): `init`, `validate`, `plan`, `apply`, `destroy`,
 `force-unlock`, `import`, `output`, `refresh`, `show`, `state`, `test`. Everything else needs
 `terragrunt run -- <cmd>`, e.g. `terragrunt run -- workspace ls`. Arguments are no longer passed
-through by default — that is deliberate, from the CLI-redesign RFC (#3445).
+through by default — that is deliberate, from the CLI-redesign RFC ([terragrunt#3445](https://github.com/gruntwork-io/terragrunt/issues/3445)).
 
 ### The CLI redesign, and what it renamed
 

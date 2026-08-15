@@ -42,7 +42,7 @@ The translation runs at three call sites, so it covers the ordinary workflow: `t
     ```
     Set to the literal string `0`, this returns the state untouched. Grepping the whole repository —
     `docs/`, `website/`, `rfc/`, every `.md` — returns **no mention of it**. It has been there since
-    the mechanism landed in commit `9c789368dc` (2023-10-27, PR #773), first tagged **v1.6.0**, so it
+    the mechanism landed in commit `9c789368dc` (2023-10-27, [opentofu#773](https://github.com/opentofu/opentofu/pull/773)), first tagged **v1.6.0**, so it
     is available in every OpenTofu release. Worth knowing as a diagnostic: if a migration produces
     provider-address confusion, this isolates whether the translation is involved.
 

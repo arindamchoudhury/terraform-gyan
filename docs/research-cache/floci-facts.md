@@ -102,7 +102,7 @@ appends `with an explicit deny in an identity-based policy`; Floci stops at the 
     returns it as the request's identity — no signature check on that path. A separate, **per-service**
     switch now exists: `services.s3.enforce-auth` (env `FLOCI_SERVICES_S3_ENFORCE_AUTH`, default
     `false`), distinct from the global `FLOCI_AUTH_VALIDATE_SIGNATURES`, and commit `3fe836aa`
-    (2026-08-15, PR #1842) added **real SigV4 verification for pre-signed URLs when it is enabled**,
+    (2026-08-15, [floci-io/floci#1842](https://github.com/floci-io/floci/pull/1842)) added **real SigV4 verification for pre-signed URLs when it is enabled**,
     with tests asserting a tampered signature is rejected. Two caveats for a chapter: that commit is
     **after 1.6.0 and unreleased**, and it covers **pre-signed URLs**, not header-signed requests.
     `FLOCI_SERVICES_S3_ENFORCE_AUTH` is itself absent from the environment-variables page, so the
@@ -332,7 +332,7 @@ pairs and routes them through the existing `s3Service.putBucketTagging`. It was 
 botocore's `service-2.json`, which declares `CreateBucketConfiguration.Tags` as a `TagSet` list with
 `locationName: Tag`. That is the shape traced above. It shipped in release **1.6.0**, published
 2026-08-06, as the changelog line *"fix(s3): apply `CreateBucketConfiguration` tags on bucket
-creation (#2115)"*. `labs/docker-compose.yml` now pins `floci/floci:1.6.0`, and
+creation (#2115)"*. <!-- lint-ok: verbatim upstream changelog line; linked in full above --> `labs/docker-compose.yml` now pins `floci/floci:1.6.0`, and
 `/_floci/health` on that image reports `"version": "1.6.0"` with 72 services running.
 
 **Verified on the released image, 2026-08-09.** Both halves of the trace above were re-run.

@@ -82,7 +82,7 @@ Two entries are user-visible in configuration language terms, which is why they 
 All quoted from `hclsyntax/spec.md` at `9466647`. These are the wording the Terraform docs
 paraphrase, so citing the spec is stronger than citing the docs.
 
-**Identifiers** are UAX #31 `ID_Start (ID_Continue | '-')*`. The dash is a deliberate addition
+**Identifiers** are [`UAX #31`](https://unicode.org/reports/tr31/) `ID_Start (ID_Continue | '-')*`. The dash is a deliberate addition
 outside the Unicode definition, "to allow attribute names and block type names to contain dashes,
 although underscores as word separators are considered the idiomatic usage." So `my-attr` is legal
 HCL and unidiomatic by the spec's own statement.
