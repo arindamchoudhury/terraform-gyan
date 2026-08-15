@@ -32,7 +32,15 @@ Why this exists:
        into `!!! note "..."`, `??? ...` and `=== "..."` titles, so the page shows
        a literal backslash. Use curly quotes for a quoted phrase in a title.
 
-    4. Ordered lists silently destroyed by an interrupting block — either a
+    4. An admonition or collapsible opener the parser refuses — usually text
+       after the closing quote of the title. The title is end-anchored, so the
+       line matches nothing, and the entire block renders as plain paragraph
+       text with no error anywhere. Note this is a *different* defect from (3):
+       an escaped quote still parses and merely looks wrong, while trailing
+       text makes the callout disappear. Nested straight quotes are legal and
+       are not flagged.
+
+    5. Ordered lists silently destroyed by an interrupting block — either a
        marker that cannot interrupt the paragraph above it, or a callout sitting
        between two items. Both render as a valid page, so nothing else notices:
        the build passes, the links resolve, and the list is simply wrong. Five
@@ -69,6 +77,71 @@ BULLET_RE = re.compile(r"^\s*[-*+]\s")
 ANY_MARKER_RE = re.compile(r"^\s*(?:\d+\.|[-*+])\s")
 ADMONITION_RE = re.compile(r"^(?:!!!|\?\?\?)\s")
 HEADING_RE = re.compile(r"^#{1,6}\s")
+
+# Copied from the parsers themselves, not paraphrased from them:
+#   markdown.extensions.admonition.AdmonitionProcessor.RE
+#   pymdownx.details.DetailsProcessor.START
+# Both end in ` *(?:\n|$)`, which is the whole point — anything after the
+# closing quote means the line does not match, and the block silently stops
+# being an admonition. The leading (?:^|\n) is dropped since we match per line.
+ADMONITION_LINE_RE = re.compile(r'^!{3} ?([\w\-]+(?: +[\w\-]+)*)(?: +"(.*?)")? *$')
+DETAILS_LINE_RE = re.compile(
+    r'^\?{3}(\+)? ?(?:([\w\-]+(?: +[\w\-]+)*?)?(?: +"(.*?)")|([\w\-]+(?: +[\w\-]+)*?)) *$'
+)
+
+
+def check_admonition_syntax(lines):
+    """Flag `!!!`/`???` lines the real parser would refuse.
+
+    The failure this exists for: text after the closing quote of the title.
+    Both parsers anchor the title to end-of-line, so
+
+        !!! warning "a title" and then some stray words
+
+    matches nothing, the block is not an admonition, and the whole thing —
+    title, body, and all — renders as plain paragraph text. There is no error
+    anywhere; the page just quietly loses a callout.
+
+    Nested straight quotes inside a title are fine and are NOT flagged: the
+    title is lazy-matched but end-anchored, so it extends to the last quote on
+    the line. Verified against both regexes rather than assumed.
+    """
+    findings = []
+    in_fence = False
+    fence_marker = ""
+    for i, raw in enumerate(lines):
+        fence = FENCE_RE.match(raw)
+        if fence:
+            marker = fence.group(1)[0] * 3
+            if not in_fence:
+                in_fence, fence_marker = True, marker
+            elif marker == fence_marker:
+                in_fence = False
+            continue
+        if in_fence or LINT_OK_RE.search(raw):
+            continue
+
+        stripped = raw.strip()
+        if stripped.startswith("!!!"):
+            pattern, kind = ADMONITION_LINE_RE, "admonition"
+        elif stripped.startswith("???"):
+            pattern, kind = DETAILS_LINE_RE, "collapsible"
+        else:
+            continue
+
+        if not pattern.match(stripped):
+            reason = (
+                "text after the closing quote"
+                if stripped.count('"') >= 2 and not stripped.endswith('"')
+                else "malformed opener"
+            )
+            findings.append(
+                (i + 1,
+                 f"ERROR {kind} line does not parse ({reason}); the whole block "
+                 f"renders as plain text",
+                 stripped[:90])
+            )
+    return findings
 
 
 def check_ordered_lists(lines):
@@ -183,6 +256,7 @@ def check_file(path):
     with open(path, encoding="utf-8", errors="replace") as handle:
         all_lines = handle.read().split("\n")
     findings.extend(check_ordered_lists(all_lines))
+    findings.extend(check_admonition_syntax(all_lines))
     with open(path, encoding="utf-8", errors="replace") as handle:
         for lineno, raw in enumerate(handle, 1):
             fence = FENCE_RE.match(raw)
