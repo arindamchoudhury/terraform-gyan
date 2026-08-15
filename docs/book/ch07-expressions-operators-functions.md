@@ -1205,7 +1205,91 @@ Two ways to get the same list from a `for_each` resource. Collapse the object do
 ]
 ```
 
-Splat has one special trick: on a non-list value it wraps it in a one-element tuple, and on `null` it yields an **empty** tuple — handy for feeding an optional variable into a `dynamic` block's `for_each` ([Ch 12](ch12-dynamic-blocks-complex-types.md)).
+#### There are two splat operators, and they disagree about a trailing index
+
+Everything above used `[*]`, the **full** splat. HCL also has an older **attribute-only** splat
+written `.*.`, and the two are not spellings of the same thing. HCL's
+[native syntax specification](https://github.com/hashicorp/hcl/blob/main/hclsyntax/spec.md), under
+*Splat Operators*, defines the difference in terms of the `for` expressions they abbreviate:
+
+- "`tuple.*.foo.bar[0]` is approximately equivalent to `[for v in tuple: v.foo.bar][0]`."
+- "`tuple[*].foo.bar[0]` is approximately equivalent to `[for v in tuple: v.foo.bar[0]]`"
+
+Read the bracket placement in those two `for` expressions: the attribute-only form indexes **the
+result list**, the full form indexes **inside each element**. Same characters either side of the
+splat, different answers. In the console, on Terraform 1.15.8:
+
+```
+> [{ foo = { bar = ["x", "y"] } }, { foo = { bar = ["p", "q"] } }].*.foo.bar[0]
+[
+  "x",
+  "y",
+]
+> [{ foo = { bar = ["x", "y"] } }, { foo = { bar = ["p", "q"] } }][*].foo.bar[0]
+[
+  "x",
+  "p",
+]
+```
+
+The first took element `[0]` of the whole projection, which is the first object's `bar` list. The
+second took element `[0]` of *every* `bar`. Neither is wrong; they answer different questions.
+
+The practical rule: **use `[*]`.** It is the form that reads the way people expect, it is what the
+Terraform documentation uses throughout, and it is the only one of the two that supports indexing
+inside elements at all — the attribute-only grammar (`attrSplat = "." "*" GetAttr*`) accepts
+attribute lookups and nothing else. Reach for `.*.` only when you meet it in someone else's code,
+and when you do, check where the index landed.
+
+#### Splat on a single value, and on `null`
+
+Splat's one genuinely surprising behaviour, and the reason the `for_each` error earlier lands on the
+attribute name. Applied to something that is **not** a tuple, list or set, a splat wraps the value in
+a one-element tuple rather than failing; applied to a **null** scalar, it produces an *empty* tuple:
+
+```
+> { id = "i-1" }.*.id
+[
+  "i-1",
+]
+> "just-a-string"[*]
+[
+  "just-a-string",
+]
+> tostring(null)[*]
+[]
+```
+
+The null case is the useful one. It turns a possibly-null scalar into a list of zero or one elements
+with no conditional, which is exactly the shape a `dynamic` block's `for_each` wants for an optional
+argument ([Ch 12](ch12-dynamic-blocks-complex-types.md)). The spec adds one restriction worth
+knowing: this leniency applies to a null *scalar*, and applying a splat to a null value that is
+already of tuple, list or set type is an error rather than an empty result.
+
+!!! warning "Nested splats: one form is rejected at parse time, the other can fail at evaluation"
+    Two different failures share the phrase *nested splat*, and the messages tell them apart.
+
+    A splat inside an **attribute-only** splat never parses — `[{ a = "x" }].*.a.*.b` fails with
+    *"Nested splat expression not allowed: A splat expression (*) cannot be used inside another
+    attribute-only splat expression."*
+
+    A splat inside a **full** splat parses, and can then fail while the result is being built. It
+    works when the source is a tuple, because a tuple may hold mixed element types, but a **list or
+    set** source has to produce one homogeneous element type and cannot when the inner splat returns
+    differently-shaped results:
+
+    ```
+    > tolist([{ a = "x" }, { a = null }])[*].a[*]
+    Error: Invalid nested splat expressions
+    The second level of splat expression produced elements of different types, so it isn't
+    possible to construct a valid list to represent the top-level result.
+    Consider using a for expression instead, to produce a tuple-typed result which can
+    therefore have non-homogenous element types.
+    ```
+
+    The inner splat gave `["x"]` for one element and `[]` for the null one, and no list type covers
+    both. Take the error's own advice — a `for` expression yields a tuple, which can. Measured
+    identical on **Terraform 1.15.8 and OpenTofu 1.12.4**, including the wording.
 
 ### The milestone: list of maps → keyed map → `for_each`
 

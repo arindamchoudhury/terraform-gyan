@@ -52,6 +52,13 @@ fork starts before:
     have back-ported any of these. That cannot be verified from this checkout — the fork is not
     cloned locally. Treat the table as *what to check*, not as a list of OpenTofu defects.
 
+    **One row now checked, and it is back-ported.** The v2.24.0 nested-splat rejection fires
+    identically on **OpenTofu 1.12.4** and **Terraform 1.15.8**, down to the wording:
+    `tolist([{ a = "x" }, { a = null }])[*].a[*]` produces *"Invalid nested splat expressions"* on
+    both (measured 2026-08-15 in `terraform console` and `tofu console`). So the fork is not simply
+    v2.20.1 plus OpenTofu features, and a delta in the table above must be tested rather than
+    assumed to be missing. The remaining rows are untested.
+
 Two entries are user-visible in configuration language terms, which is why they are worth naming:
 
 - **Marks through conditionals and `for` expressions (v2.23.0).** "Marks" are how Terraform tracks
@@ -115,12 +122,13 @@ a splat applied to a non-collection **auto-wraps it** — `any_object.*.id` is `
 the idiomatic "possibly-null value to zero-or-one-element list" conversion. Applying a splat to a
 null value that is *of* tuple, list or set type is illegal.
 
-!!! tip "Gap in Ch 7 rather than an error"
-    [Ch 7](../book/ch07-expressions-operators-functions.md) teaches `[*]` and its `for` equivalence
-    correctly, and covers the `for_each`-is-a-map trap. It does not mention the **attribute-only
-    `.*.` form**, the differing trailing-index semantics, the scalar auto-wrap, or the
-    null-to-empty-tuple rule. Worth adding when that chapter is next revised; nothing currently
-    written there is wrong.
+!!! tip "Closed in Ch 7, 2026-08-15"
+    [Ch 7](../book/ch07-expressions-operators-functions.md) previously taught `[*]` and its `for`
+    equivalence correctly but never mentioned the attribute-only `.*.` form, the differing
+    trailing-index semantics, or the scalar and null rules. It now covers all of them, with measured
+    console output rather than assertions — including the pair that makes the difference obvious:
+    the same expression body returns `["x", "y"]` under `.*.` and `["x", "p"]` under `[*]`, because
+    one indexes the result list and the other indexes inside each element.
 
 ## Structure of the repository, for future lookups
 
