@@ -29,7 +29,7 @@ So you copy the directory. That solves it for today, and what you have actually 
 - **Every update has to land in each copy.** Fix the bucket policy in staging and production still has the old one, until somebody notices. This is the drift that shows up during an incident rather than during review.
 - **Sharing between teams degenerates into copy-paste.** The tutorial's phrase for that is *"error prone and hard to maintain"*, and the copy stops tracking the original the moment it is pasted.
 
-General-purpose languages settled this a long time ago. When the same code shows up in three places, you extract it into a function, give it parameters for the parts that differ, and call it from all three. Terraform's equivalent is the module: extract the repeated configuration into its own directory, give it variables for the parts that differ, and call it from all three configurations.
+General-purpose languages settled this a long time ago. When the same code shows up in three places, you extract it into a function, give it parameters for the parts that differ, and call it from all three places. Terraform's equivalent is the module: extract the repeated configuration into its own directory, give it variables for the parts that differ, and call it from all three configurations.
 
 That is the analogy to hold, and it is the frame *Terraform: Up & Running* runs its whole module chapter on. It survives being taken item by item, which is more than most analogies manage.
 
@@ -100,6 +100,24 @@ The full argument surface, from the [`module` block reference](https://developer
 The label after `module` is yours. It is how you address the call everywhere else: `module.logs`, `module.logs.s3_bucket_arn`, `module.logs.aws_s3_bucket.this[0]` in state.
 
 Which inputs a module accepts is not your decision. The reference is blunt about it: *"the module developer determines which inputs you can specify"*. A required input you omit is an error. An optional input you omit falls back to the module's own default, which you cannot see from the call site. That asymmetry is the first thing that makes reading a module's documentation non-optional.
+
+!!! tip "What if the module's input is *named* `count`, or `source`?"
+    Those seven names are reserved, so writing `source = "..."` as an input is impossible — Terraform reads it as the meta-argument. The escape hatch is a block literally named `_`:
+
+    ```hcl
+    module "example" {
+      source = "./modules/thing"      # the meta-argument
+
+      _ {
+        source  = "upstream-vendor"   # an input variable that happens to be called "source"
+        version = "2"                 # likewise
+      }
+    }
+    ```
+
+    Terraform's own diagnostic states the rule: *"The special block type `_` can be used to force particular arguments to be interpreted as module input variables rather than as meta-arguments, but each module block can have only one such block."* The block's contents are merged with the rest of the body, so everything else keeps working normally.
+
+    Rare, and worth knowing exactly once — when you adopt a third-party module whose author picked a colliding input name and you cannot rename it. Confirmed in `internal/configs/module_call.go` at the `v1.15.8` tag.
 
 !!! info "`ignore_nested_deprecations` — the consumer's opt-out, new in 1.15"
     A module author can mark a variable or an output `deprecated`, which raises a warning in every configuration that still uses it. Setting `ignore_nested_deprecations = true` on the `module` block silences those warnings for that call and everything nested below it. Default is `false`.
