@@ -151,7 +151,9 @@ That is the piece CLI workspaces can never offer — different environments assu
 So the accurate framing is not "there is no open equivalent". It is that HCP sells one product where the open ecosystem gives you two tools, and you assemble them yourself.
 
 !!! note "Where this sits in the learning path"
-    Terragrunt is deep-dived in **E4 — Large-scale state & repo architecture**, not in A7. A7 deliberately stays on native Terraform primitives, because that is the scope the Pro exam tests. Reach for Terragrunt once you have many states and teams, not for a single dev/prod split. Terragrunt **1.0** (2026-03-30) was the first release with a backwards-compatibility commitment, and renamed `run-all` to `run --all`; it works over both Terraform and OpenTofu.
+    Terragrunt is deep-dived in **E4 — Large-scale state & repo architecture**, not in A7. A7 deliberately stays on native Terraform primitives, because that is the scope the Pro exam tests. Reach for Terragrunt once you have many states and teams, not for a single dev/prod split. Terragrunt **1.0** (2026-03-30) was the first release with a backwards-compatibility commitment, and renamed `run-all` to `run --all`; it works over both Terraform and OpenTofu, and defaults to OpenTofu when both are on `PATH`. The line is now at **1.1.3** (2026-08-13).
+
+    The full source-derived surface — CLI and HCL blocks, explicit stacks, the `--filter` query language, the content-addressable store — is in [[terragrunt-facts]], mined from the local `repos\terragrunt` checkout with every claim version-gated.
 
 ## When to read which
 
