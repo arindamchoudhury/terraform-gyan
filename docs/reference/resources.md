@@ -23,3 +23,22 @@ Resources cited across the [Learning Path](../learning-path.md). Books serve top
 > (`terraform test`, `import`/`removed` blocks, Stacks) against **HCDocs**.
 
 See [version & certification facts](../research-cache/version-facts.md) for current tooling versions and exam details.
+
+## Code-quality toolchain
+
+The tools **TID Ch7** builds its makefile around, and the ones **A3**/**A5** wire into a pipeline. Current
+releases and their OpenTofu support are tracked in
+[CI / quality tooling versions](../research-cache/ci-quality-tooling-versions.md) — every version printed
+in the book has moved.
+
+| Tool | What it does | URL |
+|---|---|---|
+| **TFLint** | Terraform linter; plugin-based, cloud rulesets for AWS/GCP/Azure, plus an OPA plugin for custom Rego rules | https://github.com/terraform-linters/tflint |
+| **Checkov** | Local IaC security scanner; custom policies in plain YAML, loadable from a shared Git repo | https://www.checkov.io/ |
+| **Trivy** | Security scanner that absorbed the deprecated **tfsec**; covers more providers than Checkov | https://trivy.dev/ |
+| **terraform-docs** | Generates input/output tables from the configuration; `inject` mode edits a README in place, `--output-check` gates staleness | https://github.com/terraform-docs/terraform-docs |
+| **tenv** | Per-project version manager for Terraform, OpenTofu **and** Terragrunt; successor to `tfenv` | https://github.com/tofuutils/tenv |
+| **pre-commit** | Framework for declaring Git pre-commit hooks in a config file | https://pre-commit.com/ |
+| `pre-commit-terraform` | Published hooks for every tool above (Babenko); OpenTofu fork: `tofuutils/pre-commit-opentofu` | https://github.com/antonbabenko/pre-commit-terraform |
+| **Cookiecutter** | Templated project generator; bootstraps a module with the whole toolchain pre-configured | https://www.cookiecutter.io/ |
+| **Terratest** | Go-based Terraform testing framework (Gruntwork); the alternative to native `terraform test` | https://terratest.gruntwork.io/ |
