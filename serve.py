@@ -86,4 +86,5 @@ _do_build()  # initial build on startup (immediate, not debounced)
 server = Server()
 server.watch("docs/", build)
 server.watch("zensical.toml", build)
-server.serve(root="site", port=8000, host="0.0.0.0")
+# PORT lets a launcher assign a free port; 8000 stays the default for Docker.
+server.serve(root="site", port=int(os.environ.get("PORT", 8000)), host="0.0.0.0")
