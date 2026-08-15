@@ -114,6 +114,8 @@ Two features carry the chapter: **`.PHONY`**, which tells Make the target produc
 
 Make also echoes each command before running it, which is why the book's transcripts show the command and its output — useful for debugging, and worth knowing so you can read the `@` suppression in §7.3.2.
 
+> ⚠️ **Book defect** — Listings 7.5 and 7.6 have their captions swapped. "Listing 7.5 Using the makefile" contains the `chores: format document` grouping, and "Listing 7.6 Target grouping with makefiles" contains the `$ make hello` usage transcript. Read them the other way round.
+
 ### 7.2.3 Installing applications with makefiles
 
 The tool count is itself a barrier to entry, and package managers differ per OS. So detect the package manager in the makefile and put the package list in a variable:
@@ -300,7 +302,9 @@ terratest:
 ```
 
 !!! info "OpenTofu — `tofu test` exists, and has since day one"
-    The book says the native framework "is also an area where OpenTofu may lag behind in features as new functionality is released in the HashiCorp Terraform." Read that as a claim about *later additions*, not about the framework's existence: `internal/command/test.go` is present in the OpenTofu tree at tag **v1.6.0**, its first release. Both engines run `test`; the question is only which extensions each has. Detail belongs to Ch9.
+    The book says the native framework "is also an area where OpenTofu may lag behind in features as new functionality is released in the HashiCorp Terraform." Read that as a claim about *later additions*, not about the framework's existence.
+
+    OpenTofu **v1.6.0**, its first release, registers the command at `cmd/tofu/commands.go:290`, and its CHANGELOG says: *"the previously experimental `tofu test` command has been moved out of experimental"*, with tests *"written within `.tftest.hcl` files, controlled by a series of `run` blocks"* — the same shape as Terraform 1.6.0. Both engines run `test`; the only question is which later extensions each has. Detail belongs to Ch9.
 
 ### 7.3.3 TFLint
 
@@ -333,6 +337,8 @@ plugin "aws" {
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
 }
 ```
+
+> ⚠️ **Book defect** — the two listings disagree with each other: the Cookiecutter template in §7.2.1 pins `tflint-ruleset-aws` at `0.29.0`, this one at `0.30.0`. Both are long stale, so it only matters as a reminder that a template's pins and a chapter's prose drift apart the moment they are written down twice.
 
 Plugins are installed with `tflint --init`, the same shape as `terraform init`. The book runs it every time because it is fast and idempotent:
 
@@ -687,10 +693,13 @@ jobs:
         engine:  ["opentofu", "terraform"]
         version: ["1.6", "1.7", "1.8"]
         experimental: [false]
-        include:
-          - engine: "terraform"      # extra legs the cross-product cannot express
-            version: "1.10"
-            experimental: true
+        include:                     # extra legs the cross-product cannot express
+          - engine: "terraform"      # 1.9 shipped for Terraform before OpenTofu, so
+            version: "1.9"           # it cannot come from the engine × version product
+            experimental: false      # …but it is released, so it must pass
+          - engine: "terraform"
+            version: "1.10"          # prerelease at the time of writing
+            experimental: true       # …so it reports without blocking
     continue-on-error: ${{ matrix.experimental }}
     runs-on: ubuntu-latest
     steps:
@@ -716,6 +725,8 @@ Three mechanisms worth extracting:
 
 - **`fail-fast: false`** — without it the first failure cancels the rest, and you learn about one broken combination instead of all of them.
 - **`include:`** — adds legs the cross-product cannot express. Here it is needed because a version existed for one engine and not the other, which is exactly the situation a two-engine matrix keeps producing.
+
+    ⚠️ **The book's Listing 7.41 is internally inconsistent here.** It prints `version: "1.10"` on *both* include entries, while its own annotations describe the first as the 1.9 case (*"since v1.9 has only been released for Terraform we add this field to our matrix"*, *"OpenTofu is working on their v1.9 release, while Terraform's has released"*) and only the second as the alpha. Its stated total — *"our settings result in eight tests running"* — needs 6 product legs plus 2 distinct include legs, which only works on the 1.9/1.10 reading. The block above is rendered that way; the printed listing is wrong or its callout leaders are mispointed.
 - **`continue-on-error: ${{ matrix.experimental }}`** — a per-leg switch for "run this, report it, but do not block the merge". That is how you test a prerelease without making it a gate.
 
 !!! warning "Test the versions you actually promise"
