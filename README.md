@@ -74,6 +74,10 @@ python scripts/check_markdown.py --commits origin/master..HEAD
 | Bare `#123` in a **commit message** | error (fails the run) | GitHub autolinks it against **this** repo, so a citation of an upstream issue becomes a link into `terraform-gyan`'s own empty tracker. Use `owner/repo#123` |
 | Bare `#123` in a **Markdown file** | hygiene | *Not* a broken link — GitHub's docs state "Autolinked references are not created in wikis or files in a repository", and Zensical renders it as plain text. It is an unlinked number the reader cannot follow, so prefer `[#123](full-url)` |
 | `\"` in an admonition title | error | Zensical passes it through verbatim, so `!!! note "the \"nines\""` renders the backslashes. Use curly quotes |
+| A numbered item that can't interrupt the paragraph above it | error | CommonMark only lets `1.` interrupt a paragraph, so an item following an indented continuation with no blank line is swallowed — **that item and every later one** collapse into the paragraph as run-on text |
+| A callout between two items of an ordered list | error | It terminates the list, so the following items start a new one and the numbering restarts. Move it after the list ends |
+
+Both list rules produce a page that builds cleanly and passes the link check — the list is just silently wrong. Five sections of `learning-path.md` had rotted this way before the check existed. A marker following a *wrapped* line of the previous item is fine and is not flagged; that distinction was settled by rendering all three shapes, not by reading the spec.
 
 The bare-reference rule is easy to get backwards, so the severity split is deliberate: only the commit-message case is an actual broken link, and it is the only one that fails the run.
 

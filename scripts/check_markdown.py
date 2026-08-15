@@ -31,6 +31,14 @@ Why this exists:
     3. Escaped quotes in admonition titles. Zensical passes \\" through verbatim
        into `!!! note "..."`, `??? ...` and `=== "..."` titles, so the page shows
        a literal backslash. Use curly quotes for a quoted phrase in a title.
+
+    4. Ordered lists silently destroyed by an interrupting block — either a
+       marker that cannot interrupt the paragraph above it, or a callout sitting
+       between two items. Both render as a valid page, so nothing else notices:
+       the build passes, the links resolve, and the list is simply wrong. Five
+       sections of learning-path.md had rotted this way before the check existed.
+       See check_ordered_lists for the two shapes and the discriminator that
+       separates them from the wrapped-line shape, which is fine.
 """
 
 import argparse
@@ -55,6 +63,109 @@ ADMONITION_ESCAPE_RE = re.compile(r'^\s*(!!!|\?\?\?|===)\s+.*\\"')
 # Escape hatch for text that must stay byte-exact — a quoted upstream changelog
 # line, for instance, where linking the number would corrupt the quotation.
 LINT_OK_RE = re.compile(r"<!--\s*lint-ok\b")
+# Top-level ordered-list marker, and the two things that silently break one.
+ORDERED_RE = re.compile(r"^(\d+)\.\s")
+BULLET_RE = re.compile(r"^\s*[-*+]\s")
+ANY_MARKER_RE = re.compile(r"^\s*(?:\d+\.|[-*+])\s")
+ADMONITION_RE = re.compile(r"^(?:!!!|\?\?\?)\s")
+HEADING_RE = re.compile(r"^#{1,6}\s")
+
+
+def check_ordered_lists(lines):
+    """Two CommonMark traps that silently destroy a numbered list.
+
+    Neither shows up in a build or a link check — the page renders, just wrong —
+    and both were found rotting in learning-path.md across five sections.
+
+    1. A list marker cannot interrupt a paragraph unless it is "1.". So an item
+       carrying an indented continuation paragraph, followed by the next marker
+       with no blank line, swallows that marker and every item after it as lazy
+       continuation text.
+
+       Discriminator: a marker whose immediately-preceding line is non-blank is
+       only a defect when a blank line has appeared since the *previous* marker.
+       Without one the preceding line is a wrapped continuation of the current
+       item, which renders correctly — verified against python-markdown rather
+       than assumed.
+
+    2. An unindented admonition between two items of an ordered list terminates
+       it, so the following items begin a new list and the numbering restarts.
+       Callouts belong after the list ends.
+    """
+    findings = []
+    in_fence = False
+    fence_marker = ""
+    prev_marker = None          # line index of the previous top-level marker
+    blank_since_marker = False
+    section_start = 0
+    markers, admonitions = [], []
+
+    def flush():
+        """Report callouts sitting between the first and last marker of a list."""
+        if len(markers) >= 2:
+            first, last = markers[0], markers[-1]
+            for a in admonitions:
+                if first < a < last:
+                    findings.append(
+                        (a + 1, "ERROR callout interrupts an ordered list (numbering restarts)",
+                         lines[a].strip()[:90])
+                    )
+
+    for i, raw in enumerate(lines):
+        fence = FENCE_RE.match(raw)
+        if fence:
+            marker = fence.group(1)[0] * 3
+            if not in_fence:
+                in_fence, fence_marker = True, marker
+            elif marker == fence_marker:
+                in_fence = False
+            continue
+        if in_fence:
+            continue
+
+        if HEADING_RE.match(raw):           # a heading closes the current list scope
+            flush()
+            markers, admonitions = [], []
+            prev_marker, blank_since_marker = None, False
+            continue
+
+        if ADMONITION_RE.match(raw):
+            admonitions.append(i)
+            continue
+
+        m = ORDERED_RE.match(raw)
+        if m:
+            # "1." begins a fresh list, so anything before it belongs to the old one.
+            if m.group(1) == "1" and markers:
+                flush()
+                markers, admonitions = [], []
+            if m.group(1) != "1" and prev_marker is not None and blank_since_marker:
+                prev_line = lines[i - 1] if i else ""
+                if prev_line.strip() and not ANY_MARKER_RE.match(prev_line):
+                    findings.append(
+                        (i + 1,
+                         f"ERROR item '{m.group(1)}.' cannot interrupt the paragraph above "
+                         f"(needs a blank line); this and every later item collapse into it",
+                         raw.strip()[:90])
+                    )
+            markers.append(i)
+            prev_marker, blank_since_marker = i, False
+            continue
+
+        if not raw.strip():
+            if prev_marker is not None:
+                blank_since_marker = True
+            continue
+
+        # An unindented, non-marker paragraph ends the list. Admonition bodies are
+        # indented, so they never reach here and never close a list prematurely.
+        if not raw.startswith((" ", "\t")) and not ANY_MARKER_RE.match(raw):
+            flush()
+            markers, admonitions = [], []
+            prev_marker, blank_since_marker = None, False
+
+    flush()
+    return findings
 
 
 def strip_noise(line):
@@ -69,6 +180,9 @@ def check_file(path):
     findings = []
     in_fence = False
     fence_marker = ""
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        all_lines = handle.read().split("\n")
+    findings.extend(check_ordered_lists(all_lines))
     with open(path, encoding="utf-8", errors="replace") as handle:
         for lineno, raw in enumerate(handle, 1):
             fence = FENCE_RE.match(raw)
@@ -89,7 +203,7 @@ def check_file(path):
                 findings.append(
                     (lineno, f"hygiene unlinked citation #{match.group(1)}", raw.strip()[:90])
                 )
-    return findings
+    return sorted(findings, key=lambda f: f[0])
 
 
 def check_commits(rev_range):
@@ -118,6 +232,13 @@ def check_commits(rev_range):
 
 
 def main():
+    # Callout titles carry emoji; the Windows console defaults to cp1252 and
+    # would raise UnicodeEncodeError mid-report rather than print the finding.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     parser.add_argument("docs", nargs="?", default="docs", help="docs directory (default: docs)")
     parser.add_argument("--commits", metavar="RANGE", help="also scan commit messages in RANGE")
