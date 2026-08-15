@@ -18,7 +18,7 @@ By the end you can:
 
 ## 1. The problem, and the thing you already have
 
-You need staging and production. Both stand up the same network, the same application servers behind the same load balancer, and the same bucket for logs. They differ in three values: staging runs one `t2.micro` where production runs five `t3.large`, and every resource carries `environment = "staging"` instead of `environment = "prod"`.
+You need staging and production. Both stand up the same network, the same application servers behind the same load balancer, and the same bucket for logs. They differ in three values: the application server is a single `t2.micro` EC2 instance in staging and five `t3.large` instances in production, and every resource carries `environment = "staging"` instead of `environment = "prod"`.
 
 Chapter 6 already handles that: `instance_type`, `instance_count` and `resource_tags` become variables, and you keep a `staging.tfvars` beside a `prod.tfvars`. Parameterising a single configuration is a solved problem. Reusing it is not. The moment staging and production are separate configurations, or another team wants the same bucket setup, or the same three resources show up in a fifth project, variables have nothing to offer — they vary the values inside one configuration, not the configuration itself.
 
