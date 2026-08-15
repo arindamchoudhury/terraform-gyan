@@ -66,7 +66,26 @@ Three names follow from that.
 
 A root module can call the same child several times, and a child can call children of its own. Nesting has no hard limit, but it has a practical one: past two levels deep, working out which module set a given value becomes genuinely hard.
 
-The mechanical fact underneath is the one to hold on to. Terraform reads the `.tf` files in **one** directory. It does not walk subdirectories, and it does not pick up a `modules/` folder because of its name. A `module` block is the only thing that makes Terraform read another directory at all.
+The mechanical fact underneath is the one to hold on to. Terraform reads the `.tf` files in **one** directory. It does not walk subdirectories, and it does not pick up a `modules/` folder because of its name. When Terraform builds a plan, a `module` block is the only thing that makes it read another directory.
+
+Measured on 1.15.8. A root directory holding one valid `main.tf`, plus a `sub/` and a `modules/thing/` each containing a file with deliberately unparseable HCL in it:
+
+```shell
+$ terraform validate
+Success! The configuration is valid.
+
+$ terraform apply -auto-approve
+Outputs:
+
+root = "from root"
+```
+
+Neither subdirectory was read. Broken syntax in an unreferenced directory is not a syntax error, because those files were never opened, and the outputs declared in them do not exist.
+
+!!! note "Test files are the exception, and they are still not configuration"
+    `terraform test` reads `.tftest.hcl` files from a `tests/` directory by default, with no `module` block involved. Verified on 1.15.8 against the same root directory above: adding `tests/basic.tftest.hcl` and running `terraform test` gave `Success! 1 passed, 0 failed.`
+
+    That does not make `tests/` part of the configuration. The files are a separate language of `run` blocks, they are read only by the `test` command, and `plan` and `apply` ignore the directory entirely. Chapter 19 covers them.
 
 !!! note "Consuming and authoring are different skills, and this chapter is only the first"
     The language reference organises the whole modules section around three phases: **Develop** a module, **Distribute** it, then **Provision** with it. This chapter is Provision, the caller's side: finding a module, pinning it, passing it inputs, reading its outputs, and knowing what it installed.
