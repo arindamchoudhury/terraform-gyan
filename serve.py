@@ -83,6 +83,38 @@ def build():
 
 _do_build()  # initial build on startup (immediate, not debounced)
 
+import logging
+
+import livereload.watcher as _lr_watcher
+
+_lr_logger = logging.getLogger("livereload")
+_orig_is_file_changed = _lr_watcher.Watcher.is_file_changed
+
+
+def _is_file_changed_resilient(self, path, ignore=None):
+    """is_file_changed that survives a stat() failure on one file.
+
+    Docker Desktop's bind mount intermittently raises OSError (EIO) from
+    os.path.getmtime for files that stat fine on the Windows host. Upstream
+    doesn't guard that call, so the exception escapes into tornado's
+    PeriodicCallback and aborts the whole polling pass — the visible symptom
+    being "Exception in callback ... LiveReloadHandler.poll_tasks" and live
+    reload quietly missing edits afterwards.
+    """
+    try:
+        return _orig_is_file_changed(self, path, ignore)
+    except OSError as err:
+        previous = self._task_mtimes.get(path)
+        if previous is not None:
+            # Carry the last known mtime forward, or is_file_removed() reads the
+            # missing entry as a deletion and forces a needless rebuild.
+            self._new_mtimes[path] = previous
+        _lr_logger.warning("skipping unreadable path %s (%s)", path, err)
+        return False
+
+
+_lr_watcher.Watcher.is_file_changed = _is_file_changed_resilient
+
 server = Server()
 server.watch("docs/", build)
 server.watch("zensical.toml", build)
