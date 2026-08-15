@@ -188,7 +188,17 @@ module "vpc" {
 }
 ```
 
-Order matters. The package address comes first, then `//`, then the sub-directory, and query parameters go **after** the sub-directory. Writing `?ref=v1.2.0` before the `//` is a common way to get a confusing failure.
+Order matters. The package address comes first, then `//`, then the sub-directory, and query parameters go **after** the sub-directory. Get that order wrong and the sub-directory is swallowed by the query string. Measured on 1.15.8 against the lab's local repository, with `?ref=v0.0.1//modules/data-bucket` written the wrong way round:
+
+```
+│ Error: Failed to download module
+│
+│ error downloading
+│ 'file://.../modules-repo?ref=v0.0.1%2F%2Fmodules%2Fdata-bucket':
+│ invalid ref: "v0.0.1//modules/data-bucket"
+```
+
+The `//` was URL-encoded into the `ref` value, so Terraform went looking for a Git revision named `v0.0.1//modules/data-bucket`. The error names the ref rather than the ordering, which is why the mistake takes longer to spot than it should.
 
 The consequence is more interesting than the syntax. Terraform extracts the **entire package** to disk and then reads the module from the sub-directory. So a module inside a package can reference a sibling module in the same package by a local path, and that path resolves. That is what makes it possible to split a large module into pieces without publishing every piece separately.
 
@@ -214,7 +224,7 @@ S3 sources resolve credentials in a fixed order: the `AWS_ACCESS_KEY_ID` and `AW
 
 ---
 
-## 4. Pinning, and the lock file that does not exist
+## 4. Pinning a registry module, and the lock file that does not exist
 
 `version` is optional. Treating it as optional is the single most expensive habit in this chapter.
 
@@ -305,9 +315,11 @@ Each layer is useless without the others. An exact pin with no upgrade process i
 
     For **the constraints inside a reusable module you write**, constrain only the minimum, for example `required_version = ">= 1.15"`. A module that pins an upper bound on Terraform or on a provider forces every consumer to wait for you. Root modules are where the `~>` upper bound belongs.
 
-### Git sources: an immutable pin or a shallow clone, not both
+---
 
-Git sources have no `version` argument. Revision selection is a query parameter on the source address:
+## 5. Git sources: an immutable pin or a shallow clone, not both
+
+Everything in section 4 assumed a registry source. Git sources have no `version` argument. Revision selection is a query parameter on the source address:
 
 ```hcl
 module "vpc" {
@@ -355,7 +367,7 @@ The second cost is shallow clones, and no documentation page connects it to the 
 
 ---
 
-## 5. Composing a source from variables (Terraform 1.15)
+## 6. Composing a source from variables (Terraform 1.15)
 
 Until 1.15, `source` had to be a literal string. That forced duplication: pointing staging and production at different registries or different pins meant two `module` blocks that were otherwise identical.
 
@@ -420,11 +432,12 @@ Because these values are consumed at `init`, they can be supplied to `init` itse
 
     Measured on **OpenTofu 1.12.4** with this chapter's Part C configuration: the variable-composed Git source installs correctly **with or without** `const = true` on the variables. OpenTofu accepts the `const` argument rather than rejecting it, so a configuration written for Terraform 1.15 runs unchanged on OpenTofu. The reverse is not true. Strip `const` for OpenTofu and Terraform stops at `init`.
 
-    The exam (004, Terraform 1.12) still assumes literal sources.
+!!! note "Answer exam questions as though `source` were still literal"
+    The Terraform Associate 004 exam tests Terraform **1.12**, three minor versions before dynamic sources existed. Any exam question about `source` assumes a literal string, and `const` is not on the syllabus. This section is current-Terraform knowledge, not exam knowledge.
 
 ---
 
-## 6. Wiring a module in
+## 7. Wiring a module in
 
 ### Inputs, and the argument for not adding one
 
@@ -510,7 +523,7 @@ There is no module-wide form and no wildcard. The reference is explicit: *"You c
 
 ---
 
-## 7. What `init` actually installed
+## 8. What `init` actually installed
 
 The install step is where most of a module's surprises live, so it is worth looking at directly.
 
@@ -563,7 +576,7 @@ $ terraform get
     Plan: 0 to add, 2 to change, 0 to destroy.
     ```
 
-    Note the second half of that plan. **Both** callers moved, because they share one directory. That is the local-module trade in a single line: the fastest possible edit loop, and no way to change one caller without changing the others. Versioned sources exist to break that coupling, which is the promotion workflow in section 9.
+    Note the second half of that plan. **Both** callers moved, because they share one directory. That is the local-module trade in a single line: the fastest possible edit loop, and no way to change one caller without changing the others. Versioned sources exist to break that coupling, which is the promotion workflow in section 10.
 
 A registry source is genuinely downloaded, and `modules.json` records the resolved version:
 
@@ -593,13 +606,13 @@ Changing `source` or `version` requires a re-`init`. Beyond that, one asymmetry 
 | `terraform init -upgrade` | re-resolves the constraint, downloads the newest match | re-clones and re-resolves the `ref` |
 | fresh directory, plain `init` | resolves as if nothing were installed | clones fresh |
 
-Both halves are measured. Section 4 has the registry numbers. The Git behaviour is measured in Part C of the lab, where a force-moved tag is invisible to a plain `init` and picked up immediately by `init -upgrade`.
+Both halves are measured. Section 4 has the registry numbers and section 5 the Git trade-offs. The Git behaviour is measured in Part C of the lab, where a force-moved tag is invisible to a plain `init` and picked up immediately by `init -upgrade`.
 
 ---
 
-## 8. Encapsulation is also opacity
+## 9. Encapsulation is also opacity
 
-Modules hide things. That is the feature, and it is also the review problem, and both show up in the same number.
+Modules hide things. That is the feature, and it is also the review problem. Both show up in the same place: the resource count at the end of an apply, which is almost never the number of resources you can see in the configuration.
 
 The registry-modules tutorial builds a VPC and two EC2 instances from two `module` blocks and roughly a dozen visible arguments. The apply reports **22 resources**. The page acknowledges it in passing: *"The vpc and ec2 modules define more resources than just the VPC and EC2 instances."*
 
@@ -672,11 +685,11 @@ The **resources** tab is the one to open first. It tells you what the module wil
 
 ---
 
-## 9. Versioning as a promotion workflow
+## 10. Versioning as a promotion workflow
 
 Everything above is mechanism. The reason to care is that a versioned module lets two environments run different code on purpose.
 
-With a local `source`, they cannot. As *Terraform: Up & Running* puts it, *"as soon as you make a change in that folder, it will affect both environments on the very next deployment."* Section 7's measurement is that sentence in plan output: one edit, two callers changed.
+With a local `source`, they cannot. As *Terraform: Up & Running* puts it, *"as soon as you make a change in that folder, it will affect both environments on the very next deployment."* Section 8's measurement is that sentence in plan output: one edit, two callers changed.
 
 The fix is to separate the blueprint from the buildings. Module code lives in one repository and is released. Environment configurations live in another and each pins a release. The workflow then has four steps:
 
@@ -691,7 +704,7 @@ Two upgrades to that advice, which was written in 2022 against a friendlier thre
 
 ---
 
-## 10. Removing a module
+## 11. Removing a module
 
 Deleting a `module` block and applying **destroys** everything inside it. That is usually what you want and occasionally a disaster.
 
@@ -730,6 +743,8 @@ curl -s http://localhost:4566/_floci/health          # wait until the services r
 ```
 
 Every transcript below was captured on **Terraform 1.15.8** with **AWS provider 6.58.0** against Floci 1.5.34, on 2026-08-08. Long outputs are trimmed to the lines that carry the point, and nothing is paraphrased.
+
+Anything that reaches the emulator runs through `tflocal`. A few commands never make an AWS call — `terraform modules` reads the configuration, and `terraform console` here only reads state — so they are shown as plain `terraform`. Either wrapper works for those; the distinction is just what needs the endpoint redirection.
 
 ### Part A — one local module, called twice
 
@@ -970,7 +985,7 @@ Module repo: /tmp/ch13-lab3/modules-repo
 module_repo = "file:///tmp/ch13-lab3/modules-repo"
 ```
 
-`main.tf` composes the source from two `const = true` variables, which is the 1.15 feature from section 5:
+`main.tf` composes the source from two `const = true` variables, which is the 1.15 feature from section 6:
 
 ```hcl
 locals {
