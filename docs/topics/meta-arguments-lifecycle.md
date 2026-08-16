@@ -1,6 +1,6 @@
 # Meta-arguments and `lifecycle`
 
-Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]], [[tf-meta-depends-on]] and [[tf-meta-lifecycle]] (HCDocs per-argument references), [[tut-count]], [[tut-for-each]] and [[tut-resource-lifecycle]] (HCDocs hands-on), TID Ch2 §2.7 and [Ch10 §10.6](../books/tid/chapters/10-advanced-topics.md#106-checks-and-conditions) (the condition rules), [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
+Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]], [[tf-meta-depends-on]] and [[tf-meta-lifecycle]] (HCDocs per-argument references), [[tut-count]], [[tut-for-each]] and [[tut-resource-lifecycle]] (HCDocs hands-on), TID Ch2 §2.7 and [Ch10 §10.6](../books/tid/chapters/10-advanced-topics.md#106-checks-and-conditions) (the condition rules), [TUR Ch5](../books/tur/chapters/05-tips-and-tricks.md) (the reindex demonstration and the zero-downtime argument), [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
 
 Feeds learning-path **I1** (`count`/`for_each`/`depends_on`) and **I2** (`lifecycle`).
 
@@ -303,6 +303,36 @@ Two consequences worth holding onto:
 
 !!! warning "The reference page still carries the un-narrowed cancellation claim"
     It says supplying `providers` "cancels the default behavior" so the child "only has access to the provider configurations you specify." That is the exact wording issue [#35781](https://github.com/hashicorp/terraform/issues/35781) was filed against, and the fix landed on *Providers Within Modules* rather than here. Per-provider is the accurate reading. See [[tf-meta-providers]].
+
+## What TUR Ch5 adds: the demonstrations, and one inverted rule
+
+[TUR Ch5](../books/tur/chapters/05-tips-and-tricks.md) is the only source here that *shows* the failure modes rather than describing them.
+
+**The reindex hazard, as a plan.** Remove the middle item from a three-element `count` list and Terraform does not delete one resource:
+
+```text
+# aws_iam_user.example[1] will be updated in-place
+  ~ name = "trinity" -> "morpheus"
+
+# aws_iam_user.example[2] will be destroyed
+```
+
+Because index *is* identity, this reads as "rename index 1, delete index 2". The chapter's summary is the sentence to keep: remove an item from the middle and Terraform "will delete every resource after that item and then re-create those resources again from scratch."
+
+**The rule that inverts the usual advice.** Everywhere else the guidance is simply "prefer `for_each`". TUR splits it by purpose:
+
+> when it comes to conditional logic, setting `count` to 0 or 1 tends to be simpler than setting `for_each` to an empty or nonempty collection. Therefore, I typically recommend using `count` to conditionally create resources and modules, and using `for_each` for all other types of loops and conditionals.
+
+Which is consistent rather than contradictory: the reindex hazard is an argument about *identity under change*, and a count that is only ever 0 or 1 has no middle to remove.
+
+**The `one(concat(...))` idiom** is the companion to `count`-as-conditional — the safe way to read an attribute off whichever of two mutually exclusive resources exists, without a second ternary that can drift out of sync with the first.
+
+!!! tip "`create_before_destroy` for zero-downtime, and the argument against it"
+    TUR Ch5 builds the classic ASG zero-downtime deploy on this page's subject — make the ASG's `name` depend on the launch configuration's name, set `create_before_destroy`, set `min_elb_capacity` so Terraform waits for health checks — and then **tells you to delete all of it** in favour of AWS's native `instance_refresh`.
+
+    The generalisation is worth carrying past ASGs: *"for important and complicated tasks like a zero-downtime deployment, you really want to use native, first-class solutions, and not workarounds that require you to haphazardly glue together `create_before_destroy`, `min_elb_capacity`, custom scripts, etc."*
+
+    So `create_before_destroy` earns its place for the deadlock case (TUR Ch2) and for genuine availability requirements, and loses it wherever the platform has its own rollout primitive.
 
 ## Style
 
