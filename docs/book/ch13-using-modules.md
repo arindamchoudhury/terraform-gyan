@@ -12,6 +12,7 @@ By the end you can:
 - Predict which of `init` and `init -upgrade` re-resolves a module, for both registry and Git sources.
 - Compose a module `source` from variables under Terraform 1.15, and say why those variables need `const = true`.
 - Reference a child module's outputs, and explain why `terraform output` cannot see them.
+- Read a public registry module page and say, before running a plan, what it will create, what you have to set, what it returns, and which provider version it demands.
 - Audit every module a configuration depends on from the command line.
 
 ---
@@ -852,6 +853,99 @@ The [language reference's Modules overview](https://developer.hashicorp.com/terr
 
 The **resources** tab is the one to open first. It tells you what the module will create before you run a plan, which is the shortest path past the 22-resources surprise.
 
+### Reading a registry page: `terraform-aws-modules/ec2-instance/aws`
+
+The checklist is easier to trust once you have walked a real page with it. This one is a good specimen because it is the module most people meet first, and because almost every trap in this chapter is visible on it. Everything below was read off [the page](https://registry.terraform.io/modules/terraform-aws-modules/ec2-instance/aws/latest) on 2026-08-16, at version **6.4.0**, and is cached in [Registry Module Page Facts](../research-cache/registry-module-page-facts.md).
+
+**Start at the version selector, not at the readme.** The header strip carries a combobox labelled *Module version*, reading `Version 6.4.0 (latest)`. It is not a convenience. The entire page is scoped to the version it names, and a search engine will happily land you on an old one. The same module at 5.8.0 is a materially different thing:
+
+| | v5.8.0 (30 Mar 2025) | v6.4.0 (26 Mar 2026) |
+|---|---|---|
+| Inputs | 70 | 83 |
+| Outputs | 27 | 30 |
+| Dependencies | 1 | 1 |
+| Resources | 7 | **13** |
+| Provider requirement | `hashicorp/aws >= 4.66` | `hashicorp/aws >= 6.37` |
+
+Seven resources became thirteen and the provider floor moved two majors. Confirm the version in the breadcrumb (`v6.4.0`) before reading anything else on the page.
+
+**The rest of the header strip is the provenance check.** `Provider: aws`. `Downloads: 52.7M`, `This week: 518,859`. `Versions: 98`. `Published: March 26, 2026`. `Published by: antonbabenko`, `Managed by: antonbabenko`. A `Source code:` link to `github.com/terraform-aws-modules/terraform-aws-ec2-instance`, and a `View Source` button beside the selector. Published nine weeks ago at 98 releases is a maintained module, and half a million downloads a week means a breakage would be noticed by somebody other than you.
+
+!!! warning "52.7M downloads and no badge: popularity is not vetting"
+    Nothing on this page says *verified*. Compare `aws-ia/vpc/aws`, which renders a badge reading **Partner** next to the module name. In the registry's API that badge is the field `"verified": true`; on `ec2-instance` the same field is `false`. So the most-downloaded EC2 module in the registry is community code published by an individual account, which is fine, and is exactly the provenance the [Modules overview](https://developer.hashicorp.com/terraform/language/modules) means by *"created and maintained by HashiCorp, our partners, and the Terraform community"*. Read it as *who to ask when it breaks*, not as *who approved it*.
+
+**Take the pinned snippet from the sidebar, never from the readme.** The right-hand column holds a *Provision Instructions* panel: *"Copy and paste into your Terraform configuration, insert the variables, and run `terraform init`"*, with a **Copy configuration** button over a skeleton call.
+
+```hcl
+module "ec2-instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "6.4.0"
+}
+```
+
+That `version` line is generated from the version you are viewing, and it is the only place on the page that produces one. Every usage snippet in the readme body has its own copy button and omits `version` entirely:
+
+```hcl
+module "ec2_instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+
+  name          = "single-instance"
+  instance_type = "t3.micro"
+  # ...
+}
+```
+
+Copy the readme block, which is the one that actually shows you the arguments, and you have written the unpinned call that section 4 measured going a major version sideways. The working habit is to take the arguments from the readme and the `version` line from the sidebar, then decide the constraint yourself.
+
+**The tab counts are the fastest read of a module's size.** `Readme · Inputs 83 · Outputs 30 · Dependencies 1 · Resources 13`. Four numbers, before a single line of HCL.
+
+The **Resources** tab lists all thirteen by address, from `aws_instance.this` down to `aws_vpc_security_group_ingress_rule.this`, each linked to its provider documentation. It also states its own limit: *"The module can create zero or more of each of these resources depending on the `count` value. The `count` value is determined at runtime."* This is section 9's opacity written down by the registry itself. Thirteen is the ceiling, and the `[0]` suffixes you will meet in state come from those internal `count`s.
+
+One thing the tab leaves out. The module also reads four data sources, including `aws_ssm_parameter.this` and `aws_subnet.this`, and they appear only in the terraform-docs table further down the readme. The tab counts what the module *manages*; the readme table counts everything it *touches*. Read both.
+
+**The Inputs tab answers "what must I set" directly, and here the answer is a trap.** The tab splits into *Required Inputs* and *Optional Inputs*, and for this module there is no required section at all, only the sentence *"This module has no required variables."* Eighty-three inputs, zero of them required, confirmed against the registry API at both 5.8.0 and 6.4.0.
+
+So the schema will not tell you what to fill in. The defaults will:
+
+| Input | Default | What it means if you leave it |
+|---|---|---|
+| `create` | `true` | The module is on. |
+| `name` | `""` | An unnamed instance. |
+| `instance_type` | `"t3.micro"` | A size chosen by the module author, not by you. |
+| `ami` | `null` | No image pinned. |
+| `ami_ssm_parameter` | `"/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"` | The AMI is resolved at plan time from the *latest* Amazon Linux 2023 parameter. |
+
+The last row is the one to sit with. An unset `ami` does not mean "no instance", it means "whatever AWS is publishing as latest today", which is a value that changes underneath a configuration that has not changed. The module ships `ignore_ami_changes` and a separate `aws_instance.ignore_ami` resource precisely because of it, and the resource list is where you notice that a second instance address exists at all.
+
+!!! tip "A module with no required inputs is not a module with no required decisions"
+    `required` is an author's choice, and defaulting everything is a friendly one that costs the reader their checklist. When a module offers you nothing to fill in, the readme's own usage example becomes the de-facto minimum. Here that is `name`, `instance_type`, `key_name`, `monitoring`, `subnet_id`, and `tags`, which is a far more useful starting call than the three-line skeleton in the sidebar.
+
+**The Outputs tab is your other half of the wiring.** Thirty names with descriptions and no types, alphabetised: `ami`, `arn`, `availability_zone`, `id`, `instance_state`, `private_ip`, `public_ip`, `iam_role_arn`, `security_group_id`, and so on. Each one is addressable in your configuration as `module.<LABEL>.<NAME>`, and each one is invisible to `terraform output` until the root module re-exports it, which is section 7's rule. The tab is also the honest answer to "can I chain this into the next resource": if the value you need is not on that list, no amount of reading the readme will produce it, and you are looking at a fork or a `data` source instead.
+
+**The Dependencies tab is where the provider vote is declared.** It has two halves. Module dependencies, here *"This module has no external module dependencies"*, so nothing else gets downloaded when you call it. And *Provider Dependencies*, here `aws (hashicorp/aws) >= 6.37`. That single line is the constraint that merges with yours at `init`, the one section 9 watched turn into `">= 5.83.0, ~> 6.0"` for a different module. Read it before you upgrade, not after `init` refuses to resolve.
+
+**The Examples dropdown goes to registry-rendered pages, and they are runnable but not copyable.** The header offers `complete` and `session-manager`, and they link to `/modules/terraform-aws-modules/ec2-instance/aws/latest/examples/complete`, not to GitHub. An example page is a small module page in its own right: its own `Readme · Inputs 0 · Outputs 54` tabs, a *Return to module* link, a *Change example* control, and a source link pinned to the tag rather than to a branch (`tree/v6.4.0/examples/complete`).
+
+!!! warning "An example's `source` is `../../` and will not resolve in your repository"
+    The Modules table on the `complete` example page lists twelve calls to the module under test, every one of them with source `../../` and version `n/a`. That is correct inside the module's own repository and broken everywhere else. Copying an example means swapping each `../../` for `terraform-aws-modules/ec2-instance/aws` plus a `version`. The same table is worth reading for what the example drags in, which here is `terraform-aws-modules/vpc/aws ~> 6.0` and `terraform-aws-modules/security-group/aws ~> 5.0`.
+
+**What the page cannot tell you is on the other side of `View Source`.** Whether the variables have `validation` blocks, what the resource wiring actually does with `subnet_id`, what the CHANGELOG says about the 5.x to 6.x break, how many issues are open, and whether the repository protects its tags. The registry renders an interface; adoption is a decision about a codebase. Section 5's measurement of a moved tag is the reason the last of those matters.
+
+!!! tip "Skip the browser when you are checking many modules"
+    Every number above is also served as JSON, which is what makes "is this module pinned to a maintained release" a policy check rather than a browsing session:
+
+    ```shell
+    curl -s https://registry.terraform.io/v1/modules/terraform-aws-modules/ec2-instance/aws/6.4.0
+    curl -s https://registry.terraform.io/v1/modules/terraform-aws-modules/ec2-instance/aws/versions
+    ```
+
+    The first carries `published_at`, `downloads`, `verified`, `source`, and the full `root.inputs`
+    array with each input's `required`, `type`, and `default`. The second lists all 98 versions. Pair
+    it with `terraform modules -json` from earlier in this section and you can compare what a
+    configuration pins against what the registry currently offers, without opening a page.
+
+**The page, read in order.** Version selector, Resources tab, Dependencies tab, Inputs tab, readme usage, Examples, and only then the Provision Instructions block, so the last thing you do is copy a call you already understand.
+
 !!! tip "Check the pins in any tutorial before copying them, including HashiCorp's own"
     The registry-modules tutorial pins AWS provider `~> 4.49.0`, `vpc` at 3.18.1, and `ec2-instance` at 4.3.0. Verified on 2026-08-08, the current versions are AWS provider 6.x, `vpc` **6.6.1**, and `ec2-instance` **6.4.0**. The reference documentation is maintained; the tutorials are not, and the same page's own reference counterpart pins a 6.x `vpc`.
 
@@ -1329,6 +1423,10 @@ tflocal destroy -auto-approve
 - **Using `depends_on` on a module call to fix an ordering problem.** It applies to everything inside and pushes more values to `(known after apply)`. Find the missing reference instead.
 - **Editing a local module and expecting only one caller to change.** Every call to that directory moves at once. That coupling is the reason versioned sources exist.
 - **Deleting a `module` block to stop managing its resources.** That destroys them. Use `removed` with `lifecycle { destroy = false }`.
+- **Copying a module's usage snippet out of its readme.** The readme blocks show the arguments and carry no `version`. Only the sidebar's Provision Instructions block generates one.
+- **Reading a registry page without checking which version it is scoped to.** `ec2-instance` at 5.8.0 and at 6.4.0 differ by six resources, thirteen inputs, and two provider majors.
+- **Reading "no required variables" as "nothing to decide".** Every input having a default means the defaults are the decision, including an AMI that resolves to whatever is latest today.
+- **Copying a registry example verbatim.** Its calls to the module under test are `source = "../../"`, which resolves only inside that module's own repository.
 - **Treating a curated private-registry entry as an enforced allowlist.** It is a bookmark. Enforcement is policy.
 
 ---
@@ -1341,7 +1439,8 @@ tflocal destroy -auto-approve
 4. **Apply.** A child module exports `cluster_endpoint`. A CI job needs to read it with `terraform output -raw`. Write everything required to make that work.
 5. **Apply.** Point staging and production at the same module repository but different releases, using one `module` block per environment and Terraform 1.15 dynamic sources. Which variables need `const = true`, and why does `version` not help you here?
 6. **Extend.** Take lab 2's configuration and work out, without applying, exactly what it will create. Use `terraform modules`, the registry entry's resources tab, and a `terraform plan`. Which of the three told you the most, and which was fastest?
-7. **Extend.** Your organisation wants every module pinned to an exact version. Sketch the three layers of control from section 4, and name which chapter of this book each one is built in.
+7. **Apply.** Open the registry page for `terraform-aws-modules/s3-bucket/aws` and answer four questions without running anything: which version are you looking at, how many resources can it create, which provider versions does it demand, and which inputs are required. Then write the `module` block you would actually use, and say which part of it came from which part of the page.
+8. **Extend.** Your organisation wants every module pinned to an exact version. Sketch the three layers of control from section 4, and name which chapter of this book each one is built in.
 
 ---
 
@@ -1356,6 +1455,7 @@ tflocal destroy -auto-approve
 - **Terraform 1.15 allows a variable `source`**, if every variable feeding it declares `const = true`. The reason is timing: modules install at `init`, before plan-time evaluation exists. OpenTofu needs no marker, because early evaluation has been general since 1.8.
 - **Module outputs are not inherited.** They are readable in configuration and invisible to `terraform output` until the root module re-exports them.
 - **Encapsulation is also opacity.** Two module blocks produced 22 resources in HashiCorp's own tutorial; one produced six objects with internal `count` indices in this chapter's lab. Modules also contribute provider version constraints to your resolution.
+- **A registry page answers the adoption questions in a fixed order.** The version selector scopes everything else, the Resources tab is the ceiling on what will be created, Dependencies is the provider constraint you will inherit, Inputs marks what is required, and only the sidebar's Provision Instructions block emits a `version` line. Measured on `terraform-aws-modules/ec2-instance/aws`: 83 inputs and **none of them required**, 13 resources at 6.4.0 against 7 at 5.8.0, and no verification badge behind 52.7M downloads.
 - **`terraform modules`** (1.10+, Terraform-only) prints every declared module with its source, resolved version, and constraint, with a `-json` form for policy.
 - **OpenTofu diverges in five places in this chapter**, all measured on 1.12.5. A `.tofu` file shadows the same-named `.tf` file. A hostname-less registry address resolves against `registry.opentofu.org`. `ignore_nested_deprecations` is rejected, and `-deprecation=module:none|local` is the opt-out instead. A `for_each` module call can vary its providers, because provider `for_each` exists. `tofu modules` does not exist. Everything else in this chapter, including `//`, the `depth`-versus-SHA rule, and the absence of a module lock file, behaves identically.
 - **A versioned source is what lets staging and production differ on purpose.** Tag a release, move staging, leave production, roll forward once proven.
@@ -1381,5 +1481,6 @@ Chapter 14 crosses the boundary. The input variables you have been filling in be
 - Renovate [discussion #31006](https://github.com/renovatebot/renovate/discussions/31006) and [issue #14790](https://github.com/renovatebot/renovate/issues/14790); Dependabot [#10787](https://github.com/dependabot/dependabot-core/issues/10787) and [#10926](https://github.com/dependabot/dependabot-core/issues/10926) — why no bot moves a SHA pin.
 - Reading notes: [[tf-modules]], [[tf-modules-configuration]], [[tf-block-module]], [[tf-expr-version-constraints]], [[tut-module]], [[tut-module-use]], [[tut-private-registry-add]], [[tf-dependency-lock]].
 - *Terraform: Up & Running* Ch 4 (the function analogy, inputs as the module's API, the promotion workflow, Git-tag versioning), captured as [[04-reusable-modules]]; *Terraform in Depth* Ch 3 §3.1 (module flavours, the `module` block's three module-specific meta-arguments, registries), captured as [[03-variables-modules]].
+- Terraform Registry, [`terraform-aws-modules/ec2-instance/aws`](https://registry.terraform.io/modules/terraform-aws-modules/ec2-instance/aws/latest) — the page walked in section 9, read at v6.4.0 and v5.8.0; structure and numbers cached in [Registry Module Page Facts](../research-cache/registry-module-page-facts.md).
 - Measurements and lab configurations: `labs/chapter13/`.
 - 🧪 Lab: [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)
