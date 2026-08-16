@@ -901,6 +901,8 @@ module "ec2_instance" {
 }
 ```
 
+[![The Readme tab at v6.4.0, showing both snippets in one view. The readme's Single EC2 Instance block on the left has its own Copy button and a source line with no version argument. The sidebar's Provision Instructions block on the right carries the same source plus version = "6.4.0".](assets/ch13-registry-readme-vs-sidebar.png)](assets/ch13-registry-readme-vs-sidebar.png)
+
 Copy the readme block, which is the one that actually shows you the arguments, and you have written the unpinned call that section 4 measured going a major version sideways. The working habit is to take the arguments from the readme and the `version` line from the sidebar, then decide the constraint yourself.
 
 **The tab counts are the fastest read of a module's size.** `Readme · Inputs 83 · Outputs 30 · Dependencies 1 · Resources 13`. Four numbers, before a single line of HCL.
@@ -930,7 +932,11 @@ The last row is the one to sit with. An unset `ami` does not mean "no instance",
 !!! tip "A module with no required inputs is not a module with no required decisions"
     `required` is an author's choice, and defaulting everything is a friendly one that costs the reader their checklist. When a module offers you nothing to fill in, the readme's own usage example becomes the de-facto minimum. Here that is `name`, `instance_type`, `key_name`, `monitoring`, `subnet_id`, and `tags`, which is a far more useful starting call than the three-line skeleton in the sidebar.
 
+[![The Outputs tab at v6.4.0. Thirty entries in alphabetical order, each a name with a copy button and an italic Description line, and no type anywhere: ami, arn, availability_zone, capacity_reservation_specification, ebs_block_device, ebs_volumes, ephemeral_block_device, iam_instance_profile_arn.](assets/ch13-registry-outputs-tab.png)](assets/ch13-registry-outputs-tab.png)
+
 **The Outputs tab is your other half of the wiring.** Thirty names with descriptions and no types, alphabetised: `ami`, `arn`, `availability_zone`, `ebs_volumes`, `iam_role_arn`, `id`, `instance_state`, `private_ip`, `public_ip`, `security_group_id`, and so on. Each one is addressable in your configuration as `module.<LABEL>.<NAME>`, and each one is invisible to `terraform output` until the root module re-exports it, which is section 7's rule. The tab is also the honest answer to "can I chain this into the next resource": if the value you need is not on that list, no amount of reading the readme will produce it, and you are looking at a fork or a `data` source instead.
+
+[![The Dependencies tab at v6.4.0. Under Dependencies, the line "This module has no external module dependencies." Under Provider Dependencies, a single bullet reading aws (hashicorp/aws) >= 6.37.](assets/ch13-registry-dependencies-tab.png)](assets/ch13-registry-dependencies-tab.png)
 
 **The Dependencies tab is where the provider vote is declared.** It has two halves. Module dependencies, here *"This module has no external module dependencies"*, so nothing else gets downloaded when you call it. And *Provider Dependencies*, here `aws (hashicorp/aws) >= 6.37`. That single line is the constraint that merges with yours at `init`, the one section 9 watched turn into `">= 5.83.0, ~> 6.0"` for a different module. Read it before you upgrade, not after `init` refuses to resolve.
 
