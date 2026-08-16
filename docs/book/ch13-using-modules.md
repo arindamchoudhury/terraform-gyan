@@ -774,6 +774,19 @@ Changing `source` or `version` requires a re-`init`. Beyond that, one asymmetry 
 
 Both halves are measured. Section 4 has the registry numbers and section 5 the Git trade-offs. The Git behaviour is measured in Part C of the lab, where a force-moved tag is invisible to a plain `init` and picked up immediately by `init -upgrade`.
 
+!!! note "You edited `version`. Which `init` do you need?"
+    A plain `init` reinstalls a module only when one of three things is true, checked in [`module_install.go`](https://github.com/hashicorp/terraform/blob/v1.15.8/internal/initwd/module_install.go) against the `modules.json` record:
+
+    1. There is no record for that module call, which is the fresh-clone and deleted-`.terraform` case.
+    2. The `source` string differs from the recorded one, which includes any edit to a Git `?ref=`.
+    3. A recorded version no longer satisfies the constraint now in the configuration.
+
+    `-upgrade` skips all three checks and replaces unconditionally.
+
+    So tightening or moving a pin, `4.1.0` to `4.2.0` or `~> 4.1` to `~> 5.0`, needs only a plain `init`, because condition 3 fires. Loosening one, `4.1.0` to `~> 4.1`, needs `-upgrade`, because the installed version still satisfies what you wrote and nothing fires. Leaving the constraint alone and wanting a release that has since come out also needs `-upgrade`, and so does a tag that was force-moved under an unchanged `ref`.
+
+    `-upgrade` is never wrong for correctness. It is only worse for determinism, because it re-resolves every module in the configuration rather than the one you edited.
+
 ---
 
 ## 9. Encapsulation is also opacity
