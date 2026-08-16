@@ -815,7 +815,7 @@ There is a second kind of opacity in the same install. The child module carries 
 - Installing hashicorp/aws v6.58.0...
 ```
 
-`~> 6.0` is the root module's constraint. `>= 5.83.0` came from inside the module. Every module you call gets a vote on your provider version, and Terraform proceeds only when all the constraints are satisfiable. A module upgrade that fails with an unsatisfiable provider constraint is this mechanism working correctly, and Chapter 17 goes into it.
+`~> 6.0` is the root module's constraint. `>= 5.83.0` came from inside the module. Every module you call gets a vote on your provider version, and Terraform proceeds only when one available version satisfies every constraint at once. So a module upgrade can fail at `init`, before a single resource is planned, because the version the new module demands and the version something else in the configuration demands have no overlap. Nothing is broken when that happens. Terraform is refusing to pick a provider that one of the voters said it cannot work with, and Chapter 17 covers how to read the failure and what your options are.
 
 ### Audit what you actually depend on
 
