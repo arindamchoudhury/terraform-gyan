@@ -882,7 +882,7 @@ So confirm the version in the breadcrumb before reading anything else. Every scr
 !!! warning "52.7M downloads and no badge: popularity is not vetting"
     Nothing on this page says *verified*. Compare `aws-ia/vpc/aws`, which renders a badge reading **Partner** next to the module name. In the registry's API that badge is the field `"verified": true`; on `ec2-instance` the same field is `false`. So the most-downloaded EC2 module in the registry is community code published by an individual account, which is fine, and is exactly the provenance the [Modules overview](https://developer.hashicorp.com/terraform/language/modules) means by *"created and maintained by HashiCorp, our partners, and the Terraform community"*. Read it as *who to ask when it breaks*, not as *who approved it*.
 
-[![The aws-ia/vpc/aws page at v4.8.0 for comparison. A purple Partner badge sits next to the module name, a Submodules dropdown sits beside Examples, and its Provision Instructions block carries the line "# insert the 2 required variables here" inside the module block.](assets/ch13-registry-partner-badge.png)](assets/ch13-registry-partner-badge.png)
+[![The same strip on aws-ia/vpc/aws at v4.8.0, cropped identically for comparison. A purple Partner badge sits beside the module name, the publisher and manager are both aws-ia-ci, a Submodules dropdown sits before Examples, and the tab row reads Readme, Inputs 31, Outputs 22, Dependencies 8, Resources 44.](assets/ch13-registry-partner-badge.png)](assets/ch13-registry-partner-badge.png)
 
 **Take the pinned snippet from the sidebar, never from the readme.** The right-hand column holds a *Provision Instructions* panel: *"Copy and paste into your Terraform configuration, insert the variables, and run `terraform init`"*, with a **Copy configuration** button over a skeleton call.
 
@@ -893,7 +893,11 @@ module "ec2-instance" {
 }
 ```
 
-That `version` line is generated from the version you are viewing, and it is the only place on the page that produces one. The panel also counts required inputs for you: on `aws-ia/vpc/aws` the same skeleton carries a `# insert the 2 required variables here` comment inside the block. Here there is no such line, and its absence is the first hint of what the Inputs tab confirms below. Every usage snippet in the readme body has its own copy button and omits `version` entirely:
+That `version` line is generated from the version you are viewing, and it is the only place on the page that produces one. The panel also counts required inputs for you. On `aws-ia/vpc/aws` the same skeleton carries a comment inside the block:
+
+[![The Provision Instructions panel on aws-ia/vpc/aws. The block reads module "vpc", source "aws-ia/vpc/aws", version "4.8.0", then a blank line and the comment "# insert the 2 required variables here" before the closing brace.](assets/ch13-registry-vpc-provision-required.png)](assets/ch13-registry-vpc-provision-required.png)
+
+On `ec2-instance` there is no such line, and its absence is the first hint of what the Inputs tab confirms below. Every usage snippet in the readme body has its own copy button and omits `version` entirely:
 
 ```hcl
 module "ec2_instance" {
