@@ -909,9 +909,13 @@ module "ec2_instance" {
 }
 ```
 
-[![The Readme tab at v6.4.0, showing both snippets in one view. The readme's Single EC2 Instance block on the left has its own Copy button and a source line with no version argument. The sidebar's Provision Instructions block on the right carries the same source plus version = "6.4.0".](assets/ch13-registry-readme-vs-sidebar.png)](assets/ch13-registry-readme-vs-sidebar.png)
+[![The readme's Usage section on the registry page. Under a "Single EC2 Instance" heading, a code block with its own Copy button holds module "ec2_instance" with source "terraform-aws-modules/ec2-instance/aws" and the arguments name, instance_type, key_name, monitoring, subnet_id, and a tags map. There is no version argument anywhere in the block.](assets/ch13-registry-readme-usage-block.png)](assets/ch13-registry-readme-usage-block.png)
 
 Copy the readme block, which is the one that actually shows you the arguments, and you have written the unpinned call that section 4 measured going a major version sideways. The working habit is to take the arguments from the readme and the `version` line from the sidebar, then decide the constraint yourself.
+
+Both blocks are on screen at once, which is what makes the mistake so easy:
+
+[![The Readme tab at v6.4.0, showing both snippets in one view. The readme's Single EC2 Instance block on the left has its own Copy button and a source line with no version argument. The sidebar's Provision Instructions block on the right carries the same source plus version = "6.4.0".](assets/ch13-registry-readme-vs-sidebar.png)](assets/ch13-registry-readme-vs-sidebar.png)
 
 **The tab counts are the fastest read of a module's size.** `Readme · Inputs 83 · Outputs 30 · Dependencies 1 · Resources 13`. Four numbers, before a single line of HCL.
 
