@@ -923,7 +923,11 @@ Both blocks are on screen at once, which is what makes the mistake so easy:
 
 The **Resources** tab lists all thirteen by address in one alphabetical column, from `aws_ebs_volume.this` down to `aws_vpc_security_group_ingress_rule.this`. They are plain text, not links; the terraform-docs table inside the readme is the copy that links each address to its provider documentation. The tab also states its own limit: *"The module can create zero or more of each of these resources depending on the `count` value. The `count` value is determined at runtime."* This is section 9's opacity written down by the registry itself. Thirteen is the ceiling, and the `[0]` suffixes you will meet in state come from those internal `count`s.
 
-One thing the tab leaves out. The module also reads four data sources, including `aws_ssm_parameter.this` and `aws_subnet.this`, and they appear only in the terraform-docs table further down the readme. The tab counts what the module *manages*; the readme table counts everything it *touches*. Read both.
+One thing the tab leaves out. The module also reads four data sources, and they appear only in the terraform-docs table further down the readme:
+
+[![The Resources table inside the readme, with Name and Type columns and every name a link. Thirteen rows of type "resource" run from aws_ebs_volume.this to aws_vpc_security_group_ingress_rule.this, then four rows of type "data source": aws_iam_policy_document.assume_role_policy, aws_partition.current, aws_ssm_parameter.this, and aws_subnet.this.](assets/ch13-registry-readme-resources-table.png)](assets/ch13-registry-readme-resources-table.png)
+
+Seventeen rows against the tab's thirteen, and a `Type` column the tab does not have. The tab counts what the module *manages*; the readme table counts everything it *touches*, which is where `aws_ssm_parameter.this` shows up — the data source that turns an unset `ami` into whatever AWS published last. Read both.
 
 **The Inputs tab answers "what must I set" directly, and here the answer is a trap.** The tab splits into *Required Inputs* and *Optional Inputs*, and for this module there is no required section at all, only the sentence *"This module has no required variables."* Eighty-three inputs, zero of them required, confirmed against the registry API at both 5.8.0 and 6.4.0.
 
