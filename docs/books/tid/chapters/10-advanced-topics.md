@@ -4,7 +4,7 @@
 >
 > The book's grab-bag chapter, and it says so itself: rather than one topic, a tour of patterns, niche providers and advanced features. Two of the eight sections are everyday tools — **naming schemes** (§10.1) and **checks and conditions** (§10.6). The rest are escape hatches you will be glad exist and should reach for last: **provisioners** (§10.3), the **external provider** (§10.4), the **local provider** (§10.5). In between sits the one genuinely hard engineering exercise in the chapter, a **dynamically subnetted network module** (§10.2), and it closes on the most useful section of all — **when Terraform is the wrong tool** (§10.8).
 >
-> 📌 **Five claims in this chapter did not survive checking against source and provider docs.** Two are version claims: §10.5.1 dates provider-defined functions to "Terraform and OpenTofu 1.8.0", but **OpenTofu shipped them in 1.7.0** ([opentofu#1439](https://github.com/opentofu/opentofu/pull/1439)); and the `winrm` connection type §10.3.1 documents without qualification is **deprecated as of OpenTofu 1.12**, expected to error in 1.13. Three are behavioural: **`self` is a postcondition keyword only** (§10.6.1 presents it as belonging to both condition types), an omitted `query` sends an empty JSON **object**, not an array (§10.4.1), and `content_base64sha256` is the base64 of the *checksum*, not a checksum of the base64 (§10.5.2). Two of its listings are also defective: **Listing 10.8's topology toggles are inverted**, so the network module errors on one branch and silently returns empty outputs on the other (§10.2.4, reproduced on both engines), and Listing 10.40 feeds gzipped Cloud-Init output to `user_data` rather than `user_data_base64` (§10.8.3). Each is flagged where it occurs; version state in [[version-facts]].
+> 📌 **Five claims in this chapter did not survive checking against source and provider docs.** Two are version claims: §10.5.1 dates provider-defined functions to "Terraform and OpenTofu 1.8.0", but **OpenTofu shipped them in 1.7.0** ([opentofu#1439](https://github.com/opentofu/opentofu/pull/1439)); and the `winrm` connection type §10.3.1 documents without qualification is **deprecated as of OpenTofu 1.12**, expected to error in 1.13. Three are behavioural: **`self` is a postcondition keyword only** (§10.6.1 presents it as belonging to both condition types), an omitted `query` sends an empty JSON **object**, not an array (§10.4.1), and `content_base64sha256` is the base64 of the *checksum*, not a checksum of the base64 (§10.5.2). **The network module in §10.2 does not work as printed** — three independent defects, each measured rather than inferred: its topology toggles are **inverted**, so it errors on one branch and silently returns empty outputs on the other; its `count` is `subnet_count` rather than `availability_zones`, so **asking for three zones builds four** and reports the fourth's CIDR as spare; and **no `aws_internet_gateway` exists anywhere in the chapter**, so the "public" subnet has no route out and the NAT gateway behind it is inert. Listing 10.40 is miswired too, feeding gzipped Cloud-Init output to `user_data` rather than `user_data_base64` (§10.8.3). Each is flagged where it occurs; version state in [[version-facts]].
 
 > 🔗 **See also:** owns learning-path **A1** (provisioners, `terraform_data` and escape hatches) and **A2**'s condition half (`precondition`/`postcondition`/`check`), feeds **E3** (OpenTofu divergence, via `.tofu` files), **I3**/**I4** (the network module is a `for`-expression, `count`-toggle and splat exercise), **B7** (network functions, provider-defined functions) and **A6** (never commit the private key a `connection` block reads). Builds on [Ch4](04-expressions-iterations.md) (`for`, splat, `count` as a binary toggle), [Ch6](06-state-management.md) §6.8.4 (`terraform_data`) and [Ch9](09-testing-refactoring.md) (randomised names, and why `aws_secretsmanager_secret` needs one). Topic backlog: `opentofu-divergence` gains §10.7.
 
@@ -77,7 +77,7 @@ resource "aws_ecs_cluster" "main" {
 The rule for the primary resource: a module with one obvious main resource (a `db` module's database instance) may use `var.name` unchanged; everything else takes `var.name` as a prefix plus a descriptor.
 
 !!! tip "`random_string` beats `random_id` and `random_password` for name suffixes"
-    Some resources need randomness baked into the name. `aws_secretsmanager_secret` cannot be destroyed and re-created cheaply (Ch9's week-long deletion window), and `aws_s3_bucket` needs it to avoid **S3 namespace squatting**, where an attacker pre-registers your predictable bucket name in their own account.
+    Some resources need randomness baked into the name. `aws_secretsmanager_secret` cannot be destroyed and re-created cheaply, because a deleted secret holds its name through a recovery window — **7 to 30 days, defaulting to 30**, or `0` to force immediate deletion. (The book says "a full week" in Ch9 and points back to it here; a week is the floor, not the default — [Ch9](09-testing-refactoring.md) records the same defect.) And `aws_s3_bucket` needs randomness to avoid **S3 namespace squatting**, since bucket names are globally unique — a predictable name can be registered first in someone else's account.
 
     The provider's own steer, on the `random_string` page, is *"for unique ids please use `random_id`, for sensitive random values please use `random_password`"* — but for names the book's exception holds. `random_password` marks the result **sensitive**, which then poisons every name derived from it. And `random_id` is denser only in its `b64_url` form (6 bits per character), whose `-` and `_` many name fields reject; the `hex` form everyone actually interpolates carries **4 bits per character**, against roughly 5.2 for a lowercase-alphanumeric `random_string`.
 
@@ -188,7 +188,14 @@ locals {
 }
 ```
 
-The public subnet sets `map_public_ip_on_launch = true` (this is the *only* thing making it public) and carries an EIP plus `aws_nat_gateway`. The private subnet leaves that flag off and gets a route table with a catch-all `0.0.0.0/0` route pointing at the NAT gateway — outbound yes, inbound no. Both subnets are tagged `Network = "Public"` / `"Private"` so tools outside Terraform can find them.
+The public subnet sets `map_public_ip_on_launch = true` and carries an EIP plus `aws_nat_gateway`. The private subnet leaves that flag off and gets a route table with a catch-all `0.0.0.0/0` route pointing at the NAT gateway — outbound yes, inbound no. Both subnets are tagged `Network = "Public"` / `"Private"` so tools outside Terraform can find them.
+
+!!! danger "⚠️ `map_public_ip_on_launch` is not what makes a subnet public — and the chapter never builds the thing that does"
+    The chapter's annotation on that line reads "This is the field that makes this a public subnet". AWS says otherwise, in the VPC user guide's own words: *"The subnet type is determined by how you configure routing for your subnets"*, and a **public subnet** is one with *"a direct route to an internet gateway"*. Auto-assigning a public IPv4 address is a separate subnet setting. A subnet with public IPs and no internet-gateway route is not public; it is a subnet full of instances holding addresses that route nowhere.
+
+    That would be a wording quibble if the internet gateway showed up later. It does not. **`aws_internet_gateway` appears nowhere in Chapter 10** — the submodules build only a private route table, the parent module (Listing 10.8) creates `aws_vpc`, the AZ data source, the two module calls and outputs, and nothing associates a route table with the public subnet at all. So the public subnet inherits the VPC's main route table, which is local-only; the NAT gateway sitting in it has no path out; and the private subnets routing through that NAT gateway have no internet access either.
+
+    The §10.2.3 NOTE says the internet gateway "is the responsibility of the high-level module that we'll be creating in the next section" — the next section does not create it. Treat this module as a subnetting exercise, not a working network: to run it you need an `aws_internet_gateway`, a public route table with `0.0.0.0/0` pointing at it, and an association per public subnet.
 
 **`az_3` — plus isolated.** Thirds are not a thing you can subnet into, since every split is a power of two. The trick avoids wasting a quarter of the block:
 
@@ -234,7 +241,7 @@ locals {
 Three techniques worth naming:
 
 - **Borrowed bits are computed, not asked for.** The user says "three zones"; the module works out that three zones need two bits and therefore four networks.
-- **Leftovers are returned, not hidden.** Ask for 3 and you get 4 networks; the unused one comes back as `spare_subnet_cidr_blocks` via a `for` over `range()`, so the caller can decide what to do with it. Swallowing spare address space silently is how estates run out of room.
+- **Leftovers are returned, not hidden.** Ask for 3 and you get 4 networks; the unused one comes back as `spare_subnet_cidr_blocks` via a `for` over `range()`, so the caller can decide what to do with it. Swallowing spare address space silently is how estates run out of room. (That is the intent. See the defect below for what the printed code does instead.)
 - **`count` as a binary toggle** picks the topology — the Ch4 technique, used here on modules:
 
 ```hcl
@@ -248,6 +255,22 @@ module "two_tier_subnets" {
 ```
 
 The `aws_availability_zones` data source with `state = "available"` supplies the zone names, so an unavailable zone is never selected.
+
+!!! danger "⚠️ The count is `subnet_count`, so asking for three zones builds four"
+    Both module blocks take `count = … ? local.subnet_count : 0`, and `subnet_count` is `pow(2, subnet_bits)` — the number of networks the CIDR was **divided into**, not the number of zones the user asked for. The two only agree at 1, 2 and 4.
+
+    Evaluated on Terraform 1.15.8 with the chapter's own expressions:
+
+    | `availability_zones` | `subnet_bits` | Modules created | Reported spare | Overlap |
+    | --- | --- | --- | --- | --- |
+    | 1 | 0 | 1 | — | — |
+    | 2 | 1 | 2 | — | — |
+    | **3** | 2 | **4** | `192.168.192.0/18` | **`192.168.192.0/18`** |
+    | 4 | 2 | 4 | — | — |
+
+    At three zones the module builds a **fourth** location — an extra set of subnets, a fourth NAT gateway, a fourth bill — and then reports the CIDR that fourth location is using as *spare*, so the same range is simultaneously allocated and advertised as free. The fix is `count = var.availability_zones`; `subnet_count` should only ever feed `cidrsubnet`'s `newbits` and the spare-block range.
+
+    Worth noting where it bites: three is the value the chapter itself calls the standard for high availability, and it is the only value in the module's own validated 1–4 range that is wrong.
 
 !!! danger "⚠️ Listing 10.8's two toggles are inverted, and the module returns nothing"
     As printed, `two_tier_subnets` takes `count = var.enable_isolated_subnet ? local.subnet_count : 0` and `three_tier_subnets` takes `count = var.enable_isolated_subnet ? 0 : local.subnet_count`. So **asking for an isolated subnet builds the two-tier module**, which has no isolated subnet — while the `local` a page later selects `module.three_tier_subnets` when the same variable is true. The code contradicts itself; no annotation is needed to see it, since only `az_3` has an isolated subnet.
@@ -422,6 +445,9 @@ provisioner "remote-exec" {
 ```
 
 Directories can be uploaded too, but **the destination directory must already exist**. Since provisioners run in written order, a `remote-exec` before the `file` block creates it, and one after sets permissions.
+
+!!! tip "The trailing slash on `source` changes what gets uploaded"
+    The rule the chapter leaves out, read from `internal/communicator/ssh/communicator.go` (`UploadDir`): with **no** trailing slash the source directory name is created inside the destination, and **with** one the directory's *contents* are copied into the destination. So `source = "conf/"` → `destination = "/etc/nginx/"` gives `/etc/nginx/<files>`, while `source = "conf"` gives `/etc/nginx/conf/<files>`. The chapter's example uses the trailing-slash form and is therefore correct, but silently — get it wrong and you nest a directory you did not mean to.
 
 ### 10.3.4 Provisioner control
 
@@ -928,6 +954,7 @@ The generalisation: anything you can push to a registry — containers, machine 
 - **Resource-specific naming constraints belong inside the module.** A `random_string` suffix for `aws_secretsmanager_secret` and `aws_s3_bucket` is the module author's problem, not the user's.
 - **A reusable network module is mostly arithmetic.** `cidrsubnet` splits by borrowed bits; splitting a half again is how you get "thirds" without waste; the number of AZs drives the bit count; leftovers get returned as an output rather than swallowed.
 - **Identical interfaces make topologies swappable.** Two submodules with the same inputs and outputs, selected with `count` as a binary toggle and collapsed behind a `local` plus splat, and the caller never sees the switch.
+- **Read §10.2's code as a design sketch, not a module to run.** Three defects, all measured: inverted toggles, a `count` that builds four locations for three zones, and a missing internet gateway. The *techniques* are sound and worth stealing; the listing is not.
 - **Provisioners are a last resort, and the failure mode is the reason.** A failed provisioner taints a healthy resource; the connection block codes network topology into the module; `when = destroy` disappears with the code that declares it. Reach for immutable images and Cloud-Init instead, and treat `terraform output -json` as the handoff to a configuration tool.
 - **The external provider is for data, not for actions** — JSON on stdin, JSON on stdout, exit zero or explain yourself on stderr. Bash for anything redistributable; if you were going to write it in Go, write a provider instead.
 - **The `local` provider is a development tool.** The data sources are worth it for the hashes and for `depends_on`; the resources report drift forever anywhere state outlives the filesystem.
