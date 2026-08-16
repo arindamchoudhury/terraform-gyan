@@ -869,11 +869,11 @@ The checklist is easier to trust once you have walked a real page with it. This 
 | Resources | 7 | **13** |
 | Provider requirement | `hashicorp/aws >= 4.66` | `hashicorp/aws >= 6.37` |
 
-Seven resources became thirteen and the provider floor moved two majors. This is the older page, and every number in the left column above is on it:
+Seven resources became thirteen and the provider floor moved two majors. Here is the same strip on the older page, so the two can be read against each other:
 
-[![The same module's Resources tab at v5.8.0. The breadcrumb reads v5.8.0, the selector reads Version 5.8.0 with no "latest" marker, the tab row reads Inputs 70, Outputs 27, Dependencies 1, Resources 7, and the body lists seven addresses. The Provision Instructions block pins version 5.8.0.](assets/ch13-registry-v580-resources-tab.png)](assets/ch13-registry-v580-resources-tab.png)
+[![The top of the same page at v5.8.0, cropped identically. The breadcrumb ends v5.8.0, the combobox reads Version 5.8.0 with no "latest" marker, Published reads March 30 2025, and the tab row reads Readme, Inputs 70, Outputs 27, Dependencies 1, Resources 7. Provider, Downloads 52.7M, This week 518,859, and Versions 98 are unchanged from the 6.4.0 strip.](assets/ch13-registry-v580-header-strip.png)](assets/ch13-registry-v580-header-strip.png)
 
-Set that beside the 6.4.0 page and you can see which parts of a registry page the selector actually scopes. The tab counts, the resource list, and the pinned snippet all follow it. The header's download figures do not: `Downloads: 52.7M` and `This week: 518,859` are module-wide totals, and they read identically on both pages, so they say nothing about the version in front of you.
+Four lines differ between those two images: the breadcrumb, the selector, the publication date, and the tab counts. The resource list and the pinned snippet further down each page follow the version too. The download figures do not. `Downloads: 52.7M` and `This week: 518,859` are module-wide totals and read identically on both, so they say nothing about the version in front of you. The provider requirement in the table above is the one number not on this strip at all; it lives one tab across, on Dependencies.
 
 So confirm the version in the breadcrumb before reading anything else. Every screenshot from here on is `v6.4.0`.
 
