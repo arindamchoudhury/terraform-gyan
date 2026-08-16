@@ -174,6 +174,15 @@ HCDocs adds one qualifier the book doesn't: **support for each individual rule v
 
     One more side effect: with `create_before_destroy = true`, a **destroy-time provisioner on that resource does not run**.
 
+!!! example "The deadlock TUR Ch2 uses to introduce it"
+    Every reference here describes CBD as an availability choice. [TUR Ch2](../books/tur/chapters/02-getting-started.md) arrives at it from the other direction — as the only exit from a plan that cannot proceed:
+
+    1. `aws_launch_configuration` is **immutable**, so any edit forces a replacement.
+    2. Terraform's default replacement order is destroy-then-create.
+    3. The `aws_autoscaling_group` references the launch configuration, so the destroy is blocked.
+
+    Nothing about high availability is involved; without CBD the configuration is simply stuck. Worth keeping as the second motivation for the rule, because it is the one a learner hits first and the reference pages do not describe it. The AWS specifics have since expired — launch configurations cannot be created in accounts opened on or after 2024-10-01 ([[launch-configurations-eol]]) — but the shape recurs on any immutable resource that something else points at.
+
 ### How the three rules look at the terminal
 
 [[tut-resource-lifecycle]] is the hands-on, and its transcripts supply the artifacts none of the reference pages show.

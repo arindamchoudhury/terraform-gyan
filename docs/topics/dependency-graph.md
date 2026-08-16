@@ -1,6 +1,6 @@
 # The dependency graph: seeing it, and its blind spot
 
-Cross-source topic page. Sources: [[tf-cmd-graph]] (HCDocs `terraform graph`), [[tf-meta-depends-on]] (HCDocs `depends_on`), [[tut-dependencies]] (HCDocs hands-on tutorial), TID Ch2 §2.2.5 + §2.7.3, [TID Ch5 §5.1–5.2 + §5.7](../books/tid/chapters/05-terraform-plan.md) (the DAG chapter — nodes, node types, cycles), [[tf-configure-resource]] (HCDocs), plus experiments run locally against **Terraform v1.15.6**.
+Cross-source topic page. Sources: [[tf-cmd-graph]] (HCDocs `terraform graph`), [[tf-meta-depends-on]] (HCDocs `depends_on`), [[tut-dependencies]] (HCDocs hands-on tutorial), TID Ch2 §2.2.5 + §2.7.3, [TID Ch5 §5.1–5.2 + §5.7](../books/tid/chapters/05-terraform-plan.md) (the DAG chapter — nodes, node types, cycles), [TUR Ch2](../books/tur/chapters/02-getting-started.md) (the implicit-dependency introduction), [[tf-configure-resource]] (HCDocs), plus experiments run locally against **Terraform v1.15.6**.
 
 Feeds learning-path **B3** (plan/apply ordering), **I1** (`depends_on`), and **E5** (`terraform graph`).
 
@@ -82,6 +82,13 @@ On a cycle, Terraform refuses to plan at all: `Error: Cycle: terraform_data.a, t
 
 !!! tip "Use `graph` to confirm, never to discover"
     It faithfully renders every edge Terraform knows about. Bring the suspicion yourself — pick the two resources you think are wrongly parallel and check whether an edge exists between them.
+
+!!! note "The default output changed, and TUR Ch2 accidentally dates it"
+    [TUR Ch2](../books/tur/chapters/02-getting-started.md) prints a `terraform graph` transcript from 2022 that contains `meta.count-boundary (EachMode fixup)`, `provider.aws (close)` and a `root` node — runtime implementation nodes that today's **default** output omits entirely. The book's transcript is now roughly what `-type=plan` produces.
+
+    Useful for two reasons. It explains why older blog posts and courses show a busier graph than the one you get. And it is a reminder that the resources-only default is a *presentation* choice: the provider open/close ordering was always in the real graph, and `-type=plan` is how you get it back.
+
+    What TUR adds conceptually is the clearest one-line statement of why the graph exists at all: a reference from one resource to another **is** an implicit dependency, and "when Terraform walks your dependency tree, it creates as many resources in parallel as it can." Ordering and parallelism are the same mechanism seen from two sides.
 
 ## Route 2 — the state file
 

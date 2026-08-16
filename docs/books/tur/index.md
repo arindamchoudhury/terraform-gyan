@@ -10,7 +10,7 @@ The second book on this site, alongside [Terraform in Depth](../tid/index.md). T
 | Status | Chapter | Topic page(s) |
 | ------ | ------- | ------------- |
 | ✅ done | 1. Why Terraform | [IaC fundamentals](../../topics/iac-fundamentals.md) |
-| ⬜ todo | 2. Getting Started with Terraform | — |
+| ✅ done | 2. Getting Started with Terraform | [Core workflow](../../topics/core-workflow.md) · [Dependency graph](../../topics/dependency-graph.md) · [Meta-arguments](../../topics/meta-arguments-lifecycle.md) |
 | ⬜ todo | 3. How to Manage Terraform State | — |
 | ✅ done | 4. How to Create Reusable Infrastructure with Terraform Modules | [Modules](../../topics/modules.md) |
 | ⬜ todo | 5. Terraform Tips and Tricks: Loops, If-Statements, Deployment, and Gotchas | — |
