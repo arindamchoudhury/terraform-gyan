@@ -1,6 +1,6 @@
 # Modules
 
-> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch2 §2.8 (the block) + Ch3 (full treatment) · Brikman, *Terraform: Up & Running* 3rd ed. Ch4 (the narrative refactor) · AWS Get Started "Manage infrastructure" (hands-on)
+> **Sources:** HCDocs "What is Terraform?" · Hafner, *Terraform in Depth* Ch2 §2.8 (the block) + Ch3 (full treatment) · Brikman, *Terraform: Up & Running* 3rd ed. Ch4 (the narrative refactor) + Ch8 (module design for production) · AWS Get Started "Manage infrastructure" (hands-on)
 
 ## In one paragraph
 
@@ -55,9 +55,24 @@ Three ideas TUR Ch4 states better than anywhere else in these notes:
 !!! warning "TUR's Git-tag advice needs one correction"
     TUR recommends Git tags over branches and SHAs, arguing *"Git tags are as stable as a commit."* Against accidental drift that is right, and the branch warning is right. But a tag is a movable pointer — whoever controls the source repo can force-move it. Against an adversary, only a SHA pins. See the supply-chain callout in learning-path **I4** and the note in [TUR Ch4](../books/tur/chapters/04-reusable-modules.md).
 
+## What TUR Ch8 adds: design rules rather than mechanics
+
+[TUR Ch8](../books/tur/chapters/08-production-grade.md) is the only source here that treats module *design* as a subject in itself, and it splits into four rules plus a practice.
+
+- **Small.** "Large modules … should be considered harmful", with six named costs. The one worth repeating is about review rather than architecture: a several-thousand-line plan does not get read, so *"no one will notice that one little red line that means your database is being deleted."*
+- **Composable.** McIlroy's Unix philosophy, applied by minimizing side effects — everything in through variables, everything out through outputs, complex modules assembled from simple ones. The chapter's worked split of `webserver-cluster` into `asg-rolling-deploy` + `alb` + `hello-world-app` is the demonstration, and each new input variable maps to one coupling removed.
+- **Testable.** The `modules/` + `examples/` + `test/` triple, stated as a rule: every module gets an example, every example gets a test. The practice to steal is **write the example first**, before any module code, so you design the API rather than surfacing from the implementation with one nobody wants.
+- **Versioned.** Three dependency types to pin separately — Terraform core (`required_version`), providers (`required_providers` plus the committed lock file), and modules (`?ref=` on a Git tag) — against the standard that "if the code didn't change, then running `apply` should always produce the same result."
+
+!!! danger "Ch8's self-validation section is the one part that has gone stale"
+    It argues that `validation` blocks can only reference their own variable, and that anything cross-variable or dynamic therefore needs `precondition`. **Terraform 1.9.0 and OpenTofu 1.9.0 both made validation conditions general expressions** that can reference other variables, data sources and resources. The chapter's own free-tier example — a hardcoded instance-type list versus an `aws_ec2_instance_type` data source — now belongs in a `validation` block by its own preference ordering.
+
+    Still true: preconditions and postconditions are the only option for assertions about resources and data sources, and `self` works only in a postcondition. And there is now a fourth mechanism the chapter predates, `check` blocks (Terraform 1.5), which report as warnings rather than errors. See the `checks-and-conditions` backlog entry.
+
 ## When to read which
 
 - The consumer's side end to end, with measurements? → [Book Ch 13 — Using modules](../book/ch13-using-modules.md).
+- How to *design* a module you intend other teams to use, and how to size it? → [TUR Ch8](../books/tur/chapters/08-production-grade.md).
 - Quick "what is a module and why"? → [[terraform-intro]].
 - The `module` block mechanics in context? → TID Ch2 §2.8.
 - Full treatment (flavors, the variable trio, types, validation, publishing)? → [TID Ch3](../books/tid/chapters/03-variables-modules.md).
@@ -73,6 +88,7 @@ Three ideas TUR Ch4 states better than anywhere else in these notes:
 - [TID Ch 3 — Terraform variables and modules](../books/tid/chapters/03-variables-modules.md) — full treatment
 - [TID Ch 10 — Advanced Terraform topics](../books/tid/chapters/10-advanced-topics.md#102-network-management) §10.2 — a worked reusable module: identical interfaces, computed subnetting, `count` as a topology switch
 - [TUR Ch 4 — How to Create Reusable Infrastructure with Terraform Modules](../books/tur/chapters/04-reusable-modules.md) — the narrative refactor, module versioning by Git tag, the staging→production promotion workflow
+- [TUR Ch 8 — Production-Grade Terraform Code](../books/tur/chapters/08-production-grade.md) — small/composable/testable/versioned as design rules, examples-first as a practice, and the three dependency types to pin
 - [Manage infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-manage.md) — consuming the registry VPC module
 - [Style Guide](../sources/terraform-docs/tf-style-guide.md) — module repo naming + structure
 

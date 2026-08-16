@@ -16,7 +16,7 @@ The second book on this site, alongside [Terraform in Depth](../tid/index.md). T
 | ⬜ todo | 5. Terraform Tips and Tricks: Loops, If-Statements, Deployment, and Gotchas | — |
 | ⬜ todo | 6. Managing Secrets with Terraform | — |
 | ⬜ todo | 7. Working with Multiple Providers | — |
-| ⬜ todo | 8. Production-Grade Terraform Code | — |
+| ✅ done | 8. Production-Grade Terraform Code | [Modules](../../topics/modules.md) — (backlog: checks-and-conditions, provisioners-and-escape-hatches, module-versioning-and-registries) |
 | ⬜ todo | 9. How to Test Terraform Code | — |
 | ⬜ todo | 10. How to Use Terraform as a Team | — |
 
