@@ -6,6 +6,8 @@
 >
 > 📌 **Its third section is about a dead project.** CDKTF was **sunset and archived on 10 December 2025** — HashiCorp's own docs say it "is deprecated" and "no longer supports or maintains" it, and the repository README says no further updates, fixes or compatibility work will be made. §11.3 is now history rather than a recommendation, which is a strange kind of vindication for §11.3.1, where the author argues against using it.
 >
+> ⚠️ **Its opening premise has also expired.** §11.1 begins "there is no Terraform SDK … teams need to wrap the CLI to do so". HashiCorp maintains **`terraform-exec`**, an official Go module for exactly this, and since **1.13** Terraform ships **`terraform rpcapi`**, whose stated purpose in the source is to let wrapping automation *bypass* the CLI layer. Both are flagged in §11.1; OpenTofu has neither.
+>
 > ⚠️ **And the chapter does not contain two of the things its introduction promises.** The opening paragraph says it covers "the CDKTF and Pulumi projects" and that "we end the chapter with Terragrunt". **Neither Pulumi nor Terragrunt appears anywhere in it** — it ends at CDKTF and goes straight to the summary. Terragrunt is covered nowhere else in the book either; for that, the path's own material is the substitute.
 
 > 🔗 **See also:** feeds **A3** (the machine-readable UI is what a CI pipeline actually parses), **B4** (`*.tf.json` as a first-class syntax), **E5** (integrating Terraform into your own tooling) and **E1** (§11.3's "write a provider instead" is [Ch12](12-terraform-providers.md)). Builds on [Ch6](06-state-management.md) (`terraform state pull`, and the state JSON this chapter parses) and [Ch5](05-terraform-plan.md) (the plan structure it maps into classes). Every measurement below is on **Terraform 1.15.8** and **OpenTofu 1.12.5**, 2026-08-16.
@@ -14,7 +16,21 @@
 
 ## 11.1 Wrapping Terraform
 
-**There is no Terraform SDK.** No library exposes the engine; the only supported integration point is the CLI. So every tool you have met that "integrates with Terraform" — Terragrunt, Checkov, Trivy, HCP Terraform, Spacelift, Env0, Atlantis — wraps the binary and parses its output. Wrapping means calling the CLI, parsing what comes back, and presenting it as native objects in your language.
+The chapter opens on a flat claim: **there is no Terraform SDK**, no library controls the engine, so teams that want to drive Terraform from a program must wrap the CLI themselves. Every tool you have met — Terragrunt, Checkov, Trivy, HCP Terraform, Spacelift, Env0, Atlantis — does exactly that: call the binary, parse the output, present native objects.
+
+The *practice* is right, and everything the section teaches follows from it. The premise is out of date in two specific ways.
+
+!!! danger "⚠️ HashiCorp publishes the wrapper the chapter tells you to write — and Terraform ships a non-CLI interface"
+    **`hashicorp/terraform-exec`** is an official Go module *"for constructing and running Terraform CLI commands"*, returning structured values typed by its sibling `hashicorp/terraform-json`. Its README states the position directly: importing it *"is preferable to importing `github.com/hashicorp/terraform/command`, because the latter is not intended for use outside Terraform Core"*. That is a maintained, first-party version of this entire section — for Go. It is still a CLI wrapper, so the chapter's underlying architectural point survives; what does not survive is "you have to build this yourself", which for a Go team is simply false. (It is pre-1.0, so minor releases may break.)
+
+    **`terraform rpcapi` is a genuine non-CLI surface.** Terraform registers it in `commands.go` above this comment, which is worth reading in full because it answers the chapter's premise directly:
+
+    > *"'rpcapi' is handled a bit differently because the whole point of this interface is to bypass the CLI layer so wrapping automation can get as-direct-as-possible access to Terraform Core functionality, without interference from behaviors that are intended for CLI end-user convenience. We bypass the 'command' package entirely for this command in particular."*
+
+    Version-gated: the commit that moved it out of experimental is contained in **v1.13.0** and later, so it is real in the releases this book targets. Two honest caveats — it is in `HiddenCommands`, i.e. a plumbing command rather than an advertised one, and it grew out of the Stacks work rather than as a general-purpose API, so treat it as an integrator's channel and not a stability promise.
+
+!!! info "OpenTofu — no `rpcapi` at all"
+    Checked across the whole OpenTofu checkout (`v1.12.5`): **zero occurrences of `rpcapi`**, no `internal/rpcapi` package, no command registration. So the chapter's "wrap the CLI" is still the *only* option on OpenTofu, while Terraform has had a second door since 1.13. If you are writing an integration meant to work on both engines, the CLI wrapper is the portable choice — which is the right conclusion, reached for a reason the chapter does not give.
 
 !!! warning "Read the licence before you build a product on it"
     The chapter's TIP, and it is the commercially important sentence in the chapter: from **Terraform 1.6** the HashiCorp binary is **BSL 1.1**, not open source, and the licence restricts what you may build around the engine. If you are shipping a product, **OpenTofu's MPL 2.0** is the permissive option. See [[version-facts]] for the licensing timeline.
@@ -131,7 +147,7 @@ Measured on the same workspace, top-level keys:
 So `show -json` loses `serial` and `lineage` exactly as the chapter says. The wrapper's answer is to run both: pull the state, write it to a temporary file, `show -json` that file, then hand the parsed result plus the two missing fields to the `State` model.
 
 !!! note "📌 Two corrections to the section's framing"
-    **The `.tfstate` extension is not required.** The chapter says `show` "expects the state file to exist as an actual file (including with the appropriate file extension, tfstate)". The file part is true — `show` cannot read stdin. The extension part is not: copying a state file to a name with **no extension at all** and running `terraform show -json <file>` works on 1.15.8, and `tofu show -json` accepts it too. The `suffix=".tfstate"` in the listing is harmless, not load-bearing.
+    **The `.tfstate` extension is not required.** The chapter says `show` "expects the state file to exist as an actual file (including with the appropriate file extension, tfstate)". The file part is true — piping `state pull` into `show -json -` fails with *"Failed to read the given file as a state or plan file"*, so the temporary file really is unavoidable. The extension part is not: copying a state file to a name with **no extension at all** and running `terraform show -json <file>` works on 1.15.8, and `tofu show -json` accepts it too. The `suffix=".tfstate"` in the listing is harmless, not load-bearing.
 
     **`serial` and `lineage` are not the only losses.** `state pull` also carries **`check_results`** — the recorded outcomes of `check` blocks and conditions — which `show -json` omits here. That matters for this very chapter, whose test module includes a `check` block specifically so there is one in state to test against, and whose `State` model then cannot see it.
 
@@ -154,7 +170,7 @@ The `State` → `Module` → `Resource` / `Output` models are a plain recursive 
 | `@timestamp` | When it happened |
 | `type` | **The discriminator.** Determines which extra fields exist |
 
-Confirmed on a real apply: `@level`, `@message`, `@module`, `@timestamp` are the only `@`-prefixed fields, and one replace-in-place run produced this type sequence:
+Confirmed on a real apply: `@level`, `@message`, `@module`, `@timestamp` are the only `@`-prefixed fields, `@module` is `terraform.ui` as described, and the opening `version` event carries both the engine version and a **UI version** of its own (`"ui": "1.3"` on 1.15.8, where the book's sample shows `1.2` — that field is the one to check if a parser ever has to cope with a format change). One replace-in-place run produced this type sequence:
 
 ```text
 version → refresh_start → refresh_complete → planned_change → change_summary →
@@ -244,6 +260,26 @@ Why generate configuration at all? The chapter's three cases: a diagram-to-infra
 !!! note "📌 That `resource.` prefix is valid, and I did not expect it to be"
     `"${resource.terraform_data.main.output}"` looks like a mistake — nobody writes `resource.` in HCL. It is legal: applied on 1.15.8, the output resolved to the resource's real value. It is the explicit form of a managed-resource reference, the counterpart to `data.`, and it exists so a resource type can never be shadowed by something else in scope. Harmless in a generator, and unnecessary.
 
+!!! note "📌 The listing drops the `check` block its own prose promises — and `check` does work in JSON"
+    The text introducing Listing 11.33 says it converts "our variable, data source, resource, **checks**, and outputs". The listing has no `check` block, and the chapter's list of supported top-level keys (resource, data, variable, output, locals, module, provider, terraform) leaves it out too.
+
+    It works. Applied on 1.15.8 — note that `assert`, repeatable within one `check`, takes the **list** form, and the condition is a string template like every other expression:
+
+    ```json
+    {
+      "resource": { "terraform_data": { "main": { "input": "hello" } } },
+      "check": {
+        "example": {
+          "assert": [
+            { "condition": "${length(terraform_data.main.output) > 0}", "error_message": "empty output" }
+          ]
+        }
+      }
+    }
+    ```
+
+    The same shape covers the other blocks the chapter's list omits — `moved`, `import`, `removed`, `check`. Nothing about JSON restricts which blocks exist; the list is just incomplete.
+
 **Blocks that may repeat with the same name become a list.** `provider` is the case that bites, since aliases mean two `aws` blocks:
 
 ```json
@@ -321,7 +357,7 @@ Two things from this section stay useful after the deprecation:
 
 ## Summary
 
-- **There is no Terraform SDK.** Every integration wraps the CLI — that is the supported path, not a hack, and the engines are built for it.
+- **Wrapping the CLI is the portable integration path** — that is not a hack, and both engines are built for it. But the chapter's "no library exists" is wrong for Go, where HashiCorp maintains **`terraform-exec`**, and Terraform has shipped **`terraform rpcapi`** since 1.13 explicitly to let automation bypass the CLI. OpenTofu has neither, which is the real reason to wrap.
 - **Two machine contracts, not one.** Single-answer commands (`show`, `validate`, `output`) return one JSON object; long-running ones (`plan`, `apply`) stream JSONL where the `type` field decides what else the line contains.
 - **`show -json` is the documented view of state, and it is lossy** — no `serial`, no `lineage`, no `check_results`. Combine it with `state pull`, which is complete but undocumented as a contract.
 - **Wrap with an escape hatch.** Name the common flags, then pass `extra_args` through, or your library expires at the next engine release.
@@ -334,7 +370,9 @@ Two things from this section stay useful after the deprecation:
 
 ## References
 
-- `tofupy` — <https://github.com/TerraformInDepth/tofupy> (the chapter's library, on PyPI as `tofupy`)
+- `tofupy` — <https://github.com/TerraformInDepth/tofupy> (the chapter's library; on PyPI as `tofupy`, **1.1.2**, 5 Dec 2025)
+- `hashicorp/terraform-exec` — <https://github.com/hashicorp/terraform-exec> (official Go wrapper; the thing §11.1 says does not exist)
+- `hashicorp/terraform-json` — <https://github.com/hashicorp/terraform-json> (the Go types for the JSON output format, used by `terraform-exec`)
 - Terraform JSON output format — <https://developer.hashicorp.com/terraform/internals/json-format>
 - Machine-readable UI — <https://developer.hashicorp.com/terraform/internals/machine-readable-ui>
 - JSON configuration syntax — <https://developer.hashicorp.com/terraform/language/syntax/json>
