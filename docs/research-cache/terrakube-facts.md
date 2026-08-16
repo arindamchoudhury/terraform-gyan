@@ -184,6 +184,31 @@ Compare with the finding recorded in **A9** for the pure-git route: with git mod
 visibility *is* repository visibility. Terrakube instead gives a real registry whose write side is
 admin-gated, and whose read side follows the organization.
 
+### How a module is published (read from the source, 2026-08-16)
+
+Verified in `repos/terrakube` at `de53c946`. **A module is a registration record pointing at a VCS
+repository, not an upload.** `api/src/main/java/io/terrakube/api/rs/module/Module.java` carries
+`name`, `description`, `provider`, `source`, `tagPrefix`, `folder`, `downloadQuantity`, an
+`Organization`, and either a `Vcs` connection or an `Ssh` credential. Create, update and delete are
+each annotated `team manage module`.
+
+Versions are **Git tags**, discovered rather than declared: `ModuleVersionRepository` holds them and
+`api/.../plugin/scheduler/module/ModuleRefreshJob.java` + `ModuleRefreshService.java` re-scan the
+repository on a schedule. So the publish loop is *register once, then push a semver tag*, which is
+the same contract the public registry enforces.
+
+**Two fields the public registry has no equivalent for**, and they are the reason this is worth
+teaching next to it:
+
+- **`folder`** — the module lives in a subdirectory, so one repository can hold many modules. The
+  public registry requires one module per repository, with the code at the repository root.
+- **`tagPrefix`** — per-module tag namespacing, which is what makes the monorepo layout above
+  workable when several modules in one repository version independently.
+
+Consequence for the learning path: the `terraform-<PROVIDER>-<NAME>` repository-naming rule and the
+one-module-per-repo constraint are **public-registry rules, not Terraform rules**. A private registry
+can and does relax them.
+
 ## Other surfaces worth knowing
 
 - **Custom workflows / extensions.** Templates are first-class entities (`manageTemplate`), and the
