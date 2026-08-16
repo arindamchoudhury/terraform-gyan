@@ -867,11 +867,13 @@ The checklist is easier to trust once you have walked a real page with it. This 
 | Resources | 7 | **13** |
 | Provider requirement | `hashicorp/aws >= 4.66` | `hashicorp/aws >= 6.37` |
 
-Seven resources became thirteen and the provider floor moved two majors. Confirm the version in the breadcrumb (`v6.4.0`) before reading anything else on the page.
+Seven resources became thirteen and the provider floor moved two majors. This is the older page, and every number in the left column above is on it:
 
 [![The same module's Resources tab at v5.8.0. The breadcrumb reads v5.8.0, the selector reads Version 5.8.0 with no "latest" marker, the tab row reads Inputs 70, Outputs 27, Dependencies 1, Resources 7, and the body lists seven addresses. The Provision Instructions block pins version 5.8.0.](assets/ch13-registry-v580-resources-tab.png)](assets/ch13-registry-v580-resources-tab.png)
 
-Two things travel with the version and one does not. The tab counts, the resource list, and the pinned snippet all change. The header's download figures do not: `Downloads: 52.7M` and `This week: 518,859` are module-wide totals and read identically on the 5.8.0 page, so they say nothing about the version you are looking at.
+Set that beside the 6.4.0 page and you can see which parts of a registry page the selector actually scopes. The tab counts, the resource list, and the pinned snippet all follow it. The header's download figures do not: `Downloads: 52.7M` and `This week: 518,859` are module-wide totals, and they read identically on both pages, so they say nothing about the version in front of you.
+
+So confirm the version in the breadcrumb before reading anything else. Every screenshot from here on is `v6.4.0`.
 
 **The rest of the header strip is the provenance check.** `Provider: aws`. `Downloads: 52.7M`, `This week: 518,859`. `Versions: 98`. `Published: March 26, 2026`. `Published by: antonbabenko`, `Managed by: antonbabenko`. A `Source code:` link to `github.com/terraform-aws-modules/terraform-aws-ec2-instance`, and a `View Source` button beside the selector. A release five months ago at 98 releases total is a maintained module, and half a million downloads a week means a breakage would be noticed by somebody other than you.
 
