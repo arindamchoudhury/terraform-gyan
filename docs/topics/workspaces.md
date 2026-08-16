@@ -1,6 +1,6 @@
 # Workspaces
 
-> **Sources:** Hafner, *Terraform in Depth* Ch6 §6.4.5 (`cloud` block) + §6.4.7 (CLI workspaces) · HCDocs ["Workspaces"](https://developer.hashicorp.com/terraform/language/state/workspaces) · HCDocs ["Managing Workspaces"](https://developer.hashicorp.com/terraform/cli/workspaces) · HCDocs ["HCP Terraform workspaces"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) · Terraform 1.15.8 source · [Terragrunt docs](https://docs.terragrunt.com/features/units) ("Units", "AWS authentication") · [Atlantis](https://www.runatlantis.io/)
+> **Sources:** Hafner, *Terraform in Depth* Ch6 §6.4.5 (`cloud` block) + §6.4.7 (CLI workspaces) · Brikman, *Terraform: Up & Running* Ch3 ("Isolation via workspaces") · HCDocs ["Workspaces"](https://developer.hashicorp.com/terraform/language/state/workspaces) · HCDocs ["Managing Workspaces"](https://developer.hashicorp.com/terraform/cli/workspaces) · HCDocs ["HCP Terraform workspaces"](https://developer.hashicorp.com/terraform/cloud-docs/workspaces) · Terraform 1.15.8 source · [Terragrunt docs](https://docs.terragrunt.com/features/units) ("Units", "AWS authentication") · [Atlantis](https://www.runatlantis.io/)
 
 ## In one paragraph
 
@@ -72,6 +72,13 @@ Using `terraform.workspace` in a lookup map does not fix this. It is a runtime b
     HCDocs states it directly: **"Workspaces are not appropriate for system decomposition or deployments requiring separate credentials and access controls."** Note that this is about *credentials and access controls*, not about state layout. Separate state was never the hard part.
 
 Which leaves the boundary from the section above: several short-lived copies of the same thing, at the same risk level, under the same credentials. The moment the copies need different permissions, they have outgrown the mechanism.
+
+!!! note "TUR Ch3 reached the same conclusion in 2022, and explains why the misuse survives"
+    [TUR Ch3](../books/tur/chapters/03-manage-state.md) demonstrates the mechanism before judging it: create `example1`, run `plan`, and Terraform proposes building the instance from scratch, because the workspace's state is empty. Then the one-line model — *"switching to a different workspace is equivalent to changing the path where your state file is stored"* — and the `env:` folder in S3 that proves it.
+
+    Its three drawbacks map onto the table above: shared backend and credentials, invisibility in code and terminal, and error-proneness as the product of the two. Its verdict is flat: *"workspaces are not a suitable mechanism for isolating one environment from another."*
+
+    The footnote is the part worth keeping, because it explains the persistence of the anti-pattern. HashiCorp's docs make the same point, but it is *"buried among several paragraphs of text"*, and **workspaces used to be called “environments”** — so the feature's own former name taught the misuse. That is the answer to "why does every course still show a `terraform.workspace` lookup map", and it is why **A7** carries a warning naming two current sources that still do.
 
 ## CLI workspaces
 
