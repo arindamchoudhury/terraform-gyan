@@ -929,7 +929,11 @@ One thing the tab leaves out. The module also reads four data sources, and they 
 
 Seventeen rows against the tab's thirteen, and a `Type` column the tab does not have. The tab counts what the module *manages*; the readme table counts everything it *touches*, which is where `aws_ssm_parameter.this` shows up — the data source that turns an unset `ami` into whatever AWS published last. Read both.
 
-**The Inputs tab answers "what must I set" directly, and here the answer is a trap.** The tab splits into *Required Inputs* and *Optional Inputs*, and for this module there is no required section at all, only the sentence *"This module has no required variables."* Eighty-three inputs, zero of them required, confirmed against the registry API at both 5.8.0 and 6.4.0.
+**The Inputs tab answers "what must I set" directly, and here the answer is a trap.** The tab splits into *Required Inputs* and *Optional Inputs*. On a module that has required variables, the first heading is the shortlist you were looking for, as on `aws-ia/vpc/aws`:
+
+[![The Inputs tab on aws-ia/vpc/aws at v4.8.0. A "Required Inputs" heading, the sentence "These variables must be set in the module block when using this module.", then name of type string with its description, and subnets of type any.](assets/ch13-registry-vpc-required-inputs.png)](assets/ch13-registry-vpc-required-inputs.png)
+
+Two names, and you know what your `module` block must contain before reading anything else. On `ec2-instance` that heading does not exist at all, only *Optional Inputs* and the sentence *"This module has no required variables."* Eighty-three inputs, zero of them required, confirmed against the registry API at both 5.8.0 and 6.4.0.
 
 [![The Inputs tab at v6.4.0. The only heading is Optional Inputs, and the paragraph under it ends "This module has no required variables." The first entries are ami with default null and ami_ssm_parameter defaulting to the al2023 latest SSM path.](assets/ch13-registry-inputs-tab.png)](assets/ch13-registry-inputs-tab.png)
 
