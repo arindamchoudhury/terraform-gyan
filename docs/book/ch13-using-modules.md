@@ -613,7 +613,19 @@ That reference is also the dependency. Because `aws_subnet.main` reads `module.v
 
 Then there is the constraint that surprises everyone once: **module outputs are not inherited**. The tutorial states it flatly: *"Terraform will not display module outputs by default. You must create a corresponding output in your root module and set it to the module's output."*
 
-Measured on 1.15.8, with a child module exporting `bucket_arn` and the root module deliberately re-exporting only one of its two calls:
+Measured on 1.15.8, on this chapter's lab 1. It calls one local module twice, as `raw` and as `curated`, the module exports `bucket_arn`, and the root module deliberately re-exports only the curated one. After `apply`, ask for the whole list:
+
+```shell
+$ terraform output
+```
+
+```
+curated_bucket_arn = "arn:aws:s3:::ch13-lab1-curated"
+```
+
+One line. Nine resources in state, two module calls, and each of them exporting a `bucket_arn` that Terraform computed and used during the apply. What the CLI lists is the single value a root `output` block names.
+
+`module.raw.bucket_arn` is not on that list, and asking for it by name does not help, because it is the module's name for the value and never a root output name:
 
 ```shell
 $ terraform output raw_bucket_arn
@@ -623,6 +635,8 @@ $ terraform output raw_bucket_arn
 │ The output variable requested could not be found in the state file.
 ╵
 ```
+
+The value itself is fine. `terraform console` prints it:
 
 ```shell
 $ echo 'module.raw.bucket_arn' | terraform console
@@ -642,7 +656,12 @@ output "raw_bucket_arn" {
 }
 ```
 
+Adding that block is not enough on its own. The output map in state is rewritten by `apply`, so `terraform output` keeps listing one value until you apply again, which is what the error's own hint is telling you.
+
 That pass-through is not boilerplate. Anything another system consumes, whether that is a CI job reading `terraform output -raw`, or another configuration reading this one's state (Chapter 15), has to be re-exported deliberately. The root module's outputs are the configuration's public surface, and they should be a chosen subset rather than everything a child happened to expose.
+
+!!! note "The listing form is bare `terraform output`, or `-json`"
+    `-raw` and `-json` are not both list flags. `-raw` requires exactly one name and refuses to run without it, with *"You must give the name of a single output value when using the `-raw` option."* `-json` takes a name or no name, so `terraform output -json` is the machine-readable form of the whole list. The two flags are also mutually exclusive.
 
 ### Meta-arguments on a module call
 
