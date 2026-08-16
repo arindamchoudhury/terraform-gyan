@@ -279,7 +279,7 @@ resp.DataSourceData = c
 resp.ResourceData = c
 ```
 
-Both fields get the same client. **There is no `FunctionData`** — deliberately, because provider functions must be pure logic and never call out to a service.
+Both fields get the same client. **There is no `FunctionData`** — deliberately, because provider functions must be pure logic and never call out to a service. That still holds at v1.19.0, even though `ConfigureResponse` has since grown `EphemeralResourceData`, `ActionData`, `ListResourceData` and `StateStoreData` beside the two the chapter uses: every new component type got a channel for the client, and functions still did not.
 
 ### 12.4.4 Provider testing
 
