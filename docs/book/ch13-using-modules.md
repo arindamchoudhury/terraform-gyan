@@ -883,7 +883,7 @@ module "ec2-instance" {
 }
 ```
 
-That `version` line is generated from the version you are viewing, and it is the only place on the page that produces one. Every usage snippet in the readme body has its own copy button and omits `version` entirely:
+That `version` line is generated from the version you are viewing, and it is the only place on the page that produces one. The panel also counts required inputs for you: on `aws-ia/vpc/aws` the same skeleton carries a `# insert the 2 required variables here` comment inside the block. Here there is no such line, and its absence is the first hint of what the Inputs tab confirms below. Every usage snippet in the readme body has its own copy button and omits `version` entirely:
 
 ```hcl
 module "ec2_instance" {

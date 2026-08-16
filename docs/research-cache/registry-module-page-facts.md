@@ -94,6 +94,20 @@ module "ec2-instance" {
 The pinned version tracks the version being viewed (`5.8.0` on the 5.8.0 page). The Readme's own
 Usage snippets carry **no `version` argument**.
 
+When the module has required inputs, the skeleton carries a comment counting them. `aws-ia/vpc/aws`
+4.8.0 renders:
+
+```hcl
+module "vpc" {
+  source  = "aws-ia/vpc/aws"
+  version = "4.8.0"
+
+  # insert the 2 required variables here
+}
+```
+
+`ec2-instance` has no such line, which is the panel's own statement that nothing is required.
+
 ## Examples
 
 The Examples dropdown links to registry-hosted pages, not to GitHub:
