@@ -383,6 +383,42 @@ A one-line install for the wrapper and its companion CLIs, ready for the next ch
 pip install terraform-local awscli-local   # provides `tflocal` and `awslocal`
 ```
 
+!!! warning "S3 labs crawling, or timing out after 2 minutes? Set `S3_HOSTNAME`"
+    Left alone, `tflocal` points the S3 endpoint at `http://s3.localhost.localstack.cloud:4566` rather than at `localhost`. That hostname starts with `s3.`, and `tflocal` reads that prefix as “this endpoint understands virtual-host addressing”, so it *omits* `s3_use_path_style` from the override file it generates. The AWS provider then addresses every bucket as a subdomain: `my-bucket.s3.localhost.localstack.cloud`.
+
+    Those subdomains are **public DNS names**. LocalStack publishes a wildcard record for them pointing at `127.0.0.1`, so each S3 call now depends on a real DNS round-trip leaving your machine. When a resolver on the path declines to serve the wildcard, the lookup fails or returns `0.0.0.0`, and the AWS SDK treats that as a transient connection error and retries with backoff until the resource's read timeout expires:
+
+    ```text
+    Error: reading S3 Bucket Versioning (ch13-lab1-raw): timeout while waiting for state
+    to become 'Enabled, Suspended, Disabled' (timeout: 2m0s): operation error S3:
+    GetBucketVersioning, request canceled, context deadline exceeded
+    ```
+
+    Home routers, corporate DNS, and ad-blocking resolvers such as Pi-hole all break the wildcard this way, often only for *some* names, which is why the symptom looks intermittent. The emulator is innocent: its own log shows every S3 call finishing in milliseconds.
+
+    Fix by setting `S3_HOSTNAME`. `tflocal` then builds the endpoint as `http://localhost:4566`, which does not start with `s3.`, so it writes `s3_use_path_style = true` into the override. Bucket names move into the URL path, no hostname is ever looked up, and every request goes straight to loopback.
+
+    ```shell
+    # Linux / macOS — current shell
+    export S3_HOSTNAME=localhost
+
+    # persist it (bash)
+    echo 'export S3_HOSTNAME=localhost' >> ~/.bashrc
+
+    # persist it (zsh)
+    echo 'export S3_HOSTNAME=localhost' >> ~/.zshrc
+    ```
+
+    ```powershell
+    # Windows — current session
+    $env:S3_HOSTNAME = "localhost"
+
+    # persist for future sessions (does not affect the shell you run it in)
+    setx S3_HOSTNAME localhost
+    ```
+
+    Confirm it took by checking the generated override after any `tflocal` command. `localstack_providers_override.tf` should now contain `s3_use_path_style = true` and an `s3 = "http://localhost:4566"` endpoint. The variable only changes S3, because S3 is the one service whose addressing puts the resource name in the hostname.
+
 `awslocal` is the AWS CLI pre-pointed at `:4566` — `awslocal s3 ls` lists the buckets your Terraform labs create, a handy way to confirm an `apply` really did something.
 
 !!! warning "`awslocal` fails with `pip install "botocore[crt]"`?"
