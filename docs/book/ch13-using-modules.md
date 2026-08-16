@@ -857,6 +857,8 @@ The **resources** tab is the one to open first. It tells you what the module wil
 
 The checklist is easier to trust once you have walked a real page with it. This one is a good specimen because it is the module most people meet first, and because almost every trap in this chapter is visible on it. Everything below was read off [the page](https://registry.terraform.io/modules/terraform-aws-modules/ec2-instance/aws/latest) on 2026-08-16, at version **6.4.0**, and is cached in [Registry Module Page Facts](../research-cache/registry-module-page-facts.md).
 
+[![The top of the ec2-instance page at v6.4.0: breadcrumb Modules / terraform-aws-modules / ec2-instance / v6.4.0, the module name, a Module version combobox reading Version 6.4.0 (latest) beside a View Source button, the provenance line (Provider aws, Downloads 52.7M, This week 518,859, Versions 98, Source code on GitHub, Published March 26 2026 by antonbabenko, Managed by antonbabenko), an Examples dropdown, and the tab row Readme, Inputs 83, Outputs 30, Dependencies 1, Resources 13.](assets/ch13-registry-v640-header-strip.png)](assets/ch13-registry-v640-header-strip.png)
+
 **Start at the version selector, not at the readme.** The header strip carries a combobox labelled *Module version*, reading `Version 6.4.0 (latest)`. It is not a convenience. The entire page is scoped to the version it names, and a search engine will happily land you on an old one. The same module at 5.8.0 is a materially different thing:
 
 | | v5.8.0 (30 Mar 2025) | v6.4.0 (26 Mar 2026) |
