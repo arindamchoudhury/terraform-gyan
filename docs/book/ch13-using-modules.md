@@ -609,7 +609,7 @@ resource "aws_subnet" "main" {
 }
 ```
 
-That reference is also what orders the two. No `depends_on` is needed or wanted. Reading an output creates the edge, exactly as reading a resource attribute does in Chapter 5.
+That reference is also the dependency. Because `aws_subnet.main` reads `module.vpc.vpc_id`, Terraform finishes everything in the module before it creates the subnet, and no `depends_on` is needed or wanted. Reading a module output draws an edge in the graph exactly as reading a resource attribute does in Chapter 5.
 
 Then there is the constraint that surprises everyone once: **module outputs are not inherited**. The tutorial states it flatly: *"Terraform will not display module outputs by default. You must create a corresponding output in your root module and set it to the module's output."*
 
