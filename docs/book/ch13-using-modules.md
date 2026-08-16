@@ -629,7 +629,11 @@ $ echo 'module.raw.bucket_arn' | terraform console
 "arn:aws:s3:::ch13-lab1-raw"
 ```
 
-The value exists, is in state, and is readable anywhere in the configuration. It is only invisible to the CLI. The fix is a pass-through output in the root module:
+The value exists and is readable anywhere in the configuration. It is invisible to `terraform output` because that command never evaluates the configuration at all: it opens the backend, loads the state, and looks the name up in the root output map, which is the only place outputs are persisted. The [`states.State`](https://github.com/hashicorp/terraform/blob/v1.15.8/internal/states/state.go) comment on that field is explicit that output values in other modules do not persist anywhere between runs. `terraform console` prints the value because it does the opposite: it loads the configuration and re-evaluates `module.raw.bucket_arn` from the child's resources in state.
+
+That also explains the error text. `raw_bucket_arn` is not a name Terraform failed to evaluate, it is a key that is not in a map, which is why the message talks about the state file and suggests you may need to `apply`. Ask for a name when the state holds no root outputs at all and you get a warning rather than that error, because the empty-map case is checked first.
+
+The fix is a pass-through output in the root module:
 
 ```hcl
 output "raw_bucket_arn" {
