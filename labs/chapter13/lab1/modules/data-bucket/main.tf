@@ -23,6 +23,7 @@ resource "aws_s3_bucket" "this" {
 
   tags = merge(var.tags, {
     ManagedBy = "data-bucket-module"
+    Reviewed  = "2026-08-08"
     Layer     = var.layer
   })
 }

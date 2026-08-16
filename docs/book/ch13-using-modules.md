@@ -1088,6 +1088,11 @@ Anything that reaches the emulator runs through `tflocal`. A few commands never 
 
 `labs/chapter13/lab1` holds a `data-bucket` module in `modules/data-bucket`, called twice from the root with different inputs, plus one root-level resource that writes into a bucket the module owns.
 
+!!! note "Why the child module declares `required_providers` and the root one configures the provider"
+    Both files carry a `terraform { required_providers { aws = ... } }` block, which looks like duplication and is not. HashiCorp's [Providers Within Modules](https://developer.hashicorp.com/terraform/language/modules/develop/providers) page draws the line: *"Only provider configurations are inherited by child modules, not provider source or version requirements. Each module must declare its own provider requirements."* What a child module must **not** have is a `provider` block, since *"A module intended to be called by one or more other modules must not contain any provider blocks"*, and one there breaks `for_each`, `count`, and `depends_on` on every call to it. So the child declares what it needs and configures nothing; the root does both.
+
+    The two constraints differ on purpose as well. The child says `>= 6.0` and the root says `~> 6.0`, which is [Version Constraints](https://developer.hashicorp.com/terraform/language/expressions/version-constraints) applied literally: *"Reusable modules should constrain only their minimum allowed versions of Terraform and providers"*, while *"Root modules should use a `~>` constraint to set both a lower and upper bound on versions for each provider they depend on."* A reusable module that pins an upper bound forces its ceiling onto every caller, which is the actual anti-pattern in this area. Chapter 18 covers provider inheritance, aliases, and the `providers` argument in full.
+
 ```shell
 cd labs/chapter13/lab1
 tflocal init
