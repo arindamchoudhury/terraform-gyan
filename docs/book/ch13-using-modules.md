@@ -869,10 +869,12 @@ The checklist is easier to trust once you have walked a real page with it. This 
 
 Seven resources became thirteen and the provider floor moved two majors. Confirm the version in the breadcrumb (`v6.4.0`) before reading anything else on the page.
 
-**The rest of the header strip is the provenance check.** `Provider: aws`. `Downloads: 52.7M`, `This week: 518,859`. `Versions: 98`. `Published: March 26, 2026`. `Published by: antonbabenko`, `Managed by: antonbabenko`. A `Source code:` link to `github.com/terraform-aws-modules/terraform-aws-ec2-instance`, and a `View Source` button beside the selector. Published nine weeks ago at 98 releases is a maintained module, and half a million downloads a week means a breakage would be noticed by somebody other than you.
+**The rest of the header strip is the provenance check.** `Provider: aws`. `Downloads: 52.7M`, `This week: 518,859`. `Versions: 98`. `Published: March 26, 2026`. `Published by: antonbabenko`, `Managed by: antonbabenko`. A `Source code:` link to `github.com/terraform-aws-modules/terraform-aws-ec2-instance`, and a `View Source` button beside the selector. A release five months ago at 98 releases total is a maintained module, and half a million downloads a week means a breakage would be noticed by somebody other than you.
 
 !!! warning "52.7M downloads and no badge: popularity is not vetting"
     Nothing on this page says *verified*. Compare `aws-ia/vpc/aws`, which renders a badge reading **Partner** next to the module name. In the registry's API that badge is the field `"verified": true`; on `ec2-instance` the same field is `false`. So the most-downloaded EC2 module in the registry is community code published by an individual account, which is fine, and is exactly the provenance the [Modules overview](https://developer.hashicorp.com/terraform/language/modules) means by *"created and maintained by HashiCorp, our partners, and the Terraform community"*. Read it as *who to ask when it breaks*, not as *who approved it*.
+
+[![The aws-ia/vpc/aws page at v4.8.0 for comparison. A purple Partner badge sits next to the module name, a Submodules dropdown sits beside Examples, and its Provision Instructions block carries the line "# insert the 2 required variables here" inside the module block.](assets/ch13-registry-partner-badge.png)](assets/ch13-registry-partner-badge.png)
 
 **Take the pinned snippet from the sidebar, never from the readme.** The right-hand column holds a *Provision Instructions* panel: *"Copy and paste into your Terraform configuration, insert the variables, and run `terraform init`"*, with a **Copy configuration** button over a skeleton call.
 
@@ -899,6 +901,8 @@ Copy the readme block, which is the one that actually shows you the arguments, a
 
 **The tab counts are the fastest read of a module's size.** `Readme · Inputs 83 · Outputs 30 · Dependencies 1 · Resources 13`. Four numbers, before a single line of HCL.
 
+[![The ec2-instance Resources tab at v6.4.0. The header strip reads Downloads 52.7M, This week 518,859, Versions 98, Published March 26 2026 by antonbabenko, with no verification badge. The tab row reads Readme, Inputs 83, Outputs 30, Dependencies 1, Resources 13. The tab body lists thirteen addresses alphabetically as plain code, aws_ebs_volume.this first and aws_vpc_security_group_ingress_rule.this last. The right sidebar shows Module Downloads and a Provision Instructions block pinning version 6.4.0.](assets/ch13-registry-resources-tab.png)](assets/ch13-registry-resources-tab.png)
+
 The **Resources** tab lists all thirteen by address in one alphabetical column, from `aws_ebs_volume.this` down to `aws_vpc_security_group_ingress_rule.this`. They are plain text, not links; the terraform-docs table inside the readme is the copy that links each address to its provider documentation. The tab also states its own limit: *"The module can create zero or more of each of these resources depending on the `count` value. The `count` value is determined at runtime."* This is section 9's opacity written down by the registry itself. Thirteen is the ceiling, and the `[0]` suffixes you will meet in state come from those internal `count`s.
 
 One thing the tab leaves out. The module also reads four data sources, including `aws_ssm_parameter.this` and `aws_subnet.this`, and they appear only in the terraform-docs table further down the readme. The tab counts what the module *manages*; the readme table counts everything it *touches*. Read both.
@@ -924,10 +928,31 @@ The last row is the one to sit with. An unset `ami` does not mean "no instance",
 
 **The Dependencies tab is where the provider vote is declared.** It has two halves. Module dependencies, here *"This module has no external module dependencies"*, so nothing else gets downloaded when you call it. And *Provider Dependencies*, here `aws (hashicorp/aws) >= 6.37`. That single line is the constraint that merges with yours at `init`, the one section 9 watched turn into `">= 5.83.0, ~> 6.0"` for a different module. Read it before you upgrade, not after `init` refuses to resolve.
 
-**The Examples dropdown goes to registry-rendered pages, and they are runnable but not copyable.** The header offers `complete` and `session-manager`, and they link to `/modules/terraform-aws-modules/ec2-instance/aws/latest/examples/complete`, not to GitHub. An example page is a small module page in its own right: its own `Readme · Inputs 0 · Outputs 54` tabs, a *Return to module* link, a *Change example* control, and a source link pinned to the tag rather than to a branch (`tree/v6.4.0/examples/complete`).
+**The Examples dropdown goes to registry-rendered pages, and each one is a module you can call.** The header offers `complete` and `session-manager`, and they link to `/modules/terraform-aws-modules/ec2-instance/aws/latest/examples/complete`, not to GitHub. An example page is a small module page in its own right: its own `Readme · Inputs 0 · Outputs 54` tabs, a *Return to module* link, a *Change example* control, and a source link pinned to the tag rather than to a branch (`tree/v6.4.0/examples/complete`). It carries its own Provision Instructions panel too, and the source it emits uses the `//` sub-directory syntax from section 3:
 
-!!! warning "An example's `source` is `../../` and will not resolve in your repository"
-    The Modules table on the `complete` example page lists twelve calls to the module under test, every one of them with source `../../` and version `n/a`. That is correct inside the module's own repository and broken everywhere else. Copying an example means swapping each `../../` for `terraform-aws-modules/ec2-instance/aws` plus a `version`. The same table is worth reading for what the example drags in, which here is `terraform-aws-modules/vpc/aws ~> 6.0` and `terraform-aws-modules/security-group/aws ~> 5.0`.
+```hcl
+module "ec2-instance_example_complete" {
+  source  = "terraform-aws-modules/ec2-instance/aws//examples/complete"
+  version = "6.4.0"
+}
+```
+
+That call works, and the reason is worth knowing, because the example's own Modules table lists twelve calls to the module under test with source `../../` and version `n/a`. The `module` block reference explains why those are not a problem here: *"Terraform extracts the entire package to local disk, but reads the module from the subdirectory. As a result, modules in a sub-directory of a package can use a local path to reference another module in the same package."* Measured with `terraform get` on exactly the block above, all twelve resolved to the package root:
+
+```
+Downloading registry.terraform.io/terraform-aws-modules/ec2-instance/aws 6.4.0 for ec2_instance_example_complete...
+- ec2_instance_example_complete in .terraform\modules\ec2_instance_example_complete\examples\complete
+- ec2_instance_example_complete.ec2_complete in .terraform\modules\ec2_instance_example_complete
+- ec2_instance_example_complete.ec2_disabled in .terraform\modules\ec2_instance_example_complete
+```
+
+[![The Modules table on the complete example page. Twelve rows named ec2_complete through ec2_targeted_capacity_reservation all carry source ../../ and version n/a, followed by security_group at terraform-aws-modules/security-group/aws with constraint ~> 5.0 and vpc at terraform-aws-modules/vpc/aws with constraint ~> 6.0.](assets/ch13-registry-example-modules-table.png)](assets/ch13-registry-example-modules-table.png)
+
+!!! warning "Pinning the example does not pin what the example pulls in"
+    `version = "6.4.0"` fixes the package, and nothing else. The `complete` example calls two other registry modules with range constraints, `terraform-aws-modules/vpc/aws ~> 6.0` and `terraform-aws-modules/security-group/aws ~> 5.0`, and section 4's rule applies to them: no module lock file, so resolution happens at `get` time. The same `terraform get` above installed `vpc` **6.6.1** and `security-group` **5.3.1**, neither of which appears anywhere in the block you wrote. Read the example's Modules table for exactly this, and expect a different pair of versions next month.
+
+!!! warning "Copying an example's text into your own repository is the case that breaks"
+    `../../` resolves inside the package, not inside your configuration. Lifting the `complete` example's HCL into your own directory means rewriting every one of those twelve calls to `terraform-aws-modules/ec2-instance/aws` plus a `version`, because there is no module package above your file for `../../` to climb into. Calling the example as a module and copying an example's source are different acts with different failure modes.
 
 **What the page cannot tell you is on the other side of `View Source`.** Whether the variables have `validation` blocks, what the resource wiring actually does with `subnet_id`, what the CHANGELOG says about the 5.x to 6.x break, how many issues are open, and whether the repository protects its tags. The registry renders an interface; adoption is a decision about a codebase. Section 5's measurement of a moved tag is the reason the last of those matters.
 
@@ -1426,7 +1451,8 @@ tflocal destroy -auto-approve
 - **Copying a module's usage snippet out of its readme.** The readme blocks show the arguments and carry no `version`. Only the sidebar's Provision Instructions block generates one.
 - **Reading a registry page without checking which version it is scoped to.** `ec2-instance` at 5.8.0 and at 6.4.0 differ by six resources, thirteen inputs, and two provider majors.
 - **Reading "no required variables" as "nothing to decide".** Every input having a default means the defaults are the decision, including an AMI that resolves to whatever is latest today.
-- **Copying a registry example verbatim.** Its calls to the module under test are `source = "../../"`, which resolves only inside that module's own repository.
+- **Copying a registry example's HCL into your own repository.** Its calls to the module under test are `source = "../../"`, which resolves inside the downloaded package and nowhere else. Calling the example itself, `<MODULE>//examples/complete`, does work; pasting its text does not.
+- **Reading a pinned example as a pinned dependency tree.** `version = "6.4.0"` on an example fixes that package only. The `complete` example's own `~>` calls resolved to `vpc` 6.6.1 and `security-group` 5.3.1 at `terraform get` time.
 - **Treating a curated private-registry entry as an enforced allowlist.** It is a bookmark. Enforcement is policy.
 
 ---

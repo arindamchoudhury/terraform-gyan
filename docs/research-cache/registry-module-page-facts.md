@@ -122,6 +122,27 @@ Its Modules table shows every call to the module under test as `../../` with ver
 real registry modules it pulls in (`terraform-aws-modules/vpc/aws ~> 6.0`,
 `terraform-aws-modules/security-group/aws ~> 5.0`).
 
+The example page has its own Provision Instructions panel, emitting the `//` sub-directory form:
+
+```hcl
+module "ec2-instance_example_complete" {
+  source  = "terraform-aws-modules/ec2-instance/aws//examples/complete"
+  version = "6.4.0"
+}
+```
+
+**That call works**, measured 2026-08-16 with `terraform get` on Terraform 1.15.8. All twelve `../../`
+calls resolved to the package root (`.terraform\modules\ec2_instance_example_complete`), while the
+example's own module reads from `...\examples\complete`. This matches the
+[`module` block reference](https://developer.hashicorp.com/terraform/language/block/module): *"Terraform
+extracts the entire package to local disk, but reads the module from the subdirectory. As a result,
+modules in a sub-directory of a package can use a local path to reference another module in the same
+package."* What breaks is pasting the example's HCL into a configuration of your own, where nothing
+sits above `../../`.
+
+Pinning the example pins one package. The same run installed `vpc` **6.6.1** and `security-group`
+**5.3.1** from the example's `~>` constraints — neither version named anywhere in the caller.
+
 ## The same data over HTTP
 
 Everything above is available without the browser:
