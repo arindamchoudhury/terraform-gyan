@@ -11,6 +11,9 @@ New-Item -ItemType Directory -Force (Join-Path $repo "modules\data-bucket") | Ou
 
 Push-Location $repo
 git init -q -b main
+# Set-Content writes CRLF on Windows; a global core.autocrlf=true would then warn
+# on every `git add`. This repo is throwaway, so keep line endings as written.
+git config core.autocrlf false
 
 function Write-Module([string]$Version) {
     $body = @"
