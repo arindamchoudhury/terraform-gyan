@@ -92,4 +92,5 @@ State files, plan files, `.terraform/` directories, and the `localstack_provider
 
 - **An S3 operation hangs, then fails with `context deadline exceeded`.** The `S3_HOSTNAME` problem above. Check that you sourced `lab-env`.
 - **`Failed to load plugin schemas` on every provider.** Terraform talks to its plugins over mTLS on loopback, and some endpoint security products block it. It is not a provider or emulator fault.
+- **A command takes minutes, then does its actual work instantly.** The same interception, degrading rather than failing outright. Confirm it by comparing `terraform version`, which loads no plugin, against `terraform providers schema -json`, which starts one. A gap of seconds between them means the time is going into Terraform's channel to its provider, not into the emulator. Checking the emulator's log settles it: a long silence followed by millisecond-scale operations means the API calls were never the problem.
 - **`Unexpected attribute` for a service you never used.** A stale `localstack_providers_override.tf` from an older `tflocal` run. Delete it and run `tflocal init` again.
