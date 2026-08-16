@@ -47,6 +47,32 @@ Left to its defaults, `tflocal` points the S3 endpoint at `s3.localhost.localsta
 
 `lab-env.sh` and `lab-env.ps1` set `S3_HOSTNAME=localhost` to prevent that, along with the dummy credentials the emulator expects. `.envrc` does the same automatically for [direnv](https://direnv.net/) users, after one `direnv allow`. The full explanation, plus a permanent `setx` / shell-rc alternative, is in Chapter 1.
 
+## Running the labs in a container
+
+On a machine whose security software intercepts the loopback mTLS handshake between Terraform and its provider plugins, `tflocal` cannot run at all. `labs/tf-docker.sh` and `labs/tf-docker.ps1` are the way out. They run Terraform inside a container, where that handshake happens in its own network namespace and the host's filter driver never sees it. Nothing is disabled and no TLS is weakened.
+
+Use them exactly where you would have used `tflocal`, from inside a lab directory:
+
+```bash
+"$(git rev-parse --show-toplevel)/labs/tf-docker.sh" init
+"$(git rev-parse --show-toplevel)/labs/tf-docker.sh" apply -auto-approve
+"$(git rev-parse --show-toplevel)/labs/tf-docker.sh" destroy -auto-approve
+```
+
+```powershell
+& "$(git rev-parse --show-toplevel)/labs/tf-docker.ps1" init
+& "$(git rev-parse --show-toplevel)/labs/tf-docker.ps1" apply -auto-approve
+& "$(git rev-parse --show-toplevel)/labs/tf-docker.ps1" destroy -auto-approve
+```
+
+The script finds the emulator's Docker network from the running container, joins it, and reaches the emulator by container name instead of going back out through the host. It writes a `docker_providers_override.tf` carrying the endpoints, `s3_use_path_style`, and dummy credentials, which Terraform merges over the lab's own `provider` block. Your `.tf` files stay untouched and still apply to real AWS. That generated file is rewritten every run and is gitignored.
+
+Provider binaries live in a Docker named volume rather than on the bind mount, which matters more than it sounds: reading a 700 MB provider through a Windows bind mount cost 21 seconds per command against 5 seconds from the volume.
+
+`TF_IMAGE`, `EMULATOR_CONTAINER`, and `PLUGIN_VOLUME` override the defaults if you swap the emulator or pin a different Terraform version.
+
+Two things to expect. The first `init` for a lab adds a `linux_amd64` hash to its `.terraform.lock.hcl`, which is a genuine improvement, because the lock then covers both platforms. And `chapter13/lab3` builds a Git repository in your host temp directory, which the container cannot see, so run that one on the host.
+
 ## What is where
 
 | Directory | Chapter | Subject |
@@ -91,6 +117,6 @@ State files, plan files, `.terraform/` directories, and the `localstack_provider
 ## When something misbehaves
 
 - **An S3 operation hangs, then fails with `context deadline exceeded`.** The `S3_HOSTNAME` problem above. Check that you sourced `lab-env`.
-- **`Failed to load plugin schemas` on every provider.** Terraform talks to its plugins over mTLS on loopback, and some endpoint security products block it. It is not a provider or emulator fault.
+- **`Failed to load plugin schemas` on every provider.** Terraform talks to its plugins over mTLS on loopback, and some endpoint security products block it. It is not a provider or emulator fault. Run the lab through `tf-docker` instead, as described above.
 - **A command takes minutes, then does its actual work instantly.** The same interception, degrading rather than failing outright. Confirm it by comparing `terraform version`, which loads no plugin, against `terraform providers schema -json`, which starts one. A gap of seconds between them means the time is going into Terraform's channel to its provider, not into the emulator. Checking the emulator's log settles it: a long silence followed by millisecond-scale operations means the API calls were never the problem.
 - **`Unexpected attribute` for a service you never used.** A stale `localstack_providers_override.tf` from an older `tflocal` run. Delete it and run `tflocal init` again.
