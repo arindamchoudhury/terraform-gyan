@@ -869,6 +869,10 @@ The checklist is easier to trust once you have walked a real page with it. This 
 
 Seven resources became thirteen and the provider floor moved two majors. Confirm the version in the breadcrumb (`v6.4.0`) before reading anything else on the page.
 
+[![The same module's Resources tab at v5.8.0. The breadcrumb reads v5.8.0, the selector reads Version 5.8.0 with no "latest" marker, the tab row reads Inputs 70, Outputs 27, Dependencies 1, Resources 7, and the body lists seven addresses. The Provision Instructions block pins version 5.8.0.](assets/ch13-registry-v580-resources-tab.png)](assets/ch13-registry-v580-resources-tab.png)
+
+Two things travel with the version and one does not. The tab counts, the resource list, and the pinned snippet all change. The header's download figures do not: `Downloads: 52.7M` and `This week: 518,859` are module-wide totals and read identically on the 5.8.0 page, so they say nothing about the version you are looking at.
+
 **The rest of the header strip is the provenance check.** `Provider: aws`. `Downloads: 52.7M`, `This week: 518,859`. `Versions: 98`. `Published: March 26, 2026`. `Published by: antonbabenko`, `Managed by: antonbabenko`. A `Source code:` link to `github.com/terraform-aws-modules/terraform-aws-ec2-instance`, and a `View Source` button beside the selector. A release five months ago at 98 releases total is a maintained module, and half a million downloads a week means a breakage would be noticed by somebody other than you.
 
 !!! warning "52.7M downloads and no badge: popularity is not vetting"
@@ -909,6 +913,8 @@ One thing the tab leaves out. The module also reads four data sources, including
 
 **The Inputs tab answers "what must I set" directly, and here the answer is a trap.** The tab splits into *Required Inputs* and *Optional Inputs*, and for this module there is no required section at all, only the sentence *"This module has no required variables."* Eighty-three inputs, zero of them required, confirmed against the registry API at both 5.8.0 and 6.4.0.
 
+[![The Inputs tab at v6.4.0. The only heading is Optional Inputs, and the paragraph under it ends "This module has no required variables." The first entries are ami with default null and ami_ssm_parameter defaulting to the al2023 latest SSM path.](assets/ch13-registry-inputs-tab.png)](assets/ch13-registry-inputs-tab.png)
+
 So the schema will not tell you what to fill in. The defaults will:
 
 | Input | Default | What it means if you leave it |
@@ -936,6 +942,8 @@ module "ec2-instance_example_complete" {
   version = "6.4.0"
 }
 ```
+
+[![The complete example page. The breadcrumb ends v6.4.0 / complete, the heading reads "Example: complete", the source line points at tree/v6.4.0/examples/complete, and the controls are Return to module ec2-instance, Change example, and View Source. Its tabs are Readme, Inputs 0, Outputs 54, and its Provision Instructions block holds the sub-directory source above.](assets/ch13-registry-example-page.png)](assets/ch13-registry-example-page.png)
 
 That call works, and the reason is worth knowing, because the example's own Modules table lists twelve calls to the module under test with source `../../` and version `n/a`. The `module` block reference explains why those are not a problem here: *"Terraform extracts the entire package to local disk, but reads the module from the subdirectory. As a result, modules in a sub-directory of a package can use a local path to reference another module in the same package."* Measured with `terraform get` on exactly the block above, all twelve resolved to the package root:
 

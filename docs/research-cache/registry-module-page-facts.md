@@ -24,6 +24,10 @@ Breadcrumb: `Modules / terraform-aws-modules / ec2-instance / v6.4.0`.
 | Published by: | `antonbabenko` |
 | Managed by: | `antonbabenko` |
 
+`Downloads:` and `This week:` are **module-wide, not version-scoped** — the 5.8.0 page renders the
+same 52.7M and 518,859. The selector drops the `(latest)` marker on an older version and the
+breadcrumb reads `v5.8.0`.
+
 Controls in the same strip: a combobox labelled **Module version** reading `Version 6.4.0 (latest)`,
 a **View Source** link, and an **Examples** dropdown. Modules that have submodules also get a
 **Submodules** dropdown (present on `aws-ia/vpc/aws`, absent here).
