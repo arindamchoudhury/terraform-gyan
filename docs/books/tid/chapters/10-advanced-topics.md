@@ -4,7 +4,7 @@
 >
 > The book's grab-bag chapter, and it says so itself: rather than one topic, a tour of patterns, niche providers and advanced features. Two of the eight sections are everyday tools — **naming schemes** (§10.1) and **checks and conditions** (§10.6). The rest are escape hatches you will be glad exist and should reach for last: **provisioners** (§10.3), the **external provider** (§10.4), the **local provider** (§10.5). In between sits the one genuinely hard engineering exercise in the chapter, a **dynamically subnetted network module** (§10.2), and it closes on the most useful section of all — **when Terraform is the wrong tool** (§10.8).
 >
-> 📌 **Two version claims in this chapter needed correcting, both verified against the local checkouts.** The book's NOTE in §10.5.1 says provider-defined functions arrived in "Terraform and OpenTofu 1.8.0"; **OpenTofu shipped them in 1.7.0** ([opentofu#1439](https://github.com/opentofu/opentofu/pull/1439)), a release earlier than Terraform. And the `winrm` connection type used by §10.3.1 is **deprecated as of OpenTofu 1.12** and expected to become an error in 1.13. Both flagged in place; version state in [[version-facts]].
+> 📌 **Five claims in this chapter did not survive checking against source and provider docs.** Two are version claims: §10.5.1 dates provider-defined functions to "Terraform and OpenTofu 1.8.0", but **OpenTofu shipped them in 1.7.0** ([opentofu#1439](https://github.com/opentofu/opentofu/pull/1439)); and the `winrm` connection type §10.3.1 documents without qualification is **deprecated as of OpenTofu 1.12**, expected to error in 1.13. Three are behavioural: **`self` is a postcondition keyword only** (§10.6.1 presents it as belonging to both condition types), an omitted `query` sends an empty JSON **object**, not an array (§10.4.1), and `content_base64sha256` is the base64 of the *checksum*, not a checksum of the base64 (§10.5.2). One example is also miswired — Listing 10.40 feeds gzipped Cloud-Init output to `user_data` rather than `user_data_base64` (§10.8.3). Each is flagged where it occurs; version state in [[version-facts]].
 
 > 🔗 **See also:** owns learning-path **A1** (provisioners, `terraform_data` and escape hatches) and **A2**'s condition half (`precondition`/`postcondition`/`check`), feeds **E3** (OpenTofu divergence, via `.tofu` files), **I3**/**I4** (the network module is a `for`-expression, `count`-toggle and splat exercise), **B7** (network functions, provider-defined functions) and **A6** (never commit the private key a `connection` block reads). Builds on [Ch4](04-expressions-iterations.md) (`for`, splat, `count` as a binary toggle), [Ch6](06-state-management.md) §6.8.4 (`terraform_data`) and [Ch9](09-testing-refactoring.md) (randomised names, and why `aws_secretsmanager_secret` needs one). Topic backlog: `opentofu-divergence` gains §10.7.
 
@@ -79,7 +79,7 @@ The rule for the primary resource: a module with one obvious main resource (a `d
 !!! tip "`random_string` beats `random_id` and `random_password` for name suffixes"
     Some resources need randomness baked into the name. `aws_secretsmanager_secret` cannot be destroyed and re-created cheaply (Ch9's week-long deletion window), and `aws_s3_bucket` needs it to avoid **S3 namespace squatting**, where an attacker pre-registers your predictable bucket name in their own account.
 
-    HashiCorp's general advice is to prefer `random_id` or `random_password`, but for names the book's exception is right: `random_id` spends more characters per bit of entropy, and `random_password` marks the result **sensitive**, which then poisons every name derived from it.
+    The provider's own steer, on the `random_string` page, is *"for unique ids please use `random_id`, for sensitive random values please use `random_password`"* — but for names the book's exception holds. `random_password` marks the result **sensitive**, which then poisons every name derived from it. And `random_id` is denser only in its `b64_url` form (6 bits per character), whose `-` and `_` many name fields reject; the `hex` form everyone actually interpolates carries **4 bits per character**, against roughly 5.2 for a lowercase-alphanumeric `random_string`.
 
     ```hcl
     resource "random_string" "suffix" {
@@ -493,7 +493,7 @@ One data source, no resources — deliberately. This is for querying, not for ma
 | Argument | Type | Notes |
 | --- | --- | --- |
 | `program` | list of strings | Command first, arguments after — the same shape as Docker's `ENTRYPOINT`/`CMD`. **Required.** |
-| `query` | `map(string)` | Serialised to JSON and sent on **stdin**. Omitted means an empty JSON object arrives. |
+| `query` | `map(string)` | Serialised to JSON and sent on **stdin**. Omitted means an empty JSON **object** `{}` arrives — the chapter says "an empty JSON array", which is wrong: the provider marshals a `map[string]string`, so `{}` is the only thing it can produce ([`internal/provider/data_source.go`](https://github.com/hashicorp/terraform-provider-external/blob/main/internal/provider/data_source.go), and the docs say "the program will receive an empty object as its input"). Matters if your parser type-checks its input. |
 | `working_dir` | string | Defaults to the current working directory |
 
 The program returns a JSON object of strings on stdout, which surfaces as the `result` attribute:
@@ -609,11 +609,14 @@ Why bother, when `file()` exists? Two reasons: a data source can carry **`depend
 
 | Attribute | Description |
 | --- | --- |
-| `content` | The file's contents (sensitive in the `_sensitive_` variant) |
-| `content_base64` | Base64-encoded contents |
-| `content_base64sha256` / `content_base64sha512` | Hashes of the base64 content |
-| `content_sha1` / `content_sha256` / `content_sha512` | Hashes of the raw content |
-| `content_md5` | MD5 of the raw content |
+| `content` | The file's contents as a UTF-8 string (sensitive in the `_sensitive_` variant) |
+| `content_base64` | The contents, base64-encoded — the one to use for binary files |
+| `content_base64sha256` / `content_base64sha512` | The SHA-256 / SHA-512 checksum **of the content**, base64-encoded |
+| `content_sha1` / `content_sha256` / `content_sha512` / `content_md5` | The same checksums in hex |
+| `id` | Hex SHA-1 of the content |
+
+!!! note "📌 Read the `content_base64*` names carefully"
+    The chapter's table glosses these as "the hash of the base64 content", which inverts the operation. Per the [provider docs](https://registry.terraform.io/providers/hashicorp/local/latest/docs/data-sources/file) (checked 2026-08-16), `content_base64sha256` is *"Base64 encoded SHA256 checksum of file content"* — hash the raw content, then base64 the digest. It is the `base64sha256()` function's output, and it is what AWS APIs that want a base64 digest (`source_code_hash`, ETag comparisons) expect. Hashing the base64 text would give a different value and break those.
 
 If you need a checksum alongside the content — a common trigger for redeploying something — this is shorter than computing it yourself.
 
@@ -654,7 +657,14 @@ Ch9 tested modules during development. This section tests infrastructure **that 
 
 Both live inside the `lifecycle` block, available on every resource and data source. Both take a `condition` (any boolean expression) and an `error_message`. Both **stop Terraform** when they fail, which is what makes them safeguards rather than reports. You may have as many of each as you like, one per block.
 
-`self` refers to the containing resource — and it is what makes conditions work under `count`/`for_each`, since each instance evaluates against itself with no index bookkeeping.
+Both are evaluated **once per instance** under `count`/`for_each`, with `count.index` / `each.key` in scope, so a rule written once covers every instance with no index bookkeeping.
+
+!!! danger "⚠️ Correction — `self` is a *postcondition* keyword, not a condition keyword"
+    The chapter introduces `self` under the shared "Preconditions and postconditions" heading, as the way "to refer to the resource the condition is defined in". That is true of postconditions only, and the reason is obvious once stated: a **precondition runs before the object exists**, so there is nothing for `self` to point at.
+
+    Settled in source rather than inferred — `internal/terraform/eval_conditions.go` binds a self reference for exactly one rule type, `addrs.ResourcePostcondition`, above the comment *"Only resource postconditions can refer to self"*. OpenTofu's `internal/tofu/eval_conditions.go` carries the same line, so this is not a divergence. HCDocs agrees by example: its `self.tags[...]` sample is a postcondition, and its precondition sample reaches for another resource's attributes instead.
+
+    Every example the chapter actually prints is consistent with this — its `self` usage is in the postcondition on `data.aws_ami` — so the slip is in the prose, not the code.
 
 ```hcl
 resource "aws_lb" "example" {
@@ -759,9 +769,11 @@ Putting the whole family in order, weakest binding to strongest:
 | Mechanism | Runs | On failure | Sees |
 | --- | --- | --- | --- |
 | Variable `validation` | Before anything | Blocks | Its own variable; other vars/locals/data on 1.9+ |
-| `precondition` | Before create/update | Blocks | Everything, plus `self` |
-| `postcondition` | After create/update | Blocks | Everything, plus `self` |
-| `check` | Every plan and apply | **Warns** | Everything, plus its own scoped data sources |
+| `precondition` | Before create/update | Blocks | Everything except `self` — the object does not exist yet |
+| `postcondition` | After create/update | Blocks | Everything, **plus `self`** |
+| `check` | Every plan and apply | **Warns** | Everything, plus its own scoped data sources. No `self` |
+
+> 💡 One more from source: when a check's condition cannot be evaluated yet, the assertion does not fail — Terraform emits a *"Check assertion known after apply"* warning and resolves it during the apply. Preconditions and postconditions have no such escape.
 
 ---
 
@@ -880,6 +892,13 @@ resource "aws_instance" "node" {
 ```
 
 `yamlencode` is the useful part — the config is a Terraform object, so it can be built from variables and resource attributes instead of being a static blob. Multiple `part` blocks are allowed, though resources cap how large the whole payload may be.
+
+!!! warning "⚠️ Listing 10.40 wires `rendered` to the wrong argument"
+    The example above is the chapter's, and it does not survive a check against the two providers involved (both checked 2026-08-16).
+
+    `cloudinit_config` defaults **`gzip = true`** and **`base64_encode = true`**, so `rendered` is gzip-compressed, base64-encoded output unless you turn those off — the provider's own example sets both to `false` explicitly. And the AWS provider says of `aws_instance.user_data`: *"Do not pass gzip-compressed data via this argument; see `user_data_base64` instead"*, with `user_data_base64` documented for exactly this case, since *"gzip-encoded user data must be base64-encoded and passed via this argument to avoid corruption"*.
+
+    So either pair `rendered` with **`user_data_base64`** and keep the defaults, or set `gzip = false` and `base64_encode = false` and keep `user_data`. The chapter does neither.
 
 **Installation → Packer.** Bake the software into an image ahead of time. Prebuilt images are easier to test and much faster to launch, which is the same immutable-infrastructure argument from §10.3.6 arriving from the other direction.
 
