@@ -82,6 +82,28 @@ root = "from root"
 
 Neither subdirectory was read. Broken syntax in an unreferenced directory is not a syntax error, because those files were never opened, and the outputs declared in them do not exist.
 
+!!! info "OpenTofu — the directory holds one more file extension, and it shadows rather than merges"
+    OpenTofu reads `.tofu` files as well as `.tf` files, and the rule between them is not the merge
+    rule. A `main.tofu` **replaces** `main.tf` entirely for OpenTofu, while Terraform never sees the
+    `.tofu` file at all. That makes one directory two different modules depending on which binary
+    runs it.
+
+    Measured on **OpenTofu 1.12.5** and **Terraform 1.15.8** in the same directory, holding a
+    `main.tf` and a `main.tofu` that each declare an output named `who`:
+
+    ```
+    # tofu apply
+    who = "from tofu"
+
+    # terraform apply
+    who = "from tf"
+    ```
+
+    The shadowing is per file name, so an OpenTofu-only file with a name no `.tf` file uses is
+    merged normally. Arrived in **OpenTofu 1.8**, and the intended use is holding the OpenTofu-only
+    parts of a configuration that has to run on both tools. Details in
+    [[opentofu-migration-mechanics]].
+
 !!! note "Test files are the exception, and they are still not configuration"
     `terraform test` reads `.tftest.hcl` files from a `tests/` directory by default, with no `module` block involved. Verified on 1.15.8 against the same root directory above: adding `tests/basic.tftest.hcl` and running `terraform test` gave `Success! 1 passed, 0 failed.`
 
@@ -147,6 +169,33 @@ Which inputs a module accepts is not your decision. The reference is blunt about
     A module author can mark a variable or an output `deprecated`, which raises a warning in every configuration that still uses it. Setting `ignore_nested_deprecations = true` on the `module` block silences those warnings for that call and everything nested below it. Default is `false`.
 
     Use it to keep a noisy CI log readable while an upgrade is scheduled, not to make the notice go away permanently. Marking something `deprecated` in the first place is the author's half of this, and Chapter 14 covers it.
+
+!!! info "OpenTofu — six arguments, not seven, and the opt-out is a CLI flag"
+    OpenTofu had `deprecated` on variables and outputs first, in **1.10**, but it never added a
+    per-call suppressor. The `module` block schema at the `v1.12.4` tag lists exactly six arguments,
+    `source`, `version`, `count`, `for_each`, `depends_on` and `providers`, plus the same `_`
+    escaping block Terraform uses. Anything else in the block is an input variable, so a Terraform
+    1.15 configuration carrying the seventh argument fails on OpenTofu with an unknown-input error.
+    Measured on **1.12.5**:
+
+    ```
+    │ Error: Unsupported argument
+    │
+    │   on main.tf line 3, in module "m":
+    │    3:   ignore_nested_deprecations  = true
+    │
+    │ An argument named "ignore_nested_deprecations" is not expected here.
+    ```
+
+    OpenTofu's equivalent control lives on the command instead of in the configuration:
+    `-deprecation=module:all|local|none`, accepted by `plan` and `apply` and not by `validate`. The
+    `local` setting is the interesting one, because it warns only for modules loaded by relative
+    path, which keeps your own deprecations visible while silencing a third party's. Measured on the
+    same configuration, `-deprecation=module:none` dropped the warning and `-deprecation=module:local`
+    kept it.
+
+    The two designs land in different places. Terraform's is per module call and committed. OpenTofu's
+    is per invocation, so it silences everything at once and leaves no record in the repository.
 
 ---
 
@@ -228,6 +277,37 @@ The `//` was URL-encoded into the `ref` value, so Terraform went looking for a G
 
 !!! note "Same source, different labels is legal and sometimes necessary"
     You may point two `module` blocks at the identical `source`, as long as the labels differ. That is an ordinary way to get two of something with different inputs, and it is also the workaround when `count` or `for_each` will not do, because a multiplied module call cannot vary its provider configurations. Chapter 17 covers that constraint.
+
+!!! info "OpenTofu — a `for_each` module call *can* vary its providers"
+    The constraint above is the reason the duplicate-block workaround exists, and OpenTofu removed it
+    in **1.9** with `for_each` on a `provider` block. One provider instance per key, indexed in the
+    `providers` map of a module call that iterates the same way:
+
+    ```hcl
+    provider "local" {
+      alias    = "per_env"
+      for_each = var.envs
+    }
+
+    module "app" {
+      source   = "./mod"
+      for_each = var.envs
+      providers = {
+        local = local.per_env[each.key]
+      }
+    }
+    ```
+
+    Measured on **1.12.5** and **1.15.8**. OpenTofu installs it. Terraform rejects the address at
+    `init`: *"The providers argument requires a provider type name, optionally followed by a period
+    and then a configuration alias."* One `module` block per region or account is therefore still the
+    Terraform answer, and Chapter 17 writes it out.
+
+    OpenTofu warns about the shape used above, and the warning is worth heeding: *"This provider
+    configuration uses the same for_each expression as a module, which means that subsequent removal
+    of elements from this collection would cause a planning error."* A provider instance has to
+    outlive the resources it destroys, so the provider's collection must be a superset of the
+    module's rather than the identical variable.
 
 !!! warning "Absolute local paths behave differently from relative ones"
     A path beginning with `/` or a drive letter is treated as an absolute path, and Terraform **copies it into the module cache as a package** rather than referencing it in place. The reference discourages the form outright, because *"doing so can couple your configuration to the filesystem layout of a particular computer"*. Relative paths do not have that problem and are what you want inside a repository.
@@ -331,6 +411,32 @@ Two machines, one commit, one constraint. One is running `4.1.0` and the other `
     Do not try to commit `modules.json` as a substitute. Its `Dir` fields are repository-relative so it looks portable, but it is an undocumented internal snapshot that `init` rewrites, and no flag makes Terraform treat it as authoritative.
 
 Leaving `version` out entirely is the same hazard with the brakes off. The reference's summary line for the argument is *"Defaults to latest version available from the source."* Measured on the same module on the same day, an unpinned `source` resolved to **5.15.4** while `~> 4.1` resolved to **4.11.0**. That is a whole major version, arriving without a diff.
+
+!!! info "OpenTofu — the same shorthand address resolves against a different registry"
+    A registry `source` with no hostname is not portable in the way it looks. Terraform expands
+    `terraform-aws-modules/s3-bucket/aws` against `registry.terraform.io`, and OpenTofu expands the
+    identical string against `registry.opentofu.org`. Nothing in the configuration says which.
+
+    Measured on **OpenTofu 1.12.5**, same `module` block as the transcripts above:
+
+    ```
+    Downloading registry.opentofu.org/terraform-aws-modules/s3-bucket/aws 4.1.0 for logs...
+    ```
+
+    ```json
+    {"Key": "logs", "Source": "registry.opentofu.org/terraform-aws-modules/s3-bucket/aws",
+     "Version": "4.1.0", "Dir": ".terraform/modules/logs"}
+    ```
+
+    The resolution rules are the same, and here the versions matched exactly: `~> 4.1` selected
+    **4.11.0** and an unpinned source selected **5.15.4**, the two numbers Terraform produced. That
+    is a property of this module rather than a guarantee, because the two registries are separate
+    indexes with separate publication pipelines. Pin the version and the risk is small; leave it out
+    and you are trusting two registries to agree.
+
+    The `localterraform.com` row in the source catalogue is HCP Terraform and Terraform Enterprise
+    only, so it has no meaning on OpenTofu. OpenTofu does define a generic hostname of its own,
+    `localtofu.com`, but that is the `remote` backend's, not a module source.
 
 ### Three layers of control
 
@@ -1215,6 +1321,7 @@ tflocal destroy -auto-approve
 - **Module outputs are not inherited.** They are readable in configuration and invisible to `terraform output` until the root module re-exports them.
 - **Encapsulation is also opacity.** Two module blocks produced 22 resources in HashiCorp's own tutorial; one produced six objects with internal `count` indices in this chapter's lab. Modules also contribute provider version constraints to your resolution.
 - **`terraform modules`** (1.10+, Terraform-only) prints every declared module with its source, resolved version, and constraint, with a `-json` form for policy.
+- **OpenTofu diverges in five places in this chapter**, all measured on 1.12.5. A `.tofu` file shadows the same-named `.tf` file. A hostname-less registry address resolves against `registry.opentofu.org`. `ignore_nested_deprecations` is rejected, and `-deprecation=module:none|local` is the opt-out instead. A `for_each` module call can vary its providers, because provider `for_each` exists. `tofu modules` does not exist. Everything else in this chapter, including `//`, the `depth`-versus-SHA rule, and the absence of a module lock file, behaves identically.
 - **A versioned source is what lets staging and production differ on purpose.** Tag a release, move staging, leave production, roll forward once proven.
 
 ---
