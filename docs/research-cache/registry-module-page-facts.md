@@ -82,6 +82,23 @@ Two sections. Module dependencies: *"This module has no external module dependen
 Dependencies, with the standing note that providers *"will be automatically installed during
 `terraform init`"*: `aws (hashicorp/aws) >= 6.37`.
 
+### A populated Dependencies tab (`aws-ia/vpc/aws` 4.8.0)
+
+The tab pools the root module's declarations with every submodule's, which is why the same provider
+can appear more than once. Page renders eight entries; the API splits them:
+
+| Half | Entry | Declared on |
+|---|---|---|
+| Module | `subnet_calculator (1.0.2): drewmullen/subnets/cidr` | `modules/calculate_subnets`, `modules/calculate_subnets_ipv6` |
+| Module | `tags`, `subnet_tags`, `vpc_lattice_tags` `(0.0.6): aws-ia/label/aws` | root |
+| Provider | `aws (hashicorp/aws) >= 5.0.0` | root |
+| Provider | `aws (hashicorp/aws) >= 3.72.0` | `modules/calculate_subnets`, `calculate_subnets_ipv6`, `flow_logs` |
+| Provider | `aws (hashicorp/aws) >= 4.0.0` | `modules/flow_logs/modules/s3_log_bucket` |
+| Provider | `awscc (hashicorp/awscc) >= 0.15.0` | `modules/calculate_subnets_ipv6` |
+
+Module dependency versions here are exact, not ranges. `root.dependencies` in the API lists only the
+three root ones, so a reader comparing page to API should expect the page to be the larger number.
+
 ## Provision Instructions panel
 
 Right sidebar, below a **Module Downloads** panel (this week 518,859 · this month 1.0M · this year
