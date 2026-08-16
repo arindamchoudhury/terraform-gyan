@@ -17,6 +17,7 @@ A module is a reusable, self-contained bundle of Terraform code — data sources
 - **The `module` block + three meta arguments** (TID Ch2 §2.8, Ch3 §3.1.1) — `source` *(required — registry / path / Git)*, `version` *(registry sources only)*, `providers` *(pass provider aliases into the child)*. A module's arguments come from its `variable` blocks; its attributes from its `output` blocks, read as `module.NAME.output`.
 - **Standard file structure** (TID Ch3) — `variables.tf` / `outputs.tf` / `main.tf` / `README.md`, plus `modules/`, `templates/`, `examples/`. Convention, not enforced; one-file modules work. Style Guide details in [[tf-style-guide]].
 - **Registries + publishing** (TID Ch3) — registries tie into version control and release on a Git **tag**. Name repos **`terraform-<PROVIDER>-<NAME>`**; select a submodule inside a repo with the **double-slash** `//`. The largest public registry is registry.terraform.io.
+- **Matching interfaces make implementations swappable** (TID Ch10 §10.2.3–§10.2.4) — the network module's two topology submodules take the *same inputs* and expose the *same outputs*, so the parent selects between them with `count` as a binary toggle and hides the choice behind a `local` plus splat. The corollary from HCDocs composition is the same shape: a `join-network` module with the same outputs as a `create-network` module makes promoting an environment a one-line `source` change. Two useful sub-rules from the same section: a lower-layer module is allowed to be **incomplete on its own** if the parent completes it (the AWS internet gateway), and anything the module cannot use — spare CIDR blocks — should be **returned as an output**, not silently swallowed.
 - **Hands-on consumption** ([[tf-aws-manage]]) — calling the registry VPC module: a versioned `module` block, `module.vpc.*` outputs feeding resources, state addressing under `module.`, and re-running `terraform init` to install a newly-added module.
 
 ## Consuming vs. authoring
@@ -70,6 +71,7 @@ Three ideas TUR Ch4 states better than anywhere else in these notes:
 - [What is Terraform? (Intro)](../sources/terraform-docs/terraform-intro.md)
 - [TID Ch 2 — Terraform HCL components](../books/tid/chapters/02-hcl-components.md) §2.8 — the `module` block
 - [TID Ch 3 — Terraform variables and modules](../books/tid/chapters/03-variables-modules.md) — full treatment
+- [TID Ch 10 — Advanced Terraform topics](../books/tid/chapters/10-advanced-topics.md#102-network-management) §10.2 — a worked reusable module: identical interfaces, computed subnetting, `count` as a topology switch
 - [TUR Ch 4 — How to Create Reusable Infrastructure with Terraform Modules](../books/tur/chapters/04-reusable-modules.md) — the narrative refactor, module versioning by Git tag, the staging→production promotion workflow
 - [Manage infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-manage.md) — consuming the registry VPC module
 - [Style Guide](../sources/terraform-docs/tf-style-guide.md) — module repo naming + structure

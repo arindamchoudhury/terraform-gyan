@@ -64,7 +64,7 @@
 | `dynamic` blocks + complex/optional types | I3 | ✅ |
 | Built-in function library | B7 | ✅ |
 | `convert()` (TF 1.15) | B7 | ✅ |
-| **Provider-defined functions** `provider::x::fn()` (TF 1.8) | B7 (use) / E1 (author) | ➕ |
+| **Provider-defined functions** `provider::x::fn()` (TF 1.8 / **OT 1.7**) | B7 (use) / E1 (author) | ➕ |
 
 ## State, backends, workspaces
 

@@ -1,6 +1,6 @@
 # Meta-arguments and `lifecycle`
 
-Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]], [[tf-meta-depends-on]] and [[tf-meta-lifecycle]] (HCDocs per-argument references), [[tut-count]], [[tut-for-each]] and [[tut-resource-lifecycle]] (HCDocs hands-on), TID Ch2 §2.7, [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
+Cross-source topic page. Sources: [[tf-meta-arguments]] (HCDocs meta-arguments index), [[tf-meta-count]], [[tf-meta-for-each]], [[tf-meta-depends-on]] and [[tf-meta-lifecycle]] (HCDocs per-argument references), [[tut-count]], [[tut-for-each]] and [[tut-resource-lifecycle]] (HCDocs hands-on), TID Ch2 §2.7 and [Ch10 §10.6](../books/tid/chapters/10-advanced-topics.md#106-checks-and-conditions) (the condition rules), [[tf-configure-resource]] (HCDocs), [[ot-dynamic-prevent-destroy]] (OpenTofu), [[tf-style-guide]] (HCDocs).
 
 Feeds learning-path **I1** (`count`/`for_each`/`depends_on`) and **I2** (`lifecycle`).
 
@@ -132,6 +132,9 @@ An over-used `depends_on` serializes work the graph could have run in parallel.
 A **subblock**, declarable **once** per resource. It's a subblock deliberately: new options can be added over time without colliding with vendor-provided argument names (TID Ch2 §2.2.3) — and that is exactly what happened, twice.
 
 Per the [[tf-block-resource]] reference the full set is: `action_trigger`, `create_before_destroy`, `prevent_destroy`, `ignore_changes`, `replace_triggered_by`, `precondition`, `postcondition`. TID covers the middle four. The condition blocks belong to **A2**; `action_trigger` is new in the 1.14 actions work and is described below.
+
+!!! note "The two condition rules, in one paragraph"
+    `precondition` and `postcondition` take a `condition` expression and an `error_message`, run before and after create/update respectively, and **block the run** when they fail. `self` is legal inside them, which is what makes them work per-instance under `count`/`for_each` with no index bookkeeping. They pre-date cross-variable `validation` (Terraform 1.9 / OpenTofu 1.9) and were the standard workaround for it; TID's guidance now is to prefer the variable rule, since that is where a developer looks first, and keep conditions for rules that genuinely belong to the resource. Full treatment, including the non-blocking top-level `check` block and the ordering table, in [TID Ch10 §10.6](../books/tid/chapters/10-advanced-topics.md#106-checks-and-conditions).
 
 HCDocs adds one qualifier the book doesn't: **support for each individual rule varies across block types.** A rule legal on `resource` isn't automatically legal elsewhere.
 
