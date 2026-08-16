@@ -417,21 +417,23 @@ pip install terraform-local awscli-local   # provides `tflocal` and `awslocal`
     setx S3_HOSTNAME localhost
     ```
 
-    To keep the fix in the repo instead of in your machine's environment, this book ships `labs/lab-env.sh` and `labs/lab-env.ps1`. Each sets `S3_HOSTNAME` plus the dummy credentials, so a fresh clone needs no setup. Source one per shell from the repo root, then work in any lab directory:
+    To keep the fix in the repo instead of in your machine's environment, this book ships `labs/lab-env.sh` and `labs/lab-env.ps1`. Each sets `S3_HOSTNAME` plus the dummy credentials, so a fresh clone needs no setup. Run one per shell. Asking Git for the repository root makes the command work from anywhere, including from inside a lab directory:
 
     ```shell
-    source labs/lab-env.sh
+    source "$(git rev-parse --show-toplevel)/labs/lab-env.sh"
     cd labs/chapter13/lab1
     tflocal apply
     ```
 
     ```powershell
-    . .\labs\lab-env.ps1
+    . "$(git rev-parse --show-toplevel)/labs/lab-env.ps1"
     cd labs\chapter13\lab1
     tflocal apply
     ```
 
-    They are sourced rather than run as a wrapper because lab directories sit at different depths under `labs/`, so a wrapper script would need a different relative path from each one. Sourcing sets the shell once and every depth works. If you use **direnv**, `labs/.envrc` loads `lab-env.sh` for you on every `cd` into a lab, after one `direnv allow`.
+    From the repo root itself, `source labs/lab-env.sh` and `. .\labs\lab-env.ps1` are equivalent. What does *not* work is a bare relative path from somewhere deeper, such as `. .\labs\lab-env.ps1` while standing in `labs\chapter13\lab2`, because that path resolves against your current directory.
+
+    They set the shell rather than wrapping `tflocal` because lab directories sit at different depths under `labs/`, so a wrapper script would need a different relative path from each one. If you use **direnv**, `labs/.envrc` loads `lab-env.sh` for you on every `cd` into a lab, after one `direnv allow`.
 
     Confirm it took by checking the generated override after any `tflocal` command. `localstack_providers_override.tf` should now contain `s3_use_path_style = true` and an `s3 = "http://localhost:4566"` endpoint. The variable only changes S3, because S3 is the one service whose addressing puts the resource name in the hostname.
 

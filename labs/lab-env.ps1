@@ -1,13 +1,15 @@
-# Environment the book's labs assume. Dot-source it once per shell, from the
-# repo root, then cd into any lab directory:
+# Environment the book's labs assume. Run it once per shell. This form works
+# from anywhere inside the repository, including from within a lab directory:
 #
-#     . .\labs\lab-env.ps1
-#     cd labs\chapter13\lab1
-#     tflocal apply
+#     . "$(git rev-parse --show-toplevel)/labs/lab-env.ps1"
 #
-# Dot-sourced rather than run as a wrapper on purpose: lab directories sit at
-# different depths under labs/, so a wrapper would need a different relative
-# path from each one. This sets the shell once and every depth works.
+# From the repo root, `. .\labs\lab-env.ps1` is equivalent and shorter. A bare
+# relative path is what trips people up, because it resolves against the
+# current directory, not against this file.
+#
+# Dot-sourcing is habit rather than necessity here: `$env:` writes to the
+# process environment block, so plainly running the script sets the session
+# too. The Bash sibling genuinely must be sourced.
 #
 # Nothing here touches machine state. Close the shell and it is all gone.
 # For a permanent setting instead, see `setx` in docs/book/ch01-iac-fundamentals.md.

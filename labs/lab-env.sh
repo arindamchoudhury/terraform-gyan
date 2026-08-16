@@ -1,13 +1,13 @@
-# Environment the book's labs assume. Source it once per shell, from the repo
-# root, then cd into any lab directory:
+# Environment the book's labs assume. Source it once per shell. This form works
+# from anywhere inside the repository, including from within a lab directory:
 #
-#     source labs/lab-env.sh
-#     cd labs/chapter13/lab1
-#     tflocal apply
+#     source "$(git rev-parse --show-toplevel)/labs/lab-env.sh"
 #
-# Sourced rather than run as a wrapper on purpose: lab directories sit at
-# different depths under labs/, so a wrapper would need a different relative
-# path from each one. This sets the shell once and every depth works.
+# From the repo root, `source labs/lab-env.sh` is equivalent and shorter. A bare
+# relative path is what trips people up, because it resolves against the current
+# directory, not against this file.
+#
+# It must be sourced, not executed: a subshell's exports die with the subshell.
 #
 # Nothing here touches machine state. Close the shell and it is all gone.
 # For a permanent setting instead, see the shell-rc lines in

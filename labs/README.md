@@ -18,15 +18,17 @@ Start the emulator once. It stays up until you stop it.
 docker compose -f labs/docker-compose.yml up -d
 ```
 
-Set the lab environment once per shell, from the repo root.
+Set the lab environment once per shell. These forms work from anywhere inside the repository, including from inside a lab directory you have already `cd`-ed into:
 
 ```bash
-source labs/lab-env.sh
+source "$(git rev-parse --show-toplevel)/labs/lab-env.sh"
 ```
 
 ```powershell
-. .\labs\lab-env.ps1
+. "$(git rev-parse --show-toplevel)/labs/lab-env.ps1"
 ```
+
+Standing in the repo root, `source labs/lab-env.sh` and `. .\labs\lab-env.ps1` do the same job with less typing. Reach for the longer form when you are already deep in a lab, because a bare relative path resolves against the current directory rather than against the script.
 
 Then work in any lab directory:
 
