@@ -57,7 +57,16 @@ Notable defaults: `name` is `""`, `instance_type` is `"t3.micro"`, `ami` is `nul
 
 Standing text: *"This is the list of resources that the module may create. The module can create zero
 or more of each of these resources depending on the `count` value. The `count` value is determined at
-runtime."* Then *"This module defines 13 resources."*
+runtime. The goal of this page is to present the types of resources that may be created."* Then
+*"This list contains all the resources this plus any submodules may create. When using this module, it
+may create fewer resources if you use a submodule."* Then *"This module defines 13 resources."*
+
+The 13 are listed alphabetically by address, `aws_ebs_volume.this` first and
+`aws_vpc_security_group_ingress_rule.this` last. Each entry is a bare `<code>` inside an `<li>` —
+**no links** on this tab. The readme's terraform-docs table is the copy that links every resource and
+data source to its provider documentation
+(`registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance`, and
+`.../docs/data-sources/ssm_parameter` for the data sources).
 
 The 13 are all **managed resources**. The four data sources the module reads
 (`aws_iam_policy_document.assume_role_policy`, `aws_partition.current`, `aws_ssm_parameter.this`,
@@ -112,3 +121,15 @@ https://registry.terraform.io/v1/modules/terraform-aws-modules/ec2-instance/aws/
 Useful keys: `version`, `published_at`, `downloads`, `verified`, `source`, `root.inputs[]` (with
 `required`, `type`, `default`), `root.outputs[]`, `root.resources[]`, `root.provider_dependencies[]`,
 `submodules[]`, `examples[]`. `root.outputs` is not alphabetised; the web page sorts it.
+
+Re-verified 2026-08-16 against the API: 6.4.0 published `2026-03-26T19:54:48Z`, `verified: false`,
+`downloads: 52717885`, 83 inputs / **0 required** / 30 outputs / 13 resources / `hashicorp/aws >= 6.37`,
+no module dependencies, examples `examples/complete` and `examples/session-manager`, no submodules;
+5.8.0 published `2025-03-30T16:10:59Z` with 70 / 0 / 27 / 7 and `>= 4.66`; `/versions` returns 98.
+`aws-ia/vpc/aws` is at 4.8.0 with `verified: true` and renders the **Partner** badge.
+
+The download counters are volatile and the page shows two generations of them: a fresh load paints the
+server-rendered set (52.7M all time · 518,859 this week · 1.0M this month · 16.8M this year, matching
+the version record's `downloads`), and a page left open long enough to re-fetch client-side showed
+52.6M · 520,939 · 911,164 · 16.7M. Treat any download figure as a reading with a timestamp, never as
+a stable fact.
