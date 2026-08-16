@@ -42,3 +42,18 @@ in the book has moved.
 | `pre-commit-terraform` | Published hooks for every tool above (Babenko); OpenTofu fork: `tofuutils/pre-commit-opentofu` | https://github.com/antonbabenko/pre-commit-terraform |
 | **Cookiecutter** | Jinja2-templated project generator; bootstraps a module with the whole toolchain pre-configured. (TID Ch7 cites `www.cookiecutter.io`, which does not resolve) | https://cookiecutter.readthedocs.io/en/stable/ |
 | **Terratest** | Go-based Terraform testing framework (Gruntwork); the alternative to native `terraform test` | https://terratest.gruntwork.io/ |
+
+## Provider development
+
+What **TID Ch12** builds on, and what **E1** needs. Versions checked 2026-08-16.
+
+| Tool / doc | What it is | URL |
+|---|---|---|
+| **Plugin Framework** | The current provider SDK (`v1.19.0`, 2026-03-10); protocol 6, Go 1.25+ | https://developer.hashicorp.com/terraform/plugin/framework |
+| **Plugin Testing** | `terraform-plugin-testing` (`v1.16.0`, 2026-04-23); `resource.Test`, `resource.UnitTest`, and the newer `statecheck`/`knownvalue` assertions | https://developer.hashicorp.com/terraform/plugin/testing |
+| **Scaffolding template** | The repository TID Ch12 clones to start a provider; carries the release workflow, `.goreleaser.yml` and `tools/tools.go` | https://github.com/hashicorp/terraform-provider-scaffolding-framework |
+| **`tfplugindocs`** | Generates provider docs from schemas and `examples/` | https://github.com/hashicorp/terraform-plugin-docs |
+| **Publishing (Terraform)** | Signing-key registration and provider publication on the Terraform Registry; RSA/DSA keys only, no ECC | https://developer.hashicorp.com/terraform/registry/providers/publishing |
+| **Publishing (OpenTofu)** | Provider and signing-key submissions, **via the GitHub issue forms only** | https://github.com/opentofu/registry |
+| **Mastodon provider** | TID Ch12's finished project — the reference when a listing looks wrong | https://github.com/TerraformInDepth/terraform-provider-mastodon |
+| **corefunc** | The book's example of a functions-only provider — "utilities that should have been Terraform core functions", built on the Plugin Framework, also usable as a Go library. Community-maintained (northwood-labs), not HashiCorp | https://github.com/northwood-labs/terraform-provider-corefunc |

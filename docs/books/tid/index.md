@@ -15,7 +15,7 @@
 | ✅ done | 9. Testing and refactoring | — (backlog: testing, refactoring) |
 | ✅ done | 10. Advanced Terraform topics | [Meta-arguments and `lifecycle`](../../topics/meta-arguments-lifecycle.md) — (backlog: provisioners-and-escape-hatches, checks-and-conditions, naming-and-domains, opentofu-divergence) |
 | ✅ done | 11. Alternative interfaces | — (backlog: wrapping-and-machine-readable-ui, json-configuration) |
-| ⬜ todo | 12. Terraform providers | — |
+| ✅ done | 12. Terraform providers | — (backlog: provider-development, opentofu-divergence) |
 
 ## Conventions
 
