@@ -14,7 +14,7 @@
 | ✅ done | 8. Continuous delivery and deployment | — (backlog: deployment-and-gitops, ci-quality-gates, secrets-and-state) |
 | ✅ done | 9. Testing and refactoring | — (backlog: testing, refactoring) |
 | ✅ done | 10. Advanced Terraform topics | [Meta-arguments and `lifecycle`](../../topics/meta-arguments-lifecycle.md) — (backlog: provisioners-and-escape-hatches, checks-and-conditions, naming-and-domains, opentofu-divergence) |
-| ⬜ todo | 11. Alternative interfaces | — |
+| ✅ done | 11. Alternative interfaces | — (backlog: wrapping-and-machine-readable-ui, json-configuration) |
 | ⬜ todo | 12. Terraform providers | — |
 
 ## Conventions
