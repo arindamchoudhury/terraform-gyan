@@ -4,7 +4,7 @@
 >
 > The book's grab-bag chapter, and it says so itself: rather than one topic, a tour of patterns, niche providers and advanced features. Two of the eight sections are everyday tools — **naming schemes** (§10.1) and **checks and conditions** (§10.6). The rest are escape hatches you will be glad exist and should reach for last: **provisioners** (§10.3), the **external provider** (§10.4), the **local provider** (§10.5). In between sits the one genuinely hard engineering exercise in the chapter, a **dynamically subnetted network module** (§10.2), and it closes on the most useful section of all — **when Terraform is the wrong tool** (§10.8).
 >
-> 📌 **Five claims in this chapter did not survive checking against source and provider docs.** Two are version claims: §10.5.1 dates provider-defined functions to "Terraform and OpenTofu 1.8.0", but **OpenTofu shipped them in 1.7.0** ([opentofu#1439](https://github.com/opentofu/opentofu/pull/1439)); and the `winrm` connection type §10.3.1 documents without qualification is **deprecated as of OpenTofu 1.12**, expected to error in 1.13. Three are behavioural: **`self` is a postcondition keyword only** (§10.6.1 presents it as belonging to both condition types), an omitted `query` sends an empty JSON **object**, not an array (§10.4.1), and `content_base64sha256` is the base64 of the *checksum*, not a checksum of the base64 (§10.5.2). One example is also miswired — Listing 10.40 feeds gzipped Cloud-Init output to `user_data` rather than `user_data_base64` (§10.8.3). Each is flagged where it occurs; version state in [[version-facts]].
+> 📌 **Five claims in this chapter did not survive checking against source and provider docs.** Two are version claims: §10.5.1 dates provider-defined functions to "Terraform and OpenTofu 1.8.0", but **OpenTofu shipped them in 1.7.0** ([opentofu#1439](https://github.com/opentofu/opentofu/pull/1439)); and the `winrm` connection type §10.3.1 documents without qualification is **deprecated as of OpenTofu 1.12**, expected to error in 1.13. Three are behavioural: **`self` is a postcondition keyword only** (§10.6.1 presents it as belonging to both condition types), an omitted `query` sends an empty JSON **object**, not an array (§10.4.1), and `content_base64sha256` is the base64 of the *checksum*, not a checksum of the base64 (§10.5.2). Two of its listings are also defective: **Listing 10.8's topology toggles are inverted**, so the network module errors on one branch and silently returns empty outputs on the other (§10.2.4, reproduced on both engines), and Listing 10.40 feeds gzipped Cloud-Init output to `user_data` rather than `user_data_base64` (§10.8.3). Each is flagged where it occurs; version state in [[version-facts]].
 
 > 🔗 **See also:** owns learning-path **A1** (provisioners, `terraform_data` and escape hatches) and **A2**'s condition half (`precondition`/`postcondition`/`check`), feeds **E3** (OpenTofu divergence, via `.tofu` files), **I3**/**I4** (the network module is a `for`-expression, `count`-toggle and splat exercise), **B7** (network functions, provider-defined functions) and **A6** (never commit the private key a `connection` block reads). Builds on [Ch4](04-expressions-iterations.md) (`for`, splat, `count` as a binary toggle), [Ch6](06-state-management.md) §6.8.4 (`terraform_data`) and [Ch9](09-testing-refactoring.md) (randomised names, and why `aws_secretsmanager_secret` needs one). Topic backlog: `opentofu-divergence` gains §10.7.
 
@@ -249,6 +249,20 @@ module "two_tier_subnets" {
 
 The `aws_availability_zones` data source with `state = "available"` supplies the zone names, so an unavailable zone is never selected.
 
+!!! danger "⚠️ Listing 10.8's two toggles are inverted, and the module returns nothing"
+    As printed, `two_tier_subnets` takes `count = var.enable_isolated_subnet ? local.subnet_count : 0` and `three_tier_subnets` takes `count = var.enable_isolated_subnet ? 0 : local.subnet_count`. So **asking for an isolated subnet builds the two-tier module**, which has no isolated subnet — while the `local` a page later selects `module.three_tier_subnets` when the same variable is true. The code contradicts itself; no annotation is needed to see it, since only `az_3` has an isolated subnet.
+
+    Reproduced on **Terraform 1.15.8** and **OpenTofu 1.12.5** with stub submodules, and the two failure modes are not equally kind:
+
+    | `enable_isolated_subnet` | Result |
+    | --- | --- |
+    | `true` | **Error:** `This object does not have an attribute named "isolated_subnet_id"` — the selected branch is the empty list, which unification typed as the *az_2* shape |
+    | `false` | **No error.** Subnets are created and every output is `[]` — the caller gets an empty `private_subnet_ids` and never learns why |
+
+    Swapping the two `count` expressions fixes both branches; with that one change the outputs populate correctly on both engines, so **the pattern is sound and only the toggle direction is wrong**.
+
+    The silent branch is the interesting one, and it generalises past this listing: `module.x` with `count = 0` is an **empty tuple**, so a ternary between a populated module list and an empty one takes its element type from whichever branch has instances. Select the empty branch and you get a well-typed empty list rather than a type error. That is why a splat over the wrong module yields `[]` instead of complaining — and why an integration test asserting *"outputs are non-empty"* catches this and `terraform validate` does not.
+
 Outputs then hide the switch entirely — a local picks whichever module is live, and splat collects across its instances:
 
 ```hcl
@@ -437,7 +451,7 @@ What makes it a better host than a real resource:
 
 - **`triggers_replace` takes any expression**, so the provisioner can be keyed on any attribute of any resource or data source — not just the lifecycle of the thing it happens to be attached to.
 - **Multiple dependencies collapse into one run.** Several triggers together mean the script runs once when any of them changes, rather than once per resource.
-- **No `self`.** There is no underlying machine, so the connection has to name the instance explicitly.
+- **`self` exists but is useless for connecting.** The chapter says there are "no self values we can use here", which is loose: measured on Terraform 1.15.8, a provisioner on `terraform_data` resolves `self.id` and `self.output` fine. What it cannot give you is an address, because the resource has no machine behind it — so the `connection` must name another resource explicitly.
 
 ```hcl
 resource "terraform_data" "provisioners" {
