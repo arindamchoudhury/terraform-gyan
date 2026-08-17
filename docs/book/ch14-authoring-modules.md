@@ -248,7 +248,7 @@ variable "cors_rules" {
 
 `default = []` makes the whole variable optional while every element that *is* supplied still has to carry `allowed_methods` and `allowed_origins`. Optionality at the variable level and requiredness at the element level are independent knobs, and this is the declaration that shows both at once.
 
-The required/optional split inside the object is not the author's invention. The tutorial states the rule outright: *"This matches the behavior of the `aws_s3_bucket_cors_configuration` resource you will use to configure CORS."* **Mirror the wrapped resource's own split**, because a module input that disagrees with the resource beneath it either rejects configurations the provider would have accepted or defers the error to apply.
+Which attributes are required inside that object is not a free choice for the module author. It is copied from the resource the module wraps, and the tutorial says so outright: *"This matches the behavior of the `aws_s3_bucket_cors_configuration` resource you will use to configure CORS."* **Mirror the wrapped resource's own split**, because a module input that disagrees with the resource beneath it either rejects configurations the provider would have accepted or defers the error to apply.
 
 The consumption side is where the optionality pays for itself:
 
