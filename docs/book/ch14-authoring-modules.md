@@ -93,13 +93,16 @@ A module's public surface is its input variables and its output values. Everythi
 
 ### Minimise inputs, maximise outputs
 
-The recommended-pattern guide states a deliberate asymmetry.
+The recommended-pattern guide states a deliberate asymmetry, and it states it about a **module MVP** — the first version you ship to your early adopter, not a finished product. The guide sets the bar numerically: *"Always aim to deliver a module that works for at least 80% of use cases."* The other 20% is out of scope on purpose. Its framing for that is *"Modules, like any piece of code, are never complete"*, so shipping narrow is the first move rather than a compromise.
 
-On inputs: *"The module should only expose the most commonly modified arguments as variables"*, *"Never code for edge cases in modules"*, and *"Avoid conditional expressions in an MVP."*
+On inputs: *"The module should only expose the most commonly modified arguments as variables"*, *"Never code for edge cases in modules. An edge case is rare. A module should be a reusable block of code."*, and *"Avoid conditional expressions in an MVP. An MVP should have a narrow scope and should not do multiple things."*
 
 On outputs, the opposite: *"Output as much information as possible from your module MVP even if you do not currently have a use for it. This will make your module more useful for end users who will often use multiple modules, using outputs from one module as inputs for the next."*
 
 The asymmetry follows from what each one costs. An input is a promise you maintain, document, test and keep working across versions. An output is a value you have already computed, and exposing it is what lets your module compose with the next one.
+
+!!! note "“Avoid conditional expressions in an MVP” is sequencing advice"
+    It is not an argument against the `optional()` attributes and `dynamic` blocks of section 4. The MVP rule says do not build flexibility before a second real consumer has asked for it. Section 4's mechanism says that when one does ask, add it additively so the first consumer keeps working. Ship narrow, then grow — the two rules cover different halves of the same timeline.
 
 !!! tip "A value your module's purpose fixes is not a variable"
     HashiCorp's local-module tutorial makes this concrete. Its module hosts a static website, so the bucket ACL must be `public-read` — and the tutorial deliberately does **not** expose the ACL as a variable. Making it configurable would let a caller produce a bucket that cannot do the one thing the module exists to do.
