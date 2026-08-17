@@ -526,7 +526,37 @@ module "example" {
 }
 ```
 
-This is the deliberate use of the discard behaviour flagged as a footgun in section 4. Declaring only `id` and `architecture` gives structural typing: anything shaped enough to be an AMI passes.
+This is the deliberate use of the discard behaviour flagged as a footgun in section 4. Declaring only `id` and `architecture` gives structural typing: anything shaped enough to be an AMI passes. The mechanism is worth stating outright, because it is the only thing making one variable accept both branches.
+
+A resource address written without an attribute is an object value. `aws_ami_copy.example` evaluates to an object whose attributes are that resource's schema attributes, and `data.aws_ami.example` does the same for the data source. The Type Constraints page names this case directly: `object({ id=string, cidr_block=string })` matches an `aws_vpc` reference, with the extra attributes discarded.
+
+The variable's declared type is therefore a conversion target, not a shape the caller has to match exactly. Conversion succeeds when every attribute the *target* declares is present and convertible, and everything the target does not declare is dropped. A resource and a data source that both carry `id` and `architecture` converge on the same two-attribute object, which is what *"Terraform will allow any object that has at least these attributes"* means in practice.
+
+Two consequences follow, both measured on **1.15.8**. The first is that the conversion has already happened by the time the module runs, so `var.ami` really does have two attributes and nothing else. Pass an object carrying `arn` and then read it inside the module:
+
+```text
+Error: Unsupported attribute
+
+  on mod\main.tf line 13, in output "undeclared":
+  13:   value = var.ami.arn
+    ├────────────────
+    │ var.ami is a object
+
+This object does not have an attribute named "arn".
+```
+
+The caller supplied it. The type constraint removed it. Declare what the module needs and you do not get the rest back.
+
+The second is that a *missing* attribute fails loudly, which is the opposite of the silent typo in section 4:
+
+```text
+Error: Invalid value for input variable
+
+The given value is not suitable for module.example.var.ami declared at
+mod\main.tf:1,1-15: attribute "architecture" is required.
+```
+
+The asymmetry is the useful part. Extra attributes are discarded in silence; absent required ones are named and rejected at the module call. That also makes adding a third required attribute to this type a breaking change for every caller whose object lacks it, so grow it with `optional()` exactly as section 4 does.
 
 !!! warning "Two of that page's examples would fail `validate`"
     The `aws_ami` data source takes **`owners`** — a list — not `owner`. And `data "aws_subnet_ids"` **no longer exists** in the AWS provider; `aws_subnets` replaced it. Neither is load-bearing for the pattern, but both stop a reader who copies the snippet. Checked against the provider's documentation source, 2026-08-08.
