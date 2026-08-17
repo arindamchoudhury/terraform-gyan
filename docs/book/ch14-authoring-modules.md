@@ -93,7 +93,7 @@ A module's public surface is its input variables and its output values. Everythi
 
 ### Minimise inputs, maximise outputs
 
-The recommended-pattern guide states a deliberate asymmetry, and it states it about a **module MVP** — the first version you ship to your early adopter, not a finished product. The guide sets the bar numerically: *"Always aim to deliver a module that works for at least 80% of use cases."* The other 20% is out of scope on purpose. Its framing for that is *"Modules, like any piece of code, are never complete"*, so shipping narrow is the first move rather than a compromise.
+The recommended-pattern guide states a deliberate asymmetry, and it states it about a **module MVP**, borrowing the product term *minimum viable product*. That is the first version you ship to your early adopter, not a finished product. The guide sets the bar numerically: *"Always aim to deliver a module that works for at least 80% of use cases."* The other 20% is out of scope on purpose. Its framing for that is *"Modules, like any piece of code, are never complete"*, so shipping narrow is the first move rather than a compromise.
 
 On inputs: *"The module should only expose the most commonly modified arguments as variables"*, *"Never code for edge cases in modules. An edge case is rare. A module should be a reusable block of code."*, and *"Avoid conditional expressions in an MVP. An MVP should have a narrow scope and should not do multiple things."*
 
