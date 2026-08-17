@@ -70,7 +70,7 @@ Read the three tiers off that declaration:
 References change from `var.index_document_suffix` to `var.files.index_document_suffix`, and `var.terraform_managed_files` to `var.files.terraform_managed`.
 
 !!! note "The rename is the quiet lesson"
-    `terraform_managed_files` becomes `files.terraform_managed`. The `_files` suffix existed only because a flat namespace had nowhere else to put the qualifier. Once the object supplies the namespace, the suffix is noise. Flattened variable names that share a prefix or suffix are a signal that an object is hiding in the interface.
+    `terraform_managed_files` becomes `files.terraform_managed`. The `_files` suffix existed only because a flat namespace had nowhere else to put the qualifier. Once the object supplies the namespace, the suffix is noise. The generalizable tell is a word inside a flat variable name whose only job is to mark which group the variable belongs to — that word is the object not yet declared. Note that the four variables here do *not* share a token; only `terraform_managed_files` carries the qualifier, so this is a smell about hand-rolled namespacing rather than a rule about matching prefixes.
 
 Three caller shapes the page enumerates:
 

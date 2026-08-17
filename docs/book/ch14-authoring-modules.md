@@ -214,10 +214,10 @@ The minimum call is one attribute. Everything else is opt-in, and a caller who n
 
     The same variable therefore means a different directory depending on who sets it, and that is exactly the value a module cannot guess. Chapter 7 covers the full `path.*` set and why `path.module` is almost always the right one inside a module.
 
-!!! tip "A shared prefix or suffix across variable names is an object hiding in your interface"
-    The refactor renames `terraform_managed_files` to `files.terraform_managed`. The `_files` suffix existed only because a flat namespace had nowhere else to put the qualifier. Once the object supplies the namespace, the suffix is noise.
+!!! tip "A qualifier baked into a variable name is a namespace you are hand-rolling"
+    The refactor renames `terraform_managed_files` to `files.terraform_managed`. The `_files` suffix existed only because a flat namespace had nowhere else to say which group the variable belonged to. Once the object supplies the namespace, the suffix is noise.
 
-    When four variables all start or end with the same word, that word is the object you have not declared yet.
+    Read that as a smell, not a counting rule. The tell is a word inside a variable name whose only job is to mark membership of a group, and that word is the object you have not declared yet.
 
 !!! danger "An object constraint discards undeclared attributes, silently"
     A caller who misspells an optional attribute gets no error. The object constraint drops the unknown key, `optional()` fills the declared attribute with `null` or its default, and `terraform validate` prints `Success!`. Chapter 12 measured this on 1.15.8.
