@@ -165,34 +165,116 @@ Chapter 12 covered type constraints and `optional()` as language features. Here 
 
 HashiCorp's [Customize modules with object attributes](https://developer.hashicorp.com/terraform/tutorials/modules/module-object-attributes) tutorial gives the argument for object-typed inputs, and it is about versioning rather than tidiness: optional attributes *"make it easier for you to ship new module versions without changing the variables that module users need to define."*
 
-Adding a new top-level variable is safe. Adding a new *required* one breaks every existing caller. An object with `optional()` attributes lets you grow the interface additively:
+The tutorial earns that claim with one refactor, and it is worth walking through here rather than sending you to the page, because it is the shape every module that survives its first release eventually needs. The module provisions a public S3 static-website bucket and uploads a directory of local files into it. It starts with six flat variables, four of them about those files: `index_document_suffix`, `error_document_key`, `www_path` and `terraform_managed_files`. All four are deleted and replaced by one.
 
 ```hcl
-variable "retention" {
-  description = "How long object history is kept."
+variable "files" {
+  description = "Configuration for website files."
   type = object({
-    versioned       = optional(bool, true)
-    noncurrent_days = optional(number)
+    terraform_managed     = bool
+    error_document_key    = optional(string, "error.html")
+    index_document_suffix = optional(string, "index.html")
+    www_path              = optional(string)
   })
-  default = {}
 }
 ```
 
-Read the three tiers straight off the declaration. An attribute not wrapped in `optional()` is required. `optional(type, default)` means the module supplies the value. Bare `optional(type)` means the attribute arrives as `null`, which the module handles itself.
+Read the three tiers straight off that declaration. `terraform_managed` is not wrapped in `optional()`, so it is required, and because the variable itself has no `default` the whole `files` object is required too. `error_document_key` and `index_document_suffix` use `optional(type, default)`, so the module supplies the value when the caller omits it. Bare `optional(string)` on `www_path` means it arrives as `null`, which the module handles itself.
+
+Now the versioning argument. Adding a new top-level variable is safe. Adding a new *required* one breaks every existing caller. Adding another `optional()` attribute to an object that already exists breaks nobody, because old callers keep sending exactly what they sent before and the new attribute arrives as its default. That makes the choice between four flat variables and one object a release-management decision rather than a matter of taste. The refactor itself costs nothing at apply time either: it changes the module's interface, not its resource addresses, so no resource is destroyed by it.
+
+The payoff shows on the calling side, where one type accepts three quite different-looking calls:
+
+```hcl
+files = {
+  terraform_managed = false
+}
+```
+
+```hcl
+files = {
+  terraform_managed = true
+  www_path          = "${path.root}/www"
+}
+```
+
+```hcl
+files = {
+  terraform_managed     = true
+  www_path              = "${path.root}/www"
+  index_document_suffix = "main.html"
+  error_document_key    = "error.html"
+}
+```
+
+The minimum call is one attribute. Everything else is opt-in, and a caller who never needs `index_document_suffix` never learns that it exists.
+
+!!! tip "`path.module` versus `path.root` is why `www_path` is worth exposing at all"
+    Inside the module the fallback is `var.files.www_path != null ? var.files.www_path : "${path.module}/www"`, which resolves against the *module's own* directory and ships a placeholder page. The callers above pass `${path.root}/www`, which resolves against the *root configuration's* directory.
+
+    The same variable therefore means a different directory depending on who sets it, and that is exactly the value a module cannot guess. Chapter 7 covers the full `path.*` set and why `path.module` is almost always the right one inside a module.
 
 !!! tip "A shared prefix or suffix across variable names is an object hiding in your interface"
-    The tutorial's refactor renames `terraform_managed_files` to `files.terraform_managed`. The `_files` suffix existed only because a flat namespace had nowhere else to put the qualifier. Once the object supplies the namespace, the suffix is noise.
+    The refactor renames `terraform_managed_files` to `files.terraform_managed`. The `_files` suffix existed only because a flat namespace had nowhere else to put the qualifier. Once the object supplies the namespace, the suffix is noise.
 
     When four variables all start or end with the same word, that word is the object you have not declared yet.
-
-Two more rules from the same page. **Mirror the wrapped resource's own required/optional split** — its `cors_rules` type deliberately matches `aws_s3_bucket_cors_configuration`, because a module input that disagrees with the resource it wraps either rejects valid configurations or defers the error to apply. And **`path.module` versus `path.root`** is worth exposing precisely because the same variable resolves against different directories depending on who sets it: the module's fallback resolves against its own directory, the caller's value against theirs.
 
 !!! danger "An object constraint discards undeclared attributes, silently"
     A caller who misspells an optional attribute gets no error. The object constraint drops the unknown key, `optional()` fills the declared attribute with `null` or its default, and `terraform validate` prints `Success!`. Chapter 12 measured this on 1.15.8.
 
-    The same behaviour is a **feature** one section down, in the conditional-creation pattern, where a deliberately partial object type is what lets one variable accept both a resource and a data source. Duck-typed inputs and typo detection are the same knob turned two ways, and you cannot have both. Know which one you are choosing.
+    Run it against the `files` variable above. A caller who writes `wwwpath` instead of `www_path` has the unknown key dropped, `optional(string)` fills `www_path` with `null`, the `base_dir` ternary falls back to `${path.module}/www`, and the module deploys its own placeholder page instead of the caller's site. Nothing errors. Misspell the **required** `terraform_managed` and Terraform does reject the call by name, so it takes both halves to produce the footgun: the object constraint removes the attribute, and `optional()` removes the evidence.
+
+    The same behaviour is a **feature** in section 7's conditional-creation pattern, where a deliberately partial object type is what lets one variable accept both a resource and a data source. Duck-typed inputs and typo detection are the same knob turned two ways, and you cannot have both. Know which one you are choosing.
 
     OpenTofu 1.12 emits `Warning: Object attribute is ignored` for module calls and Terraform emits nothing, so OpenTofu is slightly noisier for the pattern and slightly safer against the typo.
+
+### A list of objects, and the resource it mirrors
+
+The same tutorial then adds a second input in a different shape, for CORS rules:
+
+```hcl
+variable "cors_rules" {
+  description = "List of CORS rules."
+  type = list(object({
+    allowed_headers = optional(set(string)),
+    allowed_methods = set(string),
+    allowed_origins = set(string),
+    expose_headers  = optional(set(string)),
+    max_age_seconds = optional(number)
+  }))
+  default = []
+}
+```
+
+`default = []` makes the whole variable optional while every element that *is* supplied still has to carry `allowed_methods` and `allowed_origins`. Optionality at the variable level and requiredness at the element level are independent knobs, and this is the declaration that shows both at once.
+
+The required/optional split inside the object is not the author's invention. The tutorial states the rule outright: *"This matches the behavior of the `aws_s3_bucket_cors_configuration` resource you will use to configure CORS."* **Mirror the wrapped resource's own split**, because a module input that disagrees with the resource beneath it either rejects configurations the provider would have accepted or defers the error to apply.
+
+The consumption side is where the optionality pays for itself:
+
+```hcl
+resource "aws_s3_bucket_cors_configuration" "web" {
+  count = length(var.cors_rules) > 0 ? 1 : 0
+
+  bucket = aws_s3_bucket.web.id
+
+  dynamic "cors_rule" {
+    for_each = var.cors_rules
+
+    content {
+      allowed_headers = cors_rule.value["allowed_headers"]
+      allowed_methods = cors_rule.value["allowed_methods"]
+      allowed_origins = cors_rule.value["allowed_origins"]
+      expose_headers  = cors_rule.value["expose_headers"]
+      max_age_seconds = cors_rule.value["max_age_seconds"]
+    }
+  }
+}
+```
+
+Every attribute is assigned unconditionally, optional ones included, and the tutorial gives the reason: *"Since optional object attributes default to `null`, Terraform will not set values for them unless the module user specifies them."* A `null` argument is an unset argument. `optional()` plus unconditional assignment therefore replaces the five conditionals this block would otherwise need, which is the single most useful consequence of typed nulls for a module author.
+
+Two mechanisms are stacked in that resource and they are worth keeping apart. `count` is a zero-or-one guard, because a CORS configuration with no rules is not the same thing as no CORS configuration at all. `dynamic` iterates *blocks* inside the one resource, not resources. Chapter 12 covers both.
 
 ### Typed outputs, and the engine that rejects them
 
