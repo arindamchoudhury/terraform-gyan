@@ -165,7 +165,7 @@ Chapter 12 covered type constraints and `optional()` as language features. Here 
 
 HashiCorp's [Customize modules with object attributes](https://developer.hashicorp.com/terraform/tutorials/modules/module-object-attributes) tutorial gives the argument for object-typed inputs, and it is about versioning rather than tidiness: optional attributes *"make it easier for you to ship new module versions without changing the variables that module users need to define."*
 
-The tutorial earns that claim with one refactor, and it is worth walking through here rather than sending you to the page, because it is the shape every module that survives its first release eventually needs. The module provisions a public S3 static-website bucket and uploads a directory of local files into it. It starts with six flat variables, four of them about those files: `index_document_suffix`, `error_document_key`, `www_path` and `terraform_managed_files`. All four are deleted and replaced by one.
+The tutorial earns that claim with one refactor, and it is the shape every module that survives its first release eventually needs. The module provisions a public S3 static-website bucket and uploads a directory of local files into it. It starts with six flat variables, four of them about those files: `index_document_suffix`, `error_document_key`, `www_path` and `terraform_managed_files`. All four are deleted and replaced by one.
 
 ```hcl
 variable "files" {
