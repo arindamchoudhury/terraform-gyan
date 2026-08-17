@@ -27,6 +27,7 @@ nav = [
         { "11. The lifecycle meta-argument" = "book/ch11-lifecycle.md" },
         { "12. Dynamic blocks & complex types" = "book/ch12-dynamic-blocks-complex-types.md" },
         { "13. Using modules" = "book/ch13-using-modules.md" },
+        { "14. Authoring modules" = "book/ch14-authoring-modules.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },

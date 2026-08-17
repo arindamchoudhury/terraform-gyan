@@ -528,7 +528,7 @@ You are ready to advance when you can:
 
 ---
 
-### ⬜ I5 — Authoring modules
+### ✅ I5 — Authoring modules
 
 **What it is:** Writing your own modules — standard file layout, input validation, sensible outputs, composition over inheritance, and module design principles.
 
@@ -575,7 +575,7 @@ You are ready to advance when you can:
 
     **The registry-specific trap:** *"All links in `README.md` files should be absolute"*. The Terraform Registry renders your README off-repo, so a relative link that works fine on GitHub resolves to nothing there. This is a publishing constraint rather than a style preference, and it belongs with the publishing rules above. The rest of the toolchain is in **B4**.
 
-**Milestone:** You can package infrastructure into a module with validated inputs, documented outputs, and a README, and consume it from two callers.
+**Milestone:** You can package infrastructure into a module with validated inputs, documented outputs, and a README, and consume it from two callers. **Written up as [Chapter 14 — Authoring modules](book/ch14-authoring-modules.md)**, whose lab measures typed outputs against both engines, the `deprecated` warnings each engine emits and when, and a module split that leaves the consumer's plan at `0 to add, 0 to change, 0 to destroy`.
 
 ---
 
@@ -1753,7 +1753,7 @@ Advanced (A1–A10)       → ~76 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner complete, Intermediate in progress — B1–B9, I1–I4 done (Ch 1–13 written). Next up: **I5 (Authoring modules)**.
+**You are currently here:** Beginner complete, Intermediate in progress — B1–B9, I1–I5 done (Ch 1–14 written). Next up: **I6 (Remote state & backends)**.
 
 ---
 
