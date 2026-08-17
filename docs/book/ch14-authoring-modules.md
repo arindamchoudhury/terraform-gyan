@@ -756,7 +756,39 @@ flowchart LR
     before --> after
 ```
 
+The shim is small enough to read whole. It declares no resources of its own, calls the two new modules, re-exports what it used to export, and carries the migrations:
+
+```hcl
+module "logs" {
+  source = "../logs"
+  name   = "${var.prefix}-logs"
+}
+
+module "assets" {
+  source = "../assets"
+  name   = "${var.prefix}-assets"
+}
+
+output "logs_bucket" {
+  value = module.logs.bucket
+}
+
+moved {
+  from = aws_s3_bucket.logs
+  to   = module.logs.aws_s3_bucket.this
+}
+
+moved {
+  from = aws_s3_bucket.assets
+  to   = module.assets.aws_s3_bucket.this
+}
+```
+
+`from` is an address that used to exist in this module. `to` names a resource **inside a child module**, and the addresses resolve relative to the module the block is written in, so the shim can name its own children. Terraform then treats the two existing objects as though they had been created inside the new modules all along.
+
 New consumers take `logs` and `assets` directly. Existing consumers upgrade the version they already reference and get an empty plan.
+
+Re-exporting the outputs matters as much as the `moved` blocks. A consumer reading `module.storage.logs_bucket` keeps reading it, so the interface survives even though nothing behind it does.
 
 HashiCorp names the compromise rather than hiding it. The shim's blocks address resources *inside* child modules, which *"violates the typical rule that a parent module sees its child module as a 'closed box'"*, and the page attaches a precondition: *"all three of these modules are maintained by the same people and distributed together in a single module package."* That licence covers your own package and never someone else's module.
 
