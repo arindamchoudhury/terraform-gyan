@@ -558,9 +558,6 @@ mod\main.tf:1,1-15: attribute "architecture" is required.
 
 The asymmetry is the useful part. Extra attributes are discarded in silence; absent required ones are named and rejected at the module call. That also makes adding a third required attribute to this type a breaking change for every caller whose object lacks it, so grow it with `optional()` exactly as section 4 does.
 
-!!! warning "Two of that page's examples would fail `validate`"
-    The `aws_ami` data source takes **`owners`** — a list — not `owner`. And `data "aws_subnet_ids"` **no longer exists** in the AWS provider; `aws_subnets` replaced it. Neither is load-bearing for the pattern, but both stop a reader who copies the snippet. Checked against the provider's documentation source, 2026-08-08.
-
 ### Prefer separate resources to inline blocks
 
 Some provider resources let you express the same thing two ways: an inline block inside the parent resource, or a separate resource that points back at it. `aws_security_group` with inline `ingress` blocks, or `aws_security_group` plus separate rule resources. *Terraform: Up & Running* Chapter 4 is blunt about the choice:
