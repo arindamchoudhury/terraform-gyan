@@ -129,6 +129,7 @@ nav = [
                 { "Backends" = [
                     { "Configure a backend" = "sources/terraform-docs/tf-backend-configure.md" },
                     { "local" = "sources/terraform-docs/tf-backend-local.md" },
+                    { "http" = "sources/terraform-docs/tf-backend-http.md" },
                 ]},
                 { "State" = [
                     { "Overview" = "sources/terraform-docs/tf-state.md" },
@@ -216,6 +217,22 @@ nav = [
         { "Infisical Blog" = [
             { "Overview" = "sources/infisical-blog/index.md" },
             { "1. A Guide to Terraform Secrets Management" = "sources/infisical-blog/infisical-terraform-secrets.md" },
+        ]},
+        { "GitLab Docs" = [
+            { "Overview" = "sources/gitlab-docs/index.md" },
+            { "Infrastructure as Code" = [
+                { "OpenTofu state" = "sources/gitlab-docs/gitlab-tf-state.md" },
+            ]},
+        ]},
+        { "GitHub Docs" = [
+            { "Overview" = "sources/github-docs/index.md" },
+            { "1. OpenID Connect" = "sources/github-docs/gha-oidc.md" },
+        ]},
+        { "Atlassian Bitbucket Docs" = [
+            { "Overview" = "sources/bitbucket-docs/index.md" },
+            { "Integrations" = [
+                { "Integrate Pipelines with resource servers using OIDC" = "sources/bitbucket-docs/bitbucket-pipelines-oidc.md" },
+            ]},
         ]},
         { "Terraform Best Practices" = [
             { "Overview" = "sources/terraform-best-practices/index.md" },

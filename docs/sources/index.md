@@ -61,6 +61,7 @@ Log of all captured sources, organised by course.
 | [Backend block configuration overview](terraform-docs/tf-backend-configure.md) | documentation | 2026-07-30 | backend, backend-block, partial-configuration, backend-config, tfbackend, init, migrate-state, credentials | [url](https://developer.hashicorp.com/terraform/language/backend) |
 | [`local` backend](terraform-docs/tf-backend-local.md) | documentation | 2026-07-30 | backend, local-backend, workspace-dir, state-flag, backup, legacy-flags, terraform_remote_state | [url](https://developer.hashicorp.com/terraform/language/backend/local) |
 | [Remote State](terraform-docs/tf-state-remote.md) | documentation | 2026-07-30 | state, remote-state, delegation, locking, hcp-terraform, consul, decomposition | [url](https://developer.hashicorp.com/terraform/language/state/remote) |
+| [http backend](terraform-docs/tf-backend-http.md) | documentation | 2026-08-18 | backend, http, rest, state-locking, mtls, gitlab, credentials | [url](https://developer.hashicorp.com/terraform/language/backend/http) |
 | [`terraform refresh` command](terraform-docs/tf-cmd-refresh.md) | documentation | 2026-07-30 | cli, refresh, refresh-only, deprecated, drift, state, auto-approve | [url](https://developer.hashicorp.com/terraform/cli/commands/refresh) |
 | [Inspect Infrastructure Commands Overview](terraform-docs/tf-cli-inspect.md) | documentation | 2026-07-30 | cli, inspection, graph, output, show, state-list, state-show, json, tool-integration | [url](https://developer.hashicorp.com/terraform/cli/inspect) |
 | [`terraform output` command](terraform-docs/tf-cmd-output.md) | documentation | 2026-07-30 | cli, output, json, raw, sensitive, ephemeral, root-module, automation | [url](https://developer.hashicorp.com/terraform/cli/commands/output) |
@@ -148,3 +149,21 @@ Anton Babenko's community book at [terraform-best-practices.com](https://www.ter
 | Title | Type | Added | Tags | URL |
 |---|---|---|---|---|
 | [Code styling](terraform-best-practices/code-styling.md) | documentation | 2026-08-13 | style, formatting, fmt, pre-commit, editorconfig, terraform-docs, comments | [url](https://www.terraform-best-practices.com/code-styling) |
+
+## 8. GitLab Docs
+
+| Title | Type | Added | Tags | URL |
+|---|---|---|---|---|
+| [GitLab-managed Terraform/OpenTofu state](gitlab-docs/gitlab-tf-state.md) | documentation | 2026-08-18 | gitlab, state, http-backend, state-locking, ci-cd, permissions, glab, opentofu, secrets | [url](https://docs.gitlab.com/user/infrastructure/iac/terraform_state/) |
+
+## 9. GitHub Docs
+
+| Title | Type | Added | Tags | URL |
+|---|---|---|---|---|
+| [OpenID Connect in GitHub Actions](github-docs/gha-oidc.md) | documentation | 2026-08-18 | github-actions, oidc, jwt, short-lived-credentials, trust-policy, abac | [url](https://docs.github.com/en/actions/concepts/security/openid-connect) |
+
+## 10. Atlassian Bitbucket Docs
+
+| Title | Type | Added | Tags | URL |
+|---|---|---|---|---|
+| [Integrate Pipelines with resource servers using OIDC](bitbucket-docs/bitbucket-pipelines-oidc.md) | documentation | 2026-08-18 | bitbucket, pipelines, oidc, aws, assume-role-with-web-identity, audiences | [url](https://support.atlassian.com/bitbucket-cloud/docs/integrate-pipelines-with-resource-servers-using-oidc/) |
