@@ -3,8 +3,10 @@ terraform {
 
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0"
+      source = "hashicorp/aws"
+      # A root module sets a ceiling as well as a floor. The module this calls
+      # says ">= 5.0", because a shared module must not cap its callers.
+      version = "~> 6.0"
     }
   }
 }
