@@ -811,12 +811,9 @@ Getting a module into a registry is Chapter 21's subject, but two facts belong i
 
 The registry's full bar is short: a public GitHub repository with that name, adherence to the standard module structure so the registry can generate documentation and parse submodules and examples, and at least one semver release tag.
 
-!!! warning "The publishing requirements are not on the page called Publish modules"
-    The Configuration Language sidebar has a **Publish modules** entry, and it contains none of the rules above — no naming rule, no tag rule, no structure requirement. Those live under the separate **Registry Publishing** section. A reader following the sidebar will not find them.
+Publishing through a registry rather than a Git source buys one thing above all: *"The alternative sources do not support the first-class versioning mechanism."* A registry module takes `version = "1.4.0"` as a real argument. A Git source forces a choice between a movable tag and a SHA that no update bot will bump for you.
 
-    What that page does supply is the cleanest one-line case for publishing at all: *"The alternative sources do not support the first-class versioning mechanism."* A registry module takes `version = "1.4.0"` as a real argument; a Git source forces a choice between a movable tag and a SHA that no update bot will bump for you.
-
-    It also notes that a module distributed by Git should still follow the standard structure *"or be published on the registry at a later time"* — structure as a migration path, not just tidiness.
+That is also why the standard structure is worth following for a module you only ever distribute by Git. HashiCorp frames it as keeping the module ready to *"be published on the registry at a later time"*, so structure is a migration path rather than tidiness.
 
 !!! note "Two smaller publishing facts worth knowing now"
     HCP Terraform's private registry offers a **branch-based** publishing workflow alongside the tag-based one, and it is the only workflow that supports **module testing** — which makes it the one to choose once `terraform test` is part of how you ship. And the public registry **hosts, it does not vet**: partner and community modules sit side by side, *"accessible to practitioners who can decide which modules best fit their requirements."* Curation is the consumer's job, which is what Chapter 13's review checklist was for.
