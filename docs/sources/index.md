@@ -116,6 +116,7 @@ Log of all captured sources, organised by course.
 | [Use configuration to move resources (Modules)](terraform-tutorials/tut-move-config.md) | documentation | 2026-08-08 | moved-block, refactoring, state, module-extraction, resource-addresses, rename, terraform-1.3 | [url](https://developer.hashicorp.com/terraform/tutorials/modules/move-config) |
 | [Create and use no-code modules (Modules)](terraform-tutorials/tut-no-code-provisioning.md) | documentation | 2026-08-08 | no-code-modules, hcp-terraform, self-service, platform-engineering, ephemeral-resources, write-only-arguments, variable-sets, module-versioning | [url](https://developer.hashicorp.com/terraform/tutorials/modules/no-code-provisioning) |
 | [Migrate state to HCP Terraform (State)](terraform-tutorials/tut-cloud-migrate.md) | documentation | 2026-08-18 | state, migration, hcp-terraform, cloud-block, terraform-login, remote-operations, workspaces, init | [url](https://developer.hashicorp.com/terraform/tutorials/state/cloud-migrate) |
+| [Version remote state with the HCP Terraform API (State)](terraform-tutorials/tut-cloud-state-api.md) | documentation | 2026-08-18 | state, hcp-terraform, api, state-versions, serial, lineage, md5, workspace-lock, disaster-recovery, drift, no-op-apply | [url](https://developer.hashicorp.com/terraform/tutorials/state/cloud-state-api) |
 
 ## 4. Terraform Registry
 

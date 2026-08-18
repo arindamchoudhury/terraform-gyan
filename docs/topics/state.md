@@ -10,7 +10,7 @@ State is the record that binds a `resource` block in your configuration to an ob
 
 - **State is a binding, not a cache.** [[tf-state]] calls the resource-to-object mapping the primary purpose, and everything else secondary. TID §6.1 splits the rest into three named jobs — reduced complexity, performance, and state-only resources — while [[tf-state-purpose]] adds the one that decides behaviour after you delete code: **retained dependencies**, which are what order a destroy once the configuration no longer describes the relationships. TUR compresses all of it into one sentence, and it is the most quotable version: a plan is *"a diff between the code on your computer and the infrastructure deployed in the real world, as discovered via IDs in the state file."*
 - **The attribute cache is the optional part.** The IDs must be in state; the attributes beside them are a performance convenience that a refresh re-reads. Worth knowing because it explains why `-refresh=false` is a speed knob with a correctness cost, and why stale attributes are a normal condition rather than corruption.
-- **`lineage` and `serial` are the write guards.** TID §6.3.3 dissects them; [[tf-state-backends]] explains what they gate — `terraform state push` checks both before overwriting a remote snapshot. TUR shows them in its JSON dump without explaining them, which is a fair division of labour.
+- **`lineage` and `serial` are the write guards.** TID §6.3.3 dissects them; [[tf-state-backends]] explains what they gate — `terraform state push` checks both before overwriting a remote snapshot. TUR shows them in its JSON dump without explaining them, which is a fair division of labour. [[tut-cloud-state-api]] is where the pair stops being trivia: an API state-version upload sends `serial` and `lineage` as attributes beside the encoded document, and you increment `serial` yourself because nothing else will.
 - **The file format is a private API.** Both books say so. Only the docs say what to use instead: `terraform show -json` and `terraform output -json` are the supported machine formats precisely because the file layout may change between versions ([[tf-cli-inspect]]).
 - **Backends do two jobs, and the second is optional.** A backend stores state; it *may* also provide locking ([[tf-state-backends]]). That split is why "which backend" and "how do I lock" are separate questions, and why the S3 answer to the second one changed without the first one moving.
 - **Everything in state is plaintext.** TUR uses it as the argument against committing state to Git; TID §6.2.2 treats it as a security consideration in its own right. The consequence neither book fully joins up is that `sensitive = true` is a *display* control, and the value still lands in the bucket the whole team can read. Write-only arguments (1.11) and `ephemeral` (1.10) are the mechanisms that actually keep a value out.
@@ -42,6 +42,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - Need the rule rather than the narrative? → [[tf-state]] for the model, [[tf-state-purpose]] for why a stateless design was rejected, [[tf-state-backends]] for what a backend owes you.
 - About to set up locking? → [[tf-state-locking]] and [[tf-backend-configure]], not either book.
 - About to move a local state file to HCP Terraform? → [[tut-cloud-migrate]], which is the whole migration in nine minutes and needs no cloud provider account.
+- Holding a state file you have to repair by hand? → [[tut-cloud-state-api]] for the HCP round-trip — download, bump `serial`, re-upload as a new state version — and [[tf-state-backends]] for the guards it has to satisfy.
 - About to share data between configurations? → [[tf-remote-state-data]] first, for the access-control argument, then TUR Ch3 for the mechanics.
 
 ## Sources
@@ -50,6 +51,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - [TUR Ch 3 — How to Manage Terraform State](../books/tur/chapters/03-manage-state.md) — the consequences argument, the bulkhead metaphor, the file layout
 - [[tf-state]] · [[tf-state-purpose]] · [[tf-state-backends]] · [[tf-state-locking]] · [[tf-backend-configure]] · [[tf-remote-state-data]] · [[tf-state-refactor]]
 - [[tut-cloud-migrate]] — HCTut, the local-to-HCP migration end to end: `cloud` block, `terraform login`, the copy-state prompt at `init`
+- [[tut-cloud-state-api]] — HCTut, the repair path: creating a new **state version** through the API, and the manual `serial` bump that makes it legal
 - [[terraform-intro]] — the one-paragraph version
 
 ## Open questions

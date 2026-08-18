@@ -32,6 +32,7 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 |---|---|---|
 | Migrate state to HCP Terraform | 2026-08-18 | [tut-cloud-migrate](tut-cloud-migrate.md) |
 | Lifecycle rules (Manage resource lifecycle) | 2026-08-03 | [tut-resource-lifecycle](tut-resource-lifecycle.md) |
+| Version state (Version remote state with the HCP Terraform API) | 2026-08-18 | [tut-cloud-state-api](tut-cloud-state-api.md) |
 
 ## Modules
 

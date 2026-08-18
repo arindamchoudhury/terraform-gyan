@@ -193,6 +193,7 @@ nav = [
             { "State" = [
                 { "2. Migrate state to HCP Terraform" = "sources/terraform-tutorials/tut-cloud-migrate.md" },
                 { "7. Lifecycle rules" = "sources/terraform-tutorials/tut-resource-lifecycle.md" },
+                { "8. Version state" = "sources/terraform-tutorials/tut-cloud-state-api.md" },
             ]},
             { "Modules" = [
                 { "1. Terraform modules" = "sources/terraform-tutorials/tut-module.md" },
