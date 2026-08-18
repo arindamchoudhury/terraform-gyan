@@ -347,6 +347,25 @@ Everything except the root module is optional. The four rules below are the ones
 
 The distinguishing question is who the caller will be after the code moves. Nested calls never leave the package. Examples are expected to leave.
 
+!!! warning "Do not anchor a `source` with `path.module`"
+    A relative `source` already resolves against the directory of the file that holds the `module` block, not against the working directory. So `"${path.module}/../modules/logs"` buys nothing that `"../modules/logs"` does not already give you.
+
+    It also fails late. `source` is read at `init`, before any graph exists, and a variable in it is rejected on the spot: *"Only literal values and const variables can be evaluated during init."* `path.module` is a const variable, so it survives that check. In the root module it evaluates to `.`, `"${path.module}/mod"` becomes `./mod`, and `init` succeeds. One level down it evaluates to the child's own path with **no `./` prefix**, and Terraform parses the result as a registry address:
+
+    ```text
+    Error: Module not found
+
+      on a\main.tf line 1:
+       1: module "viapath" {
+
+    Module "viapath" (from a\main.tf:1) cannot be found in the module registry
+    at registry.terraform.io.
+    ```
+
+    The habit therefore passes at the root and breaks the first time the configuration is nested, including the day a consumer turns your root into their child. Measured on Terraform 1.15.8. OpenTofu 1.12.5 fails identically against its own registry, and its message is the more useful of the two because it names the resolved address, `Module a/b/leaf ("viapath" from a\main.tf:1) cannot be found`.
+
+    `path.module` is for reaching **files** bundled inside the module, where the working directory genuinely does differ. Chapter 7 covers that use, and section 4's `www_path` fallback is an instance of it.
+
 **`LICENSE` matters more than it looks.** *"Many organizations will not adopt a module unless a clear license is present. We recommend always having a license file, even if it is not an open source license."* Note that the page's own `minimal-module/` tree omits it while the prose insists on it; take the prose.
 
 **Three things never belong in a module repository.** `terraform.tfstate` and its backup are state, not configuration. `.terraform/` is the providers and modules installed for one particular working directory. And `*.tfvars` files have no meaning for a module at all, because a module's inputs arrive as `module` block arguments — the only reason to keep one is if the directory doubles as a standalone root configuration. HashiCorp's local-module tutorial attaches a warning to all three: they *"will often include secret information such as passwords or access keys, which will become public if those files are committed to a public version control system."* Ship a `.gitignore` with the module.
@@ -1098,6 +1117,8 @@ tflocal -chdir=examples/basic destroy
 **Removing a deprecated variable in a minor release.** Deprecation only works if the removal waits for a major version; otherwise the warning was decoration.
 
 **Documenting inputs and outputs by hand in the README.** The registry generates those tables from your `description` arguments. A hand-written copy is stale after the next variable.
+
+**Anchoring a `module` block's `source` with `path.module`.** Relative sources already resolve against the file's own directory, and the interpolation survives `init` only in the root module. Nested, it produces a prefix-less path that Terraform reads as a registry address.
 
 **Relative links in a module README.** The registry renders it outside the repository, so a relative link resolves to nothing. Use commit-specific absolute URLs.
 
