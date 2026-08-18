@@ -191,6 +191,7 @@ nav = [
                 { "8. For each" = "sources/terraform-tutorials/tut-for-each.md" },
             ]},
             { "State" = [
+                { "2. Migrate state to HCP Terraform" = "sources/terraform-tutorials/tut-cloud-migrate.md" },
                 { "7. Lifecycle rules" = "sources/terraform-tutorials/tut-resource-lifecycle.md" },
             ]},
             { "Modules" = [

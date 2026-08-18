@@ -41,6 +41,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - Need to understand what is *in* the file, or to operate on it? → **TID Ch6** ([[06-state-management]]).
 - Need the rule rather than the narrative? → [[tf-state]] for the model, [[tf-state-purpose]] for why a stateless design was rejected, [[tf-state-backends]] for what a backend owes you.
 - About to set up locking? → [[tf-state-locking]] and [[tf-backend-configure]], not either book.
+- About to move a local state file to HCP Terraform? → [[tut-cloud-migrate]], which is the whole migration in nine minutes and needs no cloud provider account.
 - About to share data between configurations? → [[tf-remote-state-data]] first, for the access-control argument, then TUR Ch3 for the mechanics.
 
 ## Sources
@@ -48,6 +49,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - [TID Ch 6 — State management](../books/tid/chapters/06-state-management.md) — the reference treatment: JSON anatomy, backends, migration, drift, state-only resources
 - [TUR Ch 3 — How to Manage Terraform State](../books/tur/chapters/03-manage-state.md) — the consequences argument, the bulkhead metaphor, the file layout
 - [[tf-state]] · [[tf-state-purpose]] · [[tf-state-backends]] · [[tf-state-locking]] · [[tf-backend-configure]] · [[tf-remote-state-data]] · [[tf-state-refactor]]
+- [[tut-cloud-migrate]] — HCTut, the local-to-HCP migration end to end: `cloud` block, `terraform login`, the copy-state prompt at `init`
 - [[terraform-intro]] — the one-paragraph version
 
 ## Open questions

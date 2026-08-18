@@ -165,7 +165,7 @@ So the accurate framing is not "there is no open equivalent". It is that HCP sel
 ## When to read which
 
 - The `terraform workspace` command surface and `terraform.workspace`? → [TID Ch6 §6.4.7](../books/tid/chapters/06-state-management.md).
-- The `cloud` block, tags vs name, and `terraform login`? → [TID Ch6 §6.4.5](../books/tid/chapters/06-state-management.md).
+- The `cloud` block, tags vs name, and `terraform login`? → [TID Ch6 §6.4.5](../books/tid/chapters/06-state-management.md). For the shortest hands-on version — write the block, `init`, answer the copy-state prompt — see [[tut-cloud-migrate]], which also states the constraint the reference does not: an existing HCP workspace *“must not have any existing states”*.
 - Why CLI workspaces are not environment isolation? → HCDocs "Workspaces", and the fuller tradeoff in **A7**.
 - HCP workspace settings, variable sets, run lifecycle? → **A4**.
 
