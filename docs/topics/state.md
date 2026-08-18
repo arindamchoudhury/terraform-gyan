@@ -42,7 +42,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - Need the rule rather than the narrative? → [[tf-state]] for the model, [[tf-state-purpose]] for why a stateless design was rejected, [[tf-state-backends]] for what a backend owes you.
 - About to set up locking? → [[tf-state-locking]] and [[tf-backend-configure]], not either book.
 - About to move a local state file to HCP Terraform? → [[tut-cloud-migrate]], which is the whole migration in nine minutes and needs no cloud provider account.
-- Deciding where state lives for a team on GitLab, GitHub or Bitbucket? → [[gitlab-tf-state]] for the only forge that stores it, [[tf-backend-http]] for the protocol that makes that possible, and [[gha-oidc]] / [[bitbucket-pipelines-oidc]] for the other two, where the answer is a cloud bucket plus an OIDC trust policy.
+- Deciding where state lives for a team on GitLab, GitHub or Bitbucket? → [[gitlab-tf-state]] for the only forge that stores it, [[tf-backend-http]] for the protocol that makes that possible, and [[gha-oidc]] / [[bitbucket-pipelines-oidc]] for the other two, where the answer is a cloud bucket plus an OIDC trust policy. Self-hosting HCP's shape instead is [[terrakube-migrating]].
 - Holding a state file you have to repair by hand? → [[tut-cloud-state-api]] for the HCP round-trip — download, bump `serial`, re-upload as a new state version — and [[tf-state-backends]] for the guards it has to satisfy.
 - About to share data between configurations? → [[tf-remote-state-data]] first, for the access-control argument, then TUR Ch3 for the mechanics.
 
@@ -55,6 +55,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - [[tf-backend-http]] — the protocol backend; GET/POST/DELETE plus `LOCK`/`UNLOCK`, and locking off by default
 - [[gitlab-tf-state]] — GitLab as an `http` backend: project roles instead of IAM, and every Developer can read the file
 - [[gha-oidc]] · [[bitbucket-pipelines-oidc]] — the forges that store nothing, and the identity they issue instead
+- [[terrakube-migrating]] — the self-hosted TFE-compatible platform: same `cloud` block, one extra `hostname`, state into your own object store
 - [[tut-cloud-state-api]] — HCTut, the repair path: creating a new **state version** through the API, and the manual `serial` bump that makes it legal
 - [[terraform-intro]] — the one-paragraph version
 

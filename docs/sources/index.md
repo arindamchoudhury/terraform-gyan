@@ -167,3 +167,10 @@ Anton Babenko's community book at [terraform-best-practices.com](https://www.ter
 | Title | Type | Added | Tags | URL |
 |---|---|---|---|---|
 | [Integrate Pipelines with resource servers using OIDC](bitbucket-docs/bitbucket-pipelines-oidc.md) | documentation | 2026-08-18 | bitbucket, pipelines, oidc, aws, assume-role-with-web-identity, audiences | [url](https://support.atlassian.com/bitbucket-cloud/docs/integrate-pipelines-with-resource-servers-using-oidc/) |
+
+## 11. Terrakube Docs
+
+| Title | Type | Added | Tags | URL |
+|---|---|---|---|---|
+| [Migrating to Terrakube](terrakube-docs/terrakube-migrating.md) | documentation | 2026-08-18 | terrakube, state-migration, remote-backend, cloud-block, hostname, state-push, self-hosted | [url](https://docs.terrakube.io/user-guide/migrating-to-terrakube) |
+

@@ -234,6 +234,12 @@ nav = [
                 { "Integrate Pipelines with resource servers using OIDC" = "sources/bitbucket-docs/bitbucket-pipelines-oidc.md" },
             ]},
         ]},
+        { "Terrakube Docs" = [
+            { "Overview" = "sources/terrakube-docs/index.md" },
+            { "User Guide" = [
+                { "Migrating to Terrakube" = "sources/terrakube-docs/terrakube-migrating.md" },
+            ]},
+        ]},
         { "Terraform Best Practices" = [
             { "Overview" = "sources/terraform-best-practices/index.md" },
             { "Code styling" = "sources/terraform-best-practices/code-styling.md" },
