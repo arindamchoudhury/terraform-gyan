@@ -1,0 +1,62 @@
+# The pipeline this lab exists to show: GitLab runs Terraform, S3 holds state.
+#
+# Nothing here is GitLab-specific except the file name. The same three stages,
+# the same plan artifact, and the same backend configuration would work on
+# GitHub Actions or Bitbucket Pipelines — which is the point.
+
+image:
+  # The image's entrypoint is `terraform` itself, so it has to be cleared or
+  # every script line would be passed to terraform as arguments.
+  name: hashicorp/terraform:1.15.8
+  entrypoint: [""]
+
+variables:
+  # Tells Terraform it is not on a terminal: no colour, and it stops suggesting
+  # interactive next steps in its output.
+  TF_IN_AUTOMATION: "true"
+
+stages:
+  - validate
+  - plan
+  - apply
+
+.terraform:
+  before_script:
+    # -input=false makes a missing value a failure instead of a hang. In a
+    # pipeline, a prompt is just a job that runs until it times out.
+    - terraform init -input=false -backend-config=config.s3.tfbackend
+
+validate:
+  extends: .terraform
+  stage: validate
+  script:
+    - terraform fmt -check
+    - terraform validate
+
+plan:
+  extends: .terraform
+  stage: plan
+  script:
+    - terraform plan -input=false -out=tfplan
+  artifacts:
+    paths:
+      - tfplan
+    # A plan file contains the full prior state and every variable value in
+    # cleartext. Keep it short-lived, and never let it reach the repository.
+    expire_in: 1 hour
+    # Guests can read job artifacts by default. This is the same exposure that
+    # makes GitLab-managed state worth thinking about; here it applies to the
+    # plan rather than to the state.
+    access: 'developer'
+
+apply:
+  extends: .terraform
+  stage: apply
+  script:
+    # Applying the saved plan, not re-planning. What was reviewed is what runs.
+    - terraform apply -input=false tfplan
+  dependencies:
+    - plan
+  # Manual, because an automatic apply on every push is how people find out
+  # their pipeline had more authority than they intended.
+  when: manual

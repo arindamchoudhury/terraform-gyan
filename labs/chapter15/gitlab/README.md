@@ -1,207 +1,192 @@
-# Self-hosted GitLab for the state-backend labs
+# The forge lab — GitLab CI, state in S3
 
-The odd one out. Every other lab in this book runs against the AWS emulator with
-no accounts and no real resources; this one runs a real GitLab, because
-GitLab-managed Terraform state **is** the GitLab Rails application implementing
-the `http` backend protocol. There is nothing smaller to substitute for it if you
-want the product behaviour — roles, state versions, the lock UI.
+The arrangement most teams actually run, and the one the chapter argues for:
+**the repository and the pipeline live on the forge; the state lives in an
+object store.** GitLab can store Terraform state itself, and this lab
+deliberately does not use that feature — it runs the same `s3` backend as lab 2,
+from a CI job.
 
-If you only want the *protocol*, skip this directory. The `http`-backend lab
-beside it exercises `GET`/`POST`/`DELETE` and `LOCK`/`UNLOCK` against a server
-you can read in one sitting, offline, in megabytes.
-
-Everything below was measured on this repository's own machine on 2026-08-19,
-running `gitlab/gitlab-ce:19.2.4-ce.0` under Docker Desktop on Windows 11 with a
-9.7 GB WSL2 VM. Where a number differs from GitLab's documentation, both are
-given.
+Everything below was run end to end on 2026-08-19 against
+`gitlab/gitlab-ce:19.2.4-ce.0`, `gitlab/gitlab-runner:v19.2.2` and Terraform
+1.15.8 in the job container, under Docker Desktop on Windows 11 with a 9.7 GB
+WSL2 VM. Where a number differs from GitLab's documentation, both are given.
 
 ## What it costs
 
 | | Documented | Measured here |
 |---|---|---|
 | Image | 1.38 GB on Docker Hub | **3.54 GB on disk** after pull |
-| Disk | 20 GB available | not re-measured; 20 GB is a fair budget |
-| Memory | 2 GB + 1 GB swap | **1.5 GB** at first serve, **2.5–3.2 GB** warming, **2.3 GB** steady |
-| Time to serve | "could take a while" | **~7 minutes** from `up -d` on 16 cores |
+| Memory | 2 GB + 1 GB swap | **1.5 GB** at first serve, **2.3 GB** steady |
+| Time to serve | "could take a while" | **~7 minutes** from `up -d`, twice measured |
 
-The documented figures come from [Running GitLab in a memory-constrained
-environment](../../../docs/sources/gitlab-docs/gitlab-memory-constrained.md),
-which is also where every setting in `docker-compose.yml` comes from. GitLab's
-main requirements page quotes **16 GB** as the single-node baseline and **8 GB**
-for constrained installs; the page it links to for the details says 2 GB. This
-container is the 2 GB configuration, and it fits — with the honest caveat that
-2.3 GB resident is what it settles at here with swap untouched, so GitLab's 2 GB
-figure assumes the swapping its own page says to expect.
+The documented figures come from GitLab's own
+[memory-constrained guidance](../../../docs/sources/gitlab-docs/gitlab-memory-constrained.md),
+which is where every setting in `docker-compose.yml` comes from. GitLab's
+requirements page quotes 16 GB as the single-node baseline and 8 GB for
+constrained installs; the page it links to for detail says 2 GB. This is the
+2 GB configuration, and it fits — with the caveat that 2.3 GB resident is what
+it settles at here with swap untouched.
 
-On Docker Desktop, swap belongs to the Linux VM rather than to the container:
+Check the Docker VM has room before starting:
 
 ```bash
 docker run --rm alpine free -m
 ```
 
-If that shows less than ~3 GB of memory free, raise the VM's allocation in
-`%USERPROFILE%\.wslconfig` (`[wsl2]` → `memory=`) and restart Docker.
+## Run it
 
-## Start it
+The emulator first, because the pipeline writes into the bucket lab 2 creates:
+
+```bash
+docker compose -f labs/docker-compose.yml up -d
+cd labs/chapter15/lab2/bootstrap && tflocal init && tflocal apply
+```
+
+Then GitLab and the runner, which join the emulator's network so a job container
+can resolve `floci-lab:4566`:
 
 ```bash
 docker compose -f labs/chapter15/gitlab/docker-compose.yml up -d
 ```
 
-```bash
-docker logs -f tf-lab-gitlab
-```
+!!! warning "Do not wait for `healthy` — it reports healthy long before it serves"
+    Measured twice: healthy after ~1 minute while `gitlab-ctl status` still
+    listed only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd`. Puma
+    and nginx arrived six minutes later, with a window of **502** in between
+    while Puma booted the app.
 
-!!! warning
-    **Do not wait for the container to report `healthy` — it says so too early.**
-    Measured here: healthy after ~1 minute, while `gitlab-ctl status` still showed
-    only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd`, with no `puma`
-    and no `nginx`. HTTP did not answer for another six minutes.
+    `setup.sh` polls `/users/sign_in` for a 200 rather than trusting the health
+    status. That is the check to copy.
 
-Wait for the application itself instead:
+**Use `127.0.0.1`, never `localhost`.** On Windows, `localhost` resolves to
+`::1` first and the published IPv6 mapping returns an empty reply (curl exit
+52), while `127.0.0.1` returns 200 — with the same request succeeding *inside*
+the container. That is why `external_url` is an IPv4 literal.
 
-```bash
-until [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8929/users/sign_in)" = "200" ]; do sleep 20; done
-```
-
-**Use `127.0.0.1`, never `localhost`.** On Windows, `localhost` resolves to `::1`
-first and the published IPv6 mapping does not answer: measured here,
-`127.0.0.1:8929` returned 200 while `localhost:8929` returned an empty reply
-(curl exit 52), with the same request succeeding *inside* the container. That is
-why `external_url` in the compose file is an IPv4 literal — otherwise every link
-GitLab generates points somewhere your browser cannot reach.
-
-## Get in
-
-The initial root password is generated inside the container and **expires after
-24 hours**:
+Then:
 
 ```bash
-docker exec tf-lab-gitlab cat /etc/gitlab/initial_root_password
+./setup.sh
 ```
 
-Sign in at <http://127.0.0.1:8929> as `root`, then create a project and a
-personal access token with the `api` scope from *User settings › Access tokens*.
+It creates an API token, a project and an instance runner; registers the runner
+with the docker executor; and commits `ci/` into the project, which triggers the
+first pipeline. Re-running it is safe.
 
-For a scripted setup, both can be done without the UI. A token first:
+## What `setup.sh` does, and why each part is needed
 
-```bash
-docker exec tf-lab-gitlab gitlab-rails runner "
-u = User.find_by_username('root')
-t = u.personal_access_tokens.create!(scopes: ['api'], name: 'tf-lab', expires_at: 30.days.from_now)
-t.set_token('glpat-tflabtflabtflabtfla')
-t.save!
-puts 'TOKEN_OK'
-"
-```
+Doing it by hand in the UI works too — this is the map.
 
-Then a project, and its ID:
+**An admin API token**, created through `gitlab-rails runner`, because the API
+needs a token before it can make one. The initial root password is at
+`/etc/gitlab/initial_root_password` and expires after 24 hours.
 
-```bash
-curl -s -H "PRIVATE-TOKEN: glpat-tflabtflabtflabtfla" \
-  -X POST "http://127.0.0.1:8929/api/v4/projects" \
-  -d "name=tf-state-lab&visibility=private"
-```
+**An instance runner**, created with `POST /api/v4/user/runners` and registered
+with three arguments that matter:
 
-The first project on a fresh instance gets **ID 1**, which keeps the rest of this
-file copy-pasteable. That token value is a throwaway for a container on your own
-loopback interface; never reuse the pattern against a real instance.
+- `--docker-network-mode labs_default` puts every **job container** on the
+  emulator's network. Without it the job resolves nothing, and
+  `endpoints = { s3 = "http://floci-lab:4566" }` fails.
+- `--clone-url http://tf-lab-gitlab:8929` overrides the `external_url` GitLab
+  advertises. The UI needs `127.0.0.1` for your browser; a job container cannot
+  reach that, and would fail at `git fetch`.
+- `--docker-image hashicorp/terraform:1.15.8` is only the default; the pipeline
+  names its own.
 
-## Point Terraform at it
+!!! danger "Pin the runner image — `:latest` is a pre-release and every job fails"
+    Measured 2026-08-19. `gitlab/gitlab-runner:latest` was
+    **19.3.0~pre.1819.g9cbf0074**, and the runner derives its helper image tag
+    from its own version, so every job died in `prepare_executor`:
 
-The backend block stays empty — everything is supplied at `init`:
+    ```
+    ERROR: Job failed: failed to pull image
+    "registry.gitlab.com/gitlab-org/gitlab-runner/gitlab-runner-helper:x86_64-v19.3.0"
+    ... manifest unknown
+    ```
+
+    The helper image for an unreleased version does not exist.
+    `x86_64-<commit-sha>` did exist, but the fix is to pin the runner to a
+    released tag on the same line as GitLab itself — `v19.2.2` here. This is a
+    general trap rather than a lab artefact: a "latest" runner against a stable
+    GitLab is a broken pipeline.
+
+## The pipeline
+
+`ci/.gitlab-ci.yml`, three stages, and nothing in it is GitLab-specific except
+the file name:
+
+- **validate** — `terraform fmt -check` then `terraform validate`. `-check`
+  rather than bare `fmt`, so the job fails instead of silently reformatting.
+- **plan** — `terraform plan -out=tfplan`, kept as an artifact with
+  `expire_in: 1 hour` and `access: 'developer'`. A plan file holds the full
+  prior state and every variable value in cleartext, and job artifacts are
+  readable by Guests by default.
+- **apply** — `terraform apply tfplan`, `when: manual`. It applies the **saved
+  plan**, so what was reviewed is what runs.
+
+Every job runs `terraform init -input=false -backend-config=config.s3.tfbackend`
+first. `-input=false` turns a missing value into a failure rather than a job
+that hangs until it times out.
+
+The backend file differs from lab 2's in exactly one line — the endpoint is a
+container name rather than the host's loopback:
 
 ```hcl
-terraform {
-  backend "http" {
-  }
-}
+endpoints = { s3 = "http://floci-lab:4566" }
 ```
+
+## Verified
+
+Pipeline 2, after pinning the runner:
+
+```
+4 validate success
+5 plan     success
+6 apply    manual  -> success once played
+```
+
+From the apply job's trace:
+
+```
+Initializing the backend...
+Successfully configured the backend "s3"! Terraform will automatically
+terraform_data.probe: Creation complete after 0s [id=21e8f9c6-...]
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+Outputs:
+probe = "managed-from-gitlab-ci"
+```
+
+And the bucket afterwards, which is the whole lab in two lines:
 
 ```bash
-export TF_ADDRESS="http://127.0.0.1:8929/api/v4/projects/1/terraform/state/lab"
-
-terraform init \
-  -backend-config=address=${TF_ADDRESS} \
-  -backend-config=lock_address=${TF_ADDRESS}/lock \
-  -backend-config=unlock_address=${TF_ADDRESS}/lock \
-  -backend-config=username=root \
-  -backend-config=password=glpat-tflabtflabtflabtfla \
-  -backend-config=lock_method=POST \
-  -backend-config=unlock_method=DELETE \
-  -backend-config=retry_wait_min=5
+curl -s "http://localhost:4566/tf-state-lab?list-type=2" | grep -o "<Key>[^<]*</Key>"
 ```
 
-`-backend-config` is used here because it is a lab and the values are visible on
-purpose. In CI, GitLab tells you to use the `TF_HTTP_*` environment variables
-instead, because flag values are cached into the plan and carried to the apply,
-which can leave a job unable to lock the state.
-
-A configuration using only `terraform_data` is enough, and is what this lab was
-verified with — no provider plugin means no registry download and no loopback
-mTLS handshake for endpoint security software to interfere with.
-
-## What to actually look at
-
-**1. The state, over the API rather than the UI.** After the first apply:
-
-```bash
-curl -s -H "PRIVATE-TOKEN: glpat-tflabtflabtflabtfla" \
-  "http://127.0.0.1:8929/api/v4/projects/1/terraform/state/lab"
+```
+<Key>app/terraform.tfstate</Key>     # lab 2, applied from a workstation
+<Key>ci/terraform.tfstate</Key>      # this pipeline, applied by a runner
 ```
 
-Verified: the document comes back with `"serial": 1` and your outputs in it.
+Two states, two operators, one bucket, and nothing about Terraform state stored
+on the forge.
 
-**2. The lock, by taking it out from under Terraform.** Hold it by hand:
+## What changes against a real cloud
 
-```bash
-curl -s -X POST "${TF_ADDRESS}/lock" \
-  -H "PRIVATE-TOKEN: glpat-tflabtflabtflabtfla" \
-  -H "Content-Type: application/json" \
-  -d '{"ID":"manual-holder","Operation":"OperationTypeApply","Who":"lab@host","Version":"1.15.8","Created":"2026-08-19T09:45:00Z","Path":""}'
-```
+The `access_key`/`secret_key` pair in `config.s3.tfbackend` is emulator
+scaffolding. Against real AWS you delete both and let the job assume a role
+through OIDC — the S3 backend's `assume_role_with_web_identity` block, fed by
+the forge's identity token. The mechanism is the same on all three forges (see
+the `gha-oidc` and `bitbucket-pipelines-oidc` notes for the other two), and
+topic **A6** owns the secrets hierarchy behind it.
 
-Then run `terraform apply` and read the refusal:
+## If you want GitLab-managed state instead
 
-```
-Error: Error acquiring the state lock
-
-Error message: HTTP remote state already locked: ID=manual-holder
-Lock Info:
-  ID:        manual-holder
-  Operation: OperationTypeApply
-  Who:       root
-  Version:   1.15.8
-  Created:   2026-08-19 09:33:14.783 +0000 UTC
-```
-
-Note `Who: root`. The request above claimed `lab@host`, and **GitLab replaced it
-with the identity of the token**, along with its own `Created` timestamp. The
-holder of a GitLab state lock is a GitLab user, not whatever the client asserted
-— which is the concrete form of the docs' rule that locking and unlocking are
-role-gated.
-
-Release it with the same ID:
-
-```bash
-curl -s -X DELETE "${TF_ADDRESS}/lock" \
-  -H "PRIVATE-TOKEN: glpat-tflabtflabtflabtfla" \
-  -H "Content-Type: application/json" -d '{"ID":"manual-holder"}'
-```
-
-**3. Versions, addressed by serial.** After a second apply the current state is
-at `"serial": 2`, and both snapshots are retrievable:
-
-```bash
-curl -s -H "PRIVATE-TOKEN: glpat-tflabtflabtflabtfla" "${TF_ADDRESS}/versions/1"
-```
-
-Verified: serial 1 and 2 return 200, serial 3 returns 404. This is the same
-counter Chapter 9 measured, now doubling as an addressable version history.
-
-**4. Who can read it.** Add a second user with the Developer role and confirm
-they can download the state file. That is the finding the docs state plainly and
-the reason this backend needs thinking about before adopting.
+This lab does not use it, but it exists, and it is the `http` backend rather
+than a backend type of its own: an empty `backend "http" {}` pointed at
+`/api/v4/projects/<ID>/terraform/state/<NAME>`. The trade is that project roles
+replace bucket IAM — and that every **Developer** can download the state file.
+See `docs/sources/gitlab-docs/gitlab-tf-state.md`, and the appendix in
+`../http-backend/` for what the protocol underneath looks like.
 
 ## Stop it
 
@@ -209,8 +194,8 @@ the reason this backend needs thinking about before adopting.
 docker compose -f labs/chapter15/gitlab/docker-compose.yml down
 ```
 
-Volumes survive that, so the next start is fast and your project is still there.
-To reclaim the disk:
+Volumes survive, so the next start is fast and the project is still there. To
+reclaim the disk as well:
 
 ```bash
 docker compose -f labs/chapter15/gitlab/docker-compose.yml down -v

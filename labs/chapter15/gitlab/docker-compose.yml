@@ -1,22 +1,22 @@
-# Self-hosted GitLab CE for the Chapter 15 state-backend labs.
+# Self-hosted GitLab + a CI runner, for the Chapter 15 forge lab.
 #
-# This is the only lab in the book that does not run against the AWS emulator,
-# and the only one with a real resource cost. It exists because GitLab-managed
-# Terraform state cannot be exercised any other way without a gitlab.com account:
-# the feature is the GitLab Rails app implementing the `http` backend protocol.
+# What this lab shows is NOT "GitLab can store Terraform state". It is the
+# arrangement most teams actually run: the repository and the pipeline live on
+# the forge, and the state lives in an object store — here the `s3` backend from
+# lab 2, against the same AWS emulator.
 #
-# Sizing comes from GitLab's own memory-constrained guidance, captured in
-# docs/sources/gitlab-docs/gitlab-memory-constrained.md. Every setting under
-# GITLAB_OMNIBUS_CONFIG below is from that page. Budget ~2.5 GB of RAM for this
-# container and 20 GB of disk; the tuned configuration is documented to run in
-# 2 GB plus 1 GB of swap.
+# Both services join the emulator's network (`labs_default`) so a CI job can
+# reach the bucket by container name. Start the emulator first:
 #
+#   docker compose -f labs/docker-compose.yml up -d
 #   docker compose -f labs/chapter15/gitlab/docker-compose.yml up -d
 #
-# First boot takes several minutes: the image unpacks, then omnibus runs a full
-# `gitlab-ctl reconfigure` against settings it has never seen. Watch it with
-#   docker logs -f tf-lab-gitlab
-# and wait for the container to report healthy before opening the UI.
+# First boot takes several minutes. Do not wait for the container to report
+# healthy — it says so long before it serves. See README.md.
+#
+# Sizing comes from GitLab's memory-constrained guidance, captured in
+# docs/sources/gitlab-docs/gitlab-memory-constrained.md. Measured here: 2.3 GB
+# resident, ~7 minutes to first serve.
 
 services:
   gitlab:
@@ -25,13 +25,13 @@ services:
     # consumption is the primary concern, install GitLab CE."
     image: gitlab/gitlab-ce:19.2.4-ce.0
     container_name: tf-lab-gitlab
-    hostname: gitlab.local
+    hostname: tf-lab-gitlab
     restart: unless-stopped
     shm_size: '256m'
     ports:
       # Must match the port inside external_url, or every generated link and the
       # git remote will point somewhere the host cannot reach.
-      - '8929:8929'
+      - '127.0.0.1:8929:8929'
     environment:
       GITLAB_OMNIBUS_CONFIG: |
         # 127.0.0.1, not localhost. On Windows, localhost resolves to ::1 first and
@@ -86,9 +86,36 @@ services:
       - gitlab-logs:/var/log/gitlab
       - gitlab-data:/var/opt/gitlab
 
+  # The runner holds no configuration until ./setup.sh registers it. It mounts
+  # the Docker socket because it uses the docker executor: each job runs in its
+  # own container, which is also how the job reaches the emulator.
+  runner:
+    # PINNED, and this one is not cosmetic. `gitlab/gitlab-runner:latest` is a
+    # pre-release build (measured 2026-08-19: 19.3.0~pre.1819), and the runner
+    # derives its helper image tag from its own version — so every job fails in
+    # prepare_executor with "manifest for ...gitlab-runner-helper:x86_64-v19.3.0
+    # not found". Track the GitLab line instead: 19.2.x here.
+    image: gitlab/gitlab-runner:v19.2.2
+    container_name: tf-lab-gitlab-runner
+    restart: unless-stopped
+    depends_on:
+      - gitlab
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner-config:/etc/gitlab-runner
+
 # Named volumes rather than bind mounts. GitLab writes constantly through these
 # paths, and a Windows bind mount makes that slow enough to matter.
 volumes:
   gitlab-config:
   gitlab-logs:
   gitlab-data:
+  runner-config:
+
+# The emulator's network, created by labs/docker-compose.yml. Joining it is what
+# lets a CI job resolve `floci-lab:4566`, and lets the runner reach GitLab by
+# container name instead of through the host's loopback.
+networks:
+  default:
+    name: labs_default
+    external: true

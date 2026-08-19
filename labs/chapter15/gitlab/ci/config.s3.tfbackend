@@ -1,0 +1,24 @@
+# Backend configuration for the CI job.
+#
+# The only difference from lab 2's file is the endpoint host: a job container
+# reaches the emulator by its container name on the shared Docker network, not
+# through the host's loopback interface.
+
+bucket = "tf-state-lab"
+key    = "ci/terraform.tfstate"
+region = "us-east-1"
+
+use_lockfile = true
+
+endpoints = { s3 = "http://floci-lab:4566" }
+
+use_path_style              = true
+skip_credentials_validation = true
+skip_metadata_api_check     = true
+skip_requesting_account_id  = true
+
+# Dummy credentials for the emulator. Against real AWS these are absent and the
+# job assumes a role through OIDC instead — see the S3 backend's
+# assume_role_with_web_identity block, and topic A6.
+access_key = "test"
+secret_key = "test"
