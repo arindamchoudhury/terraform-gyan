@@ -16,3 +16,4 @@ Notes captured from the official OpenTofu documentation and release blog at [ope
 | Dynamic `prevent_destroy` | OpenTofu 1.12 | 2026-07-03 | [ot-dynamic-prevent-destroy](ot-dynamic-prevent-destroy.md) |
 | Dependency lock file — cross-platform checksums at `init` | OpenTofu 1.12 | 2026-07-10 | [ot-dependency-lock](ot-dependency-lock.md) |
 | OpenTelemetry tracing | OpenTofu 1.10 | 2026-08-15 | [ot-otel-tracing](ot-otel-tracing.md) |
+| State and plan encryption (`encryption` block, key providers, methods) | OpenTofu 1.7 | 2026-08-19 | [ot-state-encryption](ot-state-encryption.md) |

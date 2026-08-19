@@ -171,6 +171,9 @@ nav = [
                 { "Provider Configuration" = "sources/opentofu-docs/ot-provider-for-each.md" },
                 { "Dependency Lock File" = "sources/opentofu-docs/ot-dependency-lock.md" },
                 { "Backend Configuration" = "sources/opentofu-docs/ot-early-eval-backend.md" },
+                { "State" = [
+                    { "State and Plan Encryption" = "sources/opentofu-docs/ot-state-encryption.md" },
+                ]},
             ]},
             { "Command: plan" = "sources/opentofu-docs/ot-exclude-flag.md" },
             { "OpenTofu Internals" = [
