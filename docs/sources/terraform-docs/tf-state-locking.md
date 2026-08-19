@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/state/locking](https://developer.hashicorp.com/terraform/language/state/locking)
 > **Added:** 2026-07-30
-> **Source updated:** undated language reference; captured 2026-07-30 against v1.15.x (latest)
+> **Source updated:** undated language reference; captured 2026-07-30 against v1.15.x (latest); re-fetched 2026-08-19 — byte-identical, still v1.15.x
 > **Tags:** state, state-locking, lock, force-unlock, lock-id, backends
 > **Type:** documentation
 
@@ -35,7 +35,17 @@ The only time locking surfaces in output is when it is slow: "If acquiring the l
 
 > "Not all backends support locking. The documentation for each backend includes details on whether it supports locking or not."
 
-The page names no backends. [[tf-state-backends]] gives the definition this rests on — a backend stores state and *optionally* provides a locking API — and the two examples it does name (`local` via system APIs, Consul via locks with health checks). For S3 specifically, locking no longer needs a DynamoDB table: `use_lockfile = true` since Terraform 1.11 and OpenTofu 1.10 (see [[feature-history]], [[06-state-management]]).
+The page names no backends. [[tf-state-backends]] gives the definition this rests on. A backend stores state and *optionally* provides a locking API, and the two examples it does name are `local` via system APIs and Consul via locks with health checks.
+
+**"Supports locking" turns out to hide a second axis: whether it is on.** The two cloud backends captured here answer that differently, and neither answer is visible from this page.
+
+| | `s3` ([[tf-backend-s3]]) | `gcs` ([[tf-backend-gcs]]) |
+| --- | --- | --- |
+| Supported | yes | yes |
+| On by default | **no** — `use_lockfile` defaults to `false` | yes |
+| Argument to turn it off | `use_lockfile = false` | none exists |
+
+So a backend can support locking and still be silently unlocked in practice, which is the gap this page's phrasing leaves open. For S3, locking no longer needs a DynamoDB table: `use_lockfile` arrived in Terraform **1.10** and went GA in **1.11**, and in OpenTofu **1.10** (see [[feature-history]], [[06-state-management]]).
 
 ## Force unlock
 
@@ -92,4 +102,4 @@ Three things this pins down that the page only asserts.
 `-lock-timeout=3s` was set on the failing command, so the error came after a retry window rather than immediately.
 
 ---
-Related: [[tf-backend-configure]] — the backend block and emulator setup used for this verification. · [[tf-state-backends]] — the page that defers here; defines locking as an optional backend responsibility. · [[tf-state-purpose]] — argues *why* teams need syncing and locking; this is the mechanism. · [[tf-cli-commands]] — lists `force-unlock` in the command catalogue. · [[05-terraform-plan]] — TID's take on `-lock=false` and the speculative-plan exception.
+Related: [[tf-backend-configure]] — the backend block and emulator setup used for this verification. · [[tf-backend-s3]] · [[tf-backend-gcs]] — the two backends whose locking defaults this page's "not all backends support locking" glosses over. · [[tf-state-backends]] — the page that defers here; defines locking as an optional backend responsibility. · [[tf-state-purpose]] — argues *why* teams need syncing and locking; this is the mechanism. · [[tf-cli-commands]] — lists `force-unlock` in the command catalogue. · [[05-terraform-plan]] — TID's take on `-lock=false` and the speculative-plan exception.
