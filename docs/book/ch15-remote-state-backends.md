@@ -504,9 +504,41 @@ So workspace `development` with `key = networking/terraform.tfstate` lands at `e
 
 On `gcs` there is no `key` at all. State is `<prefix>/<workspace>.tfstate`, so the default workspace lands at `networking/default.tfstate` and the workspace name is in **every** path rather than only the non-default ones.
 
+!!! example "🧪 Verified — the same two workspaces on each backend"
+    Terraform 1.15.8 against the lab emulators. One `default` workspace and one other, applied on each backend, then the bucket listed.
+
+    `s3`, with `key = "wsverify/terraform.tfstate"`:
+
+    ```
+    wsverify/terraform.tfstate
+    env:/development/wsverify/terraform.tfstate
+    ```
+
+    `gcs`, with `prefix = "wsverify"`:
+
+    ```
+    wsverify/default.tfstate
+    wsverify/staging.tfstate
+    ```
+
+    Two things are visible here that the argument tables do not make obvious. The S3 default workspace's object has **nothing** in its path saying which workspace it belongs to, so a bucket tells you the names of every workspace except that one. And the `env:` segment really is a literal directory whose name ends in a colon, which is what makes these buckets look mangled in a console.
+
 ### The locking default is the trap
 
 `use_lockfile` defaults to `false`. A perfectly valid `s3` backend block that omits it is an **unlocked backend that never warns you**, which is the exact failure this whole chapter exists to prevent. Set it. There is no cost and nothing to provision.
+
+!!! danger "🧪 Verified — omitting it really does mean no lock at all"
+    Terraform 1.15.8, a backend block with every other argument set and `use_lockfile` absent. An apply was held open for 25 seconds and the bucket listed while it ran.
+
+    **No `.tflock` object was created.** Then a second command was run against the same state while the apply was still in flight:
+
+    ```
+    terraform plan -lock-timeout=3s
+    ```
+
+    It refreshed state and produced a plan. No refusal, no warning, no `Acquiring state lock` message, nothing in the output to suggest anything was wrong. Compare the same race in section 7 with `use_lockfile = true`, which fails on a 412 within milliseconds.
+
+    That is what "silently unlocked" means, and it is why this argument is worth checking on every S3 backend block you inherit.
 
 !!! warning "`dynamodb_table` is on its way out, on Terraform only"
     The S3 backend's original locking used a DynamoDB table. Terraform now deprecates it: `dynamodb_table` and `dynamodb_endpoint` *"will be removed in a future minor version"*, and both may be configured alongside `use_lockfile` purely as a migration path.
@@ -514,7 +546,11 @@ On `gcs` there is no `key` at all. State is `<prefix>/<workspace>.tfstate`, so t
     By date rather than by version number, since both projects number releases `1.x` on different schedules: Terraform **1.10** (2024-11-27) introduced native locking as opt-in and took both locks when DynamoDB was also configured; Terraform **1.11** (2025-02-27) made it GA and deprecated the DynamoDB arguments; OpenTofu **1.10** (June 2025) shipped `use_lockfile` about seven months after Terraform's first release of it.
 
 !!! info "OpenTofu — `dynamodb_table` carries no deprecation"
-    Verified in the backend schemas: Terraform v1.15.0 marks the argument `Deprecated: true` and emits a diagnostic steering you to `use_lockfile`. OpenTofu's schema carries neither. "Migrate off DynamoDB" is Terraform advice; on OpenTofu the table remains a fully supported option, even though `use_lockfile` is the better default there too.
+    Read from both backend schemas at their release tags. Terraform v1.15.8 marks the argument `Deprecated: true` and appends a runtime diagnostic pointing at `use_lockfile`. OpenTofu v1.12.5 declares it with a type, `Optional`, and a description, and nothing else.
+
+    The absence is meaningful rather than an oversight in how OpenTofu writes schemas: the same file marks **23** other attributes deprecated, so the mechanism is in active use and `dynamodb_table` is deliberately not among them.
+
+    "Migrate off DynamoDB" is therefore Terraform advice. On OpenTofu the table remains a fully supported option, even though `use_lockfile` is the better default there too.
 
 ### IAM, and the statement people forget
 
