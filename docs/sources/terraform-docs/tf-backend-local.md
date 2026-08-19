@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/backend/local](https://developer.hashicorp.com/terraform/language/backend/local)
 > **Added:** 2026-07-30
-> **Source updated:** undated language reference; captured 2026-07-30 against v1.15.x (latest)
+> **Source updated:** undated language reference; captured 2026-07-30 against v1.15.x (latest); re-fetched 2026-08-19 — byte-identical, still v1.15.x
 > **Tags:** backend, local-backend, workspace-dir, state-flag, backup, legacy-flags, terraform_remote_state
 > **Type:** documentation
 
