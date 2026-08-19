@@ -120,9 +120,39 @@ That is the whole definition, and holding on to how small it is prevents a lot o
 
 The default backend is **`local`**, which writes `terraform.tfstate` in the working directory. Every chapter so far has used it without naming it. It also locks, through operating-system file-locking APIs, which is why two `terraform apply` runs in the same directory on the same machine already refuse to overlap.
 
+!!! example "🧪 Verified — the default backend really does lock"
+    Terraform 1.15.8, an apply held open for twenty seconds, and a `terraform plan` run in the same directory while it worked:
+
+    ```
+    Error: Error acquiring the state lock
+
+    Error message: Failed to read state file: The state file could not be read:
+    read terraform.tfstate: The process cannot access the file because another
+    process has locked a portion of the file.
+    ```
+
+    A sidecar appears alongside the state for the duration, and is removed when the lock releases:
+
+    ```
+    .terraform.tfstate.lock.info    206 bytes
+    ```
+
+    Note what refuses the second run. It is not that file. The lock is a **byte-range lock taken on `terraform.tfstate` itself**, through `LockFileEx` on Windows and `fcntl` via `syscall.Flock_t` on Unix, so the wording above is literal rather than a metaphor. `.terraform.tfstate.lock.info` only carries the metadata that fills in the `Lock Info` block.
+
+    The message quoted is Windows'. The mechanism is the same everywhere; the operating system's complaint is not.
+
+    This is also why `force-unlock` cannot help here, as section 7 notes: a lock held by the kernel on behalf of a live process is not an object another process can delete.
+
 Everything above the CLI is unchanged by the choice. The docs put it plainly:
 
-> If you switch back to using the `local` backend, commands like `terraform console`, the `terraform state` operations, `terraform taint`, and more will continue to work as if the state was local.
+> Despite the state being stored remotely, all Terraform commands such as `terraform console`, the `terraform state` operations, `terraform taint`, and more will continue to work as if the state was local.
+
+That is the property worth holding on to: moving state to a bucket changes where bytes live and nothing about how you drive Terraform.
+
+!!! warning "That sentence's own example is out of date"
+    It names **`terraform taint`** among the commands that keep working. That command has been deprecated since **v0.15.2**, and its own reference page opens by saying so and directing you to `apply -replace` instead. The reason given there is worth knowing: `taint` writes the mark into state immediately, so a colleague can build a plan against the tainted object before anyone has reviewed the effect, whereas `-replace` puts the replacement in a plan you can see first.
+
+    The claim around it still holds. Only the illustration has rotted.
 
 !!! success "A remote backend keeps state off your disk entirely"
     HashiCorp's [State Storage and Locking](https://developer.hashicorp.com/terraform/language/backend) page states a guarantee that is easy to skim past:
