@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/backend](https://developer.hashicorp.com/terraform/language/backend)
 > **Added:** 2026-07-30
-> **Source updated:** undated language reference; captured 2026-07-30 against v1.15.x (latest)
+> **Source updated:** undated language reference; captured 2026-07-30 against v1.15.x (latest); re-fetched 2026-08-19 — byte-identical, still v1.15.x
 > **Tags:** backend, backend-block, partial-configuration, backend-config, tfbackend, init, migrate-state, credentials
 > **Type:** documentation
 
