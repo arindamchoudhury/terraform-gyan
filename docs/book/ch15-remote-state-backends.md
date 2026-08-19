@@ -111,7 +111,7 @@ So the file has to live somewhere Terraform can read and write on every run, tha
 
 ## 2. What a backend actually is
 
-HashiCorp's [State Storage and Locking](https://developer.hashicorp.com/terraform/language/backend) page opens with the whole definition in two sentences:
+HashiCorp's [State Storage and Locking](https://developer.hashicorp.com/terraform/language/state/backends) page opens with the whole definition in two sentences:
 
 > Backends are responsible for storing state and providing an API for state locking. State locking is optional.
 
@@ -161,12 +161,18 @@ Everything above the CLI is unchanged by the choice. The docs put it plainly:
 That is the property worth holding on to: moving state to a bucket changes where bytes live and nothing about how you drive Terraform.
 
 !!! warning "That sentence's own example is out of date"
-    It names **`terraform taint`** among the commands that keep working. That command has been deprecated since **v0.15.2**, and its own reference page opens by saying so and directing you to `apply -replace` instead. The reason given there is worth knowing: `taint` writes the mark into state immediately, so a colleague can build a plan against the tainted object before anyone has reviewed the effect, whereas `-replace` puts the replacement in a plan you can see first.
+    It names **`terraform taint`** among the commands that keep working. That command's own [reference page](https://developer.hashicorp.com/terraform/cli/commands/taint) states plainly that *"This command is deprecated. Instead, add the `-replace` option to your `terraform apply` command"*, and recommends the alternative *"For Terraform v0.15.2 and later"*.
+
+    The reason it gives is worth carrying, because it is about review rather than tidiness:
+
+    > We recommend the `-replace` option because the change will be reflected in the Terraform plan, letting you understand how it will affect your infrastructure before you take any externally-visible action. When you use `terraform taint`, other users could create a new plan against your tainted object before you can review the effects.
+
+    `taint` marks the object in state immediately, so the mark is visible to everyone sharing that state before anybody has agreed to it. That is a remote-state concern, which is why it belongs in this chapter rather than only in a command reference.
 
     The claim around it still holds. Only the illustration has rotted.
 
 !!! success "A remote backend keeps state off your disk entirely"
-    HashiCorp's [State Storage and Locking](https://developer.hashicorp.com/terraform/language/backend) page states a guarantee that is easy to skim past:
+    HashiCorp's [State Storage and Locking](https://developer.hashicorp.com/terraform/language/state/backends) page states a guarantee that is easy to skim past:
 
     > When using a non-local backend, Terraform will not persist the state anywhere on disk except in the case of a non-recoverable error where writing the state to the backend failed.
 
@@ -1401,7 +1407,11 @@ The isolation question this chapter kept deferring belongs to Chapter 24, which 
 
 **Books:** TUR Ch 3 [How to Manage Terraform State](../books/tur/chapters/03-manage-state.md) · TID Ch 6 §6.4 [Storing state](../books/tid/chapters/06-state-management.md)
 
-**HashiCorp docs:** [Backend block configuration overview](https://developer.hashicorp.com/terraform/language/backend) · [`local`](https://developer.hashicorp.com/terraform/language/backend/local) · [`s3`](https://developer.hashicorp.com/terraform/language/backend/s3) · [`gcs`](https://developer.hashicorp.com/terraform/language/backend/gcs) · [`http`](https://developer.hashicorp.com/terraform/language/backend/http) · [State Locking](https://developer.hashicorp.com/terraform/language/state/locking) · [`terraform force-unlock`](https://developer.hashicorp.com/terraform/cli/commands/force-unlock) · [`terraform_remote_state`](https://developer.hashicorp.com/terraform/language/state/remote-state-data)
+**HashiCorp docs:** [Backend block configuration overview](https://developer.hashicorp.com/terraform/language/backend) · [State Storage and Locking](https://developer.hashicorp.com/terraform/language/state/backends) · [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) · [`local`](https://developer.hashicorp.com/terraform/language/backend/local) · [`s3`](https://developer.hashicorp.com/terraform/language/backend/s3) · [`gcs`](https://developer.hashicorp.com/terraform/language/backend/gcs) · [`http`](https://developer.hashicorp.com/terraform/language/backend/http) · [State Locking](https://developer.hashicorp.com/terraform/language/state/locking) · [`terraform force-unlock`](https://developer.hashicorp.com/terraform/cli/commands/force-unlock) · [`terraform_remote_state`](https://developer.hashicorp.com/terraform/language/state/remote-state-data) · [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only)
+
+**Provider docs:** [`aws_db_instance`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance) · [`aws_iam_access_key`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_access_key)
+
+**Vendor docs (the cloud half of locking):** [Amazon S3 conditional writes](https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html) · [Google Cloud Storage request preconditions](https://docs.cloud.google.com/storage/docs/request-preconditions)
 
 **OpenTofu docs:** [State and Plan Encryption](https://opentofu.org/docs/language/state/encryption/)
 

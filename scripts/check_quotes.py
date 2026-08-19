@@ -60,6 +60,40 @@ def norm(text):
     return text.lower().strip()
 
 
+def url_to_cache():
+    """Map a source URL to the cache file holding that page.
+
+    Reading notes under docs/sources/ carry a `**Source:**` line naming the URL,
+    and their filename matches the cache slug, so the notes are the index.
+    """
+    index = {}
+    for note in glob.glob("docs/sources/**/*.md", recursive=True):
+        text = pathlib.Path(note).read_text(encoding="utf-8", errors="ignore")
+        m = re.search(r"\*\*Source:\*\*\s*\[[^\]]*\]\((https?://[^)]+)\)", text)
+        if not m:
+            continue
+        slug = pathlib.Path(note).stem
+        cache = pathlib.Path("cache/web") / f"{slug}.txt"
+        if cache.exists():
+            index[m.group(1).rstrip("/")] = cache.as_posix()
+    return index
+
+
+LINK_RE = re.compile(r"\[[^\]]+\]\((https?://[^)]+)\)")
+
+
+def attributed_url(lines, i):
+    """The page a quote is attributed to, if the lead-in names and links one."""
+    for back in range(1, 4):
+        j = i - back
+        if j < 0:
+            break
+        m = LINK_RE.search(lines[j])
+        if m:
+            return m.group(1).rstrip("/")
+    return None
+
+
 def quotes_in(path):
     out = []
     for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
@@ -78,6 +112,28 @@ def quotes_in(path):
     return out
 
 
+def check_attribution(path, corpus, index):
+    """A quote introduced by a named, linked page must be in *that* page."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    findings = []
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if not s.startswith("> ") or s.startswith("> **"):
+            continue
+        body = s[2:].strip().lstrip("- ").strip()
+        if len(body) < MIN_LEN or body.startswith("❓") or looks_like_code(body):
+            continue
+        url = attributed_url(lines, i)
+        if not url or url not in index:
+            continue
+        cache = index[url]
+        nq = norm(body)
+        hay = corpus.get(cache, "")
+        if not any(p and p in hay for p in (nq, nq[:120], nq[:80], nq[:60])):
+            findings.append((str(path), i + 1, url, cache, body))
+    return findings
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     targets = sys.argv[1:] or sorted(glob.glob("docs/book/ch*.md"))
@@ -91,7 +147,9 @@ def main():
         + glob.glob("docs/sources/**/*.md", recursive=True)
     )
     corpus = {
-        f: norm(pathlib.Path(f).read_text(encoding="utf-8", errors="ignore"))
+        pathlib.Path(f).as_posix(): norm(
+            pathlib.Path(f).read_text(encoding="utf-8", errors="ignore")
+        )
         for f in sources
     }
 
@@ -118,12 +176,23 @@ def main():
 
             findings.append((t, lineno, q))
 
+    index = url_to_cache()
+    mis = []
+    for t in targets:
+        mis += check_attribution(pathlib.Path(t), corpus, index)
+
     print(f"{checked} quoted passage(s) checked against {len(corpus)} cached source(s)")
+    for f, lineno, url, cache, q in mis:
+        print(f"  {f}:{lineno}: attributed to {url}")
+        print(f"    but not found in {cache}")
+        print(f"    {q[:90]}")
+    if mis:
+        print(f"{len(mis)} misattributed quote(s)")
     for t, lineno, q in findings:
         print(f"  {t}:{lineno}: not found in any cached source")
         print(f"    {q[:100]}")
     print(f"{len(findings)} unverified quote(s)")
-    return 1 if findings else 0
+    return 1 if (findings or mis) else 0
 
 
 if __name__ == "__main__":
