@@ -357,27 +357,59 @@ use_lockfile = true
 ```
 
 ```shell
-terraform init -backend-config=config.s3.tfbackend
+terraform init -backend-config config.s3.tfbackend
 ```
 
 The file's format is the contents of the backend block as top-level attributes, with no wrapping `terraform` or `backend` block.
+
+HashiCorp's own examples write this flag as `-backend-config=PATH`, and both forms work. The space form is used throughout this chapter because it is the one that survives every shell, for reasons the next warning makes concrete.
 
 !!! tip "The documented filename convention is `*.<backendname>.tfbackend`"
     `config.s3.tfbackend`, `prod.gcs.tfbackend`, and so on. HashiCorp will not stop you using another name, and following the convention helps your editor understand the content.
 
     Plenty of material uses `backend.tfvars` instead. It works, and it is worse: `.tfvars` tells every reader and every editor that the file holds *variable* values, when it holds backend configuration, which is a different thing evaluated at a different time.
 
-Two other ways to supply the values exist. Repeated `-backend-config="key=value"` flags work, with later flags overriding earlier ones, and Terraform prompts interactively for required values it still lacks. Prefer the file. Command-line flags land in shell history, which is a poor home for anything sensitive.
+Two other ways to supply the values exist. Repeated `-backend-config="key=value"` flags work, with later flags overriding earlier ones. And Terraform *"will interactively ask you for the required values, unless interactive input is disabled"*, which it never prompts for optional ones. That caveat is the one CI depends on: `-input=false` turns a missing required value into a failure rather than a job that hangs until it times out, which is why every command in this chapter's pipeline lab passes it.
 
-!!! warning "In PowerShell, quote the whole argument"
-    PowerShell splits an unquoted `-flag=value` argument at the `=`, so the flag arrives mangled. Wrap the entire token rather than just the value:
+Prefer the file. The page's own reason for avoiding the flags is *"many shells retain command-line flags in a history file, so this isn't recommended for secrets"*.
 
-    ```powershell
-    terraform init "-backend-config=config.s3.tfbackend"
+!!! warning "🧪 In PowerShell, quote the argument — and the error will not tell you why"
+    On PowerShell 7.6.5 an unquoted `-backend-config=config.s3.tfbackend` fails, and the message sends you somewhere unhelpful:
+
+    ```
+    Error: Too many command line arguments. Did you mean to use -chdir?
     ```
 
-!!! note "The block can be completely empty"
-    HashiCorp's own example writes `bucket = ""`, `key = ""` and so on, and the surrounding text says the partial configuration "must have a backend block containing keys set to empty values". Measured on Terraform 1.15.8, that is not required. `terraform { backend "s3" {} }` plus a `.tfbackend` file initialises and applies normally. The empty-keys form is one style, not an obligation, and the page's own later sentence agrees that the minimum is a block naming the type.
+    Nothing is wrong with `-chdir`. The argument was split before Terraform ever saw it. Printing the real `argv` of a child process shows where:
+
+    | Written | Received |
+    | --- | --- |
+    | `-backend-config=a.b` | `-backend-config=a` **and** `.b` |
+    | `-backend-config=abc` | `-backend-config=abc` |
+    | `-backend-config=bucket=a.b` | `-backend-config=bucket=a` **and** `.b` |
+    | `"-backend-config=a.b"` | `-backend-config=a.b` |
+    | `foo.bar` | `foo.bar` |
+
+    The split happens at the **first dot after the `=`**, and only in a token that begins with `-` and contains an `=`. A dot in an ordinary argument is left alone, and a value with no dot survives unquoted, which is why `-backend-config=bucket=tf-state-lab` works and hides the problem until the day a filename or a region appears.
+
+    Three forms avoid it, and all three were checked:
+
+    ```powershell
+    terraform init -backend-config config.s3.tfbackend     # space form, portable
+    terraform init "-backend-config=config.s3.tfbackend"   # whole token quoted
+    terraform init -backend-config="config.s3.tfbackend"   # value quoted
+    ```
+
+    The **space form** is the one this chapter uses, because it needs no quoting rules and reads the same in every shell.
+
+    Bash and the other POSIX shells do not do this. If a documented command works for a colleague and fails for you with a message about `-chdir`, this is why.
+
+!!! note "The block can be completely empty, and the page contradicts itself about it"
+    The file section says the partial configuration *"must have a backend block containing keys set to empty values"*, and its example duly writes `bucket = ""`, `key = ""` and so on.
+
+    Read a little further and the same page says the opposite: *"Terraform requires at a minimum that an empty backend configuration is specified in one of the root Terraform configuration files, to specify the backend type"* — followed by an example that is exactly `terraform { backend "consul" {} }`.
+
+    Measured on Terraform 1.15.8, the empty block is what actually holds. `terraform { backend "s3" {} }` plus a `.tfbackend` file initialises and applies normally, which is the form every lab in this chapter uses. The empty-keys style is not wrong, just unnecessary.
 
 This is what makes the **named-value ban** survivable. The repository holds the *shape* of the backend and nothing environment-specific. The values arrive at `init`, from a file that can differ per environment or be generated by CI.
 
@@ -1268,7 +1300,7 @@ Then the application configuration, which starts local so there is something to 
 cd ../app
 terraform init && terraform apply
 cp main.tf.s3 main.tf
-terraform init -backend-config=config.s3.tfbackend -migrate-state
+terraform init -backend-config config.s3.tfbackend -migrate-state
 ```
 
 Answer `yes`. Verify:
@@ -1309,7 +1341,7 @@ The same shape against a different cloud. The AWS emulator cannot stand in: `gcs
 docker compose -f labs/docker-compose.yml --profile gcp up -d
 cd labs/chapter15/lab3
 ./create-bucket.sh                  # .\create-bucket.ps1 on PowerShell
-terraform init -backend-config=config.gcs.tfbackend
+terraform init -backend-config config.gcs.tfbackend
 terraform apply
 ```
 

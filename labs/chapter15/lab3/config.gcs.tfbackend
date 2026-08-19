@@ -1,6 +1,6 @@
 # Partial backend configuration for the gcs backend, pointed at the emulator.
 #
-#   terraform init -backend-config=config.gcs.tfbackend
+#   terraform init -backend-config config.gcs.tfbackend
 
 bucket = "tf-state-lab"
 

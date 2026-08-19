@@ -5,6 +5,12 @@ then **s3**, then **gcs**. Everything here was run end to end on Terraform
 1.15.8 on 2026-08-19; the command output quoted in the chapter comes from these
 directories.
 
+The `-backend-config` flag is written in its **space form** throughout
+(`-backend-config config.s3.tfbackend`). HashiCorp's docs use `=`, and both work,
+but on PowerShell an unquoted `-flag=value.with.dots` is split at the first dot
+and Terraform answers `Too many command line arguments. Did you mean to use
+-chdir?`. The space form needs no quoting on any shell. See chapter 15 section 4.
+
 | Directory | Backend | Needs |
 |---|---|---|
 | `lab1/` | `local` | nothing — no emulator, no credentials, no network |
@@ -75,7 +81,7 @@ that migrates:
 cd ../app
 terraform init && terraform apply   # local state first, so there is something to move
 cp main.tf.s3 main.tf
-terraform init -backend-config=config.s3.tfbackend -migrate-state
+terraform init -backend-config config.s3.tfbackend -migrate-state
 ```
 
 Answer `yes` and the state lands at `s3://tf-state-lab/app/terraform.tfstate`.
@@ -122,7 +128,7 @@ two backends agree and where they do not.
 docker compose -f labs/docker-compose.yml --profile gcp up -d
 cd labs/chapter15/lab3
 ./create-bucket.sh                  # .\create-bucket.ps1 on PowerShell
-terraform init -backend-config=config.gcs.tfbackend
+terraform init -backend-config config.gcs.tfbackend
 terraform apply
 ```
 

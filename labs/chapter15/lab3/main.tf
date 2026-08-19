@@ -9,7 +9,7 @@
 #
 #   docker compose -f labs/docker-compose.yml --profile gcp up -d
 #   ./create-bucket.sh
-#   terraform init -backend-config=config.gcs.tfbackend
+#   terraform init -backend-config config.gcs.tfbackend
 
 terraform {
   required_version = ">= 1.10"
