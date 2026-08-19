@@ -112,6 +112,49 @@ def quotes_in(path):
     return out
 
 
+# Long quoted spans inside prose: *"..."* or plain "...". Short ones are
+# usually a term of art rather than a citation, so only sentence-length spans
+# are treated as claims about what a source wrote.
+INLINE_MIN_WORDS = 8
+INLINE_MIN_CHARS = 60
+
+
+def _paired_spans(line):
+    """Quoted spans, pairing quote marks left to right.
+
+    A regex spanning from the first quote to the last mis-joins two separate
+    quotations on one line, and treats an empty pair like `bucket = ""` as an
+    opening mark. Sequential pairing avoids both.
+    """
+    marks = [i for i, c in enumerate(line) if c in '"“”']
+    spans = []
+    for a, b in zip(marks[::2], marks[1::2]):
+        spans.append(line[a + 1 : b])
+    return spans
+
+
+def inline_quotes_in(path):
+    out = []
+    in_fence = False
+    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        s = line.strip()
+        # admonition/tab titles are quoted but are our own words, not citations
+        if in_fence or s.startswith("> ") or re.match(r"^(!!!|\?\?\?|===)\s", s):
+            continue
+        for span in _paired_spans(line):
+            body = span.strip()
+            if (
+                len(body) >= INLINE_MIN_CHARS
+                and len(body.split()) >= INLINE_MIN_WORDS
+                and not looks_like_code(body)
+            ):
+                out.append((lineno, body))
+    return out
+
+
 def check_attribution(path, corpus, index):
     """A quote introduced by a named, linked page must be in *that* page."""
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -145,6 +188,8 @@ def main():
         + glob.glob("cache/pdf/*.txt")
         + glob.glob("docs/books/**/*.md", recursive=True)
         + glob.glob("docs/sources/**/*.md", recursive=True)
+        # changelogs are cited for version-gating claims
+        + glob.glob("../repos/*/CHANGELOG.md")
     )
     corpus = {
         pathlib.Path(f).as_posix(): norm(
@@ -157,7 +202,7 @@ def main():
     findings = []
     for t in targets:
         path = pathlib.Path(t)
-        for lineno, q in quotes_in(path):
+        for lineno, q in list(quotes_in(path)) + list(inline_quotes_in(path)):
             checked += 1
             nq = norm(q)
 
@@ -168,9 +213,13 @@ def main():
                 continue
 
             # progressively shorter anchors, to tolerate our own elisions
+            # A quote we elided with … cannot match end to end; check the
+            # longest contiguous fragment we did reproduce.
+            fragments = [f.strip() for f in re.split(r"…|\.\.\.", nq) if f.strip()]
+            longest = max(fragments, key=len) if fragments else nq
+            probes = (nq, longest, longest[:120], longest[:80], longest[:60])
             if any(
-                probe and any(probe in v for v in corpus.values())
-                for probe in (nq, nq[:120], nq[:80], nq[:60])
+                probe and any(probe in v for v in corpus.values()) for probe in probes
             ):
                 continue
 

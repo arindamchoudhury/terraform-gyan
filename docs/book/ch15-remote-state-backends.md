@@ -190,7 +190,7 @@ That is the property worth holding on to: moving state to a bucket changes where
 
 ## 3. The `backend` block, and its three limitations
 
-Configuration goes inside the `terraform` block, in the **root module only**:
+Configuration goes inside the `terraform` block, in the **root module**:
 
 ```hcl
 terraform {
@@ -205,7 +205,27 @@ terraform {
 }
 ```
 
-The backend type is the block **label**. The arguments inside are specific to that type, and no two backends share a schema.
+The backend type is the block **label**. The arguments inside are specific to that type, and backends do not share a schema, which is why every one of them needs reading on its own terms.
+
+!!! danger "🧪 Verified — a `backend` block in a child module is ignored, not rejected"
+    "Root module" is usually stated as a rule, which invites the assumption that Terraform enforces it. Measured on 1.15.8, it does not.
+
+    A `backend "local"` block was placed in a child module, pointing at `child-state/dev.tfstate`, with none in the root:
+
+    ```
+    $ terraform validate
+    Success! The configuration is valid.
+
+    $ terraform init
+    Terraform has been successfully initialized!
+
+    $ terraform apply -auto-approve
+    Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+    ```
+
+    No error and no warning at any step. State landed at **`./terraform.tfstate`**, the root default, and the `child-state/` directory was never created. The block was read, accepted, and had no effect whatsoever.
+
+    That is worth knowing because of how modules get made. Extracting a working root configuration into a module carries its `backend` block along, and nothing at all tells you the block stopped meaning anything.
 
 Three limitations follow, and all three shape how real projects are laid out:
 
@@ -244,7 +264,7 @@ Functions may not be called here.
 No variable table and no function table. The backend block takes literals.
 
 !!! warning "`const = true` does not open this door"
-    Terraform **1.15** added `const` on an input variable, which makes it usable in a `module` block's `source` and `version`. Those arguments have a genuine *timing* problem: modules are installed at `init`, before plan-time evaluation exists, so a variable is only usable there if it is known during configuration loading. `const` is the marker that promises it is.
+    Terraform **1.15.0** added `const` on an input variable, which makes it usable in a `module` block's `source` and `version`. (Version-gated from the source: the commit adding the attribute is first contained in tag `v1.15.0`.) Those arguments have a genuine *timing* problem: modules are installed at `init`, before plan-time evaluation exists, so a variable is only usable there if it is known during configuration loading. `const` is the marker that promises it is.
 
     It is reasonable to expect that to extend here, and it does not. Measured on Terraform 1.15.8:
 
@@ -277,7 +297,7 @@ No variable table and no function table. The backend block takes literals.
 The consequence is more annoying than the rule. Every configuration in your organisation must repeat the bucket, the region and the locking setting verbatim, while **`key` must be unique per configuration** or one project silently overwrites another's state. You are asked to copy-paste everything except the single line you must not copy-paste. Section 4 is the sanctioned relief.
 
 !!! info "OpenTofu — variables and locals *are* allowed in a `backend` block"
-    OpenTofu **1.8** added early variable evaluation. `var` and `local` references work inside `backend` blocks, resolved in a special phase during `tofu init` before the backend is initialised and before state exists.
+    OpenTofu **1.8.0** added early variable evaluation, listed in its changelog as *"Variables and Locals allowed in module sources and backend configurations (with limitations)"* ([#1718](https://github.com/opentofu/opentofu/pull/1718)). `var` and `local` references work inside `backend` blocks, resolved in a special phase during `tofu init` before the backend is initialised and before state exists.
 
     ```hcl
     locals {
@@ -312,7 +332,7 @@ The consequence is more annoying than the rule. Every configuration in your orga
 
 **`backend` and `cloud` are mutually exclusive.** HCP Terraform, Terraform Enterprise, and compatible platforms are configured with a `cloud` block instead, and a configuration containing one cannot also contain a `backend` block. Section 9 covers what that block does differently.
 
-**Backends are built in, and only built in.** You cannot load one as a plugin. That single sentence is why the catalogue in section 9 is a finite list rather than a registry, and why "the backend must be available in the version of Terraform you are using" is a real constraint rather than a formality.
+**Backends are built in, and only built in.** The page is blunt about it: *"Terraform ships with several built-in backend types … You cannot load additional backends as plugins."* That is why the catalogue in section 9 is a finite list rather than a registry, and why *"The specified backend must be available in the version of Terraform you are using"* is a real constraint rather than a formality.
 
 ---
 
