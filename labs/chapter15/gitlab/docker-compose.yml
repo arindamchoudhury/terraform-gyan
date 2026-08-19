@@ -34,7 +34,11 @@ services:
       - '8929:8929'
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://localhost:8929'
+        # 127.0.0.1, not localhost. On Windows, localhost resolves to ::1 first and
+        # the published IPv6 mapping does not answer, so every generated link and
+        # API address in the UI would point somewhere the host cannot reach.
+        # Measured 2026-08-19: curl 127.0.0.1:8929 -> 200, localhost:8929 -> empty reply.
+        external_url 'http://127.0.0.1:8929'
         nginx['listen_port'] = 8929
 
         # --- Puma: single process instead of clustered mode.

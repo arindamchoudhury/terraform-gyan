@@ -624,6 +624,16 @@ You are ready to advance when you can:
 
     **On GitHub and Bitbucket the interesting decision moves to the trust policy**, not the backend block. Registering the IdP is authentication; the *conditions* are authorization, and without them any other customer of that IdP can assume your role (**A6**). Notes: [[gitlab-tf-state]], [[gha-oidc]], [[bitbucket-pipelines-oidc]], protocol in [[tf-backend-http]].
 
+!!! example "🧪 Verified — GitLab-managed state against a self-hosted container"
+    Run 2026-08-19 on **Terraform 1.15.8** against **`gitlab/gitlab-ce:19.2.4-ce.0`** in Docker, tuned per [[gitlab-memory-constrained]]. Compose file and full walkthrough: `labs/chapter15/gitlab/`.
+
+    - **It fits.** 3.54 GB image on disk, **2.3 GB** resident at steady state with swap untouched, ~7 minutes from `up -d` to serving. GitLab's 16 GB headline is the untuned figure and is not what this needs.
+    - **`healthy` is not ready.** The container reported healthy after ~1 minute while `gitlab-ctl status` still listed only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd` — no `puma`, no `nginx`. HTTP answered six minutes later. Wait on `/users/sign_in`, not on the health status.
+    - **`127.0.0.1`, not `localhost`.** On Windows, `localhost` resolves to `::1` first and the published IPv6 mapping gave an empty reply (curl exit 52) while `127.0.0.1` returned 200 — and the same request succeeded *inside* the container. `external_url` has to be the IPv4 literal or every link GitLab generates is unreachable.
+    - **The backend works exactly as documented.** Empty `backend "http" {}` plus the eight `-backend-config` flags, `terraform_data` only, no provider plugin: `init` succeeded, `apply` wrote `"serial": 1`, and the state read back over `/api/v4/projects/1/terraform/state/lab`.
+    - **A lock taken by hand blocks the apply**, with `HTTP remote state already locked: ID=manual-holder`. The interesting part is the `Lock Info` block: the request claimed `Who: lab@host` and Terraform printed **`Who: root`**. GitLab overwrites the holder with the token's own identity and stamps its own `Created` time — the lock belongs to a GitLab user, not to whatever the client asserted.
+    - **Versions are addressable by serial.** After the second apply, `/versions/1` and `/versions/2` both return 200 and `/versions/3` returns 404 — the counter [[ch09-state-fundamentals]] measured, doubling as version history.
+
 !!! example "🧪 Verified — the `s3` backend against the lab emulator"
     Run on **Terraform 1.15.8** against **Floci 1.5.33** on `:4566`, so this whole topic is exercisable with no AWS account. Full transcripts in [[tf-backend-configure]] and [[tf-state-locking]].
 
