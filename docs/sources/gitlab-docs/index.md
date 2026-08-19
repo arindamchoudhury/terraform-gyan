@@ -10,3 +10,10 @@ Notes from [docs.gitlab.com](https://docs.gitlab.com/). Captured for the parts o
 | Page | Added | File |
 |---|---|---|
 | OpenTofu state (GitLab-managed Terraform/OpenTofu state) | 2026-08-18 | [gitlab-tf-state](gitlab-tf-state.md) |
+
+## Linux package › Configure
+
+| Page | Added | File |
+|---|---|---|
+| Memory-constrained environments | 2026-08-18 | [gitlab-memory-constrained](gitlab-memory-constrained.md) |
+

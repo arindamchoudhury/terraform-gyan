@@ -223,6 +223,11 @@ nav = [
             { "Infrastructure as Code" = [
                 { "OpenTofu state" = "sources/gitlab-docs/gitlab-tf-state.md" },
             ]},
+            { "Linux package" = [
+                { "Configure" = [
+                    { "Memory-constrained environments" = "sources/gitlab-docs/gitlab-memory-constrained.md" },
+                ]},
+            ]},
         ]},
         { "GitHub Docs" = [
             { "Overview" = "sources/github-docs/index.md" },

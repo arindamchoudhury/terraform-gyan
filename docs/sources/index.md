@@ -155,6 +155,7 @@ Anton Babenko's community book at [terraform-best-practices.com](https://www.ter
 | Title | Type | Added | Tags | URL |
 |---|---|---|---|---|
 | [GitLab-managed Terraform/OpenTofu state](gitlab-docs/gitlab-tf-state.md) | documentation | 2026-08-18 | gitlab, state, http-backend, state-locking, ci-cd, permissions, glab, opentofu, secrets | [url](https://docs.gitlab.com/user/infrastructure/iac/terraform_state/) |
+| [Running GitLab in a memory-constrained environment](gitlab-docs/gitlab-memory-constrained.md) | documentation | 2026-08-18 | gitlab, self-managed, memory, puma, sidekiq, gitaly, jemalloc, swap, omnibus | [url](https://docs.gitlab.com/omnibus/settings/memory_constrained_envs/) |
 
 ## 9. GitHub Docs
 
