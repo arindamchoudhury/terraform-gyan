@@ -1426,8 +1426,17 @@ aws --endpoint-url http://localhost:4566 s3 ls s3://tf-state-lab --recursive
 ```
 
 ```
-app/terraform.tfstate
+2026-08-19 18:55:27        922 app/terraform.tfstate
 ```
+
+!!! note "One bucket, several keys, and the size column is the quick tell"
+    The bucket is shared. Lab 4 writes `ci/terraform.tfstate` beside this object, and any configuration you initialise against `tf-state-lab` while trying the `-backend-config` forms from section 4 leaves a key of its own behind. Narrow the listing with a prefix when you want only this lab's object:
+
+    ```shell
+    aws --endpoint-url http://localhost:4566 s3 ls s3://tf-state-lab/app/ --recursive
+    ```
+
+    The byte count tells you whether a snapshot still describes anything. Measured on Terraform 1.15.8, this object is **922 bytes** with `terraform_data.probe` in it and **181 bytes** after `terraform destroy`. A destroyed state is not deleted. It keeps its `version`, `serial`, and `lineage`, and empties `resources`.
 
 Then check what stayed behind, which is the point of the section 6 warning:
 
