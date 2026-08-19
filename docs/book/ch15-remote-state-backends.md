@@ -26,9 +26,53 @@ Add a second person and it stops working in three separate ways.
 
 **Nobody knows whose copy is current.** Terraform reads state before it plans and writes state after it applies. If your colleague applied an hour ago and you did not receive their file, your plan is computed against a world that no longer exists. Terraform will propose to create things that already exist, and will do it confidently, because the state it consulted said they were absent.
 
-**Two runs can overlap.** Nothing stops both of you running `apply` at the same time. Both read the same prior state, both compute a plan against it, and both write a new state at the end. The second write silently discards the first. The resources the first run created are now real and unrecorded, which is the worst outcome state has: infrastructure that exists and that Terraform does not know about.
+**Two runs can overlap.** Nothing stops both of you running `apply` at the same time. Both read the same prior state, both compute a plan against it, and both write a new state at the end. One of those writes silently discards the other. The resources it recorded are now real and unrecorded, which is the worst outcome state has: infrastructure that exists and that Terraform does not know about.
 
-**State is plaintext secrets.** An RDS instance puts its master username and password in state. An IAM access key resource puts the secret there. There is no encryption and no redaction, and marking the input `sensitive` changes what appears in the CLI output rather than what is written to the file.
+!!! danger "🧪 Verified — both applies succeed and one resource vanishes from state"
+    Terraform 1.15.8, two working directories pointed at the **same** `key` on an `s3` backend with locking left off, each creating one resource, started two seconds apart and overlapping for about ten.
+
+    Both reported success:
+
+    ```
+    alice:  Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+    bob:    Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+    ```
+
+    The state afterwards holds one of them:
+
+    ```
+    serial   : 1
+    resources: ['terraform_data.alice']
+    ```
+
+    Two resources created, one recorded. Neither run saw an error, and nothing in either transcript hints that anything went wrong. Note the serial too: both runs read an empty state, both computed serial 1, and the second write was accepted over the first. The lineage and serial guards that would reject exactly this mismatch run on `state push` and on backend migration, not on an ordinary apply.
+
+    This is engine-side, so it is not an artefact of the emulator. Terraform reads the whole state, computes against it, and writes the whole state back; anything that stores bytes will lose one of two overlapping writers.
+
+**State is plaintext secrets.** This is not an inference from how state works. The providers say it themselves, in the documentation for the resources you are most likely to reach for.
+
+The AWS provider on `aws_db_instance`:
+
+> All arguments including the username and password will be stored in the raw state as plain-text.
+
+And on `aws_iam_access_key`, whose `secret` attribute you cannot avoid generating:
+
+> Note that this will be written to the state file. If you use this, please protect your backend state file judiciously.
+
+There is no encryption and no redaction, and marking the input `sensitive` changes what appears in the CLI output rather than what is written to the file. That last sentence is the one people are surprised by, and section 10 shows it failing at a second boundary as well.
+
+!!! info "There is a partial escape, and it arrived in Terraform 1.11"
+    **Write-only arguments** are the exception to the paragraph above. HashiCorp's language documentation is unambiguous:
+
+    > Write-only arguments let you securely pass temporary values to Terraform's managed resources during an operation without persisting those values to state or plan files.
+
+    > Terraform does not store write-only arguments in state files, so Terraform has no way of knowing if a write-only argument value has changed.
+
+    They need **Terraform 1.11 or later** and a resource that supports them. `aws_db_instance` does, as `password_wo` alongside the older `password`. So a master password can be kept out of state entirely now, which the flat claim "state holds your secrets" no longer covers without qualification. Chapter 23 owns the topic.
+
+    ⚠️ The AWS provider's own page repeats *"Note that this may show up in logs, and it will be stored in the state file"* under **`password_wo`** as well as under `password`. Read against the language documentation above, that line is boilerplate carried over from the neighbouring argument and is wrong for the write-only one. Trust the language reference here, not the provider page.
+
+    None of this rescues the general case. A great many attributes are provider-computed rather than supplied, `aws_iam_access_key`'s `secret` among them, and no write-only argument exists for a value the API hands back to you.
 
 The obvious fix is to put the file in Git, and it fails on all three counts. Somebody will forget to pull before or push after, and it is only a matter of time. Version control offers no locking at all, so overlapping runs are unaffected. And committing state commits the database password to a repository that everyone on the team can read forever, including in its history after you delete it.
 
@@ -1252,7 +1296,7 @@ docker compose -f labs/docker-compose.yml --profile gcp down
 
 A backend stores state and, optionally, provides a locking API. That is all it is, and everything in this chapter follows from how small that definition is.
 
-- Local state fails a team three ways: **freshness**, **exclusion**, and **plaintext secrets in the repository**. Git fixes none of them.
+- Local state fails a team three ways: **freshness**, **exclusion**, and **plaintext secrets in the repository**. Git fixes none of them. Two overlapping applies both report success and one resource disappears from state, because the lineage and serial guards do not run on an ordinary apply.
 - The `backend` block lives in the root module, one per configuration. It **cannot reference variables**, which is why `key` is the one argument you must never copy and why **partial configuration** with a `*.tfbackend` file is the normal shape.
 - The bucket must exist first, so remote state starts with **two configurations**: a bootstrap that stays local, and the project that migrates onto it.
 - `init` is the backend's whole lifecycle: `-backend-config`, `-migrate-state`, `-reconfigure`. A changed backend **errors** rather than prompting, and removing a backend is just a migration in reverse.
