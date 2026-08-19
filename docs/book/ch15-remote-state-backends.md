@@ -26,6 +26,35 @@ Add a second person and it stops working in three separate ways.
 
 **Nobody knows whose copy is current.** Terraform reads state before it plans and writes state after it applies. If your colleague applied an hour ago and you did not receive their file, your plan is computed against a world that no longer exists. Terraform will propose to create things that already exist, and will do it confidently, because the state it consulted said they were absent.
 
+The obvious objection is that Terraform refreshes before planning, so surely it notices. It does not, and the reason is in the scope of what refresh covers. HashiCorp's [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) page:
+
+> Every plan and apply queries the providers and refreshes all resources **in state**.
+
+Refresh reconciles the objects your state already tracks. A resource that only exists in somebody else's state is not one of them, so there is nothing for refresh to look up and no way for it to discover the object.
+
+!!! example "🧪 Verified — the second operator plans a create for something already owned"
+    Terraform 1.15.8, refresh left at its default. Two directories with an identical configuration, and the second never receives the first's state file.
+
+    ```
+    alice applied. state binds terraform_data.thing -> id 2f7c566b-0c09-...
+    ```
+
+    Bob then plans, and the refresh does not save him:
+
+    ```
+      # terraform_data.thing will be created
+    Plan: 1 to add, 0 to change, 0 to destroy.
+    ```
+
+    After his apply the two states bind the **same address to different objects**:
+
+    ```
+    alice: terraform_data.thing -> 2f7c566b-0c09-40e5-8a59-2b9a1e666e8a
+    bob:   terraform_data.thing -> 492b0076-a29c-49e4-1f12-b3af4e21736a
+    ```
+
+    What this shows is the decision Terraform makes: a plan is computed from state, and an absent binding reads as "does not exist" no matter what is really out there. What it does not show is the damage, because `terraform_data` has no object in a cloud. With a real provider the same plan resolves one of two ways, decided by the resource type rather than by Terraform: either the create succeeds and you now own two of something you wanted one of, or it fails on a uniqueness collision such as a bucket name. Which one you get was not exercised here.
+
 **Two runs can overlap.** Nothing stops both of you running `apply` at the same time. Both read the same prior state, both compute a plan against it, and both write a new state at the end. One of those writes silently discards the other. The resources it recorded are now real and unrecorded, which is the worst outcome state has: infrastructure that exists and that Terraform does not know about.
 
 !!! danger "🧪 Verified — both applies succeed and one resource vanishes from state"
