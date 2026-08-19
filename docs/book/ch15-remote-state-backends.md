@@ -244,14 +244,16 @@ You cannot keep state in a bucket that does not exist. You also cannot create th
 So a remote-state setup starts with two configurations:
 
 ```mermaid
-flowchart LR
-    subgraph B["bootstrap/ — stays on the local backend forever"]
+flowchart TB
+    subgraph B["① bootstrap/ — runs first, stays on the local backend forever"]
+      direction LR
       B1["aws_s3_bucket"] --> B2["versioning"] --> B3["public access block"]
     end
-    subgraph A["app/ — migrates onto the bucket"]
+    subgraph A["② app/ — runs second, migrates onto the bucket"]
+      direction LR
       A1["local state"] -->|"init -migrate-state"| A2["s3 backend"]
     end
-    B3 -.->|"bucket now exists"| A2
+    B3 -.->|"bucket now exists"| A1
 ```
 
 The bootstrap configuration creates the bucket and hardens it:
