@@ -607,15 +607,44 @@ Most of that list is chosen for you. The deciding factor is whatever your team a
 
 A few entries earn a sentence:
 
-- **`inmem`** is an in-memory backend used for testing. It is not documented as a user-facing choice, and it loses your state when the process exits.
+- **`inmem`** is an in-memory backend used for testing. It is not documented as a user-facing choice, and Terraform will nonetheless configure it for you without complaint. See the warning below before going near it.
 - **`pg`** puts state in PostgreSQL, and **`kubernetes`** puts it in a Secret. Both are reasonable if that is the durable, backed-up system you already operate.
 - **`remote`** is the older HCP Terraform integration, superseded by the `cloud` block.
 
 !!! info "OpenTofu — no `oci` backend"
     Terraform 1.12 added a native Oracle Cloud Object Storage backend. Checked against the OpenTofu v1.12.5 source, the name is registered nowhere and `internal/backend/remote-state/` has no `oci` directory. Every other name in the list above is present on both engines.
 
-!!! note "Backends can be removed, and Terraform tells you by name"
-    Terraform keeps a list of names it used to support so the error is specific rather than "unknown backend". As of v1.15.8 it names `artifactory`, `azure`, `etcd`, `etcdv3`, `manta` and `swift`, all removed in v1.3, with `azure` pointing you at `azurerm`. Worth knowing before you copy a backend block out of anything written before 2022.
+!!! danger "🧪 Verified — `inmem` initialises, applies, and forgets everything immediately"
+    Terraform 1.15.8. `backend "inmem" {}` is accepted:
+
+    ```
+    Successfully configured the backend "inmem"! Terraform will automatically
+    use this backend unless the backend configuration changes.
+    ```
+
+    `terraform apply` then reports `Resources: 1 added`. The next command is a new process, and the state is already gone:
+
+    ```
+    $ terraform state list
+    No state file was found!
+
+    $ terraform plan
+      # terraform_data.p will be created
+    Plan: 1 to add, 0 to change, 0 to destroy.
+    ```
+
+    Nothing is written to disk. So the resource is orphaned the instant the first apply finishes, and the next plan proposes to build it again. "Loses state when the process exits" undersells it: **every command is a new process**, so state never survives a single command boundary.
+
+!!! note "Backends can be removed, and the message tells you which case you are in"
+    Terraform keeps a list of names it used to support. Measured on 1.15.8, all three cases share the summary **`Unsupported backend type`**, and only the detail line distinguishes them:
+
+    | Block | Detail |
+    |---|---|
+    | `backend "swift" {}` | The "swift" backend is not supported in Terraform v1.3 or later. |
+    | `backend "azure" {}` | The "azure" backend name has been removed, please use "azurerm". |
+    | `backend "nosuchbackend" {}` | There is no backend type named "nosuchbackend". |
+
+    So scanning the bold summary alone tells you nothing; read the detail. The removed names as of v1.15.8 are `artifactory`, `azure`, `etcd`, `etcdv3`, `manta` and `swift`, all dropped in v1.3. Worth knowing before you copy a backend block out of anything written before 2022.
 
 ### `http` is a protocol, not a vendor
 
@@ -629,8 +658,34 @@ Locking is three status codes:
 
 That is the whole of state locking reduced to a wire format, and it is worth reading once, because it makes clear how little a backend has to be.
 
-!!! danger "The `http` backend is unlocked unless you address it"
-    `lock_address` and `unlock_address` both **default to disabled**. A minimal `http` backend with only `address` set will never lock and will never say so. Compare `s3`, where locking is also opt-in but at least sits behind a boolean with a descriptive name.
+!!! danger "🧪 Verified — the `http` backend is unlocked unless you address it"
+    `lock_address` and `unlock_address` both **default to disabled**. A minimal `http` backend with only `address` set will never lock and will never say so.
+
+    Demonstrated against the lab's own server in `labs/chapter15/http-backend/`, run in its `--no-lock` mode so that it answers **405** to every `LOCK`. Two configurations, one server, and the only difference is whether the lock addresses are set:
+
+    ```hcl
+    # A — applies cleanly
+    backend "http" { address = "http://127.0.0.1:8099/" }
+    ```
+
+    ```hcl
+    # B — fails
+    backend "http" {
+      address        = "http://127.0.0.1:8099/"
+      lock_address   = "http://127.0.0.1:8099/"
+      unlock_address = "http://127.0.0.1:8099/"
+    }
+    ```
+
+    ```
+    # B
+    Error: Error acquiring the state lock
+    Error message: Unexpected HTTP response code 405
+    ```
+
+    A succeeds because Terraform never sends the request at all. The server's refusal is irrelevant to a configuration that was never going to ask. That also confirms the protocol's own rule, which is that any status other than 200, 423 or 409 is an error.
+
+    Compare `s3`, where locking is also opt-in but at least sits behind a boolean with a descriptive name.
 
 ### The forge backends, and the one on your forge
 
@@ -684,7 +739,11 @@ terraform state push tf.state
 `state pull` writes the current snapshot to stdout and `state push` writes one back. The push is guarded rather than blind: it is rejected if the two states have **differing lineage**, meaning they were created independently and you are probably overwriting the wrong one, or if the destination's **serial is higher**, meaning changes have happened since the snapshot you are holding. HashiCorp calls `state push` *"extremely dangerous and should be avoided if possible"*, and those two guards are the reason it is merely dangerous rather than routinely catastrophic.
 
 !!! info "Coming: pluggable state stores — watch, do not adopt"
-    The fixed catalogue has an exit under construction. A **`state_store` block** would let a *provider* supply state storage the way it supplies resources. It has been in Terraform's config parser since 1.13 and is still gated behind experimental features in 1.16.0-rc1, appears in no changelog, and OpenTofu declares no equivalent block. Nothing to do today. Learn the name so you recognise it when it lands.
+    The fixed catalogue has an exit under construction. A **`state_store` block** would let a *provider* supply state storage the way it supplies resources.
+
+    It is really there. In the v1.15.8 parser the block is decoded only `if allowExperiments`, and the `else` branch raises `Unsupported block type`, so a release binary refuses it. `module.go` already carries the diagnostics for a duplicate `state_store` and for declaring more than one of `cloud`, `state_store` and `backend` together, which is more finished than "planned".
+
+    Both engines reject it today with the **same** message, for different reasons: Terraform because the experiment is gated, OpenTofu because the block does not exist. You cannot tell from the error which situation you are in. It appears in no changelog. Nothing to do today; learn the name so you recognise it when it lands.
 
 ---
 
