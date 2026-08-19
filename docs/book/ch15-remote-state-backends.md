@@ -58,7 +58,7 @@ Everything above the CLI is unchanged by the choice. The docs put it plainly:
 
     With secrets in state, that removes one whole copy of the plaintext: the laptop. It encrypts nothing. It simply means the file is not there.
 
-    **The exception is the part to plan for.** If the write to the backend fails, Terraform writes state locally so the run is not lost. Recovery is manual. Once the underlying error is fixed, somebody has to push that local state up, and nothing does it automatically. A run that ends this way leaves exactly the plaintext file the guarantee otherwise rules out, on whichever machine happened to be running.
+    **The exception is the part to plan for.** If the write to the backend fails, Terraform writes state locally so the run is not lost. Recovery is manual. Once the underlying error is fixed, somebody has to push that local state up, and nothing does it automatically. A run that ends this way leaves exactly the plaintext file the guarantee otherwise rules out, on whichever machine happened to be running. Section 11 covers what that means when the machine is a CI runner that is about to be deleted.
 
 ---
 
@@ -664,6 +664,70 @@ There is an operational consequence beyond disclosure, and it is not obvious:
 
 A saved plan carries its own frozen backend configuration. With short-lived credentials baked in, a slow review can make the plan unappliable. Environment variables are read fresh at apply time, which is the documented fix and the reason CI pipelines should pass credentials that way rather than through `-backend-config`.
 
+### When the backend write fails, and why CI makes it worse
+
+Section 2 noted the exception to the never-on-disk guarantee. It deserves its own treatment, because the recovery path assumes a workstation and an ephemeral runner breaks that assumption.
+
+The apply has already happened at this point. Resources exist. What failed is the write of the new state, and Terraform has a three-tier fallback, read here from the v1.15.8 source:
+
+1. Write the snapshot to **`errored.tfstate`** in the working directory.
+2. If that write also fails, serialise the entire state and print it to **stderr**.
+3. If serialisation fails too, give up with a fatal error.
+
+The message on tier one is worth reading in full, because the second sentence is the trap:
+
+```
+The error shown above has prevented Terraform from writing the updated state to
+the configured backend. To allow for recovery, the state has been written to the
+file "errored.tfstate" in the current working directory.
+
+Running "terraform apply" again at this point will create a forked state, making
+it harder to recover.
+
+To retry writing this state, use the following command:
+    terraform state push errored.tfstate
+```
+
+On a laptop this works. The file is sitting there, you fix the credential or the bucket policy, you push it, and nothing is lost.
+
+!!! danger "On a CI runner, tier one is written to a container that is about to be deleted"
+    `errored.tfstate` goes to the job's working directory. The job then exits non-zero and the container is destroyed. Unless the pipeline was written in advance to capture that file, the only copy of the state describing the infrastructure you just created is gone.
+
+    What remains is the worst outcome in this chapter: **real resources that no remote state records**. The next pipeline plans against the last successfully persisted snapshot, does not see them, and proposes to create them all again.
+
+    And the retry button is exactly the wrong instinct. Terraform says so itself: running apply again "will create a forked state, making it harder to recover".
+
+    Capture the file on failure, and treat the artifact as sensitive, because it is a complete state snapshot:
+
+    ```yaml
+    apply:
+      script:
+        - terraform apply -input=false tfplan
+      artifacts:
+        when: on_failure
+        paths:
+          - errored.tfstate
+        expire_in: 1 week
+        access: 'developer'
+    ```
+
+!!! danger "Tier two prints your entire state into the job log"
+    If Terraform cannot write `errored.tfstate` either, it dumps the whole snapshot as JSON to **stderr** so you have some path to recovery. On a workstation that is an ugly but survivable last resort.
+
+    In CI, stderr is the job log. That is a plaintext state file, every secret in it included, written into a log that is retained by default, frequently readable by more people than the state bucket is, and often forwarded to a log aggregator. The instruction printed alongside it asks you to copy the state "from the first `{` to the last `}`" into a file and push it, which tells you exactly how literal the dump is.
+
+    A read-only runner filesystem is one way to arrive here, which is worth knowing before hardening a runner that way.
+
+Two conditions make this failure more likely than it sounds, and both are already in this chapter. **Credentials that expire mid-run**, because a saved plan carries its own frozen backend configuration and applies with it. And **a policy or network change** between the plan job and a manual apply job that a human approved hours later.
+
+!!! note "The lock is usually fine, and knowing why tells you when it is not"
+    The unlock is deferred, so it still runs on this path and the lock is released normally. A stuck lock is a *different* failure: the process died without unwinding, which is what a job timeout, a cancelled pipeline, or an out-of-memory kill produces. That is the case section 7's `force-unlock` exists for, and the `Lock Info` block will name the runner rather than a person.
+
+!!! info "OpenTofu — both fallbacks are encrypted"
+    OpenTofu passes its encryption layer into both paths: `statemgr.NewFilesystem("errored.tfstate", b.encryption)` for the file, and the state encryption into the console dump as well. With an `encryption` block configured, neither the emergency file nor the job-log dump is plaintext.
+
+    This is the strongest practical argument for the feature, and it is not one the documentation makes. On Terraform both fallbacks are plaintext and always will be, because there is nothing to encrypt them with.
+
 ### Encryption before the backend sees it
 
 !!! info "OpenTofu — client-side state and plan encryption"
@@ -847,6 +911,8 @@ docker compose -f labs/docker-compose.yml --profile gcp down
 
 **Treating a backend change as a code change.** Any edit to the block, including a `cloud` block edit, stops the next command until you re-`init`. Decide deliberately between `-migrate-state` and `-reconfigure`.
 
+**Retrying a CI job that failed to persist state.** The apply already happened. Recover `errored.tfstate` first; a retry forks the state.
+
 **Omitting `hostname` from a `cloud` block.** It defaults to `app.terraform.io`, so a configuration intended for a self-hosted platform silently points at HashiCorp instead.
 
 **Reaching for `state push` as a migration tool.** It is the manual path, and it is guarded by lineage and serial for good reason. Use the `init` migration where the backends support it.
@@ -882,6 +948,7 @@ A backend stores state and, optionally, provides a locking API. That is all it i
 - The catalogue is **built in and finite**. `http` is the odd one out, a protocol anything can implement, which is what GitLab's state feature actually is.
 - The **`cloud` block is a different product**, not a different bucket: it moves `plan` and `apply` off your machine, and platforms built on it still write to an object store you own. `hostname` is the one argument that decides whether you are talking to HashiCorp or to something you run.
 - `terraform_remote_state` reads **root outputs only**, and grants the reader access to the **entire** snapshot. Publish to a real store instead when the state holds anything you would not share.
+- When the backend write fails the apply has already happened. Terraform writes **`errored.tfstate`**, and dumps the whole state to **stderr** if it cannot. On an ephemeral runner the first is deleted with the container and the second lands in the job log, so capture the file on failure and never hit retry first.
 - Harden on four properties: **encrypted, versioned, locked, and readable only by the run identities**. Backend configuration leaks into `.terraform/` and into every plan file, so credentials come from the environment.
 
 ---
