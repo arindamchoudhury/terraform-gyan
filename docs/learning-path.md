@@ -609,12 +609,14 @@ You are ready to advance when you can:
     | --- | --- | --- |
     | Object path | `key`, verbatim, for the default workspace | **no `key`** — always `<prefix>/<workspace>.tfstate` |
     | Other workspaces | `<workspace_key_prefix>/<name>/<key>`, prefix defaults to the literal **`env:`** | same rule as the default one; the name is already in the path |
-    | Locking | **opt-in**: `use_lockfile = true`, defaults to `false` | **on by default**, nothing to set |
+    | Locking | **opt-in**: `use_lockfile = true`, defaults to `false` | **on by default**, and no argument exists to set *or* unset it |
     | Lock mechanism | `<key>.tflock` object, conditional PUT → **412 PreconditionFailed** | `<prefix>/<name>.tflock`, `ifGenerationMatch: 0` → **412 conditionNotMet** |
     | Bucket | must pre-exist | must pre-exist — *"prior to configuring the backend"* |
     | Versioning | recommended, not automatic | recommended, not automatic |
     | Encryption | `encrypt`, `kms_key_id`, `sse_customer_key` | `kms_encryption_key` (migratable) or `encryption_key` (**not** migratable) |
     | CI credentials | `assume_role_with_web_identity` | ADC, attached service account, or `impersonate_service_account` |
+    | IAM granularity | four statements, `s3:DeleteObject` on the `.tflock` but **not** on state | one line: **Storage Object Admin** on the bucket |
+    | Backend/provider identity | separable by design — the multi-account pattern depends on it (**A7**) | `GOOGLE_CREDENTIALS` is read by **both**; use `GOOGLE_BACKEND_CREDENTIALS` to split them |
 
     **The lock is the same idea twice.** Neither cloud runs a lock service: both write one object that must not already exist, and both surface the failure as a **412**. Once you have seen that, "does this backend support locking" becomes a question about whether the store offers a conditional write.
 

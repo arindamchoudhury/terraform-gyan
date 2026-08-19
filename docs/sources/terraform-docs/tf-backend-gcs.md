@@ -14,7 +14,9 @@ The Google counterpart to [[tf-backend-s3]]. Read them together: the differences
 
 > "**This backend supports state locking.**"
 
-No opt-in, no argument to remember. That single sentence is the biggest divergence from S3, where locking is off until you set `use_lockfile`.
+**That sentence is the entire locking surface of the page.** Nine configuration arguments and not one of them concerns locking. Nothing to enable, nothing to name, nothing to provision. It is the biggest divergence from S3, where locking is off until you set `use_lockfile = true` and the page spends two sections plus an IAM statement on it.
+
+The symmetry is worth stating in both directions. There is no argument to switch locking **off** here either, so the only lever is the CLI's, not the backend's: `-lock=false` skips it per command and `-lock-timeout` waits under contention, both covered in [[tf-state-locking]]. A `gcs` block cannot be misconfigured into an unlocked backend, which is the failure mode the S3 default invites.
 
 ```hcl
 terraform {
