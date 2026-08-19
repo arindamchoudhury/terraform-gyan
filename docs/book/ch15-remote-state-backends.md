@@ -1125,6 +1125,19 @@ Both files are plaintext, and both are easy to forget:
 !!! warning "Two files named `terraform.tfstate`, and they are unrelated"
     `.terraform/terraform.tfstate` is **backend configuration**. The `terraform.tfstate` holding your infrastructure's state is a different file, and with a remote backend it does not exist locally at all. HashiCorp says it plainly: *"The local backend configuration is different and entirely separate from the `terraform.tfstate` file that contains state data about your real-world infrastructure."*
 
+    Telling a given file apart from the other takes two seconds, because the two schemas diverged and never reconverged. The backend record is still **state format version 3**, carries a `backend` key, and carries nothing else of substance. Real state moved to **version 4** in Terraform 0.12 and carries `serial`, `lineage`, and `resources`. Measured on 1.15.8:
+
+    | | `.terraform/terraform.tfstate` | `terraform.tfstate` |
+    | --- | --- | --- |
+    | `version` | `3` | `4` |
+    | Top-level keys | `version`, `terraform_version`, `backend` | `version`, `terraform_version`, `serial`, `lineage`, `outputs`, `resources`, `check_results` |
+
+    So a file with a `backend` key is configuration, and a file with `resources` is state:
+
+    ```shell
+    python -c "import json,sys;d=json.load(open(sys.argv[1]));print('BACKEND CONFIG' if 'backend' in d else 'REAL STATE')" terraform.tfstate
+    ```
+
     Never commit `.terraform/`.
 
 ### Reproducing the leak
