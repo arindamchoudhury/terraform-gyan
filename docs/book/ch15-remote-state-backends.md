@@ -786,12 +786,71 @@ output "app_value" {
 
 Sharing is opt-in at the root, which is a feature. It means a producing configuration decides what its interface is instead of leaking everything it happens to contain.
 
+!!! example "🧪 Verified — what actually comes through"
+    Terraform 1.15.8 against the lab emulator. A producer on the `s3` backend with three root outputs, one of them a passthrough of a child module's output, plus a second child output deliberately *not* re-exported. A separate consumer reads it.
+
+    Everything declared at the root arrives:
+
+    ```
+    all_outputs = {
+      "passthru"   = "exported-from-module"
+      "plain"      = "top-value"
+      "secret_val" = "hunter2"
+    }
+    ```
+
+    The child output that was never re-exported does not exist as far as the consumer is concerned:
+
+    ```
+    Error: Unsupported attribute
+    This object does not have an attribute named "inner_only".
+    ```
+
+    Neither do the resources:
+
+    ```
+    Error: Unsupported attribute
+    This object has no argument, nested block, or exported attribute named "resources".
+    ```
+
+    **But now fetch the state object itself.** It is a plain `GET` away, and it contains what the data source refused to hand over:
+
+    ```
+    resource addresses: terraform_data.top, module.inner.terraform_data.inner
+    ```
+
+    The child module's resource is right there, module path and all. The language hides it; the bytes do not. That gap between what `terraform_remote_state` exposes and what the object holds is exactly the warning below, and it is worth seeing once rather than taking on trust.
+
 !!! danger "Reading one output requires access to the entire state snapshot"
     > Although `terraform_remote_state` doesn't expose any other state snapshot information for use in configuration, the state snapshot data is a single object, and so any user or server which has enough access to read the root module output values will also always have access to the full state snapshot data by direct network requests. Don't use `terraform_remote_state` if any of the resources in your configuration work with data that you consider sensitive.
 
     The distinction is between what the *language* exposes and what the *reader's credentials* permit. Terraform hands your configuration only `outputs`. But the consumer had to be able to fetch the whole state object to get them, and nothing stops a person, or a compromised CI runner, from fetching it directly and reading every plaintext secret in it.
 
     Note also that the read uses the **consuming** configuration's backend credentials. There is no separate authentication here to scope down.
+
+!!! danger "🧪 Verified — `sensitive` does not survive the round trip"
+    The producer marked one output sensitive and Terraform redacted it there, printing `secret_val = <sensitive>`. The flag is genuinely recorded in the state object:
+
+    ```json
+    "secret_val": { "value": "hunter2", "type": "string", "sensitive": true }
+    ```
+
+    The consumer read it and printed it in the clear, both through the whole `outputs` map and through `outputs.secret_val` directly:
+
+    ```
+    direct_secret = "hunter2"
+    ```
+
+    No warning, and no error, **even though the consumer's own output block was not marked sensitive**. The control makes the point: referencing a locally-sensitive value from an unmarked output is a hard failure.
+
+    ```
+    Error: Output refers to sensitive values
+    ... output containing sensitive data be explicitly marked as sensitive
+    ```
+
+    So sensitivity is enforced within a configuration and dropped across the state boundary. `terraform_remote_state` stores the flag and ignores it on read. A value the producing team was careful about becomes an ordinary string in the consumer, and the consumer has to know to re-mark it.
+
+    This is the same lesson as Chapter 9's, one level out: `sensitive` is a display control inside one configuration, not a property that travels with the data.
 
 Two alternatives are recommended, in this order:
 
@@ -1079,7 +1138,7 @@ docker compose -f labs/docker-compose.yml --profile gcp down
 
 **Passing backend credentials with `-backend-config`.** They land in `.terraform/` and in every plan file, and a saved plan then applies with its own frozen copy. Use environment variables.
 
-**Assuming `terraform_remote_state` is a read-only view.** It is read access to the whole snapshot for whoever runs the consuming configuration.
+**Assuming `terraform_remote_state` is a read-only view.** It is read access to the whole snapshot for whoever runs the consuming configuration, and a `sensitive` output arrives unmarked on the other side.
 
 **Reaching for `force-unlock` on a colleague's stuck run.** It is for your own lock when automatic unlocking failed. The `Lock Info` block tells you whose it is.
 
@@ -1121,7 +1180,7 @@ A backend stores state and, optionally, provides a locking API. That is all it i
 - `s3` addresses by `key` and prefixes other workspaces with the literal `env:`; `gcs` addresses by `<prefix>/<workspace>.tfstate` and always has the workspace in the path. `s3` separates backend and provider identity by design; `gcs` shares an environment variable with the provider unless you use the backend-scoped one.
 - The catalogue is **built in and finite**. `http` is the odd one out, a protocol anything can implement, which is what GitLab's state feature actually is.
 - The **`cloud` block is a different product**, not a different bucket: it moves `plan` and `apply` off your machine, and platforms built on it still write to an object store you own. `hostname` is the one argument that decides whether you are talking to HashiCorp or to something you run.
-- `terraform_remote_state` reads **root outputs only**, and grants the reader access to the **entire** snapshot. Publish to a real store instead when the state holds anything you would not share.
+- `terraform_remote_state` reads **root outputs only**, and grants the reader access to the **entire** snapshot. **`sensitive` does not cross that boundary** — the flag is stored in state and ignored on read, so a protected value arrives unmarked. Publish to a real store instead when the state holds anything you would not share.
 - When the backend write fails the apply has already happened. Terraform writes **`errored.tfstate`**, and dumps the whole state to **stderr** if it cannot. On an ephemeral runner the first is deleted with the container and the second lands in the job log, so capture the file on failure and never hit retry first.
 - Harden on four properties: **encrypted, versioned, locked, and readable only by the run identities**. Backend configuration leaks into `.terraform/` and into every plan file, so credentials come from the environment.
 
