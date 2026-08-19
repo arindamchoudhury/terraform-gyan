@@ -886,6 +886,22 @@ Both files are plaintext, and both are easy to forget:
 - **`.terraform/terraform.tfstate`** holds the resolved backend configuration for the working directory. Measured on Terraform 1.15.8 against the lab emulator, it contains the whole thing as JSON, `access_key` and `secret_key` included.
 - **Every plan file** captures that same configuration as it stood at plan time, so a saved plan carries the credentials with it.
 
+!!! danger "🧪 Verified — and grepping the plan file will not find it"
+    A backend configured with the recognisable canaries `AKIALEAKCANARY01` and `s3cr3t-canary-value-9f2a`, then `terraform plan -out=tfplan` on 1.15.8.
+
+    Searching the 2 KB file's bytes for either canary finds **nothing**, which is exactly the false negative that lets this go unnoticed. A plan file is a **zip**. Open it and the picture changes:
+
+    | Entry | |
+    | --- | --- |
+    | `tfplan` | **contains both canaries** |
+    | `tfstate` | clean |
+    | `tfstate-prev` | clean |
+    | `tfconfig/m-/main.tf` | clean |
+    | `tfconfig/modules.json` | clean |
+    | `.terraform.lock.hcl` | clean |
+
+    The leak is in the `tfplan` entry, the msgpack plan itself, rather than in the state snapshots bundled beside it. Anyone auditing build artifacts for secrets needs to unzip before scanning, or they will clear a file that is carrying credentials.
+
 !!! warning "Two files named `terraform.tfstate`, and they are unrelated"
     `.terraform/terraform.tfstate` is **backend configuration**. The `terraform.tfstate` holding your infrastructure's state is a different file, and with a remote backend it does not exist locally at all. HashiCorp says it plainly: *"The local backend configuration is different and entirely separate from the `terraform.tfstate` file that contains state data about your real-world infrastructure."*
 
@@ -906,6 +922,15 @@ The apply has already happened at this point. Resources exist. What failed is th
 1. Write the snapshot to **`errored.tfstate`** in the working directory.
 2. If that write also fails, serialise the entire state and print it to **stderr**.
 3. If serialisation fails too, give up with a fatal error.
+
+Tier one is easy to confirm. Stop the backend seven seconds into an apply and the file is there when the command exits, holding the resource that was just created:
+
+```
+errored.tfstate     833 bytes
+  serial     : 0
+  resources  : 1
+  addresses  : terraform_data.slow
+```
 
 The message on tier one is worth reading in full, because the second sentence is the trap:
 
@@ -953,8 +978,31 @@ On a laptop this works. The file is sitting there, you fix the credential or the
 
 Two conditions make this failure more likely than it sounds, and both are already in this chapter. **Credentials that expire mid-run**, because a saved plan carries its own frozen backend configuration and applies with it. And **a policy or network change** between the plan job and a manual apply job that a human approved hours later.
 
-!!! note "The lock is usually fine, and knowing why tells you when it is not"
-    The unlock is deferred, so it still runs on this path and the lock is released normally. A stuck lock is a *different* failure: the process died without unwinding, which is what a job timeout, a cancelled pipeline, or an out-of-memory kill produces. That is the case section 7's `force-unlock` exists for, and the `Lock Info` block will name the runner rather than a person.
+!!! warning "🧪 Verified — when the backend is the problem, the unlock fails too"
+    The unlock is deferred, so it always *runs*. Whether it *succeeds* is a different question, and when the thing that broke the state write is the backend itself, it does not.
+
+    Measured on Terraform 1.15.8: an apply against the `s3` backend, with the emulator stopped seven seconds into the run. Terraform reported both failures. The state write went to `errored.tfstate`, and then:
+
+    ```
+    Error message: unable to retrieve file from S3 bucket 'tf-state-lab' with
+    key 'errstate/terraform.tfstate.tflock': operation error S3: GetObject,
+    exceeded maximum number of attempts, 5 ... connectex: No connection could
+    be made because the target machine actively refused it.
+
+    Terraform acquires a lock when accessing your state to prevent others
+    running Terraform to potentially modify the state at the same time. An
+    error occurred while releasing this lock. This could mean that the lock
+    did or did not release properly. If the lock didn't release properly,
+    Terraform may not be able to run future commands since it'll appear as if
+    the lock is held.
+
+    In this scenario, please call the "force-unlock" command to unlock the
+    state manually.
+    ```
+
+    So the two failures compound rather than being alternatives. You can be left with **infrastructure created, state unpersisted, and a lock that may still be held**, and Terraform cannot tell you which of those last two happened. That is the situation `force-unlock` exists for, and it is also why the recovery order matters: get `errored.tfstate` to safety first, then deal with the lock.
+
+    A stuck lock has a second, unrelated cause worth separating: the process dying without unwinding at all, which is what a job timeout, a cancelled pipeline, or an out-of-memory kill produces. There the `Lock Info` block will name the runner rather than a person.
 
 !!! info "OpenTofu — both fallbacks are encrypted"
     OpenTofu passes its encryption layer into both paths: `statemgr.NewFilesystem("errored.tfstate", b.encryption)` for the file, and the state encryption into the console dump as well. With an `encryption` block configured, neither the emergency file nor the job-log dump is plaintext.
