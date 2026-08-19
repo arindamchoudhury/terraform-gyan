@@ -376,7 +376,7 @@ Locking is **automatic, silent, and fatal**.
 - **Silent** — you see no message when it works. The docs say so directly: "You do not see any message that it happens." No output is not evidence that nothing locked.
 - **Fatal** — "If state locking fails, Terraform does not continue." It is not a warning you can ignore.
 
-The only time locking appears in normal output is when acquisition is slow, at which point Terraform prints a status message.
+The silence has a threshold rather than being absolute. `Acquiring state lock. This may take a few moments...` is emitted through a slow-message helper with `LockThreshold = 400 * time.Millisecond`, so it prints only when acquisition takes longer than 400 ms. A lock taken promptly says nothing at all; one you have to wait for announces itself. That is why seeing the message is already a signal that something else is holding it.
 
 ### The lock is a conditional write
 
@@ -418,7 +418,9 @@ Error message: writing "gs://tf-state-lab/terraform/state/default.tflock" failed
 googleapi: Error 412: ifGenerationMatch: 1787133258314 != 0, conditionNotMet
 ```
 
-Two vendors, one idea, and both spell it **412**. `ifGenerationMatch: 0` is Google's way of saying "create only if this does not exist"; S3's if-none-match precondition says the same thing. Once you have seen that, "does this backend support locking" reduces to "does this store offer a conditional write", which is why the S3 backend no longer needs a DynamoDB table and why an S3-compatible store may or may not manage it.
+Two vendors, one idea, and both spell it **412**. `ifGenerationMatch: 0` is Google's way of saying "create only if this does not exist"; S3's if-none-match precondition says the same thing.
+
+The lock object's lifetime is visible from outside if you list the bucket during a held apply. Mid-run there is a `.tflock` and, on a first apply, no state object yet. After the run there is a state object and no `.tflock`. Lock first, write second, unlock third. Once you have seen that, "does this backend support locking" reduces to "does this store offer a conditional write", which is why the S3 backend no longer needs a DynamoDB table and why an S3-compatible store may or may not manage it.
 
 ### Waiting instead of failing
 
@@ -430,7 +432,13 @@ The default under contention is to fail immediately. Three behaviours are availa
 | `-lock-timeout=10m` | Retry for that long before giving up |
 | `-lock=false` | Skip locking entirely |
 
-Only the middle one is appropriate in a team. `-lock=false` exists, and HashiCorp's own position is "we do not recommend it". The one defensible use is a speculative plan you will certainly never apply.
+The default is literally `-lock-timeout=0s`, which `terraform plan -help` prints. Give it a duration and the retry is an exponential backoff, starting at one second and doubling to a ceiling of sixteen, until the timeout expires. So a long `-lock-timeout` costs you nothing while the lock is free and polls politely while it is not.
+
+Only the middle row is appropriate in a team. The refusal itself tells you about the third, and this is the CLI's own wording rather than the documentation site's:
+
+> Terraform acquires a state lock to protect the state from being written by multiple users at the same time. Please resolve the issue above and try again. For most commands, you can disable locking with the "-lock=false" flag, but this is not recommended.
+
+The one defensible use is a speculative plan you will certainly never apply.
 
 ### `force-unlock`
 
@@ -438,7 +446,9 @@ A crashed run can leave a lock held. `terraform force-unlock LOCK_ID` releases i
 
 > Force unlock should only be used to unlock your own lock in the situation where automatic unlocking failed.
 
-The lock ID is the guard rail. It acts as a **nonce** identifying one specific acquisition, so you cannot unlock blind, and an ID copied from an older failure will not release the current lock. This is why the `Lock Info` block above matters: it hands you the ID at exactly the moment you might need it, along with the holder, the operation and the start time, which is the evidence you need before deciding a lock is stale rather than live.
+The lock ID is the guard rail. It acts as a **nonce** identifying one specific acquisition, so you cannot unlock blind, and an ID copied from an older failure will not release the current lock.
+
+What that ID *is* differs by backend, which is worth seeing once. On `s3` it is a UUID that Terraform generates. On `gcs` it is the lock object's **generation number**, the same value that appears in the `ifGenerationMatch` comparison in the error. The nonce is not a Terraform-level abstraction bolted on top; on GCS it is the store's own optimistic-concurrency token, surfaced directly. This is why the `Lock Info` block above matters: it hands you the ID at exactly the moment you might need it, along with the holder, the operation and the start time, which is the evidence you need before deciding a lock is stale rather than live.
 
 !!! warning "`-force` suppresses the prompt, not the lock ID"
     The command's single option is `-force`, described as "Don't ask for input for unlock confirmation". `LOCK_ID` remains a required positional argument with or without it. There is no blind-unlock form.
