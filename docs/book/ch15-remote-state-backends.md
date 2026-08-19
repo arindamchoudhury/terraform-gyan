@@ -228,7 +228,9 @@ The bootstrap configuration keeps local state permanently. Its state is small, i
 
 ## 6. Migration, and what it leaves behind
 
-Change the backend configuration and Terraform stops before doing anything else. Measured on Terraform 1.15.8:
+Adding a backend for the **first time** is the easy case. There is nothing recorded in `.terraform/` yet, so a plain `terraform init` finds the local state, prompts, and migrates it.
+
+Every case after that is different. Once a backend has been recorded, changing it stops Terraform before it does anything else. Measured on Terraform 1.15.8:
 
 ```
 Error: Backend configuration changed
@@ -242,7 +244,7 @@ If you wish to store the current configuration with no changes to the
 state, use "terraform init -reconfigure".
 ```
 
-That error is the interface. There is no interactive offer on a plain `init`, and the two flags mean genuinely different things:
+That error is the interface for every subsequent move, and the two flags mean genuinely different things:
 
 | Flag | What it does | When you want it |
 |---|---|---|
@@ -264,7 +266,7 @@ Successfully configured the backend "s3"! Terraform will automatically
 use this backend unless the backend configuration changes.
 ```
 
-**Removing a backend is the same operation in reverse.** Delete the block, run `terraform init -migrate-state`, and Terraform offers to bring the state back down:
+**Removing a backend is the same operation in reverse**, and it takes the flag too, because a backend was recorded. Delete the block, run `terraform init -migrate-state`, and Terraform offers to bring the state back down:
 
 ```
 Terraform has detected you're unconfiguring your previously set "local" backend.
@@ -273,6 +275,9 @@ Successfully unset the backend "local". Terraform will now operate locally.
 ```
 
 There is no separate command for removing a backend. The `init` prompt is the whole of it.
+
+!!! note "The prompt appears; the flag decides whether you get to it"
+    Measured on Terraform 1.15.8, the two cases behave differently and the difference is easy to misremember as "`init` offers to migrate". It does, **once**. On a first backend adoption a plain `init` prompts. On any later change, including deleting the block, a plain `init` errors and you have to say which of the two flags you meant. That is the safer design: the second case is the one where guessing wrong loses state.
 
 !!! danger "Migration copies. It does not clean up."
     Measured on Terraform 1.15.8 across three runs, and once on OpenTofu 1.12.5, migrating a project from local state onto the `s3` backend leaves this in the working directory:

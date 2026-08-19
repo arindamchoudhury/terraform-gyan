@@ -38,8 +38,22 @@ terraform apply
 
 The state appears at `state/dev.tfstate` rather than `./terraform.tfstate`.
 Then copy the sidecar `main.tf.default` over `main.tf` and re-run `terraform
-init`: Terraform offers to migrate the state *back*, which is the whole of
-"removing a backend" — there is no separate command for it.
+init`. A backend is already recorded in `.terraform/`, so a plain `init` refuses:
+
+```
+Error: Backend configuration changed
+...
+If you wish to attempt automatic migration of the state, use "terraform
+init -migrate-state".
+```
+
+Run `terraform init -migrate-state` and Terraform offers to bring the state
+*back*, which is the whole of "removing a backend" — there is no separate
+command for it. Measured on 1.15.8: only a **first** backend adoption prompts
+without the flag; every later change, including removal, errors first.
+
+The old `state/dev.tfstate` is still there afterwards, complete. Migration
+copies and never cleans up.
 
 ## lab2 — the `s3` backend, and the two-step bootstrap
 

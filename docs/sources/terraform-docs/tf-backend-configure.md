@@ -151,6 +151,27 @@ Three behaviors worth knowing before you answer the prompts:
 - **Reconfiguring the same backend still asks about migration.** Answering "no" is fine here.
 - **Removing the backend block** and reinitializing prompts you to migrate state back to the default `local` backend.
 
+!!! warning "The interactive path only exists on a *first* backend adoption"
+    Measured on Terraform 1.15.8 (2026-08-19). The page describes migration as something Terraform offers, and for the first adoption it is: with no backend recorded in `.terraform/` yet, a plain `terraform init` finds the local state and prompts.
+
+    Once a backend **is** recorded, every later change stops instead:
+
+    ```
+    Error: Backend configuration changed
+
+    If you wish to attempt automatic migration of the state, use "terraform
+    init -migrate-state".
+    If you wish to store the current configuration with no changes to the
+    state, use "terraform init -reconfigure".
+    ```
+
+    That covers changing the settings, changing the type, and deleting the block. So the three interactive behaviours above are what you get *after* passing `-migrate-state`, not from a bare `init`.
+
+!!! danger "Migration copies and never cleans up"
+    Also measured 2026-08-19, three runs on Terraform 1.15.8 and one on OpenTofu 1.12.5. Migrating local state onto the `s3` backend truncates `terraform.tfstate` to **0 bytes** and leaves the complete snapshot in **`terraform.tfstate.backup`**, all attributes intact. Unsetting a backend leaves the *source* file complete instead.
+
+    Either direction leaves a full plaintext copy of the state on the disk you just moved it off, and nothing mentions it. Delete it deliberately once the new location is verified. This is the gap in the "never persisted to disk" guarantee [[tf-state-backends]] states, which describes later runs rather than the migration itself.
+
 The `-migrate-state` and `-reconfigure` flags that automate these answers are in [[06-state-management]] §6.4.6; this page describes the interactive path only.
 
 ## Verified against a local AWS emulator
