@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/backend/gcs](https://developer.hashicorp.com/terraform/language/backend/gcs)
 > **Added:** 2026-08-18
-> **Source updated:** undated language reference; captured 2026-08-18 against v1.15.x (latest)
+> **Source updated:** undated language reference; captured 2026-08-18 against v1.15.x (latest); re-fetched 2026-08-19 — byte-identical, still v1.15.x
 > **Tags:** backend, gcs, state-locking, prefix, adc, impersonation, cmek, csek, storage_custom_endpoint
 > **Type:** documentation
 
@@ -48,6 +48,21 @@ So the default workspace is `<prefix>/default.tfstate`, and the workspace name i
 
     A `.tflock` object written with `ifGenerationMatch: 0` — "create only if this does not exist". Mechanically the same idea as the S3 backend's `412 PreconditionFailed`, in Google's spelling. Both clouds implement distributed state locking as one conditional object write; neither runs a lock service. Lab: `labs/chapter15/lab3/`.
 
+## Reading this state from another configuration
+
+```hcl
+data "terraform_remote_state" "foo" {
+  backend = "gcs"
+
+  config = {
+    bucket = "terraform-state"
+    prefix = "prod"
+  }
+}
+```
+
+`bucket` and `prefix` are the whole config, matching the backend block. The page's consumer example is worth noting for what it dates: it gives two forms, `data.terraform_remote_state.foo.outputs.greeting` for **Terraform >= 0.12** and the pre-0.12 form without `.outputs`. Only the first is relevant now, and the second is a sign of how long parts of this page have sat unrevised.
+
 ## Authentication, in four situations
 
 The page organises this better than most, by *where Terraform is running*:
@@ -63,6 +78,27 @@ The page organises this better than most, by *where Terraform is running*:
     > "IAM Changes to buckets are eventually consistent and may take upto a few minutes to take effect. **Terraform will return 403 errors till it is eventually consistent.**"
 
     So a 403 immediately after granting access is not necessarily a wrong policy. Wait before debugging.
+
+## Two environment variables per argument, and one collision
+
+Every optional argument reads from **two** environment variables, a backend-scoped one and a shared one:
+
+| Argument | Backend-scoped | Shared |
+| --- | --- | --- |
+| `credentials` | `GOOGLE_BACKEND_CREDENTIALS` | `GOOGLE_CREDENTIALS` |
+| `impersonate_service_account` | `GOOGLE_BACKEND_IMPERSONATE_SERVICE_ACCOUNT` | `GOOGLE_IMPERSONATE_SERVICE_ACCOUNT` |
+| `storage_custom_endpoint` | `GOOGLE_BACKEND_STORAGE_CUSTOM_ENDPOINT` | `GOOGLE_STORAGE_CUSTOM_ENDPOINT` |
+| `encryption_key` | — | `GOOGLE_ENCRYPTION_KEY` |
+| `kms_encryption_key` | — | `GOOGLE_KMS_ENCRYPTION_KEY` |
+
+!!! warning "The shared variables are shared with the provider"
+    > "**Warning:** if using the Google Cloud Platform provider as well, it will also pick up the `GOOGLE_CREDENTIALS` environment variable."
+
+    So exporting `GOOGLE_CREDENTIALS` authenticates the backend *and* every `google` provider in the configuration with the same identity. That is usually not what a multi-account layout wants, and it is the opposite of the split the S3 page builds its architecture on, where the backend runs as the administrative user and the provider assumes an environment role ([[tf-backend-s3]]). The `GOOGLE_BACKEND_*` form exists precisely to separate the two. Prefer it whenever the backend and the managed infrastructure should not share an identity.
+
+**The IAM requirement is one line, and it is coarse.** "The provided credentials must have the **Storage Object Admin** role on the bucket." No per-object policy, no separate lock-object permission, nothing resembling the S3 page's four-statement breakdown. Narrowing below that role is undocumented here.
+
+**`bucket` must be globally unique**, per Google's bucket naming rules, because GCS bucket names share one namespace across all projects. S3 has the same property; neither page's example name would survive a real `apply`.
 
 ## Encryption: the two kinds behave differently at migration time
 
@@ -87,7 +123,9 @@ The blanket warning applies to both:
 
 > "A URL containing three parts: the protocol, the DNS name pointing to a **Private Service Connect** endpoint, and the path for the Cloud Storage API (`/storage/v1/b`)"
 
-Documented for PSC, where the point is keeping state traffic off the public internet. It is a plain URL override, which is why Chapter 15's lab can point it at a local emulator — that use is this project's finding, not a documented promise.
+Documented for PSC, where the point is keeping state traffic off the public internet. The endpoint's DNS name is either one Service Directory makes automatically or one you make yourself, and the page's worked example for the automatic form is `https://storage-xyz.p.googleapis.com/storage/v1/b` for an endpoint named `xyz`.
+
+The `/storage/v1/b` suffix is the part to copy exactly. It is the Cloud Storage JSON API path, and it is also why the AWS emulator cannot stand in for this backend in the lab. It is a plain URL override, which is why Chapter 15's lab can point it at a local GCP emulator. That use is this project's finding, not a documented promise.
 
 ---
 Related: [[tf-backend-s3]] — the same job on AWS; read the two together for `key`-versus-`prefix`, opt-in-versus-default locking, and two spellings of a conditional write. · [[tf-backend-configure]] — partial configuration and the credential-leak warning this page repeats verbatim. · [[tf-state-locking]] — what a lock protects. · [[tf-state-workspaces]] — why the workspace name is in every object path here. · [[tf-remote-state-data]] — the data-source form, and why KMS keys are not needed to read.
