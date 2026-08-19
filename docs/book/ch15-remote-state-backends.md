@@ -111,12 +111,23 @@ So the file has to live somewhere Terraform can read and write on every run, tha
 
 ## 2. What a backend actually is
 
-A backend has exactly two responsibilities:
+HashiCorp's [State Storage and Locking](https://developer.hashicorp.com/terraform/language/backend) page opens with the whole definition in two sentences:
+
+> Backends are responsible for storing state and providing an API for state locking. State locking is optional.
+
+So there are exactly two responsibilities:
 
 1. **Store state.** Read it at the start of an operation, write it at the end.
 2. **Provide a locking API.** Optional. Some backends do, some do not, and each backend's own documentation says which.
 
-That is the whole definition, and holding on to how small it is prevents a lot of confusion later. A backend is not a runner. It does not execute anything, it does not hold your variables, and with one exception noted below it has no opinion about your configuration. It is a place to put a JSON document, plus a way to say "somebody is working on this one".
+Holding on to how small that is prevents a lot of confusion later. A backend is not a runner. It does not execute anything, it does not hold your variables, and it has no opinion about your configuration beyond needing somewhere to put a JSON document, plus a way to say "somebody is working on this one".
+
+!!! note "The `cloud` block is the thing that breaks this description, and it is not a backend"
+    Every sentence above is false of HCP Terraform, Terraform Enterprise and the platforms compatible with them. Those *do* execute your runs, *do* hold your variables, and *do* have opinions about your configuration.
+
+    That is not a backend behaving unusually. It is configured by a **`cloud` block** rather than a `backend` block, the two are mutually exclusive in one configuration, and section 9 covers what it changes. When this chapter says "backend" it means the thing this page defines, and the `cloud` block is named explicitly wherever it is meant.
+
+The page's own examples of the storage half are worth keeping, because they are the two ends of the range: *"the `local` (default) backend stores state in a local JSON file on disk. The Consul backend stores the state within Consul. Both of these backends happen to provide locking: local via system APIs and Consul via locking APIs."*
 
 The default backend is **`local`**, which writes `terraform.tfstate` in the working directory. Every chapter so far has used it without naming it. It also locks, through operating-system file-locking APIs, which is why two `terraform apply` runs in the same directory on the same machine already refuse to overlap.
 
@@ -161,7 +172,13 @@ That is the property worth holding on to: moving state to a bucket changes where
 
     With secrets in state, that removes one whole copy of the plaintext: the laptop. It encrypts nothing. It simply means the file is not there.
 
-    **The exception is the part to plan for.** If the write to the backend fails, Terraform writes state locally so the run is not lost. Recovery is manual. Once the underlying error is fixed, somebody has to push that local state up, and nothing does it automatically. A run that ends this way leaves exactly the plaintext file the guarantee otherwise rules out, on whichever machine happened to be running. Section 11 covers what that means when the machine is a CI runner that is about to be deleted.
+    **The exception is the part to plan for**, and the page states both halves of it:
+
+    > In the case of an error persisting the state to the backend, Terraform will write the state locally. This is to prevent data loss. If this happens, the end user must manually push the state to the remote backend once the error is resolved.
+
+    That file has a name, **`errored.tfstate`**, and section 11 shows one being produced. Nothing pushes it back for you. A run that ends this way leaves exactly the plaintext the guarantee otherwise rules out, on whichever machine happened to be running, and section 11 covers what that means when the machine is a CI runner about to be deleted.
+
+    **Two other local copies are outside this guarantee entirely**, which is worth separating so the promise is not read as wider than it is. Migrating onto a remote backend leaves the old state behind as `terraform.tfstate.backup` (section 6). And `.terraform/terraform.tfstate` is backend *configuration* rather than state, so it is unaffected by any of this and is its own disclosure problem (section 11). The guarantee covers where a working remote backend puts your state during ordinary runs. It is not a promise that no state-shaped file exists on the disk.
 
 ---
 
