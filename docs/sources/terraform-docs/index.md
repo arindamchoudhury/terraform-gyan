@@ -71,6 +71,7 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `terraform show` command (`-json`, schema precondition) | 2026-07-30 | [tf-cmd-show](tf-cmd-show.md) |
 | `terraform state list` command (`-id` reverse lookup) | 2026-07-30 | [tf-cmd-state-list](tf-cmd-state-list.md) |
 | `terraform state show` command (PowerShell quoting corrected) | 2026-07-30 | [tf-cmd-state-show](tf-cmd-state-show.md) |
+| `terraform force-unlock` command (`LOCK_ID` positional; `-force` only skips the prompt) | 2026-08-19 | [tf-cmd-force-unlock](tf-cmd-force-unlock.md) |
 | Modules overview (section index, Develop/Distribute/Provision) | 2026-08-08 | [tf-modules](tf-modules.md) |
 | Use modules in your configuration (`ref`, `depth`, `const`, `-replace`) | 2026-08-08 | [tf-modules-configuration](tf-modules-configuration.md) |
 | Creating Modules (Develop modules overview — the abstraction test) | 2026-08-08 | [tf-modules-develop](tf-modules-develop.md) |

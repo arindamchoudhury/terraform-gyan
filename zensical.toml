@@ -62,6 +62,9 @@ nav = [
                     { "Inspecting State" = [
                         { "refresh" = "sources/terraform-docs/tf-cmd-refresh.md" },
                     ]},
+                    { "Disaster Recovery" = [
+                        { "force-unlock" = "sources/terraform-docs/tf-cmd-force-unlock.md" },
+                    ]},
                 ]},
             ]},
             { "Configuration Language" = [
