@@ -130,6 +130,8 @@ nav = [
                     { "Configure a backend" = "sources/terraform-docs/tf-backend-configure.md" },
                     { "local" = "sources/terraform-docs/tf-backend-local.md" },
                     { "http" = "sources/terraform-docs/tf-backend-http.md" },
+                    { "gcs" = "sources/terraform-docs/tf-backend-gcs.md" },
+                    { "s3" = "sources/terraform-docs/tf-backend-s3.md" },
                 ]},
                 { "State" = [
                     { "Overview" = "sources/terraform-docs/tf-state.md" },
