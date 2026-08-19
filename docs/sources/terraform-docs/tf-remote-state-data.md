@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/state/remote-state-data](https://developer.hashicorp.com/terraform/language/state/remote-state-data)
 > **Added:** 2026-07-10
-> **Source updated:** undated language reference; captured 2026-07-10 against v1.15.x (latest)
+> **Source updated:** undated language reference; captured 2026-07-10 against v1.15.x (latest); re-fetched 2026-08-19 — byte-identical, still v1.15.x
 > **Tags:** state, remote-state, terraform_remote_state, tfe_outputs, built-in-resources, data-sharing, sensitive-data
 > **Type:** documentation
 
@@ -87,6 +87,11 @@ data "terraform_remote_state" "vpc" {
 
 No `required_providers` entry, no `provider` block. It's built in.
 
+**The backend pages carry their own worked examples**, and they are the ones to copy from because they show the exact `config` keys each backend expects. [[tf-backend-s3]] gives `bucket` + `key` + `region`, [[tf-backend-gcs]] gives `bucket` + `prefix`, and [[tf-backend-local]] gives a `path` relative to `path.module`. Both of those pages carry dated artifacts around the example, which is worth noticing before copying: the S3 one prints a flat `addresses.# = 2` attribute dump from the pre-0.12 output format, and the GCS one gives explicit `Terraform >= 0.12` and `Terraform <= 0.11` variants, the second using the dead no-`.outputs` access form.
+
+!!! note "The read inherits the reader's backend credentials, not the writer's"
+    Nothing here authenticates separately. A `terraform_remote_state` block against `s3` uses whatever AWS credentials the *consuming* configuration resolves, which is why the security warning above is about access rather than about configuration. On `gcs` this compounds with the shared-environment-variable collision in [[tf-backend-gcs]]: exporting `GOOGLE_CREDENTIALS` gives one identity to the consuming config's backend, its providers, and this data source at once.
+
 ## Arguments
 
 | Argument | Meaning |
@@ -125,4 +130,4 @@ output "app_value" {
 Without that `output` block, `module.app.example` is invisible to any consumer. Sharing across configurations is opt-in at the root, not automatic.
 
 ---
-Related: [[tf-terraform-data]] — the other built-in resource, from the same built-in provider. · [[tf-style-guide]] — also recommends `tfe_outputs` for state sharing, and notes secrets sit in state in plaintext. · [[tf-configure-resource]] — the same plaintext-state caveat, via local-only resources. · [[dependency-graph]] — a `terraform_remote_state` read is a `data` block, so `depends_on` on it orders the read.
+Related: [[tf-terraform-data]] — the other built-in resource, from the same built-in provider. · [[tf-backend-s3]] · [[tf-backend-gcs]] · [[tf-backend-local]] — the three backend pages that document their own `config` shape for this data source, and whose state objects a reader must be able to fetch whole. · [[tf-style-guide]] — also recommends `tfe_outputs` for state sharing, and notes secrets sit in state in plaintext. · [[tf-configure-resource]] — the same plaintext-state caveat, via local-only resources. · [[dependency-graph]] — a `terraform_remote_state` read is a `data` block, so `depends_on` on it orders the read.
