@@ -1,0 +1,880 @@
+# Chapter 15 — Remote state & backends
+
+## Learning outcomes
+
+By the end you can:
+
+- Name the three things local state cannot do for a team, and say which one is not a Git problem.
+- Define a **backend** by its two responsibilities, and say which of the two is optional.
+- Write a `backend` block, state its three limitations, and explain which one OpenTofu removed and when.
+- Use **partial configuration** so the one argument that must differ per project is the only one in the repository.
+- Bootstrap a state bucket from a second configuration, and explain why it cannot be the same one.
+- Migrate a project onto a remote backend with `init -migrate-state`, and say what the migration leaves on local disk.
+- Explain state **locking** as a conditional write on an object, and read both clouds' `412` refusals as the same mechanism.
+- Configure the **`s3`** and **`gcs`** backends, and say why the workspace name appears in one object path and not the other.
+- Recognise the rest of the built-in catalogue, including the one backend that is a protocol rather than a vendor.
+- Read another configuration's outputs with `terraform_remote_state`, and say who else can read that state as a result.
+- Harden a state backend on four properties, and name the two plaintext files that leak backend configuration.
+
+---
+
+## 1. The problem: your state lives on one laptop
+
+Chapter 9 established what state is. Everything since has assumed it sits in `terraform.tfstate` next to your configuration, and for one person on one machine that works.
+
+Add a second person and it stops working in three separate ways.
+
+**Nobody knows whose copy is current.** Terraform reads state before it plans and writes state after it applies. If your colleague applied an hour ago and you did not receive their file, your plan is computed against a world that no longer exists. Terraform will propose to create things that already exist, and will do it confidently, because the state it consulted said they were absent.
+
+**Two runs can overlap.** Nothing stops both of you running `apply` at the same time. Both read the same prior state, both compute a plan against it, and both write a new state at the end. The second write silently discards the first. The resources the first run created are now real and unrecorded, which is the worst outcome state has: infrastructure that exists and that Terraform does not know about.
+
+**State is plaintext secrets.** An RDS instance puts its master username and password in state. An IAM access key resource puts the secret there. There is no encryption and no redaction, and marking the input `sensitive` changes what appears in the CLI output rather than what is written to the file.
+
+The obvious fix is to put the file in Git, and it fails on all three counts. Somebody will forget to pull before or push after, and it is only a matter of time. Version control offers no locking at all, so overlapping runs are unaffected. And committing state commits the database password to a repository that everyone on the team can read forever, including in its history after you delete it.
+
+So the file has to live somewhere Terraform can read and write on every run, that can refuse a second concurrent writer, and that has its own access controls. That destination is a **backend**.
+
+---
+
+## 2. What a backend actually is
+
+A backend has exactly two responsibilities:
+
+1. **Store state.** Read it at the start of an operation, write it at the end.
+2. **Provide a locking API.** Optional. Some backends do, some do not, and each backend's own documentation says which.
+
+That is the whole definition, and holding on to how small it is prevents a lot of confusion later. A backend is not a runner. It does not execute anything, it does not hold your variables, and with one exception noted below it has no opinion about your configuration. It is a place to put a JSON document, plus a way to say "somebody is working on this one".
+
+The default backend is **`local`**, which writes `terraform.tfstate` in the working directory. Every chapter so far has used it without naming it. It also locks, through operating-system file-locking APIs, which is why two `terraform apply` runs in the same directory on the same machine already refuse to overlap.
+
+Everything above the CLI is unchanged by the choice. The docs put it plainly:
+
+> If you switch back to using the `local` backend, commands like `terraform console`, the `terraform state` operations, `terraform taint`, and more will continue to work as if the state was local.
+
+!!! success "A remote backend keeps state off your disk entirely"
+    HashiCorp's [State Storage and Locking](https://developer.hashicorp.com/terraform/language/backend) page states a guarantee that is easy to skim past:
+
+    > When using a non-local backend, Terraform will not persist the state anywhere on disk except in the case of a non-recoverable error where writing the state to the backend failed.
+
+    With secrets in state, that removes one whole copy of the plaintext: the laptop. It encrypts nothing. It simply means the file is not there.
+
+    **The exception is the part to plan for.** If the write to the backend fails, Terraform writes state locally so the run is not lost. Recovery is manual. Once the underlying error is fixed, somebody has to push that local state up, and nothing does it automatically. A run that ends this way leaves exactly the plaintext file the guarantee otherwise rules out, on whichever machine happened to be running.
+
+---
+
+## 3. The `backend` block, and its three limitations
+
+Configuration goes inside the `terraform` block, in the **root module only**:
+
+```hcl
+terraform {
+  required_version = ">= 1.10"
+
+  backend "s3" {
+    bucket       = "acme-tf-state"
+    key          = "networking/terraform.tfstate"
+    region       = "eu-central-1"
+    use_lockfile = true
+  }
+}
+```
+
+The backend type is the block **label**. The arguments inside are specific to that type, and no two backends share a schema.
+
+Three limitations follow, and all three shape how real projects are laid out:
+
+> - A configuration can only provide one backend block.
+> - A backend block cannot refer to named values (like input variables, locals, or data source attributes).
+> - You cannot reference values declared within backend blocks elsewhere in the configuration.
+
+The second is the one people hit first, and it is worth seeing fail:
+
+```
+Error: Variables not allowed
+  on main.tf line 8, in terraform:
+   8:     bucket = var.state_bucket
+Variables may not be used here.
+```
+
+That is a parse-time refusal. It happens before any backend work, because the backend configuration is what Terraform needs in order to find state at all, so it cannot depend on anything that comes from state.
+
+The consequence is more annoying than the rule. Every configuration in your organisation must repeat the bucket, the region and the locking setting verbatim, while **`key` must be unique per configuration** or one project silently overwrites another's state. You are asked to copy-paste everything except the single line you must not copy-paste. Section 4 is the sanctioned relief.
+
+!!! info "OpenTofu — variables and locals *are* allowed in a `backend` block"
+    OpenTofu **1.8** added early variable evaluation. `var` and `local` references work inside `backend` blocks, resolved in a special phase during `tofu init` before the backend is initialised and before state exists.
+
+    ```hcl
+    locals {
+      region = "us-east-1"
+    }
+
+    terraform {
+      backend "s3" {
+        region = local.region
+      }
+    }
+    ```
+
+    The restrictions match the reason it works: only variables and locals, nothing from state or from data sources, and everything must be statically determinable at `init`. OpenTofu's own guidance is still to keep credentials out of it, because backend configuration leaks the same way there as here (section 11).
+
+    On Terraform 1.15.8 the ban holds. Do not use this in a configuration that must run on both engines.
+
+**`backend` and `cloud` are mutually exclusive.** HCP Terraform, Terraform Enterprise, and compatible platforms are configured with a `cloud` block instead, and a configuration containing one cannot also contain a `backend` block. Section 9 covers what that block does differently.
+
+**Backends are built in, and only built in.** You cannot load one as a plugin. That single sentence is why the catalogue in section 9 is a finite list rather than a registry, and why "the backend must be available in the version of Terraform you are using" is a real constraint rather than a formality.
+
+---
+
+## 4. Partial configuration
+
+Omit arguments from the block and supply them at `init` time. The minimum is an empty block naming the type:
+
+```hcl
+terraform {
+  backend "s3" {}
+}
+```
+
+Then put the rest in a file:
+
+```hcl
+# config.s3.tfbackend
+bucket       = "acme-tf-state"
+key          = "networking/terraform.tfstate"
+region       = "eu-central-1"
+use_lockfile = true
+```
+
+```shell
+terraform init -backend-config=config.s3.tfbackend
+```
+
+The file's format is the contents of the backend block as top-level attributes, with no wrapping `terraform` or `backend` block.
+
+!!! tip "The documented filename convention is `*.<backendname>.tfbackend`"
+    `config.s3.tfbackend`, `prod.gcs.tfbackend`, and so on. HashiCorp will not stop you using another name, and following the convention helps your editor understand the content.
+
+    Plenty of material uses `backend.tfvars` instead. It works, and it is worse: `.tfvars` tells every reader and every editor that the file holds *variable* values, when it holds backend configuration, which is a different thing evaluated at a different time.
+
+Two other ways to supply the values exist. Repeated `-backend-config="key=value"` flags work, with later flags overriding earlier ones, and Terraform prompts interactively for required values it still lacks. Prefer the file. Command-line flags land in shell history, which is a poor home for anything sensitive.
+
+!!! warning "In PowerShell, quote the whole argument"
+    PowerShell splits an unquoted `-flag=value` argument at the `=`, so the flag arrives mangled. Wrap the entire token rather than just the value:
+
+    ```powershell
+    terraform init "-backend-config=config.s3.tfbackend"
+    ```
+
+!!! note "The block can be completely empty"
+    HashiCorp's own example writes `bucket = ""`, `key = ""` and so on, and the surrounding text says the partial configuration "must have a backend block containing keys set to empty values". Measured on Terraform 1.15.8, that is not required. `terraform { backend "s3" {} }` plus a `.tfbackend` file initialises and applies normally. The empty-keys form is one style, not an obligation, and the page's own later sentence agrees that the minimum is a block naming the type.
+
+This is what makes the second limitation survivable. The repository holds the *shape* of the backend and nothing environment-specific. The values arrive at `init`, from a file that can differ per environment or be generated by CI.
+
+---
+
+## 5. The bootstrap, and why it takes two configurations
+
+You cannot keep state in a bucket that does not exist. You also cannot create that bucket with the configuration whose state it will hold, because at the moment `init` runs the bucket must already be there.
+
+So a remote-state setup starts with two configurations:
+
+```mermaid
+flowchart LR
+    subgraph B["bootstrap/ — stays on the local backend forever"]
+      B1["aws_s3_bucket"] --> B2["versioning"] --> B3["public access block"]
+    end
+    subgraph A["app/ — migrates onto the bucket"]
+      A1["local state"] -->|"init -migrate-state"| A2["s3 backend"]
+    end
+    B3 -.->|"bucket now exists"| A2
+```
+
+The bootstrap configuration creates the bucket and hardens it:
+
+```hcl
+resource "aws_s3_bucket" "state" {
+  bucket = "acme-tf-state"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_s3_bucket_versioning" "state" {
+  bucket = aws_s3_bucket.state.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "state" {
+  bucket                  = aws_s3_bucket.state.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+```
+
+Three things there are not decoration. `prevent_destroy` is a plan-time refusal to delete the bucket, from Chapter 11. **Versioning is what makes a corrupted or truncated state recoverable**, and neither backend turns it on for you. The public-access block matters because the object you are about to store is a plaintext credential file.
+
+The bootstrap configuration keeps local state permanently. Its state is small, it changes almost never, and the alternative is the same problem one level down.
+
+!!! tip "One bucket serves every configuration you own"
+    The bootstrap is awkward, and it is also a once-per-account cost. Different projects share the bucket and differ only in `key`. That is the argument for treating `key` as the project's address rather than as a filename: `networking/terraform.tfstate`, `platform/eks/terraform.tfstate`, and so on, mirroring your repository layout.
+
+---
+
+## 6. Migration, and what it leaves behind
+
+Change the backend configuration and Terraform stops before doing anything else. Measured on Terraform 1.15.8:
+
+```
+Error: Backend configuration changed
+
+A change in the backend configuration has been detected, which may require
+migrating existing state.
+
+If you wish to attempt automatic migration of the state, use "terraform
+init -migrate-state".
+If you wish to store the current configuration with no changes to the
+state, use "terraform init -reconfigure".
+```
+
+That error is the interface. There is no interactive offer on a plain `init`, and the two flags mean genuinely different things:
+
+| Flag | What it does | When you want it |
+|---|---|---|
+| `-migrate-state` | Copies the current state into the new backend | Moving a live project to a new home |
+| `-reconfigure` | Discards the association and starts fresh against the new backend | Pointing at a backend that already holds the right state, or deliberately starting empty |
+
+Answer the migration prompt and the copy happens:
+
+```
+Do you want to copy existing state to the new backend?
+  Pre-existing state was found while migrating the previous "local" backend to the
+  newly configured "s3" backend. No existing state was found in the newly
+  configured "s3" backend. Do you want to copy this state to the new "s3"
+  backend? Enter "yes" to copy and "no" to start with an empty state.
+
+  Enter a value: yes
+
+Successfully configured the backend "s3"! Terraform will automatically
+use this backend unless the backend configuration changes.
+```
+
+**Removing a backend is the same operation in reverse.** Delete the block, run `terraform init -migrate-state`, and Terraform offers to bring the state back down:
+
+```
+Terraform has detected you're unconfiguring your previously set "local" backend.
+...
+Successfully unset the backend "local". Terraform will now operate locally.
+```
+
+There is no separate command for removing a backend. The `init` prompt is the whole of it.
+
+!!! danger "Migration copies. It does not clean up."
+    Measured on Terraform 1.15.8 across three runs, and once on OpenTofu 1.12.5, migrating a project from local state onto the `s3` backend leaves this in the working directory:
+
+    ```
+    terraform.tfstate            0 bytes
+    terraform.tfstate.backup   922 bytes   <- the complete snapshot
+    ```
+
+    The working file is truncated. The **backup keeps every attribute**, including anything sensitive, in plaintext, and nothing warns you. Migrating in the other direction leaves the source file complete rather than truncated. Either way a full copy of the state you just moved somewhere safer is still sitting on the disk you moved it off.
+
+    Delete it deliberately after you have confirmed the remote copy is good. The "state is never persisted to disk" guarantee in section 2 describes future runs, not the migration that got you there.
+
+!!! warning "Only the current version migrates"
+    If the old backend kept version history, migration copies the **latest** state and nothing else. Older versions have to be moved by hand if you want them. Take a backup before starting, which is advice HashiCorp gives in its own words: back up `terraform.tfstate` to another location before migrating to a new backend.
+
+!!! note "Match the CLI version that wrote the state"
+    HashiCorp's HCP migration tutorial states the constraint the S3 material does not: *"always use the same version of the Terraform CLI you used to create the resources. Using a newer version of Terraform may update the state file and cause state file corruption."* A newer CLI can rewrite the snapshot as it reads it, and the rewrite is what lands in the new backend.
+
+`init` is where all of this lives. It is not only first-run setup. Over a project's life its backend flags are `-backend-config` for partial configuration, `-migrate-state` to move, `-reconfigure` to re-point, and `-upgrade` to re-resolve providers within their constraints.
+
+---
+
+## 7. Locking
+
+Locking is **automatic, silent, and fatal**.
+
+- **Automatic** — every operation that could write state takes a lock. That includes `plan`, which carries its own `-lock` and `-lock-timeout` flags.
+- **Silent** — you see no message when it works. The docs say so directly: "You do not see any message that it happens." No output is not evidence that nothing locked.
+- **Fatal** — "If state locking fails, Terraform does not continue." It is not a warning you can ignore.
+
+The only time locking appears in normal output is when acquisition is slow, at which point Terraform prints a status message.
+
+### The lock is a conditional write
+
+Neither major cloud backend runs a lock service. Both do the same thing: write one object that must not already exist, and let the store refuse the second writer.
+
+```mermaid
+sequenceDiagram
+    participant A as apply (first)
+    participant S as object store
+    participant B as plan (second)
+    A->>S: PUT <key>.tflock  (only if absent)
+    S-->>A: 200 OK — lock held
+    B->>S: PUT <key>.tflock  (only if absent)
+    S-->>B: 412 — precondition failed
+    Note over B: run stops, Lock Info printed
+    A->>S: write state, DELETE <key>.tflock
+```
+
+On `s3`, with `use_lockfile = true`, the refusal reads:
+
+```
+Error: Error acquiring the state lock
+
+Error message: operation error S3: PutObject, https response error StatusCode: 412,
+api error PreconditionFailed: At least one of the pre-conditions you specified did not hold
+Lock Info:
+  ID:        76be00ae-65dc-d086-f994-ef1ca2487028
+  Path:      tf-state-lab/app/terraform.tfstate
+  Operation: OperationTypeApply
+  Who:       ARINDAM\arind@arindam
+  Version:   1.15.8
+  Created:   2026-07-30 09:05:40.678421 +0000 UTC
+```
+
+On `gcs`, which needs no argument at all:
+
+```
+Error message: writing "gs://tf-state-lab/terraform/state/default.tflock" failed:
+googleapi: Error 412: ifGenerationMatch: 1787133258314 != 0, conditionNotMet
+```
+
+Two vendors, one idea, and both spell it **412**. `ifGenerationMatch: 0` is Google's way of saying "create only if this does not exist"; S3's if-none-match precondition says the same thing. Once you have seen that, "does this backend support locking" reduces to "does this store offer a conditional write", which is why the S3 backend no longer needs a DynamoDB table and why an S3-compatible store may or may not manage it.
+
+### Waiting instead of failing
+
+The default under contention is to fail immediately. Three behaviours are available:
+
+| Flag | Behaviour |
+|---|---|
+| *(none)* | Fail as soon as the lock cannot be taken |
+| `-lock-timeout=10m` | Retry for that long before giving up |
+| `-lock=false` | Skip locking entirely |
+
+Only the middle one is appropriate in a team. `-lock=false` exists, and HashiCorp's own position is "we do not recommend it". The one defensible use is a speculative plan you will certainly never apply.
+
+### `force-unlock`
+
+A crashed run can leave a lock held. `terraform force-unlock LOCK_ID` releases it, and the scoping is tighter than most people assume:
+
+> Force unlock should only be used to unlock your own lock in the situation where automatic unlocking failed.
+
+The lock ID is the guard rail. It acts as a **nonce** identifying one specific acquisition, so you cannot unlock blind, and an ID copied from an older failure will not release the current lock. This is why the `Lock Info` block above matters: it hands you the ID at exactly the moment you might need it, along with the holder, the operation and the start time, which is the evidence you need before deciding a lock is stale rather than live.
+
+!!! warning "`-force` suppresses the prompt, not the lock ID"
+    The command's single option is `-force`, described as "Don't ask for input for unlock confirmation". `LOCK_ID` remains a required positional argument with or without it. There is no blind-unlock form.
+
+    Two more facts from the command reference. It *"does not modify your infrastructure"*, which is worth knowing before running it during an incident: the harm it can do is the second writer it permits, not anything it touches directly. And *"local state files cannot be unlocked by another process"* — the `local` backend locks through system APIs, so a stuck local lock is a process to deal with rather than a lock to break. This is a remote-backend command.
+
+---
+
+## 8. Two object stores, side by side
+
+`s3` and `gcs` do the same job. Reading them against each other is what turns "the S3 backend" into a general model of what a backend is.
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket       = "acme-tf-state"
+    key          = "networking/terraform.tfstate"
+    region       = "eu-central-1"
+    use_lockfile = true
+    encrypt      = true
+  }
+}
+```
+
+```hcl
+terraform {
+  backend "gcs" {
+    bucket = "acme-tf-state"
+    prefix = "networking"
+  }
+}
+```
+
+| | `s3` | `gcs` |
+|---|---|---|
+| Object path | `key`, verbatim, for the default workspace | no `key` — always `<prefix>/<workspace>.tfstate` |
+| Other workspaces | `<workspace_key_prefix>/<name>/<key>`, prefix defaults to the literal `env:` | same rule as the default one |
+| Locking | **opt-in**: `use_lockfile = true`, defaults to `false` | **on by default**, no argument to set or unset it |
+| Lock mechanism | `<key>.tflock`, conditional PUT, `412 PreconditionFailed` | `<prefix>/<name>.tflock`, `ifGenerationMatch: 0`, `412 conditionNotMet` |
+| Bucket | must pre-exist | must pre-exist |
+| Versioning | recommended, not automatic | recommended, not automatic |
+| Encryption | `encrypt`, `kms_key_id`, `sse_customer_key` | `kms_encryption_key` (migratable) or `encryption_key` (**not** migratable) |
+| CI credentials | `assume_role_with_web_identity` | ADC, attached service account, or `impersonate_service_account` |
+| IAM granularity | four statements, `s3:DeleteObject` on the `.tflock` but not on state | one line: **Storage Object Admin** on the bucket |
+
+### Where the object lands
+
+On `s3` the default workspace gets exactly `key`. Every other workspace is prefixed:
+
+> Other workspaces are stored using the path `<workspace_key_prefix>/<workspace_name>/<key>`. The default workspace key prefix is `env:`
+
+So workspace `development` with `key = networking/terraform.tfstate` lands at `env:/development/networking/terraform.tfstate`. A literal directory with a colon in it, inherited from the pre-1.0 name for workspaces, which is why a bucket that has seen workspaces looks so strange in the console.
+
+On `gcs` there is no `key` at all. State is `<prefix>/<workspace>.tfstate`, so the default workspace lands at `networking/default.tfstate` and the workspace name is in **every** path rather than only the non-default ones.
+
+### The locking default is the trap
+
+`use_lockfile` defaults to `false`. A perfectly valid `s3` backend block that omits it is an **unlocked backend that never warns you**, which is the exact failure this whole chapter exists to prevent. Set it. There is no cost and nothing to provision.
+
+!!! warning "`dynamodb_table` is on its way out, on Terraform only"
+    The S3 backend's original locking used a DynamoDB table. Terraform now deprecates it: `dynamodb_table` and `dynamodb_endpoint` *"will be removed in a future minor version"*, and both may be configured alongside `use_lockfile` purely as a migration path.
+
+    By date rather than by version number, since both projects number releases `1.x` on different schedules: Terraform **1.10** (2024-11-27) introduced native locking as opt-in and took both locks when DynamoDB was also configured; Terraform **1.11** (2025-02-27) made it GA and deprecated the DynamoDB arguments; OpenTofu **1.10** (June 2025) shipped `use_lockfile` about seven months after Terraform's first release of it.
+
+!!! info "OpenTofu — `dynamodb_table` carries no deprecation"
+    Verified in the backend schemas: Terraform v1.15.0 marks the argument `Deprecated: true` and emits a diagnostic steering you to `use_lockfile`. OpenTofu's schema carries neither. "Migrate off DynamoDB" is Terraform advice; on OpenTofu the table remains a fully supported option, even though `use_lockfile` is the better default there too.
+
+### IAM, and the statement people forget
+
+The S3 permission set is more specific than "read and write the bucket":
+
+- `s3:ListBucket` on the **bucket**, at minimum able to list the path where state is stored.
+- `s3:GetObject` and `s3:PutObject` on the **state object**.
+- `s3:GetObject`, `s3:PutObject` **and `s3:DeleteObject`** on the **`.tflock` object**.
+
+And the line that surprises people:
+
+> `s3:DeleteObject` is not required on the state file, as Terraform does not delete it.
+
+Terraform never removes a state object. Cleaning up old state is your process, not the tool's. The corollary is the failure mode: a bucket policy written before `use_lockfile` existed grants nothing on the lock object, so the run fails at lock acquisition rather than at write, which reads like an authentication problem and is not.
+
+GCS asks for one line instead: **Storage Object Admin** on the bucket. There is no documented way to narrow below that role, and no separate lock-object permission to forget.
+
+### The identity question
+
+This is the difference that decides architecture rather than syntax.
+
+On `s3`, the backend's credentials and the provider's credentials are separate by construction. The backend authenticates as one principal and `provider "aws"` can `assume_role` into another. HashiCorp's own multi-account pattern is built on that split: one administrative account holds the humans and the single state bucket, each environment account holds a role, and the provider assumes into the environment while the backend keeps writing state as the administrator.
+
+On `gcs`, every option reads two environment variables, a backend-scoped `GOOGLE_BACKEND_*` name and a shared `GOOGLE_*` one, and the reference page warns:
+
+> if using the Google Cloud Platform provider as well, it will also pick up the `GOOGLE_CREDENTIALS` environment variable.
+
+Export the shared name and you have given one identity to the backend, to every `google` provider, and to any `terraform_remote_state` read in the configuration. Use `GOOGLE_BACKEND_CREDENTIALS` when the backend and the managed infrastructure should not be the same principal.
+
+### Encryption asymmetry
+
+Both backends can encrypt with a customer-managed KMS key or a customer-supplied key, and the two behave differently when you change them.
+
+On `gcs`, a **KMS** key migrates automatically, but the change only takes effect on the **first write after** migration, so the old key has to outlive the migration. A **customer-supplied** key cannot be migrated at all: Google does not store it, so at migration time the backend has lost the old key's details and cannot use it. The object has to be rewritten out-of-band first to strip the old key.
+
+On `s3`, the trap is where the key lives rather than how it migrates:
+
+> This can also be sourced from the `AWS_SSE_CUSTOMER_KEY` environment variable, which is recommended due to the sensitivity of the value. Setting it inside a terraform file will cause it to be persisted to disk in `terraform.tfstate`.
+
+A key written into configuration ends up inside the state it was meant to protect.
+
+!!! note "A 403 straight after granting access may be nothing"
+    The GCS page states something no other backend page does: *"IAM Changes to buckets are eventually consistent and may take upto a few minutes to take effect. Terraform will return 403 errors till it is eventually consistent."* Wait before you start debugging a policy that is probably correct.
+
+---
+
+## 9. The rest of the catalogue
+
+Backends are built in, so the list is finite and version-bound. Read out of the Terraform v1.15.8 source, the registered names are:
+
+`local` · `remote` · `azurerm` · `consul` · `cos` · `gcs` · `http` · `inmem` · `kubernetes` · `oci` · `oss` · `pg` · `s3` · `cloud`
+
+Most of that list is chosen for you. The deciding factor is whatever your team already runs: AWS gives you `s3`, Azure gives you `azurerm`, GCP gives you `gcs`. This is not a decision worth agonising over.
+
+A few entries earn a sentence:
+
+- **`inmem`** is an in-memory backend used for testing. It is not documented as a user-facing choice, and it loses your state when the process exits.
+- **`pg`** puts state in PostgreSQL, and **`kubernetes`** puts it in a Secret. Both are reasonable if that is the durable, backed-up system you already operate.
+- **`remote`** is the older HCP Terraform integration, superseded by the `cloud` block.
+
+!!! info "OpenTofu — no `oci` backend"
+    Terraform 1.12 added a native Oracle Cloud Object Storage backend. Checked against the OpenTofu v1.12.5 source, the name is registered nowhere and `internal/backend/remote-state/` has no `oci` directory. Every other name in the list above is present on both engines.
+
+!!! note "Backends can be removed, and Terraform tells you by name"
+    Terraform keeps a list of names it used to support so the error is specific rather than "unknown backend". As of v1.15.8 it names `artifactory`, `azure`, `etcd`, `etcdv3`, `manta` and `swift`, all removed in v1.3, with `azure` pointing you at `azurerm`. Worth knowing before you copy a backend block out of anything written before 2022.
+
+### `http` is a protocol, not a vendor
+
+One entry in the list is different in kind. The `http` backend defines a small REST contract and lets anything implement it:
+
+> Stores the state using a simple REST client. State will be fetched via GET, updated via POST, and purged with DELETE.
+
+Locking is three status codes:
+
+> The endpoint should return a **423: Locked** or **409: Conflict** with the holding lock info when it's already taken, **200: OK** for success.
+
+That is the whole of state locking reduced to a wire format, and it is worth reading once, because it makes clear how little a backend has to be.
+
+!!! danger "The `http` backend is unlocked unless you address it"
+    `lock_address` and `unlock_address` both **default to disabled**. A minimal `http` backend with only `address` set will never lock and will never say so. Compare `s3`, where locking is also opt-in but at least sits behind a boolean with a descriptive name.
+
+### The forge backends, and the one on your forge
+
+**GitLab** stores Terraform state, and it is this backend rather than a type of its own: an empty `backend "http" {}` pointed at `/api/v4/projects/<ID>/terraform/state/<NAME>`, with the lock at that same path plus `/lock` and the protocol's `LOCK`/`UNLOCK` verbs replaced by `POST` and `DELETE`. Project roles replace bucket IAM, which is genuinely convenient and has one consequence that decides it for many teams:
+
+> any user with the Developer role or higher can download and view Terraform state files for projects where they are members
+
+There is no per-object policy to reach for. The mitigations GitLab offers are a custom role excluding `admin_terraform_state` (Ultimate only), OpenTofu's state encryption, or simply keeping state in a separate project with its own membership.
+
+**GitHub and Bitbucket do not store Terraform state at all.** For those, and for most GitLab users, the arrangement is the one the lab in section 12 builds: repository and pipeline on the forge, state in an object store, and no long-lived cloud key in CI.
+
+### The `cloud` block
+
+HCP Terraform, Terraform Enterprise, Scalr, Env0 and the self-hosted Terrakube are configured with `cloud` rather than `backend`:
+
+```hcl
+terraform {
+  cloud {
+    organization = "acme-org"
+    hostname     = "app.terraform.io"
+
+    workspaces {
+      name = "networking-prod"
+    }
+  }
+}
+```
+
+It does more than store state. It **overrides `plan` and `apply` to run remotely** while you work locally, which is a different product from a bucket. No credentials appear in the block: `terraform login <hostname>` once, and the token is saved to disk.
+
+!!! info "OpenTofu — the `cloud` block has no default vendor"
+    Terraform defaults `hostname` to `app.terraform.io`. OpenTofu specifies no default, so `hostname` and `organization` must both be set explicitly. The HCL is otherwise identical, which is exactly why a self-hosted platform such as Terrakube needs only that one extra argument to receive a configuration written for HCP.
+
+!!! info "Coming: pluggable state stores — watch, do not adopt"
+    The fixed catalogue has an exit under construction. A **`state_store` block** would let a *provider* supply state storage the way it supplies resources. It has been in Terraform's config parser since 1.13 and is still gated behind experimental features in 1.16.0-rc1, appears in no changelog, and OpenTofu declares no equivalent block. Nothing to do today. Learn the name so you recognise it when it lands.
+
+---
+
+## 10. Reading another configuration's outputs
+
+Remote state is also a read-only sharing channel. A core-infrastructure configuration owns the VPC and publishes its IDs; an application configuration consumes them without owning them.
+
+```hcl
+data "terraform_remote_state" "network" {
+  backend = "s3"
+
+  config = {
+    bucket = "acme-tf-state"
+    key    = "networking/terraform.tfstate"
+    region = "eu-central-1"
+  }
+}
+
+resource "aws_instance" "app" {
+  subnet_id = data.terraform_remote_state.network.outputs.subnet_id
+  # ...
+}
+```
+
+The `config` object takes the same arguments as the equivalent `backend` block, with one syntactic difference: nested blocks become attributes with an `=`, so `workspaces = { name = "..." }` rather than `workspaces { ... }`.
+
+**Only root-level outputs are readable.** Resource attributes are not exposed, and neither are outputs of nested modules unless the producing configuration re-exports them from its root:
+
+```hcl
+module "app" {
+  source = "./modules/app"
+}
+
+output "app_value" {
+  value = module.app.example
+}
+```
+
+Sharing is opt-in at the root, which is a feature. It means a producing configuration decides what its interface is instead of leaking everything it happens to contain.
+
+!!! danger "Reading one output requires access to the entire state snapshot"
+    > Although `terraform_remote_state` doesn't expose any other state snapshot information for use in configuration, the state snapshot data is a single object, and so any user or server which has enough access to read the root module output values will also always have access to the full state snapshot data by direct network requests. Don't use `terraform_remote_state` if any of the resources in your configuration work with data that you consider sensitive.
+
+    The distinction is between what the *language* exposes and what the *reader's credentials* permit. Terraform hands your configuration only `outputs`. But the consumer had to be able to fetch the whole state object to get them, and nothing stops a person, or a compromised CI runner, from fetching it directly and reading every plaintext secret in it.
+
+    Note also that the read uses the **consuming** configuration's backend credentials. There is no separate authentication here to scope down.
+
+Two alternatives are recommended, in this order:
+
+**On HCP Terraform or Enterprise, use `tfe_outputs`.** It fetches outputs through an API and is *"more secure because it does not require full access to workspace state"*.
+
+**Everywhere else, publish shared values explicitly** to a store with its own access controls. Any resource-and-data-source pair works: `aws_ssm_parameter`, `consul_key_prefix`, `kubernetes_config_map`, a DNS record, or an S3 object with `jsonencode`/`jsondecode`. This costs one more resource and buys two things. Access to the shared value is no longer access to the state, and **non-Terraform systems can read it too**, which `terraform_remote_state` can never offer.
+
+Wrap the choice in a **data-only module** so the consuming configurations do not know which mechanism is in use, and you can change it later without touching them.
+
+---
+
+## 11. Hardening the backend
+
+When a secret has to be in state, protect the file. Four properties matter, and no single setting delivers them:
+
+| Property | On `s3` | On `gcs` |
+|---|---|---|
+| **Encrypted** | `encrypt = true`, `kms_key_id` with your own key | `kms_encryption_key` |
+| **Versioned** | S3 Versioning on the bucket | Object Versioning on the bucket |
+| **Locked** | `use_lockfile = true` | on by default |
+| **Readable only by the run identities** | bucket IAM | Storage Object Admin, scoped to those principals |
+
+Two of the four are backend-block settings and two live on the bucket, which is why the bootstrap configuration in section 5 is part of the security story rather than plumbing.
+
+### Backend configuration leaks harder than provider configuration
+
+This is the part that catches people who are otherwise careful.
+
+> We recommend using environment variables to supply credentials and other sensitive data. If you use `-backend-config` or hardcode these values directly in your configuration, Terraform will include these values in **both the `.terraform` subdirectory and in plan files**. This can leak sensitive credentials.
+
+Both files are plaintext, and both are easy to forget:
+
+- **`.terraform/terraform.tfstate`** holds the resolved backend configuration for the working directory. Measured on Terraform 1.15.8 against the lab emulator, it contains the whole thing as JSON, `access_key` and `secret_key` included.
+- **Every plan file** captures that same configuration as it stood at plan time, so a saved plan carries the credentials with it.
+
+!!! warning "Two files named `terraform.tfstate`, and they are unrelated"
+    `.terraform/terraform.tfstate` is **backend configuration**. The `terraform.tfstate` holding your infrastructure's state is a different file, and with a remote backend it does not exist locally at all. HashiCorp says it plainly: *"The local backend configuration is different and entirely separate from the `terraform.tfstate` file that contains state data about your real-world infrastructure."*
+
+    Never commit `.terraform/`.
+
+There is an operational consequence beyond disclosure, and it is not obvious:
+
+> When applying a plan that you previously saved to a file, Terraform uses the backend configuration **stored in that file** instead of the current backend settings. If that configuration contains time-limited credentials, they may expire before you finish applying the plan.
+
+A saved plan carries its own frozen backend configuration. With short-lived credentials baked in, a slow review can make the plan unappliable. Environment variables are read fresh at apply time, which is the documented fix and the reason CI pipelines should pass credentials that way rather than through `-backend-config`.
+
+### Encryption before the backend sees it
+
+!!! info "OpenTofu — client-side state and plan encryption"
+    OpenTofu **1.7** added something Terraform has no equivalent of at any version: state and plan files encrypted by the CLI **before the backend ever sees them**, on any backend, including reads through `terraform_remote_state`.
+
+    ```hcl
+    terraform {
+      encryption {
+        key_provider "pbkdf2" "main" {
+          passphrase = var.passphrase
+        }
+
+        method "aes_gcm" "main" {
+          keys = key_provider.pbkdf2.main
+        }
+
+        state {
+          method   = method.aes_gcm.main
+          enforced = true
+        }
+
+        plan {
+          method   = method.aes_gcm.main
+          enforced = true
+        }
+      }
+    }
+    ```
+
+    Four things to know before adopting it. The whole configuration can arrive through **`TF_ENCRYPTION`** instead, with the environment overriding code, and `enforced = true` is the guard that stops an unset variable silently writing plaintext. Migration is deliberately not seamless: OpenTofu *"will refuse to read plain text data"*, so an existing project needs the **`unencrypted`** method named temporarily in a `fallback` block. **Renaming a key provider breaks decryption**, because the encrypted data carries metadata keyed to the block name, and `encrypted_metadata_alias` is what makes a rename survivable. And key providers and methods are supported for only **+1 minor version**, so this is configuration you keep current rather than set and forget.
+
+    Read its threat model too. It protects data at rest and explicitly *"does not protect against data loss … and it also does not protect against replay attack"*, nor against *"the person running the tofu command"*.
+
+---
+
+## 12. 🧪 Lab
+
+Start the emulator:
+
+```shell
+docker compose -f labs/docker-compose.yml up -d      # start the emulator on :4566
+curl -s http://localhost:4566/_floci/health          # wait until the services read "running"
+```
+
+Set the lab environment once per shell, which supplies dummy credentials and makes `tflocal` build a path-style S3 endpoint:
+
+```shell
+source "$(git rev-parse --show-toplevel)/labs/lab-env.sh"
+```
+
+Every configuration below tracks a `terraform_data` resource. It is built into Terraform, so nothing needs a provider plugin or a registry download. The one exception is the bootstrap, which genuinely has to create a bucket.
+
+### Lab 1 — the local backend, said out loud
+
+No emulator, no credentials, no network. `labs/chapter15/lab1/`:
+
+```hcl
+terraform {
+  required_version = ">= 1.10"
+
+  backend "local" {
+    path = "state/dev.tfstate"
+  }
+}
+```
+
+```shell
+cd labs/chapter15/lab1
+terraform init
+terraform apply
+```
+
+State appears at `state/dev.tfstate` rather than `./terraform.tfstate`. Then copy the sidecar `main.tf.default` over `main.tf`, which removes the backend block, and run `terraform init`. You get the "Backend configuration changed" error from section 6. Run `terraform init -migrate-state`, answer `yes`, and watch the state come back.
+
+Look at `state/dev.tfstate` afterwards. It is still there, complete.
+
+### Lab 2 — the `s3` backend: bootstrap, migrate, lock
+
+`labs/chapter15/lab2/`. The bootstrap runs first and stays on the local backend forever:
+
+```shell
+cd labs/chapter15/lab2/bootstrap
+tflocal init && tflocal apply       # creates tf-state-lab, versioned, public access blocked
+```
+
+Then the application configuration, which starts local so there is something to migrate:
+
+```shell
+cd ../app
+terraform init && terraform apply
+cp main.tf.s3 main.tf
+terraform init -backend-config=config.s3.tfbackend -migrate-state
+```
+
+Answer `yes`. Verify:
+
+```shell
+aws --endpoint-url http://localhost:4566 s3 ls s3://tf-state-lab --recursive
+```
+
+```
+app/terraform.tfstate
+```
+
+Then check what stayed behind, which is the point of the section 6 warning:
+
+```shell
+ls -l terraform.tfstate terraform.tfstate.backup
+```
+
+Now the lock. Copy in a configuration that holds the apply open for thirty seconds, then race it from a second terminal:
+
+```shell
+cp slow.tf.lock slow.tf
+terraform apply -auto-approve
+# meanwhile, in another terminal:
+terraform plan
+```
+
+The second command prints `Acquiring state lock. This may take a few moments...` and then the `412 PreconditionFailed` from section 7. Watch the bucket during the apply and you will see the `.tflock` object appear and disappear.
+
+!!! note "`endpoints` is an attribute, not a block"
+    `endpoints { s3 = "..." }` is a parse error: *"Blocks of type `endpoints` are not expected here. Did you mean to define argument `endpoints`?"* Write `endpoints = { s3 = "http://localhost:4566" }`. It is the first thing that goes wrong against any emulator or S3-compatible store, and the emulator-only lines in `config.s3.tfbackend` are marked as such so the rest stays portable to real AWS.
+
+### Lab 3 — the `gcs` backend
+
+The same shape against a different cloud. The AWS emulator cannot stand in: `gcs` speaks the Google JSON API at `/storage/v1/b`, so the labs start a GCP emulator behind a compose profile.
+
+```shell
+docker compose -f labs/docker-compose.yml --profile gcp up -d
+cd labs/chapter15/lab3
+./create-bucket.sh                  # .\create-bucket.ps1 on PowerShell
+terraform init -backend-config=config.gcs.tfbackend
+terraform apply
+```
+
+The object lands at `terraform/state/default.tfstate` from `prefix = "terraform/state"`. Note what that name is made of: there is no `key` here, and `default` is the workspace. Race an apply the same way as lab 2 and the refusal names the mechanism in Google's spelling.
+
+### Lab 4 — pipeline on the forge, state in the bucket
+
+`labs/chapter15/gitlab/` runs a self-hosted GitLab and a runner, with a three-stage pipeline of `validate` → `plan` → manual `apply` writing to **the same bucket as lab 2**. It ends with two objects in one bucket:
+
+```
+app/terraform.tfstate     # applied from a workstation
+ci/terraform.tfstate      # applied by a runner
+```
+
+The forge held the code and ran the job. The object store held the state. That is the arrangement to copy.
+
+Two traps recorded there, each of which cost a failed pipeline. `gitlab/gitlab-runner:latest` was a pre-release, and the runner derives its helper image tag from its own version, so every job died in `prepare_executor` on a `manifest unknown`. Pin the runner to a released tag. And the runner needs an explicit `--clone-url`, because the URL GitLab advertises to a browser is not reachable from inside a job container.
+
+The `access_key` and `secret_key` in the lab's backend file are emulator scaffolding. Against real AWS you delete both and let the job assume a role through OIDC, using the S3 backend's `assume_role_with_web_identity` block fed by the forge's identity token. Chapter 23 owns that.
+
+!!! warning "Emulation is not AWS"
+    A green apply here proves your HCL and your workflow. It does not prove AWS fidelity. Locking in particular rides on conditional-write support that HashiCorp only guarantees against Amazon S3: support for S3-compatible providers is offered as *"best effort"*. Validate anything load-bearing against real free-tier AWS.
+
+Clean up:
+
+```shell
+tflocal destroy
+docker compose -f labs/docker-compose.yml --profile gcp down
+```
+
+---
+
+## 13. Common pitfalls
+
+**Omitting `use_lockfile` on the `s3` backend.** It defaults to `false`, and an unlocked backend behaves exactly like a locked one until the day two runs overlap. There is no warning, ever.
+
+**Copying `key` between projects.** Every argument in the block is meant to be identical across your organisation except this one. Two configurations sharing a `key` share a state file, and the second apply deletes everything the first one made.
+
+**Leaving the local state file after migrating.** Measured: a complete plaintext snapshot survives as `terraform.tfstate.backup`. Delete it once the remote copy is verified.
+
+**Committing `.terraform/`.** It holds the resolved backend configuration, credentials included.
+
+**Passing backend credentials with `-backend-config`.** They land in `.terraform/` and in every plan file, and a saved plan then applies with its own frozen copy. Use environment variables.
+
+**Assuming `terraform_remote_state` is a read-only view.** It is read access to the whole snapshot for whoever runs the consuming configuration.
+
+**Reaching for `force-unlock` on a colleague's stuck run.** It is for your own lock when automatic unlocking failed. The `Lock Info` block tells you whose it is.
+
+**Treating a backend change as a code change.** Any edit to the block, including a `cloud` block edit, stops the next command until you re-`init`. Decide deliberately between `-migrate-state` and `-reconfigure`.
+
+**Copying a backend block from anything written before 2022.** `endpoint`, `force_path_style`, `iam_endpoint`, `sts_endpoint`, `shared_credentials_file` and `dynamodb_table` are all deprecated on the S3 backend, and six names were removed from the catalogue entirely in v1.3.
+
+---
+
+## Exercises
+
+1. Point a configuration at the `s3` backend without `use_lockfile`, then run two applies concurrently. Nothing stops you. Add the argument and repeat, and read the `Lock Info` block.
+2. Migrate a project from local state to `s3`, then list every file left in the working directory. Say which of them you would be unhappy to see in a screen share.
+3. Take the same configuration and put it on `gcs`. Write down, before you run it, where the object will land. Check.
+4. Remove a backend block and reinitialise. Explain to somebody else why there is no `terraform backend remove` command.
+5. Set up two configurations where the second reads the first's outputs with `terraform_remote_state`. Then answer: who in your organisation can now read the first configuration's database password?
+6. Replace that `terraform_remote_state` read with an SSM parameter published by the first configuration and read by the second. Name two things you gained.
+7. Write the IAM policy for a state bucket by hand, then check it against the four statements in section 8. Did you grant `s3:DeleteObject` on the lock object?
+8. On OpenTofu, turn on state encryption over an existing unencrypted state. You will need the `unencrypted` method and a `fallback` block. Then remove them.
+
+---
+
+## Summary
+
+A backend stores state and, optionally, provides a locking API. That is all it is, and everything in this chapter follows from how small that definition is.
+
+- Local state fails a team three ways: **freshness**, **exclusion**, and **plaintext secrets in the repository**. Git fixes none of them.
+- The `backend` block lives in the root module, one per configuration. It **cannot reference variables**, which is why `key` is the one argument you must never copy and why **partial configuration** with a `*.tfbackend` file is the normal shape.
+- The bucket must exist first, so remote state starts with **two configurations**: a bootstrap that stays local, and the project that migrates onto it.
+- `init` is the backend's whole lifecycle: `-backend-config`, `-migrate-state`, `-reconfigure`. A changed backend **errors** rather than prompting, and removing a backend is just a migration in reverse.
+- **Migration copies and does not clean up.** A complete plaintext snapshot stays on local disk as `terraform.tfstate.backup` on both engines.
+- Locking is **automatic, silent, and fatal**. On both major clouds it is one conditional write on a `.tflock` object, and both refusals are a **412**. `use_lockfile` defaults to `false` on `s3`; `gcs` has no argument to set or unset.
+- `s3` addresses by `key` and prefixes other workspaces with the literal `env:`; `gcs` addresses by `<prefix>/<workspace>.tfstate` and always has the workspace in the path. `s3` separates backend and provider identity by design; `gcs` shares an environment variable with the provider unless you use the backend-scoped one.
+- The catalogue is **built in and finite**. `http` is the odd one out, a protocol anything can implement, which is what GitLab's state feature actually is.
+- `terraform_remote_state` reads **root outputs only**, and grants the reader access to the **entire** snapshot. Publish to a real store instead when the state holds anything you would not share.
+- Harden on four properties: **encrypted, versioned, locked, and readable only by the run identities**. Backend configuration leaks into `.terraform/` and into every plan file, so credentials come from the environment.
+
+---
+
+## What's next
+
+You can now put state somewhere a team can share it, keep two runs from colliding, and read one configuration's outputs from another. Chapter 16 turns to the operations you perform *on* that state: `import` for adopting existing infrastructure, `moved` and `removed` for refactoring without destroying anything, and the recovery procedures for when state and reality disagree.
+
+The isolation question this chapter kept deferring belongs to Chapter 24, which decides how many state files you should have and where the boundaries go. The credential half of the CI story is Chapter 23.
+
+---
+
+## References
+
+**Reading notes:** [Backend block configuration](../sources/terraform-docs/tf-backend-configure.md) · [`local` backend](../sources/terraform-docs/tf-backend-local.md) · [S3 backend](../sources/terraform-docs/tf-backend-s3.md) · [gcs backend](../sources/terraform-docs/tf-backend-gcs.md) · [http backend](../sources/terraform-docs/tf-backend-http.md) · [State Storage and Locking](../sources/terraform-docs/tf-state-backends.md) · [Remote State](../sources/terraform-docs/tf-state-remote.md) · [State Locking](../sources/terraform-docs/tf-state-locking.md) · [`terraform force-unlock`](../sources/terraform-docs/tf-cmd-force-unlock.md) · [`terraform_remote_state`](../sources/terraform-docs/tf-remote-state-data.md) · [OpenTofu state and plan encryption](../sources/opentofu-docs/ot-state-encryption.md) · [OpenTofu early evaluation in backends](../sources/opentofu-docs/ot-early-eval-backend.md) · [GitLab Terraform state](../sources/gitlab-docs/gitlab-tf-state.md) · [Migrating to Terrakube](../sources/terrakube-docs/terrakube-migrating.md) · [Migrate state to HCP Terraform](../sources/terraform-tutorials/tut-cloud-migrate.md)
+
+**Books:** TUR Ch 3 [How to Manage Terraform State](../books/tur/chapters/03-manage-state.md) · TID Ch 6 §6.4 [Storing state](../books/tid/chapters/06-state-management.md)
+
+**HashiCorp docs:** [Backend block configuration overview](https://developer.hashicorp.com/terraform/language/backend) · [`local`](https://developer.hashicorp.com/terraform/language/backend/local) · [`s3`](https://developer.hashicorp.com/terraform/language/backend/s3) · [`gcs`](https://developer.hashicorp.com/terraform/language/backend/gcs) · [`http`](https://developer.hashicorp.com/terraform/language/backend/http) · [State Locking](https://developer.hashicorp.com/terraform/language/state/locking) · [`terraform force-unlock`](https://developer.hashicorp.com/terraform/cli/commands/force-unlock) · [`terraform_remote_state`](https://developer.hashicorp.com/terraform/language/state/remote-state-data)
+
+**OpenTofu docs:** [State and Plan Encryption](https://opentofu.org/docs/language/state/encryption/)
+
+**Topic page:** [State](../topics/state.md)
+
+**🧪 Lab:** configurations at `labs/chapter15/` · [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)

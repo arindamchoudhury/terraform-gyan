@@ -579,7 +579,7 @@ You are ready to advance when you can:
 
 ---
 
-### ⬜ I6 — Remote state & backends
+### ✅ I6 — Remote state & backends
 
 **What it is:** Where Terraform keeps state, taught on three backends and one idea. **`local`** is where you already are. **`s3`** and **`gcs`** are the two object-store backends worth knowing properly — bootstrap, migration, locking, IAM, encryption — and reading them side by side is what turns "the S3 backend" into a general model of what a backend does. Then `terraform_remote_state` for sharing outputs, and enough of the rest of the catalogue to recognise it.
 
@@ -1806,7 +1806,7 @@ Advanced (A1–A10)       → ~76 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner complete, Intermediate in progress — B1–B9, I1–I5 done (Ch 1–14 written). Next up: **I6 (Remote state & backends)**.
+**You are currently here:** Beginner complete, Intermediate in progress — B1–B9, I1–I6 done (Ch 1–15 written). Next up: **I7 (State management operations)**.
 
 ---
 
