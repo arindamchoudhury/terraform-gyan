@@ -1107,7 +1107,7 @@ Both files are plaintext, and both are easy to forget:
 - **Every plan file** captures that same configuration as it stood at plan time, so a saved plan carries the credentials with it.
 
 !!! danger "🧪 Verified — and grepping the plan file will not find it"
-    A backend configured with the recognisable canaries `AKIALEAKCANARY01` and `s3cr3t-canary-value-9f2a`, then `terraform plan -out=tfplan` on 1.15.8.
+    A backend given the two recognisable canaries `AKIALEAKCANARY01` and `s3cr3t-canary-value-9f2a` through `-backend-config`, so that `main.tf` itself never contains them, then `terraform plan -out=tfplan` on 1.15.8. Nothing was applied.
 
     Searching the 2 KB file's bytes for either canary finds **nothing**, which is exactly the false negative that lets this go unnoticed. A plan file is a **zip**. Open it and the picture changes:
 
@@ -1126,6 +1126,89 @@ Both files are plaintext, and both are easy to forget:
     `.terraform/terraform.tfstate` is **backend configuration**. The `terraform.tfstate` holding your infrastructure's state is a different file, and with a remote backend it does not exist locally at all. HashiCorp says it plainly: *"The local backend configuration is different and entirely separate from the `terraform.tfstate` file that contains state data about your real-world infrastructure."*
 
     Never commit `.terraform/`.
+
+### Reproducing the leak
+
+The experiment is committed at `labs/chapter15/leak/`, and it is worth running once, because the technique transfers to any build artifact you suspect of carrying secrets.
+
+It turns on a **canary**: a fake value planted in a system for the sole purpose of being searched for later. The two used here are chosen so the search is unambiguous. `AKIALEAKCANARY01` has the shape of a genuine AWS access key ID, an `AKIA` prefix and twenty characters, so the secret scanners already running over your artifacts treat it exactly as they would treat the real thing. `s3cr3t-canary-value-9f2a` carries a random suffix, so nothing else in the repository can produce that byte string by accident. A hit is therefore a leak, and, just as importantly, a miss is a result you can reason about.
+
+The configuration leaves the backend block empty and supplies the canaries from a `.tfbackend` file, which is the case people assume is safe:
+
+```hcl
+# config.leak.tfbackend
+bucket     = "tf-state-lab"
+key        = "leak/terraform.tfstate"
+region     = "us-east-1"
+access_key = "AKIALEAKCANARY01"
+secret_key = "s3cr3t-canary-value-9f2a"
+```
+
+The bucket is the one Lab 2's bootstrap creates, so run that first if it is not there yet.
+
+```shell
+source "$(git rev-parse --show-toplevel)/labs/lab-env.sh"
+cd labs/chapter15/leak
+
+terraform init -backend-config config.leak.tfbackend
+terraform plan -out=tfplan
+```
+
+Now the two searches, the one that reassures you and the one that tells you the truth:
+
+```shell
+grep -c AKIALEAKCANARY01 tfplan
+```
+
+```
+0
+```
+
+`scan-plan.py`, committed beside the configuration, does the search properly. It reports whether the raw bytes match, then opens the same file as a zip and searches each entry after decompression:
+
+```shell
+python scan-plan.py tfplan AKIALEAKCANARY01 s3cr3t-canary-value-9f2a
+```
+
+```
+tfplan: 2228 bytes
+raw byte search: nothing
+
+  tfplan                     1106 B  LEAK: AKIALEAKCANARY01, s3cr3t-canary-value-9f2a
+  tfstate                     145 B  clean
+  tfstate-prev                145 B  clean
+  tfconfig/m-/main.tf         482 B  clean
+  tfconfig/modules.json        41 B  clean
+  .terraform.lock.hcl         107 B  clean
+```
+
+The working directory's copy needs no unzipping at all, which is the more immediate exposure of the two:
+
+```shell
+grep -o AKIALEAKCANARY01 .terraform/terraform.tfstate
+```
+
+```
+AKIALEAKCANARY01
+```
+
+Copy `main.tf.inline` over `main.tf` and run it again to see the hardcoded variant. The plan then leaks in **two** entries rather than one, because a plan file also embeds a copy of your configuration source under `tfconfig/`, and that copy now has the credentials in it.
+
+!!! example "🧪 Verified — the control run, which is the documented fix"
+    The same backend and the same canaries, with `access_key` and `secret_key` removed from the `.tfbackend` file so Terraform reads them from the environment instead:
+
+    ```shell
+    export AWS_ACCESS_KEY_ID=AKIALEAKCANARY01
+    export AWS_SECRET_ACCESS_KEY=s3cr3t-canary-value-9f2a
+    terraform init -reconfigure -backend-config config.env.tfbackend
+    terraform plan -out=tfplan-env
+    ```
+
+    Every entry in `tfplan-env` comes back clean, and so does `.terraform/terraform.tfstate`. The values are identical, the backend is identical, the commands are identical. The only thing that changed is where the credentials came from, which is the entire content of HashiCorp's recommendation.
+
+    On PowerShell, use `$env:AWS_ACCESS_KEY_ID = "..."`, or source `labs/lab-env.ps1` and override the two variables after it.
+
+Both leaking runs were measured on **Terraform 1.15.8** and repeated on **OpenTofu 1.12.5** against the lab emulator, with the same entry leaking in both. Nothing is ever applied, so there is nothing to destroy afterwards. Delete `.terraform/`, `tfplan`, and `tfplan-env` and the canaries are gone with them.
 
 There is an operational consequence beyond disclosure, and it is not obvious:
 

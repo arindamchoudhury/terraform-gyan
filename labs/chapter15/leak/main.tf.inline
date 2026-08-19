@@ -1,0 +1,32 @@
+# Sidecar: the same experiment with the canaries hardcoded in the configuration
+# file rather than passed through -backend-config.
+#
+#   cp main.tf.inline main.tf
+#   terraform init -reconfigure && terraform plan -out=tfplan
+#
+# The plan file then leaks in TWO entries rather than one, because a plan also
+# embeds a copy of the configuration source under tfconfig/.
+
+terraform {
+  required_version = ">= 1.10"
+
+  backend "s3" {
+    bucket = "tf-state-lab"
+    key    = "leak/terraform.tfstate"
+    region = "us-east-1"
+
+    access_key = "AKIALEAKCANARY01"
+    secret_key = "s3cr3t-canary-value-9f2a"
+
+    # --- emulator-only below this line ----------------------------------
+    endpoints                   = { s3 = "http://localhost:4566" }
+    use_path_style              = true
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_requesting_account_id  = true
+  }
+}
+
+resource "terraform_data" "probe" {
+  input = "leak-canary"
+}
