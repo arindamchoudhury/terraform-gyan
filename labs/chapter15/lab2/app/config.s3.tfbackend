@@ -1,0 +1,27 @@
+# Partial backend configuration, pointed at the lab emulator.
+#
+# The documented convention is <name>.<backendname>.tfbackend, which is what
+# makes a reader (and an editor) treat this as backend config rather than as
+# variables.
+#
+#   terraform init -backend-config=config.s3.tfbackend
+
+bucket = "tf-state-lab"
+key    = "app/terraform.tfstate"
+region = "us-east-1"
+
+# Native S3 locking: Terraform writes a <key>.tflock object with a conditional
+# PUT, so a second run fails with 412 PreconditionFailed. No DynamoDB table.
+use_lockfile = true
+
+# --- emulator-only below this line --------------------------------------
+# `endpoints` is an ATTRIBUTE (=), not a block. `endpoints { s3 = ... }` is a
+# parse error, and it is the first thing that goes wrong here.
+endpoints = { s3 = "http://localhost:4566" }
+
+use_path_style              = true
+skip_credentials_validation = true
+skip_metadata_api_check     = true
+skip_requesting_account_id  = true
+access_key                  = "test"
+secret_key                  = "test"

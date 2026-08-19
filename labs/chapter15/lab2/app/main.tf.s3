@@ -1,0 +1,27 @@
+# Sidecar: the same configuration with the S3 backend added.
+#
+#   cp main.tf.s3 main.tf
+#   terraform init -backend-config=config.s3.tfbackend -migrate-state
+#
+# The block is deliberately EMPTY. Everything comes from the .tfbackend file,
+# which is what partial configuration buys: the shape is committed, the
+# environment-specific values are not.
+
+terraform {
+  required_version = ">= 1.10"
+
+  backend "s3" {}
+}
+
+variable "label" {
+  type    = string
+  default = "s3-backend"
+}
+
+resource "terraform_data" "probe" {
+  input = var.label
+}
+
+output "probe" {
+  value = terraform_data.probe.output
+}

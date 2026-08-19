@@ -87,8 +87,17 @@ Two things to expect. The first `init` for a lab adds a `linux_amd64` hash to it
 | `chapter11/lab1/` … `lab7/` | [Ch 11](../docs/book/ch11-lifecycle.md) | `lifecycle`: `prevent_destroy`, `create_before_destroy`, `ignore_changes` |
 | `chapter12/lab1/` … `lab5/` | [Ch 12](../docs/book/ch12-dynamic-blocks-complex-types.md) | `dynamic` blocks and complex types |
 | `chapter13/lab1/` … `lab3/` | [Ch 13](../docs/book/ch13-using-modules.md) | Local, registry, and Git-sourced modules |
+| `chapter15/lab1/` … `lab3/`, `gitlab/` | Ch 15 (unwritten) | Backends: `local`, then `s3` on the AWS emulator, then `gcs` on the GCP one |
 
 Chapters 6 and 7 have labs too, but you type their files out from the chapter text, so they have no committed directory here.
+
+Chapter 15 is the exception to "one emulator": its `gcs` lab needs the **GCP** emulator, which the `gcs` backend requires because it speaks the Google JSON API at `/storage/v1/b` rather than S3. It is behind a compose profile, so it stays out of the way until you ask for it:
+
+```bash
+docker compose -f labs/docker-compose.yml --profile gcp up -d
+```
+
+That chapter also carries two directories that are not numbered labs: `chapter15/gitlab/` runs a self-hosted GitLab so a pipeline can drive an S3-backed Terraform, and `chapter15/http-backend/` is appendix reading — a whole `http` backend in one dependency-free file.
 
 Two directories are not numbered labs. `chapter13/example-as-module/` demonstrates that a registry module's own `examples/` directory is itself a callable module, and it only needs `terraform get`. `chapter9/lab2/` holds `measure-serial.sh` and `measure-serial.ps1`, which run an apply repeatedly and report the spread in state serial numbers.
 

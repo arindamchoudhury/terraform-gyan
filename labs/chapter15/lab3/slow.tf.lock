@@ -1,0 +1,16 @@
+# Sidecar for the locking exercise:
+#
+#   cp slow.tf.lock slow.tf
+#
+# Start `terraform apply` in one terminal and run `terraform plan` in another
+# while it sleeps. The refusal names the lock object and the condition that
+# failed. Delete slow.tf afterwards.
+
+resource "terraform_data" "slow" {
+  input = "hold-the-lock"
+
+  provisioner "local-exec" {
+    command     = "sleep 30"
+    interpreter = ["bash", "-c"]
+  }
+}

@@ -1,0 +1,24 @@
+# Partial backend configuration for the gcs backend, pointed at the emulator.
+#
+#   terraform init -backend-config=config.gcs.tfbackend
+
+bucket = "tf-state-lab"
+
+# Named states live at <prefix>/<name>.tfstate, so the default workspace lands
+# at terraform/state/default.tfstate. There is no `key` here — prefix plus
+# workspace name is how gcs addresses state, which is the first real difference
+# from the s3 backend.
+prefix = "terraform/state"
+
+# --- emulator-only below this line --------------------------------------
+# storage_custom_endpoint is documented for Private Service Connect, not for
+# emulators, and the docs are specific that the URL ends with the Cloud Storage
+# API path: "the protocol, the DNS name ... and the path for the Cloud Storage
+# API (/storage/v1/b)". It is a plain URL override, which is why it works here.
+storage_custom_endpoint = "http://127.0.0.1:4588/storage/v1/b"
+
+# The emulator validates no credentials, but the backend still wants one, so a
+# static token short-circuits Application Default Credentials. Against real GCS
+# you would omit this and authenticate with `gcloud auth application-default
+# login` or GOOGLE_APPLICATION_CREDENTIALS.
+access_token = "fake-token"

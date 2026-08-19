@@ -51,3 +51,23 @@ services:
     depends_on:
       - floci
     restart: unless-stopped
+
+  # GCP emulator — Chapter 15's `gcs` backend lab only, so it is behind a
+  # profile and does NOT start on a plain `up -d`:
+  #
+  #   docker compose -f labs/docker-compose.yml --profile gcp up -d
+  #
+  # Same project as the AWS emulator above (floci-io, MIT), and it ships its own
+  # compat-terraform / compat-opentofu suites. Serves the Google JSON API, which
+  # is why the AWS emulator cannot stand in for it: the `gcs` backend talks to
+  # /storage/v1/b, not to S3.
+  floci-gcp:
+    image: floci/floci-gcp:latest
+    container_name: floci-gcp-lab
+    profiles: ["gcp"]
+    ports:
+      - "127.0.0.1:4588:4588"
+    environment:
+      FLOCI_GCP_HOSTNAME: localhost
+      FLOCI_GCP_BASE_URL: http://localhost:4588
+    restart: unless-stopped

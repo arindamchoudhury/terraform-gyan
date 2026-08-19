@@ -1,0 +1,22 @@
+# Sidecar: the same configuration with NO backend block.
+#
+# Copy this over main.tf and re-run `terraform init` to watch Terraform offer to
+# migrate the state back out of state/dev.tfstate and into ./terraform.tfstate.
+# That prompt is the whole of "removing a backend": there is no separate command.
+
+terraform {
+  required_version = ">= 1.10"
+}
+
+variable "label" {
+  type    = string
+  default = "local-backend"
+}
+
+resource "terraform_data" "probe" {
+  input = var.label
+}
+
+output "probe" {
+  value = terraform_data.probe.output
+}
