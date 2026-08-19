@@ -28,9 +28,9 @@ Add a second person and it stops working in three separate ways.
 
 The obvious objection is that Terraform refreshes before planning, so surely it notices. It does not, and the reason is in the scope of what refresh covers. HashiCorp's [Purpose of Terraform State](https://developer.hashicorp.com/terraform/language/state/purpose) page:
 
-> Every plan and apply queries the providers and refreshes all resources **in state**.
+> For small infrastructures, Terraform can query your providers and sync the latest attributes from all your resources. This is the default behavior of Terraform: for every plan and apply, Terraform will sync all resources **in your state**.
 
-Refresh reconciles the objects your state already tracks. A resource that only exists in somebody else's state is not one of them, so there is nothing for refresh to look up and no way for it to discover the object.
+The scope is in that last phrase. Refresh reconciles the objects your state already tracks. A resource that only exists in somebody else's state is not one of them, so there is nothing for refresh to look up and no way for it to discover the object.
 
 !!! example "🧪 Verified — the second operator plans a create for something already owned"
     Terraform 1.15.8, refresh left at its default. Two directories with an identical configuration, and the second never receives the first's state file.
@@ -74,7 +74,7 @@ Refresh reconciles the objects your state already tracks. A resource that only e
     resources: ['terraform_data.alice']
     ```
 
-    Two resources created, one recorded. Neither run saw an error, and nothing in either transcript hints that anything went wrong. Note the serial too: both runs read an empty state, both computed serial 1, and the second write was accepted over the first. The lineage and serial guards that would reject exactly this mismatch run on `state push` and on backend migration, not on an ordinary apply.
+    Two resources created, one recorded. Neither run saw an error, and nothing in either transcript hints that anything went wrong. Note the serial too: both runs read an empty state, both computed serial 1, and the second write was accepted over the first. The lineage and serial guards that would reject exactly this mismatch are reached through `statemgr.Import` and `statemgr.Migrate`, and in the v1.15.8 source those two functions have exactly two callers between them: `terraform state push` and backend migration. Neither sits on the path an ordinary apply takes, which is why nothing here objected.
 
     This is engine-side, so it is not an artefact of the emulator. Terraform reads the whole state, computes against it, and writes the whole state back; anything that stores bytes will lose one of two overlapping writers.
 
