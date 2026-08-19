@@ -448,6 +448,8 @@ A crashed run can leave a lock held. `terraform force-unlock LOCK_ID` releases i
 
 The lock ID is the guard rail. It acts as a **nonce** identifying one specific acquisition, so you cannot unlock blind, and an ID copied from an older failure will not release the current lock.
 
+It is worth being precise about what "one acquisition" means, because the ID is easy to mistake for a run identifier. It is not one. Terraform mints a fresh ID every time it takes the lock, so a `plan` and the `apply` that follows it hold two different IDs. Retrying inside a single command is the opposite case: the backoff loop under `-lock-timeout` reuses the same lock info, so every attempt carries the ID the command started with. Nothing in the ID says which run you are, and there is no place to look one up. Who the run belongs to is carried by the other `Lock Info` fields, `Who`, `Operation`, `Version` and `Created`.
+
 What that ID *is* differs by backend, which is worth seeing once. On `s3` it is a UUID that Terraform generates. On `gcs` it is the lock object's **generation number**, the same value that appears in the `ifGenerationMatch` comparison in the error. The nonce is not a Terraform-level abstraction bolted on top; on GCS it is the store's own optimistic-concurrency token, surfaced directly. This is why the `Lock Info` block above matters: it hands you the ID at exactly the moment you might need it, along with the holder, the operation and the start time, which is the evidence you need before deciding a lock is stale rather than live.
 
 !!! warning "`-force` suppresses the prompt, not the lock ID"
