@@ -420,6 +420,28 @@ googleapi: Error 412: ifGenerationMatch: 1787133258314 != 0, conditionNotMet
 
 Two vendors, one idea, and both spell it **412**. `ifGenerationMatch: 0` is Google's way of saying "create only if this does not exist"; S3's if-none-match precondition says the same thing.
 
+!!! note "Where these transcripts come from, and what they are evidence of"
+    The two errors above were produced against **local emulators**, not against AWS or Google. That distinction matters more here than anywhere else in the chapter, because a lock is precisely the behaviour an emulator is most likely to approximate.
+
+    Split the claim in two. The **request** Terraform sends is engine-side and an emulator cannot influence it. Read from the v1.15.8 source, `s3` issues a `PutObject` carrying `IfNoneMatch: "*"` and `gcs` writes with `If(storage.Conditions{DoesNotExist: true})`. Both are conditional writes, and that much is settled without any cloud at all.
+
+    The **response** is the vendor's, so the emulator is only a witness and the documentation is the authority. Both vendors confirm it. Amazon: *"If there's an existing object, the write operation fails, resulting in a `412 Precondition Failed` response"*, and for the concurrent case, *"the first write operation to finish succeeds. Amazon S3 then fails subsequent writes with a `412 Precondition Failed` response."* Google: *"If there is a live version with the specified name, the request fails with a status code of `412 Precondition Failed`."*
+
+    So the emulators agreed with the real services here. That is a result worth having stated rather than assumed, and it does not generalise to everything else they do.
+
+!!! warning "S3 has a second failure the emulator will not show you"
+    Amazon documents a case that only arises under real concurrency:
+
+    > You can also receive a `409 Conflict` response in the case of concurrent requests if a delete request to an object succeeds before a conditional write operation on that object completes. When using conditional writes with `PutObject`, uploads may be retried after receiving a `409 Conflict` error.
+
+    In lock terms that is one client releasing the lock at the moment another tries to take it. AWS's guidance is to retry.
+
+    Terraform's `lockWithFile` does not distinguish status codes at all: any upload error is wrapped as a `statemgr.LockError` with whatever lock info can be read back. Its retry loop only continues when that error carries complete lock info, and in the 409 case the lock object has just been deleted, so reading it back is exactly what fails.
+
+    > ❓ Unverified: whether that combination produces a spurious failure on real S3. It cannot be exercised against an in-memory emulator, and it is not reproduced here. Treat it as a thing to watch for under heavy concurrency rather than a known defect.
+
+    Two smaller conditions from the same page, both invisible locally: `If-None-Match` requires **AWS Signature Version 4**, and on a versioned bucket the conditional write also succeeds when the current version is a **delete marker**.
+
 The lock object's lifetime is visible from outside if you list the bucket during a held apply. Mid-run there is a `.tflock` and, on a first apply, no state object yet. After the run there is a state object and no `.tflock`. Lock first, write second, unlock third. Once you have seen that, "does this backend support locking" reduces to "does this store offer a conditional write", which is why the S3 backend no longer needs a DynamoDB table and why an S3-compatible store may or may not manage it.
 
 ### Waiting instead of failing
@@ -1162,8 +1184,19 @@ Two traps recorded there, each of which cost a failed pipeline. `gitlab/gitlab-r
 
 The `access_key` and `secret_key` in the lab's backend file are emulator scaffolding. Against real AWS you delete both and let the job assume a role through OIDC, using the S3 backend's `assume_role_with_web_identity` block fed by the forge's identity token. Chapter 23 owns that.
 
-!!! warning "Emulation is not AWS"
-    A green apply here proves your HCL and your workflow. It does not prove AWS fidelity. Locking in particular rides on conditional-write support that HashiCorp only guarantees against Amazon S3: support for S3-compatible providers is offered as *"best effort"*. Validate anything load-bearing against real free-tier AWS.
+!!! warning "Emulation is not AWS, and here is how to tell what transfers"
+    A green apply here proves your HCL and your workflow. It does not prove AWS fidelity. HashiCorp offers support for S3-compatible providers as *"best effort"* and tests only against Amazon S3.
+
+    The useful question is not "was this run against an emulator" but **"who decided the thing I am claiming"**. Ask that of every result:
+
+    | If the behaviour is decided by | An emulator run is | Examples in this chapter |
+    | --- | --- | --- |
+    | **The CLI**, before or independent of any request | conclusive | the named-value ban, `init`'s migration flags, what migration leaves on disk, `errored.tfstate`, plan-file contents, `.terraform/terraform.tfstate`, which outputs `terraform_remote_state` exposes, the object path a workspace produces, whether a lock is attempted at all |
+    | **The service**, in its response | a witness, not authority | the status code a held lock returns, what a versioned bucket does on overwrite, IAM enforcement, encryption-key migration |
+
+    Everything in the first row is settled by the binary you already have, and the emulator is only standing in for somewhere to put bytes. Everything in the second row needs the vendor's documentation, or a real account, before it goes in your notes as fact. The 412 transcripts in section 7 are second-row claims, which is why they are quoted against Amazon's and Google's own pages there rather than left resting on the labs.
+
+    The two things these labs genuinely cannot reach: **IAM** — the emulator authorises everything, so a policy that works here proves nothing — and **concurrency at scale**, which is where S3's documented `409 Conflict` lives. Validate anything load-bearing against real free-tier AWS.
 
 Clean up:
 
@@ -1254,4 +1287,4 @@ The isolation question this chapter kept deferring belongs to Chapter 24, which 
 
 **Topic page:** [State](../topics/state.md)
 
-**🧪 Lab:** configurations at `labs/chapter15/` · [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)
+**🧪 Lab:** configurations at `labs/chapter15/` · [Conditional-write semantics](../research-cache/conditional-write-semantics.md) · [Floci Facts](../research-cache/floci-facts.md) · [MiniStack Facts](../research-cache/ministack-facts.md) · [LocalStack Facts](../research-cache/localstack-facts.md)
