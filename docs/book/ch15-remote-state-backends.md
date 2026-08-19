@@ -548,8 +548,27 @@ terraform {
 
 It does more than store state. It **overrides `plan` and `apply` to run remotely** while you work locally, which is a different product from a bucket. No credentials appear in the block: `terraform login <hostname>` once, and the token is saved to disk.
 
+**`hostname` is what makes the block portable.** It defaults to `app.terraform.io`, so a `cloud` block that omits it points at HashiCorp whether you meant to or not. Set it and the same configuration talks to Scalr, to Env0, or to a self-hosted **Terrakube**, all of which implement the same API. That one argument is the entire difference between the hosted product and an instance you run, and forgetting it is the first thing that goes wrong when adopting one of the alternatives.
+
+!!! note "A platform is a layer on top of storage you still own"
+    Terrakube is worth one paragraph because it makes the chapter's own definition concrete. It does not store state itself. It fronts an object store you provide, and its own docs say so while listing the options: after a migration you see the state *"in your storage backend (azure, aws, gcp or **minio**)"*.
+
+    So the `cloud` block is not an alternative answer to "where does the JSON go". It is an answer to "who runs `apply`, and what do they have to approve first". The bucket is still yours, and the four hardening properties in section 11 still apply to it. MinIO in that list is also why a fully local, no-cloud-account deployment of this shape is possible at all.
+
 !!! info "OpenTofu — the `cloud` block has no default vendor"
-    Terraform defaults `hostname` to `app.terraform.io`. OpenTofu specifies no default, so `hostname` and `organization` must both be set explicitly. The HCL is otherwise identical, which is exactly why a self-hosted platform such as Terrakube needs only that one extra argument to receive a configuration written for HCP.
+    Terraform defaults `hostname` to `app.terraform.io`. OpenTofu specifies no default, so `hostname` and `organization` must both be set explicitly. The HCL is otherwise identical.
+
+**Migrating onto one of these is not always the `init` prompt.** Moving between two platforms that speak the same API is the ordinary `-migrate-state` path from section 6, with a `terraform login` against each host first. Moving *local state* into one can be a manual round-trip instead:
+
+```shell
+terraform state pull > tf.state
+# add the cloud block, then
+terraform login <hostname>
+terraform init
+terraform state push tf.state
+```
+
+`state pull` writes the current snapshot to stdout and `state push` writes one back. The push is guarded rather than blind: it is rejected if the two states have **differing lineage**, meaning they were created independently and you are probably overwriting the wrong one, or if the destination's **serial is higher**, meaning changes have happened since the snapshot you are holding. HashiCorp calls `state push` *"extremely dangerous and should be avoided if possible"*, and those two guards are the reason it is merely dangerous rather than routinely catastrophic.
 
 !!! info "Coming: pluggable state stores — watch, do not adopt"
     The fixed catalogue has an exit under construction. A **`state_store` block** would let a *provider* supply state storage the way it supplies resources. It has been in Terraform's config parser since 1.13 and is still gated behind experimental features in 1.16.0-rc1, appears in no changelog, and OpenTofu declares no equivalent block. Nothing to do today. Learn the name so you recognise it when it lands.
@@ -828,6 +847,10 @@ docker compose -f labs/docker-compose.yml --profile gcp down
 
 **Treating a backend change as a code change.** Any edit to the block, including a `cloud` block edit, stops the next command until you re-`init`. Decide deliberately between `-migrate-state` and `-reconfigure`.
 
+**Omitting `hostname` from a `cloud` block.** It defaults to `app.terraform.io`, so a configuration intended for a self-hosted platform silently points at HashiCorp instead.
+
+**Reaching for `state push` as a migration tool.** It is the manual path, and it is guarded by lineage and serial for good reason. Use the `init` migration where the backends support it.
+
 **Copying a backend block from anything written before 2022.** `endpoint`, `force_path_style`, `iam_endpoint`, `sts_endpoint`, `shared_credentials_file` and `dynamodb_table` are all deprecated on the S3 backend, and six names were removed from the catalogue entirely in v1.3.
 
 ---
@@ -857,6 +880,7 @@ A backend stores state and, optionally, provides a locking API. That is all it i
 - Locking is **automatic, silent, and fatal**. On both major clouds it is one conditional write on a `.tflock` object, and both refusals are a **412**. `use_lockfile` defaults to `false` on `s3`; `gcs` has no argument to set or unset.
 - `s3` addresses by `key` and prefixes other workspaces with the literal `env:`; `gcs` addresses by `<prefix>/<workspace>.tfstate` and always has the workspace in the path. `s3` separates backend and provider identity by design; `gcs` shares an environment variable with the provider unless you use the backend-scoped one.
 - The catalogue is **built in and finite**. `http` is the odd one out, a protocol anything can implement, which is what GitLab's state feature actually is.
+- The **`cloud` block is a different product**, not a different bucket: it moves `plan` and `apply` off your machine, and platforms built on it still write to an object store you own. `hostname` is the one argument that decides whether you are talking to HashiCorp or to something you run.
 - `terraform_remote_state` reads **root outputs only**, and grants the reader access to the **entire** snapshot. Publish to a real store instead when the state holds anything you would not share.
 - Harden on four properties: **encrypted, versioned, locked, and readable only by the run identities**. Backend configuration leaks into `.terraform/` and into every plan file, so credentials come from the environment.
 
