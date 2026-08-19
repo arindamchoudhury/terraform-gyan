@@ -32,6 +32,17 @@ The backend type is the block **label**, and the arguments in the body are speci
 
 The second one is the constraint people hit first — you cannot parameterize a backend with a variable. Partial configuration below is the sanctioned workaround.
 
+!!! warning "Measured — the block has no evaluation scope at all, so `const` does not help"
+    Terraform 1.15.8, 2026-08-19. The page says named values are not allowed and stops there. The implementation is stricter than "not allowed": HCL raises `Variables not allowed` when it walks the evaluation context chain and finds **no context defining any variables**, so the reference is never resolved and rejected — there is nothing to resolve it against. A function call in the same position gives the matching `Functions not allowed` / *"Functions may not be called here."*
+
+    That matters because Terraform **1.15** added `const = true` on an input variable, which makes it usable in a `module` block's `source` and `version` ([[tf-modules-configuration]]). Reasonable to expect it to extend here. It does not:
+
+    - `path = var.state_path` with `const = true` on the variable → `Variables not allowed`.
+    - `path = local.state_path`, where the local is built from a `const` variable → `Variables not allowed`, even though that same indirection *is* accepted for a module `source`.
+    - The `const` variable declaration itself is fine in both cases. Only the reference from inside the `backend` block fails.
+
+    The two restrictions are different in kind. `const` answers *when is this value known*, which is a timing question that module installation genuinely has. The backend block never gets a scope, so timing never comes up.
+
 !!! info "OpenTofu removes limitation two"
     Since **OpenTofu 1.8**, `backend` and `provider` blocks *can* reference variables and locals, resolved in an early phase during `tofu init` before state exists. Details and restrictions in [[ot-early-eval-backend]]. This is a real divergence, not a version lag: on Terraform 1.15 the named-value ban still holds.
 

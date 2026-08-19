@@ -96,7 +96,49 @@ Error: Variables not allowed
 Variables may not be used here.
 ```
 
-That is a parse-time refusal. It happens before any backend work, because the backend configuration is what Terraform needs in order to find state at all, so it cannot depend on anything that comes from state.
+That is a refusal before any backend work happens, and the reason is more absolute than "the value is not ready yet". The backend body is evaluated with **no scope at all**. HCL emits that diagnostic when it walks the evaluation context chain and finds no context defining any variables whatsoever, so `var.state_bucket` is not looked up and rejected. There is nothing to look it up in.
+
+The companion error proves it. Put a function call in the same position and you get the matching complaint:
+
+```
+Error: Function calls not allowed
+  on main.tf line 3, in terraform:
+   3:   backend "local" { path = join("/", ["state", "dev.tfstate"]) }
+Functions may not be called here.
+```
+
+No variable table and no function table. The backend block takes literals.
+
+!!! warning "`const = true` does not open this door"
+    Terraform **1.15** added `const` on an input variable, which makes it usable in a `module` block's `source` and `version`. Those arguments have a genuine *timing* problem: modules are installed at `init`, before plan-time evaluation exists, so a variable is only usable there if it is known during configuration loading. `const` is the marker that promises it is.
+
+    It is reasonable to expect that to extend here, and it does not. Measured on Terraform 1.15.8:
+
+    ```hcl
+    terraform {
+      backend "local" {
+        path = var.state_path      # Error: Variables not allowed
+      }
+    }
+
+    variable "state_path" {
+      type    = string
+      const   = true
+      default = "state/dev.tfstate"
+    }
+    ```
+
+    Routing it through a local fails identically, even though that indirection *is* allowed for `module` sources:
+
+    ```hcl
+    locals { state_path = "${var.state_dir}/dev.tfstate" }
+
+    terraform {
+      backend "local" { path = local.state_path }   # Error: Variables not allowed
+    }
+    ```
+
+    The `const` variable itself is accepted in both cases. Only the reference from inside the backend block fails. The two restrictions look alike and are not the same thing: `const` answers *when is this value known*, while the backend block never gets an evaluation scope to ask the question in. Partial configuration remains the only answer on Terraform.
 
 The consequence is more annoying than the rule. Every configuration in your organisation must repeat the bucket, the region and the locking setting verbatim, while **`key` must be unique per configuration** or one project silently overwrites another's state. You are asked to copy-paste everything except the single line you must not copy-paste. Section 4 is the sanctioned relief.
 
@@ -117,7 +159,22 @@ The consequence is more annoying than the rule. Every configuration in your orga
 
     The restrictions match the reason it works: only variables and locals, nothing from state or from data sources, and everything must be statically determinable at `init`. OpenTofu's own guidance is still to keep credentials out of it, because backend configuration leaks the same way there as here (section 11).
 
-    On Terraform 1.15.8 the ban holds. Do not use this in a configuration that must run on both engines.
+    **No marker is required on the variable.** Measured on OpenTofu 1.12.5, an ordinary variable reached through a local works, and the state lands where the computed path says:
+
+    ```hcl
+    variable "state_dir" {
+      type    = string
+      default = "state"
+    }
+
+    locals { state_path = "${var.state_dir}/dev.tfstate" }
+
+    terraform {
+      backend "local" { path = local.state_path }
+    }
+    ```
+
+    So the engines differ twice over. Terraform has no scope in a backend block at all and offers `const` only for module sources; OpenTofu gives the block a real early-evaluation scope and needs nothing declared on the variable. Do not use this in a configuration that must run on both engines.
 
 **`backend` and `cloud` are mutually exclusive.** HCP Terraform, Terraform Enterprise, and compatible platforms are configured with a `cloud` block instead, and a configuration containing one cannot also contain a `backend` block. Section 9 covers what that block does differently.
 
