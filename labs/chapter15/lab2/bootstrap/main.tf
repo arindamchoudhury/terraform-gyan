@@ -26,6 +26,17 @@ provider "aws" {
 
 resource "aws_s3_bucket" "state" {
   bucket = "tf-state-lab"
+
+  # The chapter's version of this configuration adds:
+  #
+  #   lifecycle {
+  #     prevent_destroy = true
+  #   }
+  #
+  # It is deliberately left out here so the lab can be torn down with
+  # `tflocal destroy`. On a real state bucket, put it back. Losing the bucket
+  # loses every project's state at once, and prevent_destroy is a plan-time
+  # refusal rather than a warning.
 }
 
 # Versioning is what makes a truncated or corrupted state recoverable. The S3

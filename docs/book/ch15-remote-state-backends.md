@@ -417,7 +417,17 @@ This is what makes the **named-value ban** survivable. The repository holds the 
 
 ## 5. The bootstrap, and why it takes two configurations
 
-You cannot keep state in a bucket that does not exist. You also cannot create that bucket with the configuration whose state it will hold, because at the moment `init` runs the bucket must already be there.
+You cannot keep state in a bucket that does not exist. You also cannot create that bucket with the configuration whose state it will hold, because at the moment `init` runs the bucket must already be there. Terraform says so itself, and the wording is worth seeing because it is the whole reason this section exists:
+
+```
+Error: Failed to get existing workspaces: S3 bucket "acme-tf-state" does not exist.
+
+The referenced S3 bucket must have been previously created. If the S3 bucket
+was created within the last minute, please wait for a minute or two and try
+again.
+```
+
+`init` fails before it can do anything else, so there is no order of operations inside one configuration that gets you out of this. Note the second sentence too: bucket creation is eventually consistent, so a bucket made moments ago can still produce this error.
 
 So a remote-state setup starts with two configurations:
 
@@ -425,13 +435,14 @@ So a remote-state setup starts with two configurations:
 flowchart TB
     subgraph B["① bootstrap/ — runs first, stays on the local backend forever"]
       direction LR
-      B1["aws_s3_bucket"] --> B2["versioning"] --> B3["public access block"]
+      B1["aws_s3_bucket"] --> B2["versioning"]
+      B1 --> B3["public access block"]
     end
     subgraph A["② app/ — runs second, migrates onto the bucket"]
       direction LR
       A1["local state"] -->|"init -migrate-state"| A2["s3 backend"]
     end
-    B3 -.->|"bucket now exists"| A1
+    B1 -.->|"bucket now exists"| A1
 ```
 
 The bootstrap configuration creates the bucket and hardens it:
@@ -462,9 +473,18 @@ resource "aws_s3_bucket_public_access_block" "state" {
 }
 ```
 
-Three things there are not decoration. `prevent_destroy` is a plan-time refusal to delete the bucket, from Chapter 11. **Versioning is what makes a corrupted or truncated state recoverable**, and neither backend turns it on for you. The public-access block matters because the object you are about to store is a plaintext credential file.
+Three things there are not decoration. `prevent_destroy` is a plan-time refusal to delete the bucket, from Chapter 11. The public-access block matters because the object you are about to store is a plaintext credential file.
+
+**Versioning is the one both backend pages ask for in the same words**, and neither turns it on for you:
+
+> Warning! It is highly recommended that you enable Bucket Versioning on the S3 bucket to allow for state recovery in the case of accidental deletions and human error.
+
+The GCS page says the same thing with *Object Versioning* substituted. The reason they give is deletion and human error; this chapter adds a second one, since section 6 and section 11 both produce states that are truncated or half-written rather than deleted, and a previous version is the only way back from those too.
 
 The bootstrap configuration keeps local state permanently. Its state is small, it changes almost never, and the alternative is the same problem one level down.
+
+!!! note "The lab's copy of this leaves `prevent_destroy` out on purpose"
+    `labs/chapter15/lab2/bootstrap/` is the configuration above with the `lifecycle` block removed, so the lab can be torn down with `tflocal destroy`. That is the right trade for a lab and the wrong one for a real state bucket, where losing the bucket loses every project's state at once. The lab file says so in a comment; put the block back when you copy it.
 
 !!! tip "One bucket serves every configuration you own"
     The bootstrap is awkward, and it is also a once-per-account cost. Different projects share the bucket and differ only in `key`. That is the argument for treating `key` as the project's address rather than as a filename: `networking/terraform.tfstate`, `platform/eks/terraform.tfstate`, and so on, mirroring your repository layout.
