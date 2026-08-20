@@ -181,6 +181,10 @@ TID Ch5 is the book's dedicated DAG chapter and fills in two things this page's 
 
     Book Ch5's node-types box is written from this verification, not from TID.
 
+**Breaking a cycle by splitting the association into its own resource.** When two objects must reference each other because each holds a *rule about the other*, the fix is to make that rule a third node. [[tut-troubleshooting-workflow]] is the worked case: two `aws_security_group` resources each naming the other in an in-line `ingress.security_groups` block produce `Error: Cycle: aws_security_group.sg_ping, aws_security_group.sg_8080`, and moving both rules out into standalone `aws_security_group_rule` resources resolves it — the provider creates both groups first with no interdependent rules, then the rules, then attaches them. Two nodes that must know about each other become three nodes in a line.
+
+Generalizes wherever a provider offers both an in-line and a standalone form of an association, which is common: security-group rules, IAM policy attachments, route-table associations, DNS record sets. The in-line form is more compact and creates the cycle; the standalone form is more verbose and cannot. (The AWS provider has since moved on from `aws_security_group_rule` to `aws_vpc_security_group_ingress_rule`, but the argument is about graph shape, not the resource name.)
+
 **Breaking a cycle by routing through a variable.** When two resources form a cycle only because they share a value, break the edge by moving that value into a `variable`/`local` instead of a resource attribute — the shared value survives, the resource-to-resource edge disappears:
 
 ```hcl
@@ -195,4 +199,4 @@ resource "null_resource" "alpha" {
 Same principle as the "prefer implicit references" rule below, applied in reverse: sometimes you *want* to sever an inferred edge, and the fix is to depend on data (a variable) rather than a resource.
 
 ---
-Related: [[tf-cmd-graph]] — the command reference and its DOT dialects. · [[tf-meta-depends-on]] — the hidden-dependency meta-argument, its cost, and the `check`-block pattern. · [[tut-dependencies]] — the hands-on lab, source of the apply/destroy log evidence and of the module-level `depends_on` example. · [[meta-arguments-lifecycle]] — `depends_on` among the other five meta-arguments. · [[tf-configure-resource]] — "prefer implicit dependencies," stated without the plan-degradation reason.
+Related: [[tf-cmd-graph]] — the command reference and its DOT dialects. · [[tf-meta-depends-on]] — the hidden-dependency meta-argument, its cost, and the `check`-block pattern. · [[tut-dependencies]] — the hands-on lab, source of the apply/destroy log evidence and of the module-level `depends_on` example. · [[meta-arguments-lifecycle]] — `depends_on` among the other five meta-arguments. · [[tf-configure-resource]] — "prefer implicit dependencies," stated without the plan-degradation reason. · [[tut-troubleshooting-workflow]] — a two-resource cycle you can read from the error text, and the split-the-association fix.
