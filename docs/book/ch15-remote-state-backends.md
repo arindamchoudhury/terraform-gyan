@@ -1185,7 +1185,7 @@ When a secret has to be in state, protect the file. Four properties matter, and 
 | **Locked** | `use_lockfile = true` | on by default |
 | **Readable only by the run identities** | bucket IAM | Storage Object Admin, scoped to those principals |
 
-Two of the four are backend-block settings and two live on the bucket, which is why the bootstrap configuration in section 5 is part of the security story rather than plumbing.
+On `s3`, two of the four are backend-block settings and two live on the bucket. On `gcs` only one is a setting, because locking needs no argument there. Either way the bucket carries half of it, which is why the bootstrap configuration in section 5 is part of the security story rather than plumbing.
 
 ### Backend configuration leaks harder than provider configuration
 
@@ -1276,7 +1276,7 @@ python scan-plan.py tfplan AKIALEAKCANARY01 s3cr3t-canary-value-9f2a
 ```
 
 ```
-tfplan: 2228 bytes
+tfplan: 2227 bytes
 raw byte search: nothing
 
   tfplan                     1106 B  LEAK: AKIALEAKCANARY01, s3cr3t-canary-value-9f2a
