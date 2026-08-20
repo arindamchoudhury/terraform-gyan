@@ -164,13 +164,18 @@ probe = "managed-from-gitlab-ci"
 And the bucket afterwards, which is the whole lab in two lines:
 
 ```bash
-curl -s "http://localhost:4566/tf-state-lab?list-type=2" | grep -o "<Key>[^<]*</Key>"
+aws --endpoint-url http://localhost:4566 s3 ls s3://tf-state-lab --recursive
 ```
 
 ```
-<Key>app/terraform.tfstate</Key>     # lab 2, applied from a workstation
-<Key>ci/terraform.tfstate</Key>      # this pipeline, applied by a runner
+2026-08-20 11:09:29        922 app/terraform.tfstate     # lab 2, from a workstation
+2026-08-20 10:26:24        958 ci/terraform.tfstate      # this pipeline, from a runner
 ```
+
+That command works in PowerShell as well, once `labs/lab-env.ps1` has been
+sourced for the dummy credentials. Without them the AWS CLI reaches for a real
+login provider and fails at `https://us-east-1.signin.aws.amazon.com`, which
+looks like a network problem and is not one.
 
 Two states, two operators, one bucket, and nothing about Terraform state stored
 on the forge.

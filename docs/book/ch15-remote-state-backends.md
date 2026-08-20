@@ -1293,6 +1293,10 @@ The working directory's copy needs no unzipping at all, which is the more immedi
 grep -o AKIALEAKCANARY01 .terraform/terraform.tfstate
 ```
 
+```powershell
+Select-String -Pattern AKIALEAKCANARY01 -Path .terraform	erraform.tfstate | ForEach-Object { $_.Matches.Value }
+```
+
 ```
 AKIALEAKCANARY01
 ```
@@ -1467,6 +1471,10 @@ Set the lab environment once per shell, which supplies dummy credentials and mak
 source "$(git rev-parse --show-toplevel)/labs/lab-env.sh"
 ```
 
+```powershell
+. "$(git rev-parse --show-toplevel)/labs/lab-env.ps1"
+```
+
 Every configuration below tracks a `terraform_data` resource. It is built into Terraform, so nothing needs a provider plugin or a registry download. The one exception is the bootstrap, which genuinely has to create a bucket.
 
 !!! warning "Emulation is not AWS, and here is how to tell what transfers"
@@ -1609,8 +1617,15 @@ cd labs/chapter15/gitlab && python setup.py
 `setup.py` mints an admin API token, creates the project and an instance runner, registers the runner with the docker executor, and commits `ci/` into the project, which triggers the first pipeline. Re-running it is safe, and it is Python rather than a shell script so the same file runs under PowerShell and under bash. Play the manual `apply` job in the UI, then read the bucket:
 
 ```shell
-curl -s "http://localhost:4566/tf-state-lab?list-type=2" | grep -o "<Key>[^<]*</Key>"
+aws --endpoint-url http://localhost:4566 s3 ls s3://tf-state-lab --recursive
 ```
+
+```
+2026-08-20 11:09:29        922 app/terraform.tfstate
+2026-08-20 10:26:24        958 ci/terraform.tfstate
+```
+
+The two objects hold the same resource, the same `terraform_version` and the same `serial`. The 36-byte spread is the probe's string, which is 12 characters longer in the pipeline's copy and is stored three times over: the resource's `input`, its `output`, and the root output. Nothing about a state file changes because a runner wrote it.
 
 !!! warning "Do not wait for `healthy`, because it reports healthy long before it serves"
     Measured twice on `gitlab/gitlab-ce:19.2.4-ce.0`: healthy after about a minute, while `gitlab-ctl status` still listed only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd`. Puma and nginx arrived six minutes later, and the gap in between answers **502**. `setup.py` polls `/users/sign_in` for a 200 rather than trusting the health status, and that is the check to copy.
