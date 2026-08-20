@@ -206,7 +206,23 @@ That second ID is the best example anywhere in the tutorials of [[tut-state-impo
 !!! note "The page's own tip: this workflow is the pre-1.5 one"
     > This tutorial uses `terraform import` to bring infrastructure under Terraform management. Terraform 1.5+ supports configuration-driven import, which lets you import multiple resources at once, review the import in your plan-and-apply workflow, and generate configuration for imported resources.
 
-    The tutorial has not been rewritten around the block; it just points at [[tut-state-import]]. Two `import` blocks with the same `id` values would do the same job in one previewable plan, and would work in CI, which the two CLI commands do not. Treat the CLI form here as the mechanism being demonstrated, not the mechanism to use.
+    The tutorial has not been rewritten around the block; it just points at [[tut-state-import]]. The same two adoptions as blocks, carrying the identical `id` strings:
+
+    ```hcl
+    import {
+      id = "sg-04c74100cc8b9fc8c"
+      to = aws_security_group.sg_web
+    }
+
+    import {
+      id = "sg-04c74100cc8b9fc8c_ingress_tcp_8080_8080_0.0.0.0/0"
+      to = aws_security_group_rule.sg_web
+    }
+    ```
+
+    One previewable plan instead of two unattended state writes, and it runs in CI, which the CLI pair does not. Treat the CLI form here as the mechanism being demonstrated, not the mechanism to use.
+
+    Note that the two tutorials disagree in **emphasis, not in fact**. [[tut-state-import]] does not forbid the command — its wording is *"You can still use the `terraform import` command, but configuration-driven import is safer, works with CICD pipelines, and allows you to preview the import operation before modifying state."* This page's tip says the same thing from the other side. Neither is wrong; this one is simply older than the feature and was patched with a pointer rather than rewritten.
 
 !!! warning "State caught up, infrastructure did not"
     > Terraform successfully associated both security groups with the instance in state. However, your instance still only allows port 8080 access because the `modify-instance-attribute` AWS CLI command detached the SSH security group.
