@@ -17,6 +17,8 @@ State is the record that binds a `resource` block in your configuration to an ob
 
 - **Import is how the binding is created after the fact, and it is not symmetric.** [[tf-state-purpose]] names `terraform import` as one of two operations that break the one-to-one mapping by hand. Terraform 1.5's config-driven `import` block puts that operation back inside the plan, so an adoption is previewable and repeatable from CI. The exit is a different mechanism entirely — a `removed` block with `lifecycle { destroy = false }` — and re-entry after it needs an import again. Neither book covers the block; both predate it. ([[tut-state-import]], [[tf-block-removed]], [[tf-state-remove]].)
 
+- **Drift has three answers, and the plan output does not pick one for you.** Revert it with a plain `apply`, adopt it by changing the configuration and importing whatever was created by hand, or keep it and stop planning against it with `ignore_changes`. [[tut-resource-drift]] walks the middle one and names the first; [[tut-resource-lifecycle]] is the third, on the same repo and the same tag. What both make concrete is that `apply -refresh-only` reports `0 added, 0 changed, 0 destroyed` while rewriting the file — the counters count infrastructure actions, not state writes.
+
 ## Where the sources differ
 
 - **TID asks what state is; TUR asks what state does to your project.** TID Ch6 is a reference chapter — JSON anatomy, backend catalogue, migration, drift taxonomy, state-only providers. TUR Ch3 is a chain of consequences: state exists → it must be shared → sharing needs locking → shared state needs isolation → isolation means directories → directories mean duplication → therefore modules. Read TUR for the *why this shapes my repo* argument; nothing in TID substitutes for it.
@@ -46,6 +48,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - About to set up locking? → [[tf-state-locking]] and [[tf-backend-configure]], not either book.
 - About to move a local state file to HCP Terraform? → [[tut-cloud-migrate]], which is the whole migration in nine minutes and needs no cloud provider account.
 - Deciding where state lives for a team on GitLab, GitHub or Bitbucket? → [[gitlab-tf-state]] for the only forge that stores it, [[tf-backend-http]] for the protocol that makes that possible, and [[gha-oidc]] / [[bitbucket-pipelines-oidc]] for the other two, where the answer is a cloud bucket plus an OIDC trust policy. Self-hosting HCP's shape instead is [[terrakube-migrating]].
+- Someone changed something in the console? → [[tut-resource-drift]] for the three answers (revert, adopt, ignore) and the `plan -refresh-only` / `apply -refresh-only` pair that lets you choose, then [[tf-cmd-refresh]] for why the old `terraform refresh` is not one of them.
 - Adopting infrastructure that already exists? → [[tut-state-import]] for the config-driven `import` block end to end — `-generate-config-out`, why the generated draft has to be pruned, and the `env = null` default that turns an adoption into a replacement.
 - Holding a state file you have to repair by hand? → [[tut-cloud-state-api]] for the HCP round-trip — download, bump `serial`, re-upload as a new state version — and [[tf-state-backends]] for the guards it has to satisfy.
 - About to share data between configurations? → [[tf-remote-state-data]] first, for the access-control argument, then TUR Ch3 for the mechanics.
@@ -60,6 +63,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - [[gitlab-tf-state]] — GitLab as an `http` backend: project roles instead of IAM, and every Developer can read the file
 - [[gha-oidc]] · [[bitbucket-pipelines-oidc]] — the forges that store nothing, and the identity they issue instead
 - [[terrakube-migrating]] — the self-hosted TFE-compatible platform: same `cloud` block, one extra `hostname`, state into your own object store
+- [[tut-resource-drift]] — HCTut, drift manufactured on purpose with the AWS CLI, then reconciled; the refresh-only pair, and drift in outputs as well as attributes
 - [[tut-state-import]] — HCTut, the way *in*: config-driven import, the pruning step, and the limits (import reports current state, never health or intent)
 - [[tut-cloud-state-api]] — HCTut, the repair path: creating a new **state version** through the API, and the manual `serial` bump that makes it legal
 - [[terraform-intro]] — the one-paragraph version

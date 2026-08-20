@@ -123,6 +123,7 @@ Log of all captured sources, organised by course.
 | [Migrate state to HCP Terraform (State)](terraform-tutorials/tut-cloud-migrate.md) | documentation | 2026-08-18 | state, migration, hcp-terraform, cloud-block, terraform-login, remote-operations, workspaces, init | [url](https://developer.hashicorp.com/terraform/tutorials/state/cloud-migrate) |
 | [Version remote state with the HCP Terraform API (State)](terraform-tutorials/tut-cloud-state-api.md) | documentation | 2026-08-18 | state, hcp-terraform, api, state-versions, serial, lineage, md5, workspace-lock, disaster-recovery, drift, no-op-apply | [url](https://developer.hashicorp.com/terraform/tutorials/state/cloud-state-api) |
 | [Import Terraform configuration (State)](terraform-tutorials/tut-state-import.md) | documentation | 2026-08-20 | import-block, config-driven-import, generate-config-out, state, docker-provider, terraform-1.5, adoption | [url](https://developer.hashicorp.com/terraform/tutorials/state/state-import) |
+| [Manage resource drift (State)](terraform-tutorials/tut-resource-drift.md) | documentation | 2026-08-20 | drift, refresh-only, terraform-refresh, state, import, security-groups, out-of-band-changes, ec2 | [url](https://developer.hashicorp.com/terraform/tutorials/state/resource-drift) |
 
 ## 4. Terraform Registry
 
