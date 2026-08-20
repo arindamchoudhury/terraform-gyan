@@ -1821,7 +1821,9 @@ Username for 'http://127.0.0.1:8929': root
 Password for 'http://root@127.0.0.1:8929': <the token from step 4>
 ```
 
-If nothing is asked at all, a credential helper answered for you. Git ships one configured on Windows and macOS, and it stores what worked the first time. Ask it what it is holding, and throw that away when you want the prompt back:
+If nothing is asked at all, a credential helper answered for you. Git ships one configured on Windows and macOS, and it stores what worked the first time, because Git itself calls the helper to save a credential after any successful authentication.
+
+`git credential` is how you talk to that helper directly. It reads `key=value` lines terminated by a blank line, which is what the doubled newline in these commands is for. `fill` asks what is stored and prints it, and `reject` deletes it so the next clone or push asks you again:
 
 ```shell
 printf 'protocol=http
@@ -1833,6 +1835,8 @@ host=127.0.0.1:8929
 
 ' | git credential reject
 ```
+
+`fill` prints the password in cleartext, so pipe it through something that drops that line if anyone can see your screen.
 
 This matters beyond the lab. A pipeline that authenticates from a developer's machine and fails in CI is very often this: a helper on the workstation quietly supplying a credential that no job has, and nobody noticing which identity did the work.
 
