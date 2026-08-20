@@ -901,13 +901,15 @@ Backends are built in, so the list is finite and version-bound. Read out of the 
 
 `local` · `remote` · `azurerm` · `consul` · `cos` · `gcs` · `http` · `inmem` · `kubernetes` · `oci` · `oss` · `pg` · `s3` · `cloud`
 
+The documentation's own Backends section lists **twelve**: everything above except `inmem` and `cloud`. That gap is not an oversight in either direction. `cloud` is registered internally as a backend but is configured by a different block and documented elsewhere, and `inmem` is a testing backend nobody is meant to reach for, which is the subject of the warning below.
+
 Most of that list is chosen for you. The deciding factor is whatever your team already runs: AWS gives you `s3`, Azure gives you `azurerm`, GCP gives you `gcs`. This is not a decision worth agonising over.
 
 A few entries earn a sentence:
 
-- **`inmem`** is an in-memory backend used for testing. It is not documented as a user-facing choice, and Terraform will nonetheless configure it for you without complaint. See the warning below before going near it.
-- **`pg`** puts state in PostgreSQL, and **`kubernetes`** puts it in a Secret. Both are reasonable if that is the durable, backed-up system you already operate.
-- **`remote`** is the older HCP Terraform integration, superseded by the `cloud` block.
+- **`inmem`** is an in-memory backend used for testing. It has no page in the Backends documentation, and Terraform will nonetheless configure it for you without complaint. See the warning below before going near it.
+- **`pg`** puts state in PostgreSQL, and **`kubernetes`** puts it in a **Secret**, which the backend's own schema confirms: it addresses the `secrets` resource and names the object with a `secret_suffix`. Both are reasonable if that is the durable, backed-up system you already operate.
+- **`remote`** is the older way of talking to HCP Terraform. It is documented and carries no deprecation in the source, so it still works; the `cloud` block simply replaced it as the way you would write it today. HashiCorp dates the changeover precisely: *"Terraform versions older than 1.1 use the `remote` backend block to configure the CLI workflow and migrate state."*
 
 !!! info "OpenTofu — no `oci` backend"
     Terraform 1.12 added a native Oracle Cloud Object Storage backend. Checked against the OpenTofu v1.12.5 source, the name is registered nowhere and `internal/backend/remote-state/` has no `oci` directory. Every other name in the list above is present on both engines.
@@ -1012,7 +1014,9 @@ terraform {
 }
 ```
 
-It does more than store state. It **overrides `plan` and `apply` to run remotely** while you work locally, which is a different product from a bucket. No credentials appear in the block: `terraform login <hostname>` once, and the token is saved to disk.
+It does more than store state. It **overrides `plan` and `apply` to run remotely** while you work locally, which is a different product from a bucket. No credentials appear in the block: `terraform login <hostname>` once, and the token is reused by later commands.
+
+Where that token goes is worth knowing in a chapter about plaintext on disk. Terraform says so as it writes it: *"Terraform will store the token in plain text in the following file for use by subsequent commands"*, naming `~/.terraform.d/credentials.tfrc.json`. It is not in your state and not in `.terraform/`, so none of section 11's leak paths cover it. It is simply another readable credential on the machine.
 
 **`hostname` is what makes the block portable.** It defaults to `app.terraform.io`, so a `cloud` block that omits it points at HashiCorp whether you meant to or not. Set it and the same configuration talks to Scalr, to Env0, or to a self-hosted **Terrakube**, all of which implement the same API. That one argument is the entire difference between the hosted product and an instance you run, and forgetting it is the first thing that goes wrong when adopting one of the alternatives.
 
@@ -1022,7 +1026,9 @@ It does more than store state. It **overrides `plan` and `apply` to run remotely
     So the `cloud` block is not an alternative answer to "where does the JSON go". It is an answer to "who runs `apply`, and what do they have to approve first". The bucket is still yours, and the four hardening properties in section 11 still apply to it. MinIO in that list is also why a fully local, no-cloud-account deployment of this shape is possible at all.
 
 !!! info "OpenTofu — the `cloud` block has no default vendor"
-    Terraform defaults `hostname` to `app.terraform.io`. OpenTofu specifies no default, so `hostname` and `organization` must both be set explicitly. The HCL is otherwise identical.
+    Read from both sources. Terraform defines `defaultHostname = "app.terraform.io"` and falls back to it when the argument is absent, which its own schema description states outright: *"This optional argument defaults to app.terraform.io"*. OpenTofu defines no such constant and raises **"Hostname is required for the cloud backend"** instead.
+
+    The divergence is `hostname` alone. Both engines declare `hostname` and `organization` as optional in the schema and both require an organization at run time, so only the vendor default differs. The practical effect is that OpenTofu cannot silently point at HashiCorp, and a `cloud` block written for OpenTofu always names its host.
 
 **Migrating onto one of these is not always the `init` prompt.** Moving between two platforms that speak the same API is the ordinary `-migrate-state` path from section 6, with a `terraform login` against each host first. Moving *local state* into one can be a manual round-trip instead:
 
