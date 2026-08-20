@@ -28,7 +28,7 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 
 ## State
 
-Nav order mirrors the collection sidebar, resolved at **rung 3** (rendered nav DOM) with `fetch_nav.py` on 2026-08-20. Full sidebar, in order: *1 Import · 2 Migrate state · 3 Manage resource state · 4 Target resources · 5 Troubleshooting · 6 Resource drift · 7 Lifecycle rules · 8 Version state · 9 Refresh state · 10 Console · 11 Move resources*. All eleven are captured. *Move resources* is the same page as [tut-move-config](tut-move-config.md), which the site also files under Modules and which is listed there.
+Nav order mirrors the collection sidebar, resolved at **rung 3** (rendered nav DOM) with `fetch_nav.py` on 2026-08-20. Full sidebar, in order: *1 Import · 2 Migrate state · 3 Manage resource state · 4 Target resources · 5 Troubleshooting · 6 Resource drift · 7 Lifecycle rules · 8 Version state · 9 Refresh state · 10 Console · 11 Move resources*. All eleven are captured. *Move resources* (11) is [tut-move-config](tut-move-config.md), listed under Modules — HashiCorp serves that one tutorial under **three** collection URLs (`modules/`, `state/`, `configuration-language/`) with byte-identical bodies, verified 2026-08-20.
 
 | Page | Added | File |
 |---|---|---|

@@ -5,6 +5,18 @@
 > **Source updated:** undated tutorial (~14 min); captured 2026-08-08
 > **Tags:** moved-block, refactoring, state, module-extraction, resource-addresses, rename, terraform-1.3
 > **Type:** documentation
+> **Also published as:** [`state/move-config`](https://developer.hashicorp.com/terraform/tutorials/state/move-config) · [`configuration-language/move-config`](https://developer.hashicorp.com/terraform/tutorials/configuration-language/move-config)
+
+!!! note "One tutorial, three URLs"
+    HashiCorp serves this page under **three** collection paths — `modules/`, `state/`, and `configuration-language/`. Verified 2026-08-20 by fetching all three and diffing: the bodies are **byte-identical**, and the only differences are the collection chrome — the Previous/Next links and the "also appears in" block, each of which points at whichever collections the page is *not* currently being read under.
+
+    | URL | Position |
+    |---|---|
+    | `modules/move-config` | 9 of 10 — after *Create modules*, before *No-code modules* |
+    | `state/move-config` | 11 of 11 — last, after *Console* |
+    | `configuration-language/move-config` | between *Terraform versions* and *Custom conditions* |
+
+    The practical consequence for these notes: **"is this page already captured?" cannot be answered from a URL.** Diff the body against the existing cache before assuming a new path is a new page. Filed here under Modules, which is where it was captured first and where its `moved`-into-a-module subject fits best.
 
 Last page of the **Modules** collection, and the one that makes every earlier page survivable in a live system. [[tut-pattern-module-creation]] said how to scope modules; this one shows how to get existing resources *into* them without destroying anything. `git clone https://github.com/hashicorp-education/learn-terraform-move`. Both Community Edition and HCP Terraform variants captured; the only difference is a `cloud` block.
 
