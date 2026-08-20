@@ -1877,6 +1877,11 @@ aws --endpoint-url http://localhost:4566 s3 ls s3://tf-state-lab --recursive
 2026-08-20 10:26:24        958 ci/terraform.tfstate
 ```
 
+!!! note "A green apply that wrote nothing"
+    If the object's timestamp is older than the job you just ran, and the trace says `Apply complete! Resources: 0 added, 0 changed, 0 destroyed.`, the state under that key was already converged. Anyone who ran the lab's `setup.py` before doing it by hand has exactly this: the same `key`, the same resource, already created. The pipeline read it, found nothing to do, and left the object alone.
+
+    Nothing is broken, but nothing was proved either. To watch your own run write, change `variable "label"`'s default and push again. The plan then has one change in it, and the object's timestamp moves.
+
 The two objects hold the same resource, the same `terraform_version` and the same `serial`. The 36-byte spread is the probe's string, which is 12 characters longer in the pipeline's copy and is stored three times over: the resource's `input`, its `output`, and the root output. Nothing about a state file changes because a runner wrote it.
 
 !!! warning "Do not wait for `healthy`, because it reports healthy long before it serves"
