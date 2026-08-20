@@ -1806,13 +1806,22 @@ Five decisions in there are worth taking with you to whichever forge you end up 
 **Step 7 — push.** Clone the empty project, copy the three files in, and push:
 
 ```shell
-git clone http://root:<token>@127.0.0.1:8929/root/tf-state-lab.git
+git clone http://127.0.0.1:8929/root/tf-state-lab.git
 cd tf-state-lab
 cp -r /path/to/notes/labs/chapter15/gitlab/ci/. .
 git add -A && git commit -m "Add Terraform pipeline with an S3 backend" && git push
 ```
 
 The trailing `/.` is what carries the dotfile.
+
+Git asks for the credentials, which is what you want:
+
+```
+Username for 'http://127.0.0.1:8929': root
+Password for 'http://root@127.0.0.1:8929': <the token from step 4>
+```
+
+The username is anything non-blank, and the password is the token. A token can be written into the URL as `http://root:<token>@127.0.0.1:8929/...` instead, and that form is worth knowing about mainly so you can avoid it. It suppresses the prompt entirely, so a wrong or half-copied value fails without ever asking you for a better one, and it writes your credential into two places you did not think about: the shell's history, and `.git/config`, where `git remote -v` prints it back to anyone looking over your shoulder for the rest of the repository's life.
 
 !!! warning "`HTTP Basic: Access denied` says four things at once"
     ```
