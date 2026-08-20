@@ -1670,7 +1670,17 @@ Choose your own namespace, `root`, which is the only one on a fresh instance and
 
 **Step 5 — create the runner, and register it.** This is the step with the traps in it. In the UI: **Admin** in the upper-right corner, then **CI/CD > Runners**, then **Create instance runner**. Leave **Tags** empty and make sure **Run untagged jobs** is ticked, because the lab's pipeline tags nothing and a runner that only takes tagged jobs sits idle while the pipeline waits forever. Under **Configuration (optional)**, set **Runner description** to `tf-lab`. Then **Create runner**. GitLab shows you a `glrt-` authentication token, once.
 
-That screen ends by handing you a registration command, and the command it offers assumes a runner installed on a host. Ours lives in a container, and it needs arguments that screen does not know about.
+GitLab then shows a **Register "tf-lab" runner** page with a platform picker and a ready-made command, and that command is worth reading before you ignore it:
+
+```
+gitlab-runner register
+  --url http://127.0.0.1:8929
+  --token glrt-...
+```
+
+It assumes a runner installed on the machine you are typing on, and it is wrong here twice over. **`--url http://127.0.0.1:8929` is the address your browser uses.** Inside the runner container, `127.0.0.1` is the runner container, and GitLab is not there. And the command deliberately stops short: its next step tells you to choose an executor when the command line prompts you, which is no use to a container you are talking to through `docker exec`.
+
+Take the token and leave the rest. The page also warns that the token is on screen briefly and then lives only in the runner's `config.toml`, which is true and is the reason a mistyped registration is easier to redo from the Runners list than to repair.
 
 A runner is two halves. The half you just made is a record in GitLab. The other half is the process in the `tf-lab-gitlab-runner` container, which holds no configuration at all until you hand it that token:
 
