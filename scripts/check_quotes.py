@@ -26,6 +26,10 @@ ALLOWED_NON_WEB = {
     "terraform acquires a state lock to protect": (
         "Terraform v1.15.8 source, internal/command/clistate/state.go:26 (CLI output)"
     ),
+    # NB: norm() strips apostrophes, so fragments here must avoid them
+    "need to be cryptographically secure": (
+        "Terraform v1.15.8 source, internal/states/statemgr/locker.go:146 (code comment)"
+    ),
 }
 
 MIN_LEN = 40

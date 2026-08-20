@@ -611,9 +611,11 @@ Two words in there are worth reading slowly. `-migrate-state` says **attempt**, 
 
 ## 7. Locking
 
-Locking is **automatic, silent, and fatal**.
+Where a backend provides locking, it is **automatic, silent, and fatal**. The docs put the conditional first, and it is load-bearing: *"If supported by your backend, Terraform will lock your state for all operations that could write state."* Section 8 shows what the other case looks like, because an `s3` backend without `use_lockfile` supports locking and does not use it.
 
-- **Automatic** — every operation that could write state takes a lock. That includes `plan`, which carries its own `-lock` and `-lock-timeout` flags.
+With that granted:
+
+- **Automatic** — every operation that could write state takes a lock, with no flag to opt in. That includes `plan`, which carries its own `-lock` and `-lock-timeout` flags.
 - **Silent** — you see no message when it works. The docs say so directly: "You do not see any message that it happens." No output is not evidence that nothing locked.
 - **Fatal** — "If state locking fails, Terraform does not continue." It is not a warning you can ignore.
 
@@ -713,7 +715,16 @@ The lock ID is the guard rail. It acts as a **nonce** identifying one specific a
 
 It is worth being precise about what "one acquisition" means, because the ID is easy to mistake for a run identifier. It is not one. Terraform mints a fresh ID every time it takes the lock, so a `plan` and the `apply` that follows it hold two different IDs. Retrying inside a single command is the opposite case: the backoff loop under `-lock-timeout` reuses the same lock info, so every attempt carries the ID the command started with. Nothing in the ID says which run you are, and there is no place to look one up. Who the run belongs to is carried by the other `Lock Info` fields, `Who`, `Operation`, `Version` and `Created`.
 
-What that ID *is* differs by backend, which is worth seeing once. On `s3` it is a UUID that Terraform generates. On `gcs` it is the lock object's **generation number**, the same value that appears in the `ifGenerationMatch` comparison in the error. The nonce is not a Terraform-level abstraction bolted on top; on GCS it is the store's own optimistic-concurrency token, surfaced directly. This is why the `Lock Info` block above matters: it hands you the ID at exactly the moment you might need it, along with the holder, the operation and the start time, which is the evidence you need before deciding a lock is stale rather than live.
+**The backend then gets a say, and the two here disagree.** The minted value is a UUID-shaped random string, with the source's own note on how much it is worth: *"this doesn't need to be cryptographically secure, just unique."* What happens next depends on the backend.
+
+| | What lands in `Lock Info: ID` |
+| --- | --- |
+| `s3` | the minted value. The client generates one only `if info.ID == ""`, so the ID from `clistate` survives |
+| `gcs` | **overwritten** after the write with the lock object's **generation number**, the same value that appears in the `ifGenerationMatch` comparison in the error |
+
+So the transcripts above differ for a reason: `76be00ae-65dc-…` is Terraform's own bookkeeping, while `1787149532960` is Google Cloud Storage's optimistic-concurrency token, surfaced directly. On GCS the nonce is not a Terraform-level abstraction at all; it is the store's, and Terraform is repeating it back to you.
+
+Either way the `Lock Info` block is the thing that matters operationally: it hands you the ID at exactly the moment you might need it, along with the holder, the operation and the start time, which is the evidence you need before deciding a lock is stale rather than live.
 
 !!! warning "`-force` suppresses the prompt, not the lock ID"
     The command's single option is `-force`, described as "Don't ask for input for unlock confirmation". `LOCK_ID` remains a required positional argument with or without it. There is no blind-unlock form.
