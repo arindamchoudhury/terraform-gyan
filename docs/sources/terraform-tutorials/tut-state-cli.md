@@ -170,6 +170,8 @@ terraform state list   # aws_instance.example is gone from state
 
     In this exercise the hazard is live rather than theoretical: the whole point is that `refresh` **silently drops a resource from state**, and the transcript shows it doing so with no prompt. Run `terraform plan -refresh-only` first and `terraform apply -refresh-only` to accept — same outcome, with the review step the deprecated command cannot give you.
 
+    Six pages later, [[tut-refresh]] exists specifically to argue the opposite of this exercise — it stages a provider misconfiguration, shows the refresh-only plan reporting a live instance as `has been deleted`, and then instructs you **not** to apply. Read that one before this one.
+
 The follow-through is sound, though, and states the boundary clearly: *"The `terraform refresh` command does not update your configuration file."* State now says the instance is gone; the configuration still declares it; so `terraform plan` proposes to **create** it. Deleting the `resource` block and its two outputs brings all three back into agreement — `Apply complete! Resources: 0 added, 0 changed, 0 destroyed`, with only the outputs changing.
 
 > **Note:** Terraform automatically performs a refresh during the `plan`, `apply`, and `destroy` operations. All of these commands will reconcile state by default, and have the potential to modify your state file.
@@ -206,7 +208,7 @@ After `terraform destroy`, `terraform show` prints *"The state file is empty. No
 
 ## Neighbours in this collection
 
-The sidebar shows three State-collection pages still uncaptured: **Target resources** (`resource-targeting`, position 4), **Refresh state** (`state/refresh`, 9) — which presumably does treat `-refresh-only` properly — and **Console** (`state/console`, 10). *Move resources* (11) is the same tutorial as [[tut-move-config]], which the site also files under Modules.
+One State-collection page remains uncaptured: **Console** (`state/console`, 10). *Move resources* (11) is the same tutorial as [[tut-move-config]], which the site also files under Modules. **Refresh state** (9) is [[tut-refresh]] — and it does treat `-refresh-only` properly, which is what makes this page the collection's outlier rather than its norm.
 
 ---
 Related: [[tf-state]] — the state model, `serial`/`lineage`, and where `state rm` sits among the subcommands. · [[tf-state-purpose]] — retained dependencies, seen here as the `dependencies` array. · [[tf-state-remove]] · [[tf-block-removed]] — the `removed` block's rules and the measured `1 to destroy` when the `lifecycle` block is omitted; this page supplies the transcript for the other case. · [[tf-state-refactor]] — the legacy two-file `state mv` and why `removed` + `import` is preferred for new migrations. · [[tut-move-config]] — `moved`, which solves the same address problem within a single state file. · [[tut-state-import]] — the 1.5+ import block this page's Tip points at. · [[tut-resource-drift]] — the sibling that treats `terraform refresh` correctly. · [[tf-cmd-refresh]] — the deprecation, the alias, and the failure mode. · [[tf-cmd-show]] · [[tf-cmd-state-list]] — the two read commands used here.

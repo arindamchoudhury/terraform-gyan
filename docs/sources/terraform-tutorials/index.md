@@ -28,7 +28,7 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 
 ## State
 
-Nav order mirrors the collection sidebar, resolved at **rung 3** (rendered nav DOM) with `fetch_nav.py` on 2026-08-20. Full sidebar, in order: *1 Import · 2 Migrate state · 3 Manage resource state · 4 Target resources · 5 Troubleshooting · 6 Resource drift · 7 Lifecycle rules · 8 Version state · 9 Refresh state · 10 Console · 11 Move resources*. Two are still uncaptured — **Refresh state** (`state/refresh`) and **Console** (`state/console`). *Move resources* is the same page as [tut-move-config](tut-move-config.md), which the site also files under Modules and which is listed there.
+Nav order mirrors the collection sidebar, resolved at **rung 3** (rendered nav DOM) with `fetch_nav.py` on 2026-08-20. Full sidebar, in order: *1 Import · 2 Migrate state · 3 Manage resource state · 4 Target resources · 5 Troubleshooting · 6 Resource drift · 7 Lifecycle rules · 8 Version state · 9 Refresh state · 10 Console · 11 Move resources*. One is still uncaptured — **Console** (`state/console`). *Move resources* is the same page as [tut-move-config](tut-move-config.md), which the site also files under Modules and which is listed there.
 
 | Page | Added | File |
 |---|---|---|
@@ -40,6 +40,7 @@ Nav order mirrors the collection sidebar, resolved at **rung 3** (rendered nav D
 | Manage resource drift | 2026-08-20 | [tut-resource-drift](tut-resource-drift.md) |
 | Lifecycle rules (Manage resource lifecycle) | 2026-08-03 | [tut-resource-lifecycle](tut-resource-lifecycle.md) |
 | Version state (Version remote state with the HCP Terraform API) | 2026-08-18 | [tut-cloud-state-api](tut-cloud-state-api.md) |
+| Refresh state (Use refresh-only mode to sync Terraform state) | 2026-08-20 | [tut-refresh](tut-refresh.md) |
 
 ## Modules
 

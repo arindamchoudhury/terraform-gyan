@@ -50,6 +50,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - About to set up locking? → [[tf-state-locking]] and [[tf-backend-configure]], not either book.
 - About to move a local state file to HCP Terraform? → [[tut-cloud-migrate]], which is the whole migration in nine minutes and needs no cloud provider account.
 - Deciding where state lives for a team on GitLab, GitHub or Bitbucket? → [[gitlab-tf-state]] for the only forge that stores it, [[tf-backend-http]] for the protocol that makes that possible, and [[gha-oidc]] / [[bitbucket-pipelines-oidc]] for the other two, where the answer is a cloud bucket plus an OIDC trust policy. Self-hosting HCP's shape instead is [[terrakube-migrating]].
+- Suspect a provider or credential misconfiguration rather than real drift? → [[tut-refresh]], which stages exactly that: a changed region makes a running instance refresh as `has been deleted`, and the tutorial tells you **not** to apply.
 - Want the whole state toolkit in one sitting? → [[tut-state-cli]] runs it end to end — read the raw JSON, `-replace`, `state mv` across two state files, `removed`, `import` back, reconcile an out-of-band delete, destroy.
 - Someone changed something in the console? → [[tut-resource-drift]] for the three answers (revert, adopt, ignore) and the `plan -refresh-only` / `apply -refresh-only` pair that lets you choose, then [[tf-cmd-refresh]] for why the old `terraform refresh` is not one of them.
 - Adopting infrastructure that already exists? → [[tut-state-import]] for the config-driven `import` block end to end — `-generate-config-out`, why the generated draft has to be pruned, and the `env = null` default that turns an adoption into a replacement.
@@ -66,6 +67,7 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 - [[gitlab-tf-state]] — GitLab as an `http` backend: project roles instead of IAM, and every Developer can read the file
 - [[gha-oidc]] · [[bitbucket-pipelines-oidc]] — the forges that store nothing, and the identity they issue instead
 - [[terrakube-migrating]] — the self-hosted TFE-compatible platform: same `cloud` block, one extra `hostname`, state into your own object store
+- [[tut-refresh]] — HCTut, the case against `terraform refresh`, demonstrated rather than asserted; also the only source saying the subcommand is unsupported on HCP Terraform while `-refresh-only` is not
 - [[tut-state-cli]] — HCTut, the full toolkit as one narrative; source of the `.` forget symbol, the cross-file `state mv` form, and the collection's one page that still teaches `terraform refresh` straight
 - [[tut-resource-drift]] — HCTut, drift manufactured on purpose with the AWS CLI, then reconciled; the refresh-only pair, and drift in outputs as well as attributes
 - [[tut-state-import]] — HCTut, the way *in*: config-driven import, the pruning step, and the limits (import reports current state, never health or intent)

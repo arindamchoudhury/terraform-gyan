@@ -209,6 +209,7 @@ nav = [
                 { "6. Manage resource drift" = "sources/terraform-tutorials/tut-resource-drift.md" },
                 { "7. Lifecycle rules" = "sources/terraform-tutorials/tut-resource-lifecycle.md" },
                 { "8. Version state" = "sources/terraform-tutorials/tut-cloud-state-api.md" },
+                { "9. Refresh state" = "sources/terraform-tutorials/tut-refresh.md" },
             ]},
             { "Modules" = [
                 { "1. Terraform modules" = "sources/terraform-tutorials/tut-module.md" },
