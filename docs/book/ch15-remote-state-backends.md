@@ -1606,6 +1606,8 @@ The second compose file joins the emulator's network, which is how a job contain
 cd labs/chapter15/gitlab && ./setup.sh
 ```
 
+`setup.sh` is bash, and it is the one script in these labs with no PowerShell twin. On Windows run it from Git Bash or WSL. It needs `curl`, `docker` and `python` on the path, which a Git Bash shell already has. Everything it does is also doable by hand in the GitLab UI, and the lab README maps each step to the click that replaces it.
+
 `setup.sh` mints an admin API token, creates the project and an instance runner, registers the runner with the docker executor, and commits `ci/` into the project, which triggers the first pipeline. Re-running it is safe. Play the manual `apply` job in the UI, then read the bucket:
 
 ```shell

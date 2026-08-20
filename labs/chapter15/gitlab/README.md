@@ -73,6 +73,13 @@ It creates an API token, a project and an instance runner; registers the runner
 with the docker executor; and commits `ci/` into the project, which triggers the
 first pipeline. Re-running it is safe.
 
+**On Windows, run it from Git Bash or WSL, not PowerShell.** There is no
+`setup.ps1`: unlike lab 3's one-line bucket creation, this script talks to the
+GitLab API, `docker exec`s into two containers and builds a JSON commit payload,
+and a second implementation is a second thing to keep correct. It needs `curl`,
+`docker` and `python` on the path, all of which a Git Bash shell has. The section
+below maps every step to the UI equivalent if you would rather click it.
+
 ## What `setup.sh` does, and why each part is needed
 
 Doing it by hand in the UI works too — this is the map.
