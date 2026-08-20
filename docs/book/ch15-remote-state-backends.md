@@ -514,7 +514,28 @@ That error is the interface for every subsequent move, and the two flags mean ge
 | Flag | What it does | When you want it |
 |---|---|---|
 | `-migrate-state` | Copies the current state into the new backend | Moving a live project to a new home |
-| `-reconfigure` | Discards the association and starts fresh against the new backend | Pointing at a backend that already holds the right state, or deliberately starting empty |
+| `-reconfigure` | Discards the association and uses the new backend as it finds it | Pointing at a backend that already holds the right state, or deliberately starting empty |
+
+!!! danger "🧪 Verified — `-reconfigure` at an empty location silently unmanages everything"
+    The error presents the two flags as equal alternatives. They are not, and picking the wrong one is not a typo you notice.
+
+    Measured on Terraform 1.15.8. A project with state at `recfg/one.tfstate` tracking one resource, re-pointed at an unused `recfg/two.tfstate`:
+
+    ```
+    $ terraform init -backend-config b.s3.tfbackend -reconfigure
+    Successfully configured the backend "s3"!
+
+    $ terraform state list
+    No state file was found!
+
+    $ terraform plan
+      # terraform_data.p will be created
+    Plan: 1 to add, 0 to change, 0 to destroy.
+    ```
+
+    No prompt, no warning, and a clean exit. The old object is still in the bucket, untouched and now orphaned, and the running infrastructure is unmanaged. The next apply rebuilds what already exists, which is section 1's stale-state failure caused deliberately by a flag.
+
+    The legitimate case works exactly as advertised. Re-pointing at a location that *does* hold the right state adopts it, and `terraform state list` shows the resource again with no copying involved. That is the whole distinction: **`-migrate-state` carries your state to the new place; `-reconfigure` trusts whatever is already there.**
 
 Answer the migration prompt and the copy happens:
 
@@ -535,9 +556,18 @@ use this backend unless the backend configuration changes.
 
 ```
 Terraform has detected you're unconfiguring your previously set "local" backend.
-...
+Do you want to copy existing state to the new backend?
+  Pre-existing state was found while migrating the previous "local" backend to the
+  newly configured "local" backend. No existing state was found in the newly
+  configured "local" backend. Do you want to copy this state to the new "local"
+  backend? Enter "yes" to copy and "no" to start with an empty state.
+
+  Enter a value: yes
+
 Successfully unset the backend "local". Terraform will now operate locally.
 ```
+
+Both sides of that prompt say `"local"`, which reads oddly until you notice what it means: the backend you configured explicitly and the implicit default are both the local backend, and Terraform is moving state between two of its configurations rather than between two products.
 
 There is no separate command for removing a backend. The `init` prompt is the whole of it.
 
@@ -556,13 +586,26 @@ There is no separate command for removing a backend. The `init` prompt is the wh
 
     Delete it deliberately after you have confirmed the remote copy is good. The "state is never persisted to disk" guarantee in section 2 describes future runs, not the migration that got you there.
 
-!!! warning "Only the current version migrates"
-    If the old backend kept version history, migration copies the **latest** state and nothing else. Older versions have to be moved by hand if you want them. Take a backup before starting, which is advice HashiCorp gives in its own words: back up `terraform.tfstate` to another location before migrating to a new backend.
+!!! warning "Only the current state moves, not its history"
+    Migration reads the current state and writes it to the new backend. That is the whole operation, so version history does not travel: if the old bucket held fifty versions of the object, the new one begins with one. Older versions have to be copied by hand, at the storage layer, if you want them.
+
+    Take a backup first, which HashiCorp asks for in its own words:
+
+    > Important: Before migrating to a new backend, we strongly recommend manually backing up your state by copying your `terraform.tfstate` file to another location.
 
 !!! note "Match the CLI version that wrote the state"
     HashiCorp's HCP migration tutorial states the constraint the S3 material does not: *"always use the same version of the Terraform CLI you used to create the resources. Using a newer version of Terraform may update the state file and cause state file corruption."* A newer CLI can rewrite the snapshot as it reads it, and the rewrite is what lands in the new backend.
 
-`init` is where all of this lives. It is not only first-run setup. Over a project's life its backend flags are `-backend-config` for partial configuration, `-migrate-state` to move, `-reconfigure` to re-point, and `-upgrade` to re-resolve providers within their constraints.
+`init` is where all of this lives. It is not only first-run setup. Over a project's life these are the flags that matter, in the CLI's own descriptions:
+
+| Flag | `terraform init -help` |
+| --- | --- |
+| `-backend-config` | supplies partial configuration, as a file or a `key=value` pair |
+| `-migrate-state` | "Reconfigure a backend, and attempt to migrate any existing state." |
+| `-reconfigure` | "Reconfigure a backend, ignoring any saved configuration." |
+| `-upgrade` | "Install the latest module and provider versions allowed within configured constraints, overriding the default behavior of selecting exactly the version recorded in the dependency lockfile." |
+
+Two words in there are worth reading slowly. `-migrate-state` says **attempt**, which is the prompt and the guards rather than a promise. And `-upgrade` covers **modules as well as providers**, so it is not only a provider-version tool.
 
 ---
 
