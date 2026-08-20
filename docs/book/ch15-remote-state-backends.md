@@ -1074,6 +1074,16 @@ resource "aws_instance" "app" {
 
 The `config` object takes the same arguments as the equivalent `backend` block, with one syntactic difference: nested blocks become attributes with an `=`, so `workspaces = { name = "..." }` rather than `workspaces { ... }`.
 
+!!! tip "🧪 Verified — this read authenticates on its own, which is a lever worth using"
+    Because `config` accepts the backend's whole argument surface, it accepts its **credentials** too, and the data source is not borrowing anything from the configuration around it. Measured on Terraform 1.15.8, both halves:
+
+    - A consumer with **no `backend` block at all** and **no AWS environment variables**, supplying `access_key` and `secret_key` inside `config`, read the producer's outputs successfully.
+    - The same consumer with those two arguments removed and `AWS_*` set in the environment also succeeded, resolving credentials through the ordinary chain.
+
+    So the read authenticates exactly as the named backend would, and nothing ties it to how the consuming configuration authenticates its own state. That is the mitigation available for the warning below: give the data source an identity of its own, scoped to reading that one object, rather than letting it run as whatever identity performs your applies.
+
+    It does not shrink what that identity can see. Whichever principal you choose still fetches the entire state object, which is the point the next callout makes.
+
 **Only root-level outputs are readable.** Resource attributes are not exposed, and neither are outputs of nested modules unless the producing configuration re-exports them from its root:
 
 ```hcl
@@ -1128,7 +1138,7 @@ Sharing is opt-in at the root, which is a feature. It means a producing configur
 
     The distinction is between what the *language* exposes and what the *reader's credentials* permit. Terraform hands your configuration only `outputs`. But the consumer had to be able to fetch the whole state object to get them, and nothing stops a person, or a compromised CI runner, from fetching it directly and reading every plaintext secret in it.
 
-    Note also that the read uses the **consuming** configuration's backend credentials. There is no separate authentication here to scope down.
+    Note what the warning is and is not about. It is about *whose credentials can fetch the object*, not about which parts of it Terraform will show you.
 
 !!! danger "🧪 Verified — `sensitive` does not survive the round trip"
     The producer marked one output sensitive and Terraform redacted it there, printing `secret_val = <sensitive>`. The flag is genuinely recorded in the state object:
@@ -1158,7 +1168,7 @@ Two alternatives are recommended, in this order:
 
 **On HCP Terraform or Enterprise, use `tfe_outputs`.** It fetches outputs through an API and is *"more secure because it does not require full access to workspace state"*.
 
-**Everywhere else, publish shared values explicitly** to a store with its own access controls. Any resource-and-data-source pair works: `aws_ssm_parameter`, `consul_key_prefix`, `kubernetes_config_map`, a DNS record, or an S3 object with `jsonencode`/`jsondecode`. This costs one more resource and buys two things. Access to the shared value is no longer access to the state, and **non-Terraform systems can read it too**, which `terraform_remote_state` can never offer.
+**Everywhere else, publish shared values explicitly** to a store with its own access controls. Any resource-and-data-source pair works: `aws_ssm_parameter`, `consul_key_prefix`, `kubernetes_config_map`, a DNS record, or an S3 object with `jsonencode`/`jsondecode`. This costs one more resource and buys two things. Access to the shared value is no longer access to the state, and the value becomes readable by things that are not Terraform. The docs make that the headline reason: *"the data can potentially also be read by systems other than Terraform, such as configuration management or scheduler systems within your compute instances"*, and they suggest choosing a store your other infrastructure already uses. Remote state can only be read that way by parsing a format Chapter 9 established is a private API, which is not a supported integration point.
 
 Wrap the choice in a **data-only module** so the consuming configurations do not know which mechanism is in use, and you can change it later without touching them.
 
