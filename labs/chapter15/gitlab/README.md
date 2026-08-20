@@ -96,7 +96,7 @@ wizard, which the UI route cannot avoid. A first sign-in lands on **Create your
 first project** and then **Set up your profile**, both of which take a **Skip**.
 The first one wants a group name and would put the repository at
 `<group>/tf-state-lab` rather than under `root/`; skipping it creates nothing,
-and the instance reports no groups afterwards.
+and `gitlab-rails runner "puts Group.count"` still answers `0` afterwards.
 
 **An instance runner**, created with `POST /api/v4/user/runners` and registered
 with three arguments that matter:

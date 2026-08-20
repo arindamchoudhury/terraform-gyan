@@ -1632,15 +1632,17 @@ Then browse to `http://127.0.0.1:8929` and sign in as `root`. Not `localhost`: o
 
 **Step 3 — get past the onboarding, then create the project.** A fresh instance does not open on the dashboard. The first sign-in is a two-screen wizard, **Create your first project** and then **Set up your profile**, and the way through it is **Skip** on both.
 
-Skip the first one in particular. It asks for a **Group name** alongside the project name, and it means it: the preview under the fields reads `http://127.0.0.1:8929/ my-group / my-project`. A project made there lands in a new group rather than in root's own namespace, and every path below would have to change to match. Skipping costs nothing, and creates nothing. Measured afterwards, the instance still reported no groups at all:
+Skip the first one in particular. It asks for a **Group name** alongside the project name, and it means it: the preview under the fields reads `http://127.0.0.1:8929/ my-group / my-project`. A project made there lands in a new group rather than in root's own namespace, and every path below would have to change to match. Skipping costs nothing, and creates nothing. Measured afterwards, the instance still held no groups at all. This asks the application directly, because at this point in the lab you have no API token to ask with:
 
 ```shell
-curl -s -H "PRIVATE-TOKEN: <token>" http://127.0.0.1:8929/api/v4/groups
+docker exec tf-lab-gitlab gitlab-rails runner "puts Group.count"
 ```
 
 ```
-[]
+0
 ```
+
+The sidebar's **Groups** entry says the same thing more slowly.
 
 You then land on **Your work > Home**, with two administration banners waiting. One of them is worth reading rather than dismissing: this image lets anyone register an account. That is harmless while the port is bound to loopback, and it stops being harmless the moment it is not.
 
