@@ -208,7 +208,7 @@ After `terraform destroy`, `terraform show` prints *"The state file is empty. No
 
 ## Neighbours in this collection
 
-One State-collection page remains uncaptured: **Console** (`state/console`, 10). *Move resources* (11) is the same tutorial as [[tut-move-config]], which the site also files under Modules. **Refresh state** (9) is [[tut-refresh]] — and it does treat `-refresh-only` properly, which is what makes this page the collection's outlier rather than its norm.
+The whole collection is now captured. **Refresh state** (9) is [[tut-refresh]] — and it does treat `-refresh-only` properly, which is what makes this page the collection's outlier rather than its norm. **Console** (10) is [[tut-console]]; *Move resources* (11) is [[tut-move-config]], which the site also files under Modules.
 
 ---
 Related: [[tf-state]] — the state model, `serial`/`lineage`, and where `state rm` sits among the subcommands. · [[tf-state-purpose]] — retained dependencies, seen here as the `dependencies` array. · [[tf-state-remove]] · [[tf-block-removed]] — the `removed` block's rules and the measured `1 to destroy` when the `lifecycle` block is omitted; this page supplies the transcript for the other case. · [[tf-state-refactor]] — the legacy two-file `state mv` and why `removed` + `import` is preferred for new migrations. · [[tut-move-config]] — `moved`, which solves the same address problem within a single state file. · [[tut-state-import]] — the 1.5+ import block this page's Tip points at. · [[tut-resource-drift]] — the sibling that treats `terraform refresh` correctly. · [[tf-cmd-refresh]] — the deprecation, the alias, and the failure mode. · [[tf-cmd-show]] · [[tf-cmd-state-list]] — the two read commands used here.
