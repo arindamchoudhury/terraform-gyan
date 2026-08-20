@@ -140,6 +140,7 @@ nav = [
                 { "Import resources" = [
                     { "Overview" = "sources/terraform-docs/tf-import.md" },
                     { "Import existing resources in bulk" = "sources/terraform-docs/tf-import-bulk.md" },
+                    { "Import a single resource" = "sources/terraform-docs/tf-import-single.md" },
                 ]},
                 { "State" = [
                     { "Overview" = "sources/terraform-docs/tf-state.md" },
