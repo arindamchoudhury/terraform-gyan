@@ -125,6 +125,7 @@ Log of all captured sources, organised by course.
 | [Import Terraform configuration (State)](terraform-tutorials/tut-state-import.md) | documentation | 2026-08-20 | import-block, config-driven-import, generate-config-out, state, docker-provider, terraform-1.5, adoption | [url](https://developer.hashicorp.com/terraform/tutorials/state/state-import) |
 | [Manage resource drift (State)](terraform-tutorials/tut-resource-drift.md) | documentation | 2026-08-20 | drift, refresh-only, terraform-refresh, state, import, security-groups, out-of-band-changes, ec2 | [url](https://developer.hashicorp.com/terraform/tutorials/state/resource-drift) |
 | [Troubleshoot Terraform (State)](terraform-tutorials/tut-troubleshooting-workflow.md) | documentation | 2026-08-20 | troubleshooting, fmt, validate, cycle-error, for_each, splat, TF_LOG_CORE, TF_LOG_PROVIDER, TF_LOG_PATH, bug-reports, debugging | [url](https://developer.hashicorp.com/terraform/tutorials/state/troubleshooting-workflow) |
+| [Manage resources in Terraform state (State)](terraform-tutorials/tut-state-cli.md) | documentation | 2026-08-20 | state, state-mv, removed-block, replace-flag, taint, terraform-refresh, import, state-anatomy, state-list, show | [url](https://developer.hashicorp.com/terraform/tutorials/state/state-cli) |
 
 ## 4. Terraform Registry
 
