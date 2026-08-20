@@ -1821,24 +1821,14 @@ Username for 'http://127.0.0.1:8929': root
 Password for 'http://root@127.0.0.1:8929': <the token from step 4>
 ```
 
-If nothing is asked at all, a credential helper answered for you. Git ships one configured on Windows and macOS, and it stores what worked the first time, because Git itself calls the helper to save a credential after any successful authentication.
+!!! note "If it does not ask, something answered for you"
+    Git's credential helper, configured by default on Windows and macOS, stores whatever authenticated successfully the first time and supplies it silently afterwards. Throw that away when you want the prompt back:
 
-`git credential` is how you talk to that helper directly. It reads `key=value` lines terminated by a blank line, which is what the doubled newline in these commands is for. `fill` asks what is stored and prints it, and `reject` deletes it so the next clone or push asks you again:
+    ```shell
+    printf 'protocol=http\nhost=127.0.0.1:8929\n\n' | git credential reject
+    ```
 
-```shell
-printf 'protocol=http
-host=127.0.0.1:8929
-
-' | git credential fill
-printf 'protocol=http
-host=127.0.0.1:8929
-
-' | git credential reject
-```
-
-`fill` prints the password in cleartext, so pipe it through something that drops that line if anyone can see your screen.
-
-This matters beyond the lab. A pipeline that authenticates from a developer's machine and fails in CI is very often this: a helper on the workstation quietly supplying a credential that no job has, and nobody noticing which identity did the work.
+    Worth knowing which identity did the work. A helper answering on a workstation is a common reason something authenticates locally and fails in a job, where nothing is holding anything.
 
 The username is anything non-blank, and the password is the token. A token can be written into the URL as `http://root:<token>@127.0.0.1:8929/...` instead, and that form is worth knowing about mainly so you can avoid it. It suppresses the prompt entirely, so a wrong or half-copied value fails without ever asking you for a better one, and it writes your credential into two places you did not think about: the shell's history, and `.git/config`, where `git remote -v` prints it back to anyone looking over your shoulder for the rest of the repository's life.
 
