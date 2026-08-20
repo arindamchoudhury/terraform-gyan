@@ -768,7 +768,7 @@ terraform {
 | Versioning | recommended, not automatic | recommended, not automatic |
 | Encryption | `encrypt`, `kms_key_id`, `sse_customer_key` | `kms_encryption_key` (migratable) or `encryption_key` (**not** migratable) |
 | CI credentials | `assume_role_with_web_identity` | ADC, attached service account, or `impersonate_service_account` |
-| IAM granularity | four statements, `s3:DeleteObject` on the `.tflock` but not on state | one line: **Storage Object Admin** on the bucket |
+| IAM granularity | two documented policies, with and without workspaces; `s3:DeleteObject` on the `.tflock`, and on state **only** for non-default workspaces | one line: **Storage Object Admin** on the bucket |
 
 ### Where the object lands
 
@@ -821,26 +821,48 @@ On `gcs` there is no `key` at all. State is `<prefix>/<workspace>.tfstate`, so t
 
     By date rather than by version number, since both projects number releases `1.x` on different schedules: Terraform **1.10** (2024-11-27) introduced native locking as opt-in and took both locks when DynamoDB was also configured; Terraform **1.11** (2025-02-27) made it GA and deprecated the DynamoDB arguments; OpenTofu **1.10** (June 2025) shipped `use_lockfile` about seven months after Terraform's first release of it.
 
-!!! info "OpenTofu — `dynamodb_table` carries no deprecation"
-    Read from both backend schemas at their release tags. Terraform v1.15.8 marks the argument `Deprecated: true` and appends a runtime diagnostic pointing at `use_lockfile`. OpenTofu v1.12.5 declares it with a type, `Optional`, and a description, and nothing else.
+!!! info "OpenTofu — `dynamodb_table` carries no deprecation, but `dynamodb_endpoint` does"
+    Parsed from both backend schemas at their release tags, counting only attributes whose own block sets `Deprecated: true`:
 
-    The absence is meaningful rather than an oversight in how OpenTofu writes schemas: the same file marks **23** other attributes deprecated, so the mechanism is in active use and `dynamodb_table` is deliberately not among them.
+    | | attributes | deprecated |
+    | --- | --- | --- |
+    | Terraform v1.15.8 | 42 | 7 |
+    | OpenTofu v1.12.5 | 55 | 13 |
 
-    "Migrate off DynamoDB" is therefore Terraform advice. On OpenTofu the table remains a fully supported option, even though `use_lockfile` is the better default there too.
+    The absence on `dynamodb_table` is deliberate rather than a difference in how OpenTofu writes schemas, since the mechanism is in heavier use there than on Terraform. Splitting the two sets shows each engine retiring different things:
+
+    - **Terraform only** — `dynamodb_table`, `shared_credentials_file`.
+    - **OpenTofu only** — the flattened assume-role arguments: `role_arn`, `session_name`, `external_id`, `assume_role_duration_seconds`, `assume_role_policy`, `assume_role_policy_arns`, `assume_role_tags`, `assume_role_transitive_tag_keys`.
+    - **Both** — `dynamodb_endpoint`, `endpoint`, `force_path_style`, `iam_endpoint`, `sts_endpoint`.
+
+    So the DynamoDB story is not "Terraform deprecates it, OpenTofu does not". Both engines deprecate **`dynamodb_endpoint`**; only Terraform deprecates **`dynamodb_table`**. "Migrate off DynamoDB" is Terraform advice, and on OpenTofu the table remains fully supported, even though `use_lockfile` is the better default there too.
 
 ### IAM, and the statement people forget
 
-The S3 permission set is more specific than "read and write the bucket":
+The S3 permission set is more specific than "read and write the bucket", and the page gives **two** of them. The first applies *"When not using workspaces"*, or when only the default workspace is in play:
 
-- `s3:ListBucket` on the **bucket**, at minimum able to list the path where state is stored.
+- `s3:ListBucket` on the **bucket** — *"At a minimum, this must be able to list the path where the state is stored."*
 - `s3:GetObject` and `s3:PutObject` on the **state object**.
-- `s3:GetObject`, `s3:PutObject` **and `s3:DeleteObject`** on the **`.tflock` object**.
+- With `use_lockfile`, also `s3:GetObject`, `s3:PutObject` **and `s3:DeleteObject`** on the **`.tflock` object**.
 
 And the line that surprises people:
 
 > `s3:DeleteObject` is not required on the state file, as Terraform does not delete it.
 
-Terraform never removes a state object. Cleaning up old state is your process, not the tool's. The corollary is the failure mode: a bucket policy written before `use_lockfile` existed grants nothing on the lock object, so the run fails at lock acquisition rather than at write, which reads like an authentication problem and is not.
+Terraform never removes that object. Cleaning up old state is your process, not the tool's.
+
+!!! warning "Add workspaces and `s3:DeleteObject` on state becomes required after all"
+    The sentence above is scoped, and it is easy to carry away as a general rule. The page's second permission set, *"When using workspaces"*, widens every entry to the workspace paths and adds the one the first set explicitly excluded:
+
+    ```
+    s3:GetObject     .../path/to/my/key, .../<workspace_key_prefix>/*/path/to/my/key
+    s3:PutObject     .../path/to/my/key, .../<workspace_key_prefix>/*/path/to/my/key
+    s3:DeleteObject  .../<workspace_key_prefix>/*/path/to/my/key
+    ```
+
+    Note where the delete permission lands: on the **workspace** objects only, never on the default workspace's bare `key`. Both statements are consistent once you see why. Terraform does not delete a state object, but `terraform workspace delete` deletes a *workspace*, and on this backend a workspace is an object. `ListBucket` widens too, needing to list *"the path where the default workspace is stored as well as the other workspaces."*
+
+The other failure mode is the lock object: a bucket policy written before `use_lockfile` existed grants nothing on it, so the run fails at lock acquisition rather than at write, which reads like an authentication problem and is not.
 
 GCS asks for one line instead: **Storage Object Admin** on the bucket. There is no documented way to narrow below that role, and no separate lock-object permission to forget.
 
@@ -860,7 +882,7 @@ Export the shared name and you have given one identity to the backend, to every 
 
 Both backends can encrypt with a customer-managed KMS key or a customer-supplied key, and the two behave differently when you change them.
 
-On `gcs`, a **KMS** key migrates automatically, but the change only takes effect on the **first write after** migration, so the old key has to outlive the migration. A **customer-supplied** key cannot be migrated at all: Google does not store it, so at migration time the backend has lost the old key's details and cannot use it. The object has to be rewritten out-of-band first to strip the old key.
+On `gcs`, a **KMS** key migrates automatically, but the change only takes effect on the **first write after** migration, so the old key has to outlive the migration. The page is explicit about the consequence: *"you should not delete old KMS keys until any state file(s) encrypted with that key update."* Using one at all needs a grant of its own, the *"Cloud KMS CryptoKey Encrypter/Decrypter predefined role"* given to the project's GCS service agent, which is the counterpart to the `kms:Encrypt` / `kms:Decrypt` / `kms:GenerateDataKey` that `kms_key_id` requires on S3. A **customer-supplied** key cannot be migrated at all: Google does not store it, so at migration time the backend has lost the old key's details and cannot use it. The object has to be rewritten out-of-band first to strip the old key.
 
 On `s3`, the trap is where the key lives rather than how it migrates:
 
@@ -1588,7 +1610,7 @@ docker compose -f labs/docker-compose.yml --profile gcp down
 
 **Reaching for `state push` as a migration tool.** It is the manual path, and it is guarded by lineage and serial for good reason. Use the `init` migration where the backends support it.
 
-**Copying a backend block from anything written before 2022.** `endpoint`, `force_path_style`, `iam_endpoint`, `sts_endpoint`, `shared_credentials_file` and `dynamodb_table` are all deprecated on the S3 backend, and six names were removed from the catalogue entirely in v1.3.
+**Copying a backend block from anything written before 2022.** Seven S3 backend arguments carry a deprecation on Terraform 1.15.8: `dynamodb_table`, `dynamodb_endpoint`, `endpoint`, `force_path_style`, `iam_endpoint`, `sts_endpoint` and `shared_credentials_file`. Six backend *names* were removed from the catalogue entirely in v1.3.
 
 ---
 
