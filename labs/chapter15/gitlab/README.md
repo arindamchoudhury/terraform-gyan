@@ -73,10 +73,15 @@ It creates an API token, a project and an instance runner; registers the runner
 with the docker executor; and commits `ci/` into the project, which triggers the
 first pipeline. Re-running it is safe.
 
+**The chapter does not use this script.** Section 12's lab 4 builds the same
+thing by hand, through the UI and `git`, because every step is one you would
+take on a real forge and two of them are where the lab's recorded failures
+happen. This exists to rebuild the lab quickly afterwards, and to be read as a
+transcript of what those steps are. The section below maps each one.
+
 It is Python rather than a shell script so that one implementation covers every
 shell this lab runs in, PowerShell included. It imports nothing outside the
-standard library, and it shells out only to `docker`. The section below maps
-every step to the UI equivalent if you would rather click it.
+standard library, and it shells out only to `docker`.
 
 ## What `setup.py` does, and why each part is needed
 

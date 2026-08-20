@@ -1588,7 +1588,7 @@ The object lands at `terraform/state/default.tfstate` from `prefix = "terraform/
 
 ### Lab 4 — pipeline on the forge, state in the bucket
 
-`labs/chapter15/gitlab/` runs a self-hosted GitLab and a runner, with a three-stage pipeline of `validate` → `plan` → manual `apply` writing to **the same bucket as lab 2**. It ends with two objects in one bucket:
+`labs/chapter15/gitlab/` runs a self-hosted GitLab and a runner, and you build the pipeline in it by hand. It writes to **the same bucket as lab 2**, and it ends with two objects in one bucket:
 
 ```
 app/terraform.tfstate     # applied from a workstation
@@ -1597,24 +1597,171 @@ ci/terraform.tfstate      # applied by a runner
 
 The forge held the code and ran the job. The object store held the state. That is the arrangement to copy.
 
-This lab is heavier than the other three, so its full runbook lives beside the configurations in `labs/chapter15/gitlab/README.md`, measured numbers and all. The shape of it:
+Doing it by hand is the point. Every step below is a thing you will have to do on a real forge, and the two failures recorded at the end are both failures of a step you are about to take. There is a `setup.py` in the lab directory that performs the whole sequence through the API, which is worth reading afterwards and worth running if you rebuild the lab, but read it as a transcript rather than as the lab.
+
+**Step 1 — start the emulator, the bucket, and the forge.**
 
 ```shell
-docker compose -f labs/docker-compose.yml up -d              # emulator first
-cd labs/chapter15/lab2/bootstrap && tflocal init && tflocal apply   # the bucket lab 2 creates
-```
-
-```shell
+docker compose -f labs/docker-compose.yml up -d
+cd labs/chapter15/lab2/bootstrap && tflocal init && tflocal apply
 docker compose -f labs/chapter15/gitlab/docker-compose.yml up -d
 ```
 
-The second compose file joins the emulator's network, which is how a job container resolves `floci-lab:4566`. Then wait, and browse to `http://127.0.0.1:8929`. Not `localhost`: on Windows that resolves to `::1` first, and the published IPv6 mapping returns an empty reply.
+The second compose file joins the emulator's network, which is how a job container resolves `floci-lab:4566` later.
+
+**Step 2 — sign in.** The initial root password is inside the container, and it is deleted on the first restart after 24 hours:
 
 ```shell
-cd labs/chapter15/gitlab && python setup.py
+MSYS_NO_PATHCONV=1 docker exec tf-lab-gitlab cat /etc/gitlab/initial_root_password
 ```
 
-`setup.py` mints an admin API token, creates the project and an instance runner, registers the runner with the docker executor, and commits `ci/` into the project, which triggers the first pipeline. Re-running it is safe, and it is Python rather than a shell script so the same file runs under PowerShell and under bash. Play the manual `apply` job in the UI, then read the bucket:
+```powershell
+docker exec tf-lab-gitlab cat /etc/gitlab/initial_root_password
+```
+
+Then browse to `http://127.0.0.1:8929` and sign in as `root`. Not `localhost`: on Windows that resolves to `::1` first, and the published IPv6 mapping returns an empty reply.
+
+!!! note "`MSYS_NO_PATHCONV=1` is not decoration"
+    Git Bash rewrites arguments that look like absolute paths before the program sees them, and a container path looks exactly like one. Without the variable, this exact command reports:
+
+    ```
+    cat: 'C:/Program Files/Git/etc/gitlab/initial_root_password': No such file or directory
+    ```
+
+    The container was never asked. PowerShell and Linux shells need no such guard, which is why the two forms above differ by nothing else.
+
+**Step 3 — create the project.** Select **Create new** (the plus in the upper-right corner), then **New project/repository**, then **Create blank project**. Name it `tf-state-lab`, tick **Initialize repository with a README**, and select **Create project**. The checkbox is not required, but it gives you a default branch and something to clone, which saves setting an upstream by hand on the first push.
+
+**Step 4 — create a token to push with.** Select your avatar, then **Edit profile**, then **Access > Personal access tokens** in the left sidebar. From the **Generate token** dropdown choose **Legacy token**, give it the **api** scope, and select **Generate token**. Copy it now, because the UI shows it once. Over HTTP, Git takes any non-blank username with the token as the password.
+
+**Step 5 — create the runner, and register it.** This is the step with the traps in it. In the UI: **Admin** in the upper-right corner, then **CI/CD > Runners**, then **Create instance runner**. Tick **Run untagged**, describe it `tf-lab`, and select **Create runner**. GitLab shows you a `glrt-` authentication token, once.
+
+A runner is two halves. The half you just made is a record in GitLab. The other half is the process in the `tf-lab-gitlab-runner` container, which holds no configuration at all until you hand it that token:
+
+```shell
+docker exec tf-lab-gitlab-runner gitlab-runner register \
+  --non-interactive \
+  --url http://tf-lab-gitlab:8929 \
+  --token glrt-REPLACE_ME \
+  --executor docker \
+  --docker-image hashicorp/terraform:1.15.8 \
+  --docker-network-mode labs_default \
+  --docker-pull-policy if-not-present \
+  --clone-url http://tf-lab-gitlab:8929 \
+  --description tf-lab
+```
+
+Three of those arguments are the lab, and the rest is noise:
+
+- **`--docker-network-mode labs_default`** puts every job container on the emulator's network. Without it the job resolves nothing, and the `endpoints` line in the next step points at a host that does not exist from where the job runs.
+- **`--clone-url http://tf-lab-gitlab:8929`** overrides the URL GitLab advertises. Your browser needs `127.0.0.1`; a job container cannot reach that, and the job fails at `git fetch` before Terraform is ever invoked.
+- **`--docker-image`** is only the default for jobs that name no image. The pipeline names its own, and the entry exists so a bare job still starts.
+
+**Step 6 — write the three files.** They are in `labs/chapter15/gitlab/ci/`, and they are the whole point of the lab, so read them rather than copying them blind.
+
+The configuration says which backend and nothing else about it:
+
+```hcl
+terraform {
+  required_version = ">= 1.10"
+
+  backend "s3" {}
+}
+
+variable "label" {
+  type    = string
+  default = "managed-from-gitlab-ci"
+}
+
+resource "terraform_data" "probe" {
+  input = var.label
+}
+```
+
+An empty block, filled at `init` time by `config.s3.tfbackend`. That file is lab 2's, with one line changed:
+
+```hcl
+bucket = "tf-state-lab"
+key    = "ci/terraform.tfstate"
+region = "us-east-1"
+
+use_lockfile = true
+
+endpoints = { s3 = "http://floci-lab:4566" }
+```
+
+`key` is the second difference and the more important one in practice. The job writes beside lab 2's object rather than on top of it. The endpoint is a container name because a job container reaches the emulator across the Docker network, not through your loopback interface, and it is the line you delete when this points at real AWS.
+
+Then `.gitlab-ci.yml`, which is the only GitLab-specific file in the lab and is mostly not GitLab-specific at all:
+
+```yaml
+image:
+  name: hashicorp/terraform:1.15.8
+  entrypoint: [""]
+
+stages: [validate, plan, apply]
+
+.terraform:
+  before_script:
+    - terraform init -input=false -backend-config=config.s3.tfbackend
+
+validate:
+  extends: .terraform
+  stage: validate
+  script:
+    - terraform fmt -check
+    - terraform validate
+
+plan:
+  extends: .terraform
+  stage: plan
+  script:
+    - terraform plan -input=false -out=tfplan
+  artifacts:
+    paths: [tfplan]
+    expire_in: 1 hour
+    access: 'developer'
+
+apply:
+  extends: .terraform
+  stage: apply
+  script:
+    - terraform apply -input=false tfplan
+  dependencies: [plan]
+  when: manual
+```
+
+Five decisions in there are worth taking with you to whichever forge you end up on:
+
+- **`entrypoint: [""]`** because the image's entrypoint is `terraform` itself. Leave it and every script line is passed to `terraform` as arguments.
+- **`-input=false` everywhere**, which turns a missing value into a failed job instead of a job that sits at a prompt until it times out.
+- **`fmt -check` rather than `fmt`**, so the job reports the problem instead of silently rewriting your files inside a container that is about to be thrown away.
+- **The plan is an artifact with an expiry**, because a plan file holds the full prior state and every variable value in cleartext. Section 11 measured that. `access: 'developer'` is there because job artifacts are readable by Guests by default.
+- **`apply` runs the saved plan and is `when: manual`**, so what was reviewed is what runs, and nobody's merge applies to production on its own.
+
+**Step 7 — push.** Clone the empty project, copy the three files in, and push:
+
+```shell
+git clone http://root:<token>@127.0.0.1:8929/root/tf-state-lab.git
+cd tf-state-lab
+cp -r /path/to/notes/labs/chapter15/gitlab/ci/. .
+git add -A && git commit -m "Add Terraform pipeline with an S3 backend" && git push
+```
+
+The trailing `/.` is what carries the dotfile.
+
+!!! warning "`cp ci/* .` silently leaves the pipeline behind"
+    Measured while writing this lab. A `*` glob skips dotfiles, so `.gitlab-ci.yml` is the one file of the three that does not arrive. The push succeeds, the project looks right, and no pipeline runs at all, because from GitLab's point of view the project has no pipeline to run. There is no error anywhere to find. Check with `git show --stat HEAD` before wondering what is wrong with your runner.
+
+**Step 8 — watch it, then apply.** The push triggers `validate` and `plan`. Open the project's **Build > Pipelines**, wait for both to go green, then play the manual `apply` job. Measured on a hand-built project, which is the transcript this section was written from:
+
+```
+13 validate success
+14 plan     success
+15 apply    manual -> success once played
+```
+
+Then read the bucket:
 
 ```shell
 aws --endpoint-url http://localhost:4566 s3 ls s3://tf-state-lab --recursive
@@ -1628,11 +1775,11 @@ aws --endpoint-url http://localhost:4566 s3 ls s3://tf-state-lab --recursive
 The two objects hold the same resource, the same `terraform_version` and the same `serial`. The 36-byte spread is the probe's string, which is 12 characters longer in the pipeline's copy and is stored three times over: the resource's `input`, its `output`, and the root output. Nothing about a state file changes because a runner wrote it.
 
 !!! warning "Do not wait for `healthy`, because it reports healthy long before it serves"
-    Measured twice on `gitlab/gitlab-ce:19.2.4-ce.0`: healthy after about a minute, while `gitlab-ctl status` still listed only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd`. Puma and nginx arrived six minutes later, and the gap in between answers **502**. `setup.py` polls `/users/sign_in` for a 200 rather than trusting the health status, and that is the check to copy.
+    Measured twice on `gitlab/gitlab-ce:19.2.4-ce.0`: healthy after about a minute, while `gitlab-ctl status` still listed only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd`. Puma and nginx arrived six minutes later, and the gap in between answers **502**. Poll `/users/sign_in` for a 200 rather than trusting the health status, which is what `setup.py` does.
 
     Check the Docker VM has room before starting. The image is 3.54 GB on disk here against 1.38 GB on Docker Hub, and memory settles at 2.3 GB resident.
 
-Two traps recorded there, each of which cost a failed pipeline. `gitlab/gitlab-runner:latest` was a pre-release, and the runner derives its helper image tag from its own version, so every job died in `prepare_executor` on a `manifest unknown`. Pin the runner to a released tag. And the runner needs an explicit `--clone-url`, because the URL GitLab advertises to a browser is not reachable from inside a job container.
+Two traps cost a failed pipeline each, and both are in step 5. `gitlab/gitlab-runner:latest` was a pre-release, and the runner derives its helper image tag from its own version, so every job died in `prepare_executor` on a `manifest unknown`. Pin the runner to a released tag on the same line as GitLab itself. And a runner registered without `--clone-url` looks perfectly healthy in the UI and fails every job at the clone.
 
 The `access_key` and `secret_key` in the lab's backend file are emulator scaffolding. Against real AWS you delete both and let the job assume a role through OIDC, using the S3 backend's `assume_role_with_web_identity` block fed by the forge's identity token. Chapter 23 owns that.
 
