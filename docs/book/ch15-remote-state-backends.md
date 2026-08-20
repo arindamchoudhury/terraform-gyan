@@ -1656,6 +1656,11 @@ Select where to create this project.
 
 Choose your own namespace, `root`, which is the only one on a fresh instance and is what puts the repository at `root/tf-state-lab`. Then select **Create project**.
 
+!!! note "The refusal does not clear when you fix it"
+    That red line is rendered by the failed submit and stays on screen after the dropdown is filled in, so the form reads as though it is still refusing. It is not. Select **Create project** again and it goes through.
+
+    If the name comes back as taken, an earlier run of the lab's `setup.py` already made `root/tf-state-lab`. Delete that project first. GitLab frees the path at the moment deletion is *scheduled* rather than when it completes, by renaming the old project to `tf-state-lab-deletion_scheduled-<id>`, so the name is available again immediately.
+
 **Step 4 — create a token to push with.** Select your avatar, then **Edit profile**, then **Access > Personal access tokens** in the left sidebar. From the **Generate token** dropdown choose **Legacy token**, give it the **api** scope, and select **Generate token**. Copy it now, because the UI shows it once. Over HTTP, Git takes any non-blank username with the token as the password.
 
 **Step 5 — create the runner, and register it.** This is the step with the traps in it. In the UI: **Admin** in the upper-right corner, then **CI/CD > Runners**, then **Create instance runner**. Tick **Run untagged**, describe it `tf-lab`, and select **Create runner**. GitLab shows you a `glrt-` authentication token, once.
