@@ -1703,6 +1703,24 @@ Three of those arguments are the lab, and the rest is noise:
 - **`--clone-url http://tf-lab-gitlab:8929`** overrides the URL GitLab advertises. Your browser needs `127.0.0.1`; a job container cannot reach that, and the job fails at `git fetch` before Terraform is ever invoked.
 - **`--docker-image`** is only the default for jobs that name no image. The pipeline names its own, and the entry exists so a bare job still starts.
 
+Registration answers `Runner registered successfully` and writes what you passed into the runner's configuration file, which is worth looking at once because it is where a mistyped flag hides:
+
+```shell
+docker exec tf-lab-gitlab-runner cat /etc/gitlab-runner/config.toml
+```
+
+```toml
+  token = "glrt-..."
+  executor = "docker"
+  clone_url = "http://tf-lab-gitlab:8929"
+  [runners.docker]
+    image = "hashicorp/terraform:1.15.8"
+    network_mode = "labs_default"
+    pull_policy = ["if-not-present"]
+```
+
+The authentication token sits in that file in cleartext. Anyone who can `docker exec` into the container, or read the volume it is mounted from, can take a runner's identity and collect jobs as it. On a real forge that file is the reason runners are given their own hosts rather than sharing one with anything else.
+
 **Step 6 — write the three files.** They are in `labs/chapter15/gitlab/ci/`, and they are the whole point of the lab, so read them rather than copying them blind.
 
 The configuration says which backend and nothing else about it:
