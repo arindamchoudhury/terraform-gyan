@@ -1453,6 +1453,20 @@ source "$(git rev-parse --show-toplevel)/labs/lab-env.sh"
 
 Every configuration below tracks a `terraform_data` resource. It is built into Terraform, so nothing needs a provider plugin or a registry download. The one exception is the bootstrap, which genuinely has to create a bucket.
 
+!!! warning "Emulation is not AWS, and here is how to tell what transfers"
+    A green apply in any lab below proves your HCL and your workflow. It does not prove AWS fidelity. HashiCorp offers support for S3-compatible providers as *"best effort"* and tests only against Amazon S3.
+
+    The useful question is not "was this run against an emulator" but **"who decided the thing I am claiming"**. Ask that of every result:
+
+    | If the behaviour is decided by | An emulator run is | Examples in this chapter |
+    | --- | --- | --- |
+    | **The CLI**, before or independent of any request | conclusive | the named-value ban, `init`'s migration flags, what migration leaves on disk, `errored.tfstate`, plan-file contents, `.terraform/terraform.tfstate`, which outputs `terraform_remote_state` exposes, the object path a workspace produces, whether a lock is attempted at all |
+    | **The service**, in its response | a witness, not authority | the status code a held lock returns, what a versioned bucket does on overwrite, IAM enforcement, encryption-key migration |
+
+    Everything in the first row is settled by the binary you already have, and the emulator is only standing in for somewhere to put bytes. Everything in the second row needs the vendor's documentation, or a real account, before it goes in your notes as fact. The 412 transcripts in section 7 are second-row claims, which is why they are quoted against Amazon's and Google's own pages there rather than left resting on the labs.
+
+    The two things these labs genuinely cannot reach: **IAM** — the emulator authorises everything, so a policy that works here proves nothing — and **concurrency at scale**, which is where S3's documented `409 Conflict` lives. Validate anything load-bearing against real free-tier AWS.
+
 ### Lab 1 — the local backend, said out loud
 
 No emulator, no credentials, no network. `labs/chapter15/lab1/`:
@@ -1591,24 +1605,11 @@ Two traps recorded there, each of which cost a failed pipeline. `gitlab/gitlab-r
 
 The `access_key` and `secret_key` in the lab's backend file are emulator scaffolding. Against real AWS you delete both and let the job assume a role through OIDC, using the S3 backend's `assume_role_with_web_identity` block fed by the forge's identity token. Chapter 23 owns that.
 
-!!! warning "Emulation is not AWS, and here is how to tell what transfers"
-    A green apply here proves your HCL and your workflow. It does not prove AWS fidelity. HashiCorp offers support for S3-compatible providers as *"best effort"* and tests only against Amazon S3.
-
-    The useful question is not "was this run against an emulator" but **"who decided the thing I am claiming"**. Ask that of every result:
-
-    | If the behaviour is decided by | An emulator run is | Examples in this chapter |
-    | --- | --- | --- |
-    | **The CLI**, before or independent of any request | conclusive | the named-value ban, `init`'s migration flags, what migration leaves on disk, `errored.tfstate`, plan-file contents, `.terraform/terraform.tfstate`, which outputs `terraform_remote_state` exposes, the object path a workspace produces, whether a lock is attempted at all |
-    | **The service**, in its response | a witness, not authority | the status code a held lock returns, what a versioned bucket does on overwrite, IAM enforcement, encryption-key migration |
-
-    Everything in the first row is settled by the binary you already have, and the emulator is only standing in for somewhere to put bytes. Everything in the second row needs the vendor's documentation, or a real account, before it goes in your notes as fact. The 412 transcripts in section 7 are second-row claims, which is why they are quoted against Amazon's and Google's own pages there rather than left resting on the labs.
-
-    The two things these labs genuinely cannot reach: **IAM** — the emulator authorises everything, so a policy that works here proves nothing — and **concurrency at scale**, which is where S3's documented `409 Conflict` lives. Validate anything load-bearing against real free-tier AWS.
-
 Clean up:
 
 ```shell
 tflocal destroy
+docker compose -f labs/chapter15/gitlab/docker-compose.yml down
 docker compose -f labs/docker-compose.yml --profile gcp down
 ```
 
