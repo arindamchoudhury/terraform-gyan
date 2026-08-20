@@ -1559,6 +1559,34 @@ ci/terraform.tfstate      # applied by a runner
 
 The forge held the code and ran the job. The object store held the state. That is the arrangement to copy.
 
+This lab is heavier than the other three, so its full runbook lives beside the configurations in `labs/chapter15/gitlab/README.md`, measured numbers and all. The shape of it:
+
+```shell
+docker compose -f labs/docker-compose.yml up -d              # emulator first
+cd labs/chapter15/lab2/bootstrap && tflocal init && tflocal apply   # the bucket lab 2 creates
+```
+
+```shell
+docker compose -f labs/chapter15/gitlab/docker-compose.yml up -d
+```
+
+The second compose file joins the emulator's network, which is how a job container resolves `floci-lab:4566`. Then wait, and browse to `http://127.0.0.1:8929`. Not `localhost`: on Windows that resolves to `::1` first, and the published IPv6 mapping returns an empty reply.
+
+```shell
+cd labs/chapter15/gitlab && ./setup.sh
+```
+
+`setup.sh` mints an admin API token, creates the project and an instance runner, registers the runner with the docker executor, and commits `ci/` into the project, which triggers the first pipeline. Re-running it is safe. Play the manual `apply` job in the UI, then read the bucket:
+
+```shell
+curl -s "http://localhost:4566/tf-state-lab?list-type=2" | grep -o "<Key>[^<]*</Key>"
+```
+
+!!! warning "Do not wait for `healthy`, because it reports healthy long before it serves"
+    Measured twice on `gitlab/gitlab-ce:19.2.4-ce.0`: healthy after about a minute, while `gitlab-ctl status` still listed only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd`. Puma and nginx arrived six minutes later, and the gap in between answers **502**. `setup.sh` polls `/users/sign_in` for a 200 rather than trusting the health status, and that is the check to copy.
+
+    Check the Docker VM has room before starting. The image is 3.54 GB on disk here against 1.38 GB on Docker Hub, and memory settles at 2.3 GB resident.
+
 Two traps recorded there, each of which cost a failed pipeline. `gitlab/gitlab-runner:latest` was a pre-release, and the runner derives its helper image tag from its own version, so every job died in `prepare_executor` on a `manifest unknown`. Pin the runner to a released tag. And the runner needs an explicit `--clone-url`, because the URL GitLab advertises to a browser is not reachable from inside a job container.
 
 The `access_key` and `secret_key` in the lab's backend file are emulator scaffolding. Against real AWS you delete both and let the job assume a role through OIDC, using the S3 backend's `assume_role_with_web_identity` block fed by the forge's identity token. Chapter 23 owns that.
