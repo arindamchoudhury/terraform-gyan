@@ -119,7 +119,31 @@ The suffix says what the alternate version does. `chapter10/lab2/main.tf.after` 
 
 ## Cleaning up
 
-Run `tflocal destroy` when you finish a lab. The emulator keeps its data in memory, so restarting the container also clears everything, but leaving stale state files behind will confuse the next lab that reuses a bucket name.
+Run `tflocal destroy` when you finish a lab. Leaving stale state files behind will confuse the next lab that reuses a bucket name.
+
+### Starting the emulator from a clean slate
+
+The emulator keeps its data in memory, so restarting the container is the whole cleanup:
+
+```bash
+docker restart floci-lab
+```
+
+Verified 2026-08-20: a bucket created on `:4566` is gone after that command returns, and gone again after `docker compose -f labs/docker-compose.yml up -d --force-recreate floci`. Do not be misled by `docker inspect floci-lab`, which shows a volume mounted at `/app/data` and an `FLOCI_STORAGE_PERSISTENT_PATH` pointing at it. That volume survives a recreate with its identifier unchanged, and the buckets still do not come back, so no `down -v` is needed to clear state.
+
+Wait for the emulator to answer again before the next `tflocal` command, because the container reports itself started before its services are:
+
+```bash
+until curl -sf http://localhost:4566/_floci/health >/dev/null; do sleep 1; done
+```
+
+Clear the Terraform side too, or the next `apply` plans against resources the emulator no longer has. State files are per lab directory, so delete only the ones you are resetting:
+
+```bash
+rm -f terraform.tfstate terraform.tfstate.backup
+```
+
+Deleting a lab's `.terraform/` directory as well costs you a provider re-download on the next `init`, which is why it is worth keeping unless the lab is misbehaving.
 
 State files, plan files, `.terraform/` directories, and the `localstack_providers_override.tf` that `tflocal` generates are all gitignored. Lock files and `.tfvars` are committed on purpose, so the labs pin the same provider versions the chapters measured.
 
@@ -129,3 +153,4 @@ State files, plan files, `.terraform/` directories, and the `localstack_provider
 - **`Failed to load plugin schemas` on every provider.** Terraform talks to its plugins over mTLS on loopback, and some endpoint security products block it. It is not a provider or emulator fault. Run the lab through `tf-docker` instead, as described above.
 - **A command takes minutes, then does its actual work instantly.** The same interception, degrading rather than failing outright. Confirm it by comparing `terraform version`, which loads no plugin, against `terraform providers schema -json`, which starts one. A gap of seconds between them means the time is going into Terraform's channel to its provider, not into the emulator. Checking the emulator's log settles it: a long silence followed by millisecond-scale operations means the API calls were never the problem.
 - **`Unexpected attribute` for a service you never used.** A stale `localstack_providers_override.tf` from an older `tflocal` run. Delete it and run `tflocal init` again.
+- **`Error: creating S3 Bucket (…): BucketAlreadyExists`.** The bucket is in the emulator, but not in the state file this configuration is applying, so Terraform tries to create it a second time. Real AWS words the same situation as `BucketAlreadyOwnedByYou` when your own account holds the name. It follows an earlier run whose state was lost or deleted after the bucket was created. Either adopt what is there with `tflocal import aws_s3_bucket.state <bucket>` and apply again, or restart the emulator as described under "Starting from a clean slate". Check the bucket is empty before you throw it away: `awslocal s3 ls s3://<bucket> --recursive`.
