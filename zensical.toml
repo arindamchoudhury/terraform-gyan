@@ -143,6 +143,7 @@ nav = [
                     { "Import a single resource" = "sources/terraform-docs/tf-import-single.md" },
                     { "Generating configuration" = "sources/terraform-docs/tf-import-generate.md" },
                     { "import block reference" = "sources/terraform-docs/tf-block-import.md" },
+                    { "list block reference" = "sources/terraform-docs/tf-block-list.md" },
                 ]},
                 { "State" = [
                     { "Overview" = "sources/terraform-docs/tf-state.md" },
