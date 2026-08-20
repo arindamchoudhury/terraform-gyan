@@ -1603,19 +1603,17 @@ docker compose -f labs/chapter15/gitlab/docker-compose.yml up -d
 The second compose file joins the emulator's network, which is how a job container resolves `floci-lab:4566`. Then wait, and browse to `http://127.0.0.1:8929`. Not `localhost`: on Windows that resolves to `::1` first, and the published IPv6 mapping returns an empty reply.
 
 ```shell
-cd labs/chapter15/gitlab && ./setup.sh
+cd labs/chapter15/gitlab && python setup.py
 ```
 
-`setup.sh` is bash, and it is the one script in these labs with no PowerShell twin. On Windows run it from Git Bash or WSL. It needs `curl`, `docker` and `python` on the path, which a Git Bash shell already has. Everything it does is also doable by hand in the GitLab UI, and the lab README maps each step to the click that replaces it.
-
-`setup.sh` mints an admin API token, creates the project and an instance runner, registers the runner with the docker executor, and commits `ci/` into the project, which triggers the first pipeline. Re-running it is safe. Play the manual `apply` job in the UI, then read the bucket:
+`setup.py` mints an admin API token, creates the project and an instance runner, registers the runner with the docker executor, and commits `ci/` into the project, which triggers the first pipeline. Re-running it is safe, and it is Python rather than a shell script so the same file runs under PowerShell and under bash. Play the manual `apply` job in the UI, then read the bucket:
 
 ```shell
 curl -s "http://localhost:4566/tf-state-lab?list-type=2" | grep -o "<Key>[^<]*</Key>"
 ```
 
 !!! warning "Do not wait for `healthy`, because it reports healthy long before it serves"
-    Measured twice on `gitlab/gitlab-ce:19.2.4-ce.0`: healthy after about a minute, while `gitlab-ctl status` still listed only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd`. Puma and nginx arrived six minutes later, and the gap in between answers **502**. `setup.sh` polls `/users/sign_in` for a 200 rather than trusting the health status, and that is the check to copy.
+    Measured twice on `gitlab/gitlab-ce:19.2.4-ce.0`: healthy after about a minute, while `gitlab-ctl status` still listed only `gitaly`, `postgresql`, `redis`, `logrotate` and `sshd`. Puma and nginx arrived six minutes later, and the gap in between answers **502**. `setup.py` polls `/users/sign_in` for a 200 rather than trusting the health status, and that is the check to copy.
 
     Check the Docker VM has room before starting. The image is 3.54 GB on disk here against 1.38 GB on Docker Hub, and memory settles at 2.3 GB resident.
 

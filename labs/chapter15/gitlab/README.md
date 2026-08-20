@@ -55,7 +55,7 @@ docker compose -f labs/chapter15/gitlab/docker-compose.yml up -d
     and nginx arrived six minutes later, with a window of **502** in between
     while Puma booted the app.
 
-    `setup.sh` polls `/users/sign_in` for a 200 rather than trusting the health
+    `setup.py` polls `/users/sign_in` for a 200 rather than trusting the health
     status. That is the check to copy.
 
 **Use `127.0.0.1`, never `localhost`.** On Windows, `localhost` resolves to
@@ -66,21 +66,19 @@ the container. That is why `external_url` is an IPv4 literal.
 Then:
 
 ```bash
-./setup.sh
+python setup.py
 ```
 
 It creates an API token, a project and an instance runner; registers the runner
 with the docker executor; and commits `ci/` into the project, which triggers the
 first pipeline. Re-running it is safe.
 
-**On Windows, run it from Git Bash or WSL, not PowerShell.** There is no
-`setup.ps1`: unlike lab 3's one-line bucket creation, this script talks to the
-GitLab API, `docker exec`s into two containers and builds a JSON commit payload,
-and a second implementation is a second thing to keep correct. It needs `curl`,
-`docker` and `python` on the path, all of which a Git Bash shell has. The section
-below maps every step to the UI equivalent if you would rather click it.
+It is Python rather than a shell script so that one implementation covers every
+shell this lab runs in, PowerShell included. It imports nothing outside the
+standard library, and it shells out only to `docker`. The section below maps
+every step to the UI equivalent if you would rather click it.
 
-## What `setup.sh` does, and why each part is needed
+## What `setup.py` does, and why each part is needed
 
 Doing it by hand in the UI works too — this is the map.
 

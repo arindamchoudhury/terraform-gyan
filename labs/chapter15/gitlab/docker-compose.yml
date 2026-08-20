@@ -86,7 +86,7 @@ services:
       - gitlab-logs:/var/log/gitlab
       - gitlab-data:/var/opt/gitlab
 
-  # The runner holds no configuration until ./setup.sh registers it. It mounts
+  # The runner holds no configuration until setup.py registers it. It mounts
   # the Docker socket because it uses the docker executor: each job runs in its
   # own container, which is also how the job reaches the emulator.
   runner:
