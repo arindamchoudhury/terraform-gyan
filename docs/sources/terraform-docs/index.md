@@ -58,6 +58,7 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Import resources (overview) | 2026-08-20 | [tf-import](tf-import.md) |
 | Import existing resources in bulk (`list` blocks, `terraform query`) | 2026-08-20 | [tf-import-bulk](tf-import-bulk.md) |
 | Import a single resource (hand-written `import` blocks) | 2026-08-20 | [tf-import-single](tf-import-single.md) |
+| Generating configuration (`plan -generate-config-out`) | 2026-08-20 | [tf-import-generate](tf-import-generate.md) |
 | State (overview) | 2026-07-29 | [tf-state](tf-state.md) |
 | Purpose of Terraform State | 2026-07-29 | [tf-state-purpose](tf-state-purpose.md) |
 | State Storage and Locking (remote backends) | 2026-07-29 | [tf-state-backends](tf-state-backends.md) |

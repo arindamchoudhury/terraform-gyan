@@ -423,7 +423,7 @@ Two lessons, and the first is the stronger claim:
     terraform plan -generate-config-out=generated.tf
     ```
 
-    Three advantages over the CLI form: the import is **visible in a plan** before it happens, it is **recorded in code** so a teammate or CI reproduces it, and the configuration is generated for you rather than hand-written. The CLI `terraform import` still works.
+    Three advantages over the CLI form: the import is **visible in a plan** before it happens, it is **recorded in code** so a teammate or CI reproduces it, and the configuration is generated for you rather than hand-written. ⚠️ **The third one is still flagged experimental**, as of the **v1.15.x** docs — *"Configuration generation is available in Terraform v1.5 as an experimental feature. Later minor versions may contain changes to the formatting of generated configuration and behavior of the `terraform plan` command"* — and every run prints `Warning: Config generation is experimental`. The `import` block itself is not experimental; only the generation is. (See [[tf-import-generate]].) The CLI `terraform import` still works.
 
 ### Refactoring can be tricky
 
