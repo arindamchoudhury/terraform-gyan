@@ -2,7 +2,7 @@
 
 > **Source:** [developer.hashicorp.com/terraform/language/block/removed](https://developer.hashicorp.com/terraform/language/block/removed)
 > **Added:** 2026-07-10
-> **Source updated:** undated language reference; captured 2026-07-10 against v1.15.x (latest)
+> **Source updated:** undated language reference; captured 2026-07-10, re-verified 2026-08-20 — still v1.15.x (latest)
 > **Tags:** removed-block, destroy, state, refactoring, destroy-time-provisioner, connection, breaking-change
 > **Type:** documentation
 
@@ -29,6 +29,11 @@ The docs state it plainly in the `lifecycle` section:
 
 !!! danger "Converting a `resource` block to a bare `removed` block will destroy the object"
     If your intent is "stop managing this, leave it running," you **must** write `lifecycle { destroy = false }`. Omitting `lifecycle` is not neutral.
+
+!!! note "Re-verified 2026-08-20 — the contradiction is still there"
+    Re-fetched and diffed against the July capture. **One change in six weeks**, and it is a typo fix: *"the command specified in the **the** command argument"* lost its duplicated word in the `working_dir` description. Nothing else moved.
+
+    In particular, problem 1 below is unchanged. The opening sentence still says the block removes a resource *"without changing the underlying infrastructure"*, and the `lifecycle` section still says *"By default, Terraform removes the resource from state **and destroys the actual resource**."* Six weeks on, the page still tells you on line one that it is safe by default when it is not.
 
 ## Three problems with this page
 
