@@ -54,18 +54,18 @@ So the choice is not stylistic. A bucket is not uniquely named by its name alone
 
 The practical rule the page gives, unchanged from [[tut-state-import]]'s version of it: **ask the provider.** *"Refer to your provider documentation for information about how to reference resource identities."*
 
-!!! note "What this page does not answer"
-    It never says what `id` and `identity` **accept as expressions** — whether a variable, a `for_each` key, or a reference to another resource is legal in an `import` block. That is the **import block reference** child page, which this one links to and which is not captured here. Do not infer the rules from the tutorials: [[tut-state-import]] only ever uses a literal string.
+!!! note "What this page defers"
+    It never says what `id` and `identity` **accept as expressions**. [[tf-block-import]] does: `id` takes *"a string or an expression that evaluates to a string"* that must be **known during the plan operation**, and `identity` is an object of key-value pairs.
 
-    Also uncaptured: *Import resources in bulk* and *Import a single resource*, the two workflow pages.
+    Both are now captured: [[tf-import-bulk]] and [[tf-import-single]], along with [[tf-import-generate]] and [[tf-block-import]].
 
 ## Where this sits against what is already captured
 
 | Question | Answer lives in |
 |---|---|
 | How do I adopt one resource, start to finish? | [[tut-state-import]] — the hands-on, including the `-generate-config-out` pruning trap |
-| What does the block accept syntactically? | *import block reference* — **uncaptured** |
-| How do I find what to adopt? | *Import resources in bulk* — **uncaptured**; the `terraform query` side is in [[feature-history]] |
+| What does the block accept syntactically? | [[tf-block-import]] — `id` takes any plan-time-known string expression; `identity` is an object |
+| How do I find what to adopt? | [[tf-import-bulk]] — `list` blocks and `terraform query` |
 | Why does adopting break the one-to-one mapping? | [[tf-state-purpose]] |
 | How do I get back out, and back in again? | [[tf-state-remove]] — forgetting is reversible only by re-importing |
 

@@ -152,9 +152,9 @@ That is the mechanism behind the recommendation both this page and [[tf-import-b
 
 The page's steps, for the record: define the destination resource, add the `import` block, `terraform plan` and check it, then `terraform apply`. And *"if Terraform proposes any unexpected changes to the resource, update its configuration until it matches your intended settings"* — the loop [[tut-state-import]] runs twice before its plan comes out clean.
 
-## Still not answered
+## What this page leaves to the reference
 
-Whether `id` accepts anything other than a literal string — a variable, `each.key`, another resource's attribute. This page only ever shows `"i-abcd1234"`, and defers to the **import block reference**, still uncaptured. What *is* now settled is the shape of **`to`**: type and label, optionally an instance key, optionally a `module.` prefix.
+Whether `id` accepts anything other than a literal string. This page only ever shows `"i-abcd1234"`. [[tf-block-import]] answers it: *"a string or an expression that evaluates to a string"*, with the ID *"known during the plan operation"* — so `each.value`, a `var` or a `local` are fine, and another managed resource's attribute is not. The shape of **`to`** is settled here: type and label, optionally an instance key, optionally a `module.` prefix.
 
 !!! warning "One broken code sample"
     The `count` example opens its destination block as `resource "aws_instance" "example {` — the label's closing quote is missing. It would not parse as written.

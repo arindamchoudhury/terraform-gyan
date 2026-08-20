@@ -727,7 +727,7 @@ You are ready to advance when you can:
 
     **Then run the toolkit end to end — HCTut ["Manage resource state"](https://developer.hashicorp.com/terraform/tutorials/state/state-cli)** (~24 min, needs Terraform **1.7+** and an AWS account). This is the page that puts every operation in this topic into one narrative: read the raw state JSON, `apply -replace`, `terraform state mv` between two state files, a `removed` block, `terraform import` back, reconcile an out-of-band delete, destroy. Captured as [[tut-state-cli]]. Two cautions before running it, both below.
 
-2. **Reference — HCDocs [import resources](https://developer.hashicorp.com/terraform/language/import) ([[tf-import]], with [[tf-import-single]], [[tf-import-bulk]] and [[tf-import-generate]] behind it), [moved](https://developer.hashicorp.com/terraform/language/moved), [removed](https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources), [`state` subcommands](https://developer.hashicorp.com/terraform/cli/commands/state)** (~45 min) — prefer config-driven `import`/`moved` over CLI surgery. Know the full `state` toolkit: **`list`** / **`show`** (inspect), **`mv`** / **`rm`** (surgery), **`pull`** / **`push`** (read/write raw state — dangerous, backup first), and **`replace-provider`** (rewrite a provider source address in state, e.g. after a registry namespace change or a Terraform→OpenTofu move). The forget-without-destroying procedure has its own page, captured in [[tf-state-remove]]: the five steps, why HashiCorp recommends the `removed` block over `terraform state rm` (the block goes through plan, so you preview the result), and the fact that re-adopting the resource later requires an **import**, not an edit.
+2. **Reference — HCDocs [import resources](https://developer.hashicorp.com/terraform/language/import) ([[tf-import]], with [[tf-import-single]], [[tf-import-bulk]], [[tf-import-generate]] and [[tf-block-import]] behind it), [moved](https://developer.hashicorp.com/terraform/language/moved), [removed](https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources), [`state` subcommands](https://developer.hashicorp.com/terraform/cli/commands/state)** (~45 min) — prefer config-driven `import`/`moved` over CLI surgery. Know the full `state` toolkit: **`list`** / **`show`** (inspect), **`mv`** / **`rm`** (surgery), **`pull`** / **`push`** (read/write raw state — dangerous, backup first), and **`replace-provider`** (rewrite a provider source address in state, e.g. after a registry namespace change or a Terraform→OpenTofu move). The forget-without-destroying procedure has its own page, captured in [[tf-state-remove]]: the five steps, why HashiCorp recommends the `removed` block over `terraform state rm` (the block goes through plan, so you preview the result), and the fact that re-adopting the resource later requires an **import**, not an edit.
 3. **Book chapter — TID Ch 6** (state operations) (~1 hr) — safe patterns and recovery.
 4. **Book chapter — TUR Ch 3** (the isolation half) (~30 min) — why state operations get easier the smaller each state file is. Captured as [[03-manage-state]]: the bulkhead metaphor, the environment-then-component tree, and the three costs of it (many folders means many applies, duplication until modules, and cross-folder references that force `terraform_remote_state`).
 
@@ -821,7 +821,7 @@ You are ready to advance when you can:
 
     The standing rule is unchanged and applies to both forms: **ask the provider.** *"Refer to your provider documentation for information about how to reference resource identities."* [[tut-state-import]]'s Docker SHA256 and [[tut-resource-drift]]'s five-field composite `sg-…_ingress_tcp_8080_8080_0.0.0.0/0` are the same lesson from the `id` side.
 
-    ⚠️ **Still unverified:** what `id`/`identity` accept as *expressions* — a variable, `each.key`, another resource's attribute. [[tf-import-single]] only ever shows a literal `"i-abcd1234"` and defers to the **import block reference**, which remains uncaptured. Do not infer it from the tutorials; every one of them uses a literal. The shape of **`to`** *is* now settled — type and label, optionally an instance key, optionally a `module.` prefix. (See [[feature-history]].)
+    **Settled** by [[tf-block-import]], the reference every other import page defers to. `id` takes *"a string **or an expression that evaluates to a string**"*, and the one constraint is that *"the ID must be **known during the plan operation**."* So `each.value`, a `var`, or a `local` are all legal, and another managed resource's attribute is not — it is `(known after apply)`. `identity` is an **object of key-value pairs**, not a string. (See [[feature-history]].)
 
 !!! note "📌 Bulk import — `list` blocks, `terraform query`, and no tutorial anywhere"
     The second of [[tf-import]]'s two workflows, documented in [[tf-import-bulk]] and with no hands-on in any HashiCorp tutorial. Individual import assumes *"you can easily access unique infrastructure resource IDs"*; this is what you use when you cannot. Three steps: write `list` blocks, generate configuration, apply.
@@ -861,8 +861,45 @@ You are ready to advance when you can:
 
     **What this reframes:** every State-collection tutorial does discovery by hand — `docker inspect --format="{{.ID}}"`, `aws ec2 create-security-group` then `echo $SG_ID`, `terraform output -raw instance_id`. That step is exactly what a `list` block replaces, and none of them mention it.
 
-!!! note "📌 `import` `for_each` (TF/OpenTofu 1.7)"
-    `import` blocks take **`for_each`** (TF/OpenTofu 1.7) — loop one import block over a map to adopt many similar resources at once instead of writing a block each. (See [[feature-history]].)
+!!! tip "🔧 `import` `for_each` — one block adopts an estate"
+    `import` blocks take **`for_each`** (TF/OpenTofu 1.7), accepting a map or a set of strings. The path had this as a one-line feature note; [[tf-block-import]] shows what it is actually for.
+
+    ```hcl
+    locals {
+      buckets = {
+        "staging" = "bucket1"
+        "uat"     = "bucket2"
+        "prod"    = "bucket3"
+      }
+    }
+
+    import {
+      for_each = local.buckets
+      to       = aws_s3_bucket.this[each.key]
+      id       = each.value
+    }
+
+    resource "aws_s3_bucket" "this" {
+      for_each = local.buckets
+    }
+    ```
+
+    `each.key` indexes the destination, `each.value` supplies the ID, and driving the destination resource's own `for_each` from the **same** local is what keeps the addresses aligned.
+
+    **The reference's second example goes further and is the one worth remembering** — `for_each` over a list of objects, importing into *module* instances:
+
+    ```hcl
+    import {
+      for_each = local.buckets   # list of { group, key, id }
+      id       = each.value.id
+      to       = module.group[each.value.group].aws_s3_bucket.this[each.value.key]
+    }
+    ```
+
+    A module instance key **and** a resource instance key in one address, both computed from the loop. That is the shape adopting a real estate takes, and nothing in the tutorials comes near it.
+
+    **Placement**, which only the reference states: *"we recommend either creating an `imports.tf` file for all import configurations or placing each import block beside the destination resource block."* The first suits a bulk adoption you delete afterwards; the second suits keeping the block as the provenance record, since the origin stays beside the thing it explains.
+
 
 !!! danger "📌 `-generate-config-out` is still an experimental feature"
     Easy to miss, because nothing that *uses* the flag says so. From [[tf-import-generate]], on a page banner-versioned **v1.15.x (latest)**:
@@ -2079,7 +2116,9 @@ Expert (E1–E6)          → ~70 hrs
 ---
 
 !!! note "Research log"
-    Newest entries first, though the run is not strictly sorted — some findings were written up after later ones. **Last updated: 2026-08-20 (State collection fully captured, plus four import reference pages — and `-generate-config-out` turns out to still be flagged experimental).**
+    Newest entries first, though the run is not strictly sorted — some findings were written up after later ones. **Last updated: 2026-08-20 (State collection fully captured, plus the whole import reference tree — the standing question about what `id` accepts is answered: an expression, if plan-time known).**
+
+> **2026-08-20** — **[[tf-block-import]] captured, closing the import tree and answering the question three previous captures had to leave open.** Each of [[tf-import]], [[tf-import-single]] and [[tf-import-generate]] defers to this page, and each of my notes carried a ⚠️ saying that what `id` accepts as an *expression* was unverified and must not be inferred from tutorials that only ever use literals. The reference answers it in one sentence: *"You must specify a **string or an expression that evaluates to a string**"*, and *"the ID must be **known during the plan operation**."* So `each.value`, a `var` or a `local` are all legal, and another managed resource's attribute is not, because it is `(known after apply)`. **That is the plan-time-known rule met in a third place** — the path already tracks it as the constraint on `count`/`for_each` arguments (TID §4.8.4, from the plan side in [[05-terraform-plan]] §5.7) and hit it again via OpenTofu's `issensitive()` change. It is not a rule about loops; it is a rule about anything Terraform must resolve before it can build a plan, and importing qualifies because it has to ask the provider about the object while planning. The ⚠️ in **I7** is replaced with the answer. **`identity` is an object of key-value pairs**, not a string, and is stated mutually exclusive with `id` on both arguments. **`for_each` gets promoted from a one-line feature note to a worked callout.** The reference's first example adopts three buckets from a `locals` map with `to = aws_s3_bucket.this[each.key]` and `id = each.value`, the destination resource's own `for_each` driven by the same local so the addresses line up. Its second example is the one worth remembering: `for_each` over a **list of objects** importing into **module instances** — `to = module.group[each.value.group].aws_s3_bucket.this[each.value.key]`, a module instance key and a resource instance key in one address, both computed from the loop. That is what adopting a real estate looks like and nothing in the tutorials approaches it. Also captured: a **placement recommendation** no other page gives — an `imports.tf` holding every block, *or* each block beside its destination resource — which maps neatly onto the two dispositions [[tf-import-single]] describes, delete-after-adoption versus keep-as-provenance. **Six defects on the page recorded rather than reproduced:** the single-resource example has an extra closing brace and does not parse; `identity`'s Summary box says *"Data type: String"* against both the configuration model (map) and its own prose (object); the "Complete configuration" block declares `for_each` **twice**, as map and as list, which is invalid HCL as printed; that block is introduced as *"The following **module** block"*; `provider` is shown quoted in the Specification and unquoted in the example, and only the latter is a reference; and the alias example sets `region = "us-westl-1"`. The prose is authoritative, the samples are unproofread. **The import reference tree is now complete** — hub, two workflows, generation, and the block reference. **I7 stays ⬜.**
 
 > **2026-08-20** — **[[tf-import-generate]] captured, and it corrects something three other captures had quietly assumed: `-generate-config-out` is still flagged experimental.** The page carries an **Experimental** banner — *"Configuration generation is available in Terraform v1.5 as an experimental feature. Later minor versions may contain changes to the formatting of generated configuration and behavior of the `terraform plan` command"* — and every run prints `Warning: Config generation is experimental` beside the plan. The page is banner-versioned **v1.15.x (latest)**, so this is current rather than stale 1.5-era text: three years and ten minor releases after it shipped. **Nothing that uses the flag mentions it.** [[tut-state-import]] demonstrates it without a word on its status, [[tf-import-single]] recommends it for complex resources unqualified, and the **TUR Ch5** reading note called generation one of three advantages of the declarative form — that note now carries the caveat. The distinction that matters: the **`import` block itself is not experimental**, only the generation, so config-driven import stays the recommended path. **Three operational rules folded into I7.** An **existing output path is an error** — the same rule [[tf-import-bulk]] records for `terraform query`, so it belongs to the flag rather than to either command. **A `provider` block is mandatory when the configuration has no other resources for that provider**, *"otherwise Terraform displays an error if it can not determine which provider to use"*, and adding one costs a re-`init` — which bites exactly in the empty-repository adoption case that generation exists to serve. And generation is **self-limiting**: *"Terraform knows it doesn't need to generate configuration for resources that already exist in your state."* **The limitation section documents invalid output, not merely verbose output:** for *"resources with complex schemas"* Terraform may emit mutually-exclusive arguments — the worked case is `ipv6_address_count` conflicting with `ipv6_addresses` on `aws_instance`. ⚠️ **And two of the page's own rules collide without either section noticing:** the failing run *"still generates configuration and writes it to `generated.tf`"*, while an existing path *"throws an error"* — so a generation that errors leaves behind the very file that makes re-running the identical command fail for a different reason. Recorded as a callout, since the loop is edit-in-place or delete-then-regenerate. **One tension left open rather than resolved:** [[tut-state-import]] says the generated draft contains *"all possible arguments… including those set to default values and those without values"*, while this page's own example `generated.tf` is a **single line** and its prose is softer — *"Terraform's best guess at the appropriate value for each resource argument."* Schema size plausibly explains it, but the two claims are not the same and nothing captured reconciles them; the note says to plan for the tutorial's version, since the verbose draft is the case that needs work. Also recorded: the clean generate-plan renders the resource with **no action symbol at all** and `1 to import, 0 to add, 0 to change, 0 to destroy` — a pure import proposes no infrastructure action. **I7 stays ⬜**; no written chapter used the flag, so nothing flips to 🔄.
 
