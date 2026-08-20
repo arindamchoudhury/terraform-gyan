@@ -1646,7 +1646,15 @@ The sidebar's **Groups** entry says the same thing more slowly.
 
 You then land on **Your work > Home**, with two administration banners waiting. One of them is worth reading rather than dismissing: this image lets anyone register an account. That is harmless while the port is bound to loopback, and it stops being harmless the moment it is not.
 
-Now create the project. Select **Create new** (the plus in the top bar), then **New project/repository**, then **Create blank project**. Name it `tf-state-lab`, tick **Initialize repository with a README**, and select **Create project**. The checkbox is not required, but it gives you a default branch and something to clone, which saves setting an upstream by hand on the first push.
+Now create the project. Select **Create new** (the plus in the top bar), then **New project/repository**, then **Create blank project**. Name it `tf-state-lab`, which fills the **Project slug** for you. Tick **Initialize repository with a README**. The checkbox is not required, but it gives you a default branch and something to clone, which saves setting an upstream by hand on the first push.
+
+One field on that form does not fill itself. **Project URL** holds a **Select a group or namespace** dropdown that arrives empty, and submitting without it refuses in red:
+
+```
+Select where to create this project.
+```
+
+Choose your own namespace, `root`, which is the only one on a fresh instance and is what puts the repository at `root/tf-state-lab`. Then select **Create project**.
 
 **Step 4 — create a token to push with.** Select your avatar, then **Edit profile**, then **Access > Personal access tokens** in the left sidebar. From the **Generate token** dropdown choose **Legacy token**, give it the **api** scope, and select **Generate token**. Copy it now, because the UI shows it once. Over HTTP, Git takes any non-blank username with the token as the password.
 
