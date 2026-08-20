@@ -91,6 +91,13 @@ Doing it by hand in the UI works too — this is the map.
 needs a token before it can make one. The initial root password is at
 `/etc/gitlab/initial_root_password` and expires after 24 hours.
 
+Going through the API is also how the script avoids the first-run onboarding
+wizard, which the UI route cannot avoid. A first sign-in lands on **Create your
+first project** and then **Set up your profile**, both of which take a **Skip**.
+The first one wants a group name and would put the repository at
+`<group>/tf-state-lab` rather than under `root/`; skipping it creates nothing,
+and the instance reports no groups afterwards.
+
 **An instance runner**, created with `POST /api/v4/user/runners` and registered
 with three arguments that matter:
 

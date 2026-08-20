@@ -1630,7 +1630,21 @@ Then browse to `http://127.0.0.1:8929` and sign in as `root`. Not `localhost`: o
 
     The container was never asked. PowerShell and Linux shells need no such guard, which is why the two forms above differ by nothing else.
 
-**Step 3 — create the project.** Select **Create new** (the plus in the upper-right corner), then **New project/repository**, then **Create blank project**. Name it `tf-state-lab`, tick **Initialize repository with a README**, and select **Create project**. The checkbox is not required, but it gives you a default branch and something to clone, which saves setting an upstream by hand on the first push.
+**Step 3 — get past the onboarding, then create the project.** A fresh instance does not open on the dashboard. The first sign-in is a two-screen wizard, **Create your first project** and then **Set up your profile**, and the way through it is **Skip** on both.
+
+Skip the first one in particular. It asks for a **Group name** alongside the project name, and it means it: the preview under the fields reads `http://127.0.0.1:8929/ my-group / my-project`. A project made there lands in a new group rather than in root's own namespace, and every path below would have to change to match. Skipping costs nothing, and creates nothing. Measured afterwards, the instance still reported no groups at all:
+
+```shell
+curl -s -H "PRIVATE-TOKEN: <token>" http://127.0.0.1:8929/api/v4/groups
+```
+
+```
+[]
+```
+
+You then land on **Your work > Home**, with two administration banners waiting. One of them is worth reading rather than dismissing: this image lets anyone register an account. That is harmless while the port is bound to loopback, and it stops being harmless the moment it is not.
+
+Now create the project. Select **Create new** (the plus in the top bar), then **New project/repository**, then **Create blank project**. Name it `tf-state-lab`, tick **Initialize repository with a README**, and select **Create project**. The checkbox is not required, but it gives you a default branch and something to clone, which saves setting an upstream by hand on the first push.
 
 **Step 4 — create a token to push with.** Select your avatar, then **Edit profile**, then **Access > Personal access tokens** in the left sidebar. From the **Generate token** dropdown choose **Legacy token**, give it the **api** scope, and select **Generate token**. Copy it now, because the UI shows it once. Over HTTP, Git takes any non-blank username with the token as the password.
 
