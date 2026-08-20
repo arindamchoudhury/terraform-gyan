@@ -1661,9 +1661,16 @@ Choose your own namespace, `root`, which is the only one on a fresh instance and
 
     If the name comes back as taken, an earlier run of the lab's `setup.py` already made `root/tf-state-lab`. Delete that project first. GitLab frees the path at the moment deletion is *scheduled* rather than when it completes, by renaming the old project to `tf-state-lab-deletion_scheduled-<id>`, so the name is available again immediately.
 
-**Step 4 — create a token to push with.** Select your avatar, then **Edit profile**, then **Access > Personal access tokens** in the left sidebar. From the **Generate token** dropdown choose **Legacy token**, give it the **api** scope, and select **Generate token**. Copy it now, because the UI shows it once. Over HTTP, Git takes any non-blank username with the token as the password.
+**Step 4 — create a token to push with.** Select your avatar, then **Edit profile**, then **Access > Personal access tokens** in the left sidebar. From the **Generate token** dropdown choose **Legacy token**, and give it one scope: **write_repository**, which the documentation defines as read and write *"(pull and push) to repositories for the token's scope: private projects for a personal access token"*, over Git-over-HTTP. Select **Generate token** and copy the value now, because the UI shows it once. Over HTTP, Git takes any non-blank username with the token as the password.
 
-**Step 5 — create the runner, and register it.** This is the step with the traps in it. In the UI: **Admin** in the upper-right corner, then **CI/CD > Runners**, then **Create instance runner**. Tick **Run untagged**, describe it `tf-lab`, and select **Create runner**. GitLab shows you a `glrt-` authentication token, once.
+!!! note "Not `api`, and the other entry in that dropdown"
+    `api` grants *"complete read and write access to the API"*, which is what the lab's `setup.py` needs because it creates the project, the runner and the commit through the API. You are doing all three by hand, so the only thing this token ever does is push in step 7. Grant that and nothing else.
+
+    The dropdown's other entry, **Fine-grained token**, narrows a token to named groups and projects rather than to everything you can reach. On a real forge that is the one to reach for, and the reasoning is the same reasoning that ends this lab: a credential should be able to do the job in front of it and nothing beyond.
+
+**Step 5 — create the runner, and register it.** This is the step with the traps in it. In the UI: **Admin** in the upper-right corner, then **CI/CD > Runners**, then **Create instance runner**. Leave **Tags** empty and make sure **Run untagged jobs** is ticked, because the lab's pipeline tags nothing and a runner that only takes tagged jobs sits idle while the pipeline waits forever. Under **Configuration (optional)**, set **Runner description** to `tf-lab`. Then **Create runner**. GitLab shows you a `glrt-` authentication token, once.
+
+That screen ends by handing you a registration command, and the command it offers assumes a runner installed on a host. Ours lives in a container, and it needs arguments that screen does not know about.
 
 A runner is two halves. The half you just made is a record in GitLab. The other half is the process in the `tf-lab-gitlab-runner` container, which holds no configuration at all until you hand it that token:
 
