@@ -61,6 +61,7 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Generating configuration (`plan -generate-config-out`) | 2026-08-20 | [tf-import-generate](tf-import-generate.md) |
 | `import` block reference | 2026-08-20 | [tf-block-import](tf-block-import.md) |
 | `list` block reference (`.tfquery.hcl`) | 2026-08-20 | [tf-block-list](tf-block-list.md) |
+| `moved` block reference | 2026-08-20 | [tf-block-moved](tf-block-moved.md) |
 | State (overview) | 2026-07-29 | [tf-state](tf-state.md) |
 | Purpose of Terraform State | 2026-07-29 | [tf-state-purpose](tf-state-purpose.md) |
 | State Storage and Locking (remote backends) | 2026-07-29 | [tf-state-backends](tf-state-backends.md) |

@@ -154,6 +154,7 @@ nav = [
                     { "Locking" = "sources/terraform-docs/tf-state-locking.md" },
                     { "Workspaces" = "sources/terraform-docs/tf-state-workspaces.md" },
                     { "Remote state" = "sources/terraform-docs/tf-state-remote.md" },
+                    { "moved block reference" = "sources/terraform-docs/tf-block-moved.md" },
                     { "removed block reference" = "sources/terraform-docs/tf-block-removed.md" },
                 ]},
                 { "Reference" = [
