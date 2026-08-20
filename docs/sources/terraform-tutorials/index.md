@@ -28,13 +28,14 @@ Notes from the official hands-on tutorials at [developer.hashicorp.com/terraform
 
 ## State
 
-Nav order mirrors the collection sidebar, resolved at **rung 3** (rendered nav DOM) with `fetch_nav.py` on 2026-08-20. Full sidebar, in order: *1 Import · 2 Migrate state · 3 Manage resource state · 4 Target resources · 5 Troubleshooting · 6 Resource drift · 7 Lifecycle rules · 8 Version state · 9 Refresh state · 10 Console · 11 Move resources*. Three are still uncaptured — **Target resources** (`state/resource-targeting`), **Refresh state** (`state/refresh`), **Console** (`state/console`). *Move resources* is the same page as [tut-move-config](tut-move-config.md), which the site also files under Modules and which is listed there.
+Nav order mirrors the collection sidebar, resolved at **rung 3** (rendered nav DOM) with `fetch_nav.py` on 2026-08-20. Full sidebar, in order: *1 Import · 2 Migrate state · 3 Manage resource state · 4 Target resources · 5 Troubleshooting · 6 Resource drift · 7 Lifecycle rules · 8 Version state · 9 Refresh state · 10 Console · 11 Move resources*. Two are still uncaptured — **Refresh state** (`state/refresh`) and **Console** (`state/console`). *Move resources* is the same page as [tut-move-config](tut-move-config.md), which the site also files under Modules and which is listed there.
 
 | Page | Added | File |
 |---|---|---|
 | Import (Import Terraform configuration) | 2026-08-20 | [tut-state-import](tut-state-import.md) |
 | Migrate state to HCP Terraform | 2026-08-18 | [tut-cloud-migrate](tut-cloud-migrate.md) |
 | Manage resource state (Manage resources in Terraform state) | 2026-08-20 | [tut-state-cli](tut-state-cli.md) |
+| Target resources | 2026-08-20 | [tut-resource-targeting](tut-resource-targeting.md) |
 | Troubleshooting (Troubleshoot Terraform) | 2026-08-20 | [tut-troubleshooting-workflow](tut-troubleshooting-workflow.md) |
 | Manage resource drift | 2026-08-20 | [tut-resource-drift](tut-resource-drift.md) |
 | Lifecycle rules (Manage resource lifecycle) | 2026-08-03 | [tut-resource-lifecycle](tut-resource-lifecycle.md) |
