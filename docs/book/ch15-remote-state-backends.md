@@ -1814,6 +1814,29 @@ git add -A && git commit -m "Add Terraform pipeline with an S3 backend" && git p
 
 The trailing `/.` is what carries the dotfile.
 
+!!! warning "`HTTP Basic: Access denied` says four things at once"
+    ```
+    remote: HTTP Basic: Access denied. If a password was provided for Git
+    authentication, the password was incorrect or you're required to use a token
+    instead of a password. If a token was provided, it was either incorrect,
+    expired, or improperly scoped.
+    ```
+
+    Incorrect, expired, improperly scoped, and one the message leaves out: **revoked**. A revoked token fails exactly like a mistyped one. Since the value is displayed once, a half-copied token and a stale token from an earlier attempt look identical from here, and both are common.
+
+    Ask the application which tokens exist rather than guessing:
+
+    ```shell
+    docker exec tf-lab-gitlab gitlab-rails runner "User.find_by_username('root').personal_access_tokens.each { |t| puts [t.name, t.scopes.inspect, t.revoked].join(' | ') }"
+    ```
+
+    ```
+    tf-lab | ["api"] | false
+    example | ["api"] | true
+    ```
+
+    That `true` is a revoked token. Name tokens for what they do, because two called `example` and one of them dead is a confusing five minutes.
+
 !!! warning "`cp ci/* .` silently leaves the pipeline behind"
     Measured while writing this lab. A `*` glob skips dotfiles, so `.gitlab-ci.yml` is the one file of the three that does not arrive. The push succeeds, the project looks right, and no pipeline runs at all, because from GitLab's point of view the project has no pipeline to run. There is no error anywhere to find. Check with `git show --stat HEAD` before wondering what is wrong with your runner.
 
