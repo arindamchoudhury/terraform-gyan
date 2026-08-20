@@ -55,6 +55,7 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Built-in Functions (catalogue) | 2026-07-15 | [tf-functions](tf-functions.md) |
 | Query infrastructure data (data sources) | 2026-07-22 | [tf-data-sources](tf-data-sources.md) |
 | `data` block reference | 2026-07-22 | [tf-block-data](tf-block-data.md) |
+| Import resources (overview) | 2026-08-20 | [tf-import](tf-import.md) |
 | State (overview) | 2026-07-29 | [tf-state](tf-state.md) |
 | Purpose of Terraform State | 2026-07-29 | [tf-state-purpose](tf-state-purpose.md) |
 | State Storage and Locking (remote backends) | 2026-07-29 | [tf-state-backends](tf-state-backends.md) |

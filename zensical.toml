@@ -137,6 +137,9 @@ nav = [
                     { "gcs" = "sources/terraform-docs/tf-backend-gcs.md" },
                     { "s3" = "sources/terraform-docs/tf-backend-s3.md" },
                 ]},
+                { "Import resources" = [
+                    { "Overview" = "sources/terraform-docs/tf-import.md" },
+                ]},
                 { "State" = [
                     { "Overview" = "sources/terraform-docs/tf-state.md" },
                     { "Purpose" = "sources/terraform-docs/tf-state-purpose.md" },
