@@ -2,13 +2,20 @@
 
 > **Source:** [developer.hashicorp.com/terraform/cli/commands/refresh](https://developer.hashicorp.com/terraform/cli/commands/refresh)
 > **Added:** 2026-07-30
-> **Source updated:** undated CLI reference; captured 2026-07-30 against v1.15.x (latest)
+> **Source updated:** undated CLI reference; captured 2026-07-30, re-verified 2026-08-21 — still v1.15.x (latest)
 > **Tags:** cli, refresh, refresh-only, deprecated, drift, state, auto-approve
 > **Type:** documentation
 
 *Developer › Terraform › Terraform CLI › Manually Update State › Inspecting State › `refresh` · v1.15.x*
 
 A deprecation notice with a command attached. Confirms what [[05-terraform-plan]] §5 already says about `terraform refresh`, and adds the exact equivalence and the docs' own wording for the failure mode.
+
+!!! note "Re-verified 2026-08-21 — byte-identical, and it is now the counter-evidence in a documented pattern"
+    Re-fetched and diffed against the July capture: **no change in three weeks**. The deprecation still sits in the second sentence.
+
+    What changed is the surroundings. Two pages that route readers here have since been captured, and **neither repeats the deprecation**. [[tf-cli-state-inspect]], the section index one click above this reference, describes the command in neutral present tense and never mentions `-refresh-only`. [[tut-state-cli]]'s final exercise reconciles an out-of-band delete with a bare `terraform refresh`, no notice and no alternative. Together with [[tf-cli-state]] fronting `taint`/`untaint` for re-creation, that is three index-level pages lagging the references they point at — this page is the reference they are lagging.
+
+    The index does supply one thing this page does not: the reason a standalone refresh still has a job at all. Refreshing happens automatically during plans and applies, *"but not when interacting with state directly"* — nothing in the `state` subcommand family refreshes ([[tf-cmd-state]]), so state read through them is as stale as the last plan left it. That is a narrower job than the command's own closing advice implies, and it does not change the advice: use `plan`, or `-refresh-only` when you mean to accept drift.
 
 ## What it does, and what it is
 
