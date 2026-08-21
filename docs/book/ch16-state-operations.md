@@ -224,7 +224,7 @@ Nothing about the bucket changed. Its name is identical on both sides of the pla
 1. **Delete** the `resource` block outright. Plan, and save the output as `deleted.txt`.
 2. Put the block back and **rename** its label instead. Plan again, and save that as `renamed.txt`.
 
-Neither plan is applied, so both are computed against the same state, holding the same one bucket. Now diff them:
+Neither plan is applied, so both are computed against the same state, holding the same one bucket. Now compare them line by line:
 
 ```text
 $ diff deleted.txt renamed.txt
@@ -242,9 +242,17 @@ $ diff deleted.txt renamed.txt
 > Plan: 1 to add, 0 to change, 1 to destroy.
 ```
 
-Read what the diff does *not* report. Every refresh line, the entire destroy block, and the reason line inside it are **identical between the two plans**. A deliberate deletion and an accidental rename produce the same destroy output, character for character, so nothing in it can tell you which one you are looking at.
+Those three numbers are worth checking rather than believing:
 
-There are three differences. Two exist only in the rename: an extra `+ create` entry in the symbol legend, and the create block itself. The third is the counter line, which is present in both and reads differently — `0 to add` for the deletion against `1 to add` for the rename.
+```shell
+wc -l deleted.txt                              # 62
+diff deleted.txt renamed.txt | grep -c '^<'    # 1  — only in deleted.txt
+diff deleted.txt renamed.txt | grep -c '^>'    # 43 — only in renamed.txt
+```
+
+Measure the overlap rather than reading the diff for differences. The deletion plan is 62 lines long, and **61 of them appear in the rename plan, identically and in the same order**: every refresh line, the whole destroy block, and the reason line inside it. A deliberate deletion and an accidental rename produce the same destroy output character for character, so nothing in it can tell you which one you are looking at.
+
+Exactly one line of the deletion plan is missing from the other, and it is the counter, `0 to add` where the rename says `1 to add`. Everything else the diff reports is the 43 lines the rename *adds*: the extra `+ create` entry in the symbol legend, and the create block itself.
 
 That is the practical reading rule. **The `+` half is the tell, not the `-` half.** An unexpected destroy on its own is ambiguous. An unexpected destroy paired with the creation of something suspiciously similar, and `1 to add` where you expected `0 to add`, is a rename you forgot to declare.
 
