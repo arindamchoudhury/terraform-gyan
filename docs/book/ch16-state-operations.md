@@ -21,7 +21,19 @@ By the end you can:
 
 Chapter 9 established that state binds a configuration address to a real object, one to one, and named the fields the file carries down to the `instances` array. Chapter 15 moved that file somewhere a team can share. This section looks closer at a resource entry, and at its `instances` array in particular, because everything in this chapter depends on understanding that layout properly.
 
-Apply a single bucket and `resources` holds one entry. Trimmed to the fields that matter here:
+Everything below can be followed along. Chapter 1's `tflocal` wrapper points Terraform at the local emulator, so nothing here costs money or touches a real account. Start with one bucket:
+
+```hcl
+resource "aws_s3_bucket" "notes" {
+  bucket = "ch16-moved-notes"
+}
+```
+
+```shell
+tflocal apply -auto-approve
+```
+
+Open `terraform.tfstate` and `resources` holds one entry. Trimmed to the fields that matter here:
 
 ```json
 {
@@ -43,7 +55,18 @@ Apply a single bucket and `resources` holds one entry. Trimmed to the fields tha
 | `provider` | Which provider configuration created the object. Note that it sits *beside* the address, not inside it. |
 | `instances` | One element per instance. This is the field every operation in this chapter works on. |
 
-**A `resource` block is not one object.** It is a template, and `instances` is where the objects it produced are recorded. Without `count` or `for_each` it produces exactly one, as above, and that instance carries no key. Give a different resource `count = 2` and its entry holds two elements, each tagged with its position:
+**A `resource` block is not one object.** It is a template, and `instances` is where the objects it produced are recorded. Without `count` or `for_each` it produces exactly one, as above, and that instance carries no key.
+
+Add a second resource that uses `count`, and apply again:
+
+```hcl
+resource "aws_s3_bucket" "archive" {
+  count  = 2
+  bucket = "ch16-moved-archive-${count.index}"
+}
+```
+
+Its entry holds two elements, each tagged with its position:
 
 ```json
 { "instances": [
@@ -52,7 +75,32 @@ Apply a single bucket and `resources` holds one entry. Trimmed to the fields tha
 ] }
 ```
 
-Migrate that same resource to `for_each`, which is what section 4 does with it, and the keys become strings:
+Now migrate that resource from `count` to `for_each`, which is what section 4 does with it properly. Replace the block and declare where each instance went. The `moved` blocks are section 4's subject; here they are simply what makes the migration possible:
+
+```hcl
+resource "aws_s3_bucket" "archive" {
+  for_each = { cold = 0, warm = 1 }
+  bucket   = "ch16-moved-archive-${each.value}"
+}
+
+moved {
+  from = aws_s3_bucket.archive[0]
+  to   = aws_s3_bucket.archive["cold"]
+}
+
+moved {
+  from = aws_s3_bucket.archive[1]
+  to   = aws_s3_bucket.archive["warm"]
+}
+```
+
+Apply it and read the last line:
+
+```text
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+```
+
+Three zeroes. Terraform did work, and none of it happened in S3. Look at the entry again and the keys are strings:
 
 ```json
 { "instances": [
@@ -61,7 +109,7 @@ Migrate that same resource to `for_each`, which is what section 4 does with it, 
 ] }
 ```
 
-Compare those two blocks carefully, because the difference is the whole subject of this chapter. The `id` values are identical. Only the keys changed, from positions to names, and the apply that did it reported `0 added, 0 changed, 0 destroyed`. Two buckets were rewritten in state without either one being touched in S3.
+Compare that against the `count` version above, because the difference is the whole subject of this chapter. The `id` values are identical, so both buckets are the ones you already had. Only the keys changed, from positions to names. Two instance elements were rewritten in state while the objects they name sat untouched, and the counters are how you know: an apply that changed infrastructure could not report three zeroes.
 
 Three shapes, and each is addressed differently: `aws_s3_bucket.notes`, `aws_s3_bucket.archive[0]`, `aws_s3_bucket.archive["cold"]`. Section 3 turns that into a grammar. It is also why the migration is a state operation rather than an edit: every `index_key` has to be rewritten, one instance at a time, and the objects have to be left alone while it happens.
 
