@@ -25,7 +25,9 @@ Real infrastructure does not cooperate.
 
 Some of it predates your configuration. A bucket exists, someone created it in a console two years ago, and nothing in Terraform knows about it. Some of it gets renamed, because `aws_s3_bucket.notes` was a fine name until three teams started using it. Some of it moves into a module during a refactor. Some of it changes underneath you at three in the morning, when an on-call engineer edits a security group to stop an outage. And occasionally an apply dies halfway and leaves state describing a world that no longer exists.
 
-Every one of those is the same failure at bottom. HashiCorp's [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move) page states it in one sentence:
+Those are not all the same failure, and separating them is what gives this chapter its shape. The first three break the **binding** between a configuration address and an object: the address moved, or never existed, while the object sat still. The last two leave the binding intact and make its **contents** wrong: the address still points at the right object, and what state records about that object no longer matches reality. Sections 4 to 7 are the first kind, and sections 8, 9 and 11 are the second. Section 10 belongs to neither, because it is the command surface both families reach for.
+
+Take the binding failures first. HashiCorp's [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move) page states them in one sentence:
 
 > "Terraform's state associates each real-world object with a configured resource **at a specific resource address**. This is seamless when changing a resource's attributes, but Terraform will **lose track** of a resource if you change its name, move it to a different module, or **change its provider**."
 
@@ -42,7 +44,7 @@ What happens when the binding breaks is worth quoting too, because the docs' ton
 
 > "**Usually that's fine**: Terraform will destroy the old resource, replace it with a new one (using the new resource address), and update any resources that rely on its attributes."
 
-Destroy-and-recreate is the *right* answer to a renamed address most of the time. Everything in this chapter exists for the minority of cases where the object has to survive the rename.
+Destroy-and-recreate is the *right* answer to a renamed address most of the time. The refactoring half of this chapter, sections 4 to 7, exists for the minority of cases where the object has to survive the address change instead.
 
 ### The diagnostic line
 
@@ -80,20 +82,32 @@ Nothing about the bucket changed. Its name is identical on both sides of the pla
 
 `# (because X is not in configuration)` is the line to recognise. It means "state has something configuration does not claim", and it appears whether you deleted the resource, renamed it, moved it into a module, or forgot to `git add` a file.
 
-"Indistinguishable" is meant literally, and it is worth proving rather than asserting. Apply one bucket, then produce the two situations separately: **delete** the `resource` block outright, and **rename** its label. Diff the destroy half of the two plans:
+"Indistinguishable" is meant literally, and it is worth proving rather than asserting. Apply one bucket, then produce the two situations separately and save each plan: **delete** the `resource` block outright, and **rename** its label. Then diff the two whole plans:
 
 ```text
-$ diff <(sed -n '/will be destroyed/,/^    }/p' deleted.txt) \
-       <(sed -n '/will be destroyed/,/^    }/p' renamed.txt)
-$
+$ diff deleted.txt renamed.txt
+4a5
+>   + create
+57c58,99
+< Plan: 0 to add, 0 to change, 1 to destroy.
+---
+>   # aws_s3_bucket.team_notes will be created
+>   + resource "aws_s3_bucket" "team_notes" {
+>       + acceleration_status         = (known after apply)
+...
+>     }
+>
+> Plan: 1 to add, 0 to change, 1 to destroy.
 ```
 
-No output. The two are **byte-identical**, down to the reason line and every attribute. A deliberate deletion and an accidental rename produce the same plan text, so nothing in that half of the output can tell you which one you are looking at. The only difference between the two plans is elsewhere: the rename also carries a `+ create` block for the new address, and its counters read `1 to add, 0 to change, 1 to destroy` where the deletion reads `0 to add, 0 to change, 1 to destroy`.
+Read what the diff does *not* report. Every refresh line, the entire destroy block, and the reason line inside it are **identical between the two plans**. A deliberate deletion and an accidental rename produce the same destroy output, character for character, so nothing in it can tell you which one you are looking at.
 
-That is the practical reading rule. **The `+` half is the tell, not the `-` half.** A destroy you did not expect, paired with a creation of something suspiciously similar, is a rename you forgot to declare.
+There are three differences. Two exist only in the rename: an extra `+ create` entry in the symbol legend, and the create block itself. The third is the counter line, which is present in both and reads differently — `0 to add` for the deletion against `1 to add` for the rename.
 
-!!! note "The two directions this chapter covers"
-    **Configuration has something state does not** is the import case: an object exists, nothing tracks it. **State has something configuration does not** is the destroy case, and `moved` and `removed` are the two ways of saying "not what it looks like". Everything else here is the machinery for getting the two files back into agreement after something knocked them apart.
+That is the practical reading rule. **The `+` half is the tell, not the `-` half.** An unexpected destroy on its own is ambiguous. An unexpected destroy paired with the creation of something suspiciously similar, and `1 to add` where you expected `0 to add`, is a rename you forgot to declare.
+
+!!! note "Binding failures come in two directions, and they need different tools"
+    Within that first family, which way the mismatch points decides which block you reach for. **Configuration has something state does not** is the import case: an object exists and nothing tracks it, so section 6 adopts it. **State has something configuration does not** is the destroy case, and `moved` and `removed` in sections 4 and 5 are the two ways of telling Terraform it is not what it looks like — a rename rather than a deletion, or a handover rather than a deletion.
 
 ---
 
@@ -1357,17 +1371,20 @@ tflocal init && tflocal apply
 
 Rename the label from `notes` to `team_notes` and plan **without** a `moved` block. Read the `# (because aws_s3_bucket.notes is not in configuration)` line and the `1 to add, 1 to destroy` counters.
 
-Before fixing it, prove section 1's claim for yourself. Save that plan, then **delete** the `notes` block entirely and save a second one, and diff the destroy halves:
+Before fixing it, prove section 1's claim for yourself. Save that plan, then **delete** the `notes` block entirely and save a second one:
 
 ```shell
 tflocal plan -no-color > renamed.txt      # with the label renamed
 # now delete the resource block instead, and:
 tflocal plan -no-color > deleted.txt
-diff <(sed -n '/will be destroyed/,/^    }/p' deleted.txt) \
-     <(sed -n '/will be destroyed/,/^    }/p' renamed.txt)
+diff deleted.txt renamed.txt
 ```
 
-Empty diff. The counters are where they differ: `0 to add, 0 to change, 1 to destroy` for the deletion against `1 to add, 0 to change, 1 to destroy` for the rename.
+```powershell
+Compare-Object (Get-Content deleted.txt) (Get-Content renamed.txt)
+```
+
+Measured here, `Compare-Object` reports 44 differing rows: 43 on the renamed side, which are the `+ create` legend entry and the create block, and 1 on the deleted side, which is its counter line. The destroy block, reason line included, is identical in both and appears nowhere in the output.
 
 Then add:
 
