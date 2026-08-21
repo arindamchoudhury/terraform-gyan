@@ -32,7 +32,7 @@ Before watching that binding break, it is worth seeing what it physically is, be
 }
 ```
 
-That entry has two halves. `mode` records that this is a managed resource rather than a data source, and `type` and `name` spell the **configuration address**, `aws_s3_bucket.notes`, which is just the labels on the `resource` block. The `id` inside `instances` names the **real object**, the bucket the provider actually created. The binding is nothing more than the fact that those two sit in the same entry, and Terraform reads it in both directions: given the address it knows which object to modify, and given the object it knows which block is responsible for it.
+That entry has two halves. `mode` records that this is a managed resource rather than a data source, and `type` and `name` spell the **configuration address**, `aws_s3_bucket.notes`, which is just the labels on the `resource` block. The `id` inside `instances` names the **real object**, the bucket the provider actually created. The binding is nothing more than the fact that those two sit in the same entry, which is how Terraform gets from an address in your configuration to the object it has to modify.
 
 Nothing outside that entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. The connection survives only while the address recorded in state still corresponds to an address your configuration declares.
 
