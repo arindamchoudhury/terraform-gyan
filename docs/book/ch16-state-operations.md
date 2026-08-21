@@ -40,17 +40,21 @@ Breaking that correspondence takes one word. Rename the label on the `resource` 
 
 Both earlier chapters could assume this entry, once written by an ordinary apply, never needed adjusting. That assumption breaks constantly, and it breaks in five recognisable ways.
 
-- **Some infrastructure predates your configuration.** A bucket exists, someone created it in a console two years ago, and nothing in Terraform knows about it.
-- **Some of it gets renamed.** `aws_s3_bucket.notes` was a fine name until three teams started using it.
-- **Some of it moves into a module** during a refactor, which changes the address without touching the object.
-- **Some of it changes underneath you** at three in the morning, when an on-call engineer edits a security group to stop an outage.
-- **Some applies die halfway**, having created objects state never recorded, or recorded objects they never finished destroying.
+1. **Some infrastructure predates your configuration.** A bucket exists, someone created it in a console two years ago, and nothing in Terraform knows about it.
+2. **Some of it gets renamed.** `aws_s3_bucket.notes` was a fine name until three teams started using it.
+3. **Some of it moves into a module** during a refactor, which changes the address without touching the object.
+4. **Some of it changes underneath you** at three in the morning, when an on-call engineer edits a security group to stop an outage.
+5. **Some applies die halfway**, having created objects state never recorded, or recorded objects they never finished destroying.
 
-Those are not all the same failure, and separating them is what gives this chapter its shape. The first three break the **binding** between a configuration address and an object. Either the address moved, or the state entry was never created in the first place. In every one of them the edit leaves the object alone, still sitting there under the `id` it always had, and only the address side of the entry moves. Sections 4 to 7 are the repair kit for those. The fourth leaves the binding intact and makes state's **contents** stale, because the address still points at the right object and what state records about it no longer matches reality. That is section 8.
+Those five are not one failure with five faces. They split into two kinds, and telling the two apart is what gives this chapter its shape.
 
-The fifth is the awkward one. A run that dies partway can produce either shape, an object nobody tracks or a binding pointing at something already destroyed, and sometimes just a lock nobody released. Section 11 is the recovery.
+| Which | What actually went wrong | Handled in |
+|---|---|---|
+| 1, 2, 3 | The **binding is severed**. The address side moved, or its entry was never written at all. The object is untouched throughout, still sitting there under the `id` it always had. | Sections 4–7 |
+| 4 | The **binding is fine, the contents are stale**. State still points at the right object; what it records *about* that object is out of date. | Section 8 |
+| 5 | Either of the above, depending on how far the run got before it died. Sometimes just a lock nobody released. | Section 11 |
 
-Two sections sit outside that taxonomy. Section 9 is for objects that are damaged while state is entirely correct, which is why it takes a manual instruction rather than a repair. Section 10 is the command surface all of them reach for.
+Two sections sit outside that table. Section 9 is for an object that is damaged while state is entirely correct, which is why it needs a manual instruction rather than a repair. Section 10 is the command surface all of them reach for.
 
 Take the binding failures first. HashiCorp's [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move) page states them in one sentence:
 
@@ -132,7 +136,7 @@ There are three differences. Two exist only in the rename: an extra `+ create` e
 That is the practical reading rule. **The `+` half is the tell, not the `-` half.** An unexpected destroy on its own is ambiguous. An unexpected destroy paired with the creation of something suspiciously similar, and `1 to add` where you expected `0 to add`, is a rename you forgot to declare.
 
 !!! note "Binding failures come in two directions, and they need different tools"
-    Within that first family, which way the mismatch points decides which block you reach for. **Configuration has something state does not** is the import case: an object exists and nothing tracks it, so section 6 adopts it. **State has something configuration does not** is the destroy case, and `moved` and `removed` in sections 4 and 5 are the two ways of telling Terraform it is not what it looks like — a rename rather than a deletion, or a handover rather than a deletion.
+    Among failures 1 to 3, which way the mismatch points decides which block you reach for. **Configuration has something state does not** is the import case: an object exists and nothing tracks it, so section 6 adopts it. **State has something configuration does not** is the destroy case, and `moved` and `removed` in sections 4 and 5 are the two ways of telling Terraform it is not what it looks like — a rename rather than a deletion, or a handover rather than a deletion.
 
 ---
 
