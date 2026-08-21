@@ -19,22 +19,56 @@ By the end you can:
 
 ## 1. The problem: an address is an identity
 
-Chapter 9 established that state binds a configuration address to a real object, one to one. Chapter 15 moved that file somewhere a team can share.
+Chapter 9 established that state binds a configuration address to a real object, one to one, and named the fields the file carries. Chapter 15 moved that file somewhere a team can share. Neither opened the part this chapter spends all its time inside: how one `resource` block is actually laid out, and where an *instance* lives. Every operation ahead moves entries, or pieces of entries, so the anatomy is worth a few minutes first.
 
-Before watching that binding break, it is worth seeing what it physically is, because the word gets used loosely. Applying a single bucket produces one entry in state. Trimmed to the parts that matter, it looks like this:
+Apply a single bucket and `resources` holds one entry. Trimmed to the fields that matter here:
 
 ```json
 {
-  "mode": "managed", "type": "aws_s3_bucket", "name": "notes",
+  "mode": "managed",
+  "type": "aws_s3_bucket",
+  "name": "notes",
+  "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
   "instances": [
-    { "attributes": { "id": "ch16-moved-notes", "arn": "arn:aws:s3:::ch16-moved-notes" } }
+    {
+      "schema_version": 0,
+      "attributes": { "id": "ch16-moved-notes", "arn": "arn:aws:s3:::ch16-moved-notes" }
+    }
   ]
 }
 ```
 
-That entry has two halves. `mode` records that this is a managed resource rather than a data source, and `type` and `name` spell the **configuration address**, `aws_s3_bucket.notes`, which is just the labels on the `resource` block. The `id` inside `instances` names the **real object**, the bucket the provider actually created. The binding is nothing more than the fact that those two sit in the same entry, which is how Terraform gets from an address in your configuration to the object it has to modify.
+| Field | What it holds |
+|---|---|
+| `mode` | `managed` for a `resource`, `data` for a data source. Both live in the same array. |
+| `type`, `name` | The two labels on the block. Together they spell the **configuration address**, `aws_s3_bucket.notes`. |
+| `module` | Absent at the root. A resource inside `module "wrapped"` carries `"module": "module.wrapped"`. |
+| `provider` | Which provider configuration created the object. Note that it sits *beside* the address, not inside it. |
+| `instances` | One element per instance. This is the field that matters most, and the one chapter 9 passed over. |
 
-Nothing outside that entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. The connection survives only while the address recorded in state still corresponds to an address your configuration declares.
+**A `resource` block is not one object.** It is a template, and `instances` is where the objects it produced are recorded. Without `count` or `for_each` it produces exactly one, as above, and that instance carries no key. Add `count = 2` and the same entry grows a second element, each tagged with its position:
+
+```json
+{ "instances": [
+  { "index_key": 0, "attributes": { "id": "ch16-anat-archive-0" } },
+  { "index_key": 1, "attributes": { "id": "ch16-anat-archive-1" } }
+] }
+```
+
+Use `for_each` instead and the keys are strings rather than numbers:
+
+```json
+{ "instances": [
+  { "index_key": "alpha", "attributes": { "id": "ch16-anat-team-alpha" } },
+  { "index_key": "beta",  "attributes": { "id": "ch16-anat-team-beta"  } }
+] }
+```
+
+Three shapes, and each one is addressed differently: `aws_s3_bucket.notes`, `aws_s3_bucket.archive[0]`, `aws_s3_bucket.team["alpha"]`. Section 3 turns that into a grammar. It is also why migrating `count` to `for_each` in section 4 is a state operation and not just an edit: every `index_key` has to change from a number to a string, one instance at a time, and nothing about the buckets themselves changes while it happens.
+
+The **binding** is the pairing inside one of those instance elements. On one side the address, spelled by `module`, `type`, `name` and the instance's `index_key`. On the other the `id` in `attributes`, naming the object the provider actually created. That pairing is how Terraform gets from an address in your configuration to the object it has to modify.
+
+Nothing outside the entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. The connection survives only while the address recorded in state still corresponds to an address your configuration declares.
 
 Breaking that correspondence takes one word. Rename the label on the `resource` block and the state entry does not follow: state still holds `aws_s3_bucket.notes` while the configuration now declares `aws_s3_bucket.team_notes`. The bucket is untouched and `terraform validate` reports the configuration valid, so each half is individually in perfect order. They have simply stopped referring to each other, and Terraform has no way to guess that they were ever a pair.
 
@@ -69,12 +103,7 @@ Three ways to break the binding, and the first two are already on the table abov
 2. **Move it to a different module.** That is failure 3.
 3. **Change its provider.** This one is deliberately not among the five, because it is the only case in which nothing about the address changes at all.
 
-The third is the one people never guess, and it is also the one easiest to get wrong in the retelling, so be precise. The provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, in the same entry shown earlier, as a sibling field of the type and name:
-
-```json
-{ "mode": "managed", "type": "aws_s3_bucket", "name": "notes",
-  "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]" }
-```
+The third is the one people never guess, and it is also the one easiest to get wrong in the retelling, so be precise. The provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, as the entry at the top of this section shows: a sibling field of `type` and `name`, not a component of the address they spell.
 
 So a provider change breaks the **binding** without changing the address, which is precisely why it needs a command of its own. A `moved` block rewrites addresses, and there is no address here to rewrite. `terraform state replace-provider` exists to edit that one field, and it is documented on this page, in the sidebar's *Moving Resources* group, rather than anywhere provider-shaped.
 
