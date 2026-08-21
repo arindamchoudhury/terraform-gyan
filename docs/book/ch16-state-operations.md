@@ -151,12 +151,12 @@ That is the practical reading rule. **The `+` half is the tell, not the `-` half
 
 ## 2. The toolkit, ranked
 
-There are three tiers, and TID Ch 6 §6.5 puts them in the order you should reach for them: **code**, then the **CLI**, then hand-editing. The table below splits the first two into columns. The third tier is the last row, where there is no better option left.
+There are three tiers, and TID Ch 6 §6.5 puts them in the order you should reach for them: **code**, then the **CLI**, then hand-editing. The table below splits the first two into columns. The third tier, hand-editing, shows up only in the last row, where nothing better exists.
 
 | Intent | Preferred: goes through a plan | Fallback: writes state directly | Preferred route introduced |
 |---|---|---|---|
 | Adopt an existing object | `import` block | `terraform import` | block: 1.5 |
-| Adopt many objects | `list` blocks + `terraform query`, then the `import` blocks it generates | — | 1.14 |
+| Adopt many objects | `list` blocks + `terraform query`, then the `import` blocks it generates | `terraform import`, once per object | 1.14 |
 | Rename or relocate an address | `moved` block | `terraform state mv` | block: 1.1 |
 | Forget an object, keep it running | `removed` + `lifecycle { destroy = false }` | `terraform state rm` | block: 1.7 |
 | Move an object to another state file | `removed` + `import` in two configurations | `state mv -state -state-out` | 1.7 |
@@ -165,7 +165,7 @@ There are three tiers, and TID Ch 6 §6.5 puts them in the order you should reac
 | Force one object to be rebuilt | `apply -replace=ADDR` | `terraform taint` (deprecated) | flag: 0.15.2 |
 | Repair a corrupted state | — | `state pull` → edit → `state push` | — |
 
-Read the fallback column as an escape hatch, not as a parallel workflow. The two deprecated rows share one flaw: each writes state outside a plan anybody could have reviewed. They arrive at it from opposite directions, though, so they are worth keeping apart rather than collapsing into a single rule.
+Read the fallback column as an escape hatch, not as a parallel workflow. The two deprecated rows share one flaw: each writes state outside a plan anybody could have reviewed. They get there from opposite directions, though. `taint` deferred the action behind a state write; `refresh` writes state with no preview at all.
 
 ### Why configuration wins, three times over
 
