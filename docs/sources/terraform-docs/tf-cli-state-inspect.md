@@ -35,7 +35,9 @@ That is the only justification any captured page gives for a standalone refresh:
 
     None of that appears here. The section index one click above the reference describes the command in neutral present tense and never mentions `-refresh-only` at all. A reader arriving from the sidebar meets the recommendation-free version first.
 
-    This is the **third** place in this collection with the same shape: [[tut-state-cli]]'s final exercise reconciles an out-of-band delete with a bare `terraform refresh`, and [[tf-cli-state]] routes *Re-create resources* to `taint`/`untaint` without mentioning `-replace`. The pattern is consistent — the command references are current, and the pages that index them were not updated alongside.
+    [[tut-state-cli]]'s final exercise has the same shape, reconciling an out-of-band delete with a bare `terraform refresh`. **This page is the worse of the two**, because a tutorial can be old while a reference section index is the thing a reader consults *to find out what is current*.
+
+    A third candidate did not survive checking. [[tf-cli-state]] routes *Re-create resources* to a URL and a sidebar group both named after tainting, but the page behind them leads with `-replace` and deprecates `taint` outright ([[tf-cli-state-taint]]). That one is stale **naming**; this one is stale **guidance**. Worth keeping the two apart.
 
 ---
 Related: [[tf-cli-state]] — the parent section index; this is one of its four sub-groups. · [[tf-cli-inspect]] — the other section `state list` and `state show` are filed under, cut by *read-only* rather than by *no infrastructure side effects*. · [[tf-cmd-state-list]] · [[tf-cmd-state-show]] · [[tf-cmd-refresh]] — the three commands, all captured; the last one contradicts this page's framing of it. · [[tf-cmd-state]] — why nothing in the `state` family refreshes.

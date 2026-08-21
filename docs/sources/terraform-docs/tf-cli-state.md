@@ -37,13 +37,15 @@ The five interactions the page lists, each a link into a sub-section:
 | Link | Target | Covered here by |
 |---|---|---|
 | Inspect state | `cli/state/inspect` | [[tf-cmd-state-list]], [[tf-cmd-state-show]], [[tf-cmd-refresh]] |
-| Re-create resources | `cli/state/taint` | nothing yet — see the callout below |
+| Re-create resources | `cli/state/taint` | [[tf-cli-state-taint]] |
 | Move resources | `cli/state/move` | [[tf-state-refactor]] (the cross-configuration case), [[tf-block-moved]] (the config-driven alternative) |
 | Import existing resources | `cli/import` | [[tf-import]] and its children, [[tf-block-import]] |
 | Recover state from backup | `cli/state/recover` | [[tf-cmd-force-unlock]] (one of its three pages) |
 
-!!! warning "The index still fronts tainting as the way to re-create a resource"
-    *Re-create resources* points at `cli/state/taint`, whose sub-group is named **Forcing Re-creation (Tainting)** and holds `taint` and `untaint`. Both commands are superseded by `terraform apply -replace`, which [[tut-state-cli]] records and the B3 `-replace` callout explains: `-replace` goes through plan, so the replacement is previewed rather than latent in state. Nothing on this index says so. A reader following the sidebar top-down reaches the deprecated pair first — the same shape of problem as [[tf-cmd-refresh]], where the section index and the command reference disagreed about a command's standing.
+!!! note "The naming here is tainting-flavoured; the destination is not"
+    *Re-create resources* points at `cli/state/taint`, and its sub-group is named **Forcing Re-creation (Tainting)**. Neither name mentions `terraform apply -replace`, which superseded `taint`/`untaint` in 0.15.2.
+
+    **Corrected 2026-08-21 after capturing the destination** ([[tf-cli-state-taint]]): that page **leads with `-replace`** and names `taint` only to deprecate it, so a reader clicking through does *not* land on the deprecated pair. What is stale is the URL, the link text and the group label — not the guidance behind them. Unlike [[tf-cli-state-inspect]] one sub-group over, which genuinely does describe a deprecated command as current.
 
 ## The group this page heads
 
@@ -54,7 +56,7 @@ The sidebar (rung 1, `__NEXT_DATA__`) gives *Manually Update State* one loose pa
 | — | Resource Addressing (`state/resource-addressing`) | no |
 | — | `state` command reference (`cli/commands/state`) | no |
 | Inspecting State | Overview, `state list`, `state show`, `refresh` | 3 of 4 |
-| Forcing Re-creation (Tainting) | Overview, `taint`, `untaint` | none |
+| Forcing Re-creation (Tainting) | Overview, `taint`, `untaint` | 1 of 3 |
 | Moving Resources | Overview, `state mv`, `state rm`, `state replace-provider` | none |
 | Disaster Recovery | Overview, `state pull`, `state push`, `force-unlock` | 1 of 4 |
 
