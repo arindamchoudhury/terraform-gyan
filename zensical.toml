@@ -61,6 +61,7 @@ nav = [
                 ]},
                 { "Manually Update State" = [
                     { "Overview" = "sources/terraform-docs/tf-cli-state.md" },
+                    { "Resource Addressing" = "sources/terraform-docs/tf-resource-addressing.md" },
                     { "Inspecting State" = [
                         { "refresh" = "sources/terraform-docs/tf-cmd-refresh.md" },
                     ]},

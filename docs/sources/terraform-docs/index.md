@@ -89,3 +89,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Refactor modules (`moved` deep reference — instance keys, module split, chaining) | 2026-08-08 | [tf-modules-refactoring](tf-modules-refactoring.md) |
 | `module` block reference (source catalogue; self-contradicts on `source`) | 2026-08-08 | [tf-block-module](tf-block-module.md) |
 | Update state manually (section index; taint still fronted, `replace-provider` filed as a move) | 2026-08-21 | [tf-cli-state](tf-cli-state.md) |
+| Resource Address Reference (one grammar, several parsers; bare address = all instances) | 2026-08-21 | [tf-resource-addressing](tf-resource-addressing.md) |
