@@ -21,7 +21,7 @@ By the end you can:
 
 Chapter 9 established that state binds a configuration address to a real object, one to one, and named the fields the file carries down to the `instances` array. Chapter 15 moved that file somewhere a team can share. This section looks closer at a resource entry, and at its `instances` array in particular, because everything in this chapter depends on understanding that layout properly.
 
-Everything below can be followed along. Chapter 1's `tflocal` wrapper points Terraform at the local emulator, so nothing here costs money or touches a real account. Start with one bucket:
+Everything below can be followed along, and the configurations are in `labs/chapter16/section1/`. Chapter 1's `tflocal` wrapper points Terraform at the local emulator, so nothing here costs money or touches a real account. Start with one bucket:
 
 ```hcl
 resource "aws_s3_bucket" "notes" {
