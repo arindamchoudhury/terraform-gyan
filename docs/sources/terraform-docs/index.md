@@ -98,3 +98,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `terraform state mv` command (race window; PowerShell row verified broken; cross-state case omitted) | 2026-08-21 | [tf-cmd-state-mv](tf-cmd-state-mv.md) |
 | `terraform state replace-provider` command (the one that prompts; shorthand FQNs verified) | 2026-08-21 | [tf-cmd-state-replace-provider](tf-cmd-state-replace-provider.md) |
 | Recover state from backup overview (pull → fix → push; the only page that lists `state push`) | 2026-08-21 | [tf-cli-state-recover](tf-cli-state-recover.md) |
+| `terraform state pull` command (rewrites `terraform_version` on the way out; PowerShell encoding measured) | 2026-08-21 | [tf-cmd-state-pull](tf-cmd-state-pull.md) |
