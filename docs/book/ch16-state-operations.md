@@ -27,7 +27,7 @@ Before watching that binding break, it is worth seeing what it physically is, be
 {
   "mode": "managed", "type": "aws_s3_bucket", "name": "notes",
   "instances": [
-    { "attributes": { "id": "ch16-binding-demo", "arn": "arn:aws:s3:::ch16-binding-demo" } }
+    { "attributes": { "id": "ch16-moved-notes", "arn": "arn:aws:s3:::ch16-moved-notes" } }
   ]
 }
 ```
