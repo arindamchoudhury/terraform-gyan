@@ -90,3 +90,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `module` block reference (source catalogue; self-contradicts on `source`) | 2026-08-08 | [tf-block-module](tf-block-module.md) |
 | Update state manually (section index; taint still fronted, `replace-provider` filed as a move) | 2026-08-21 | [tf-cli-state](tf-cli-state.md) |
 | Resource Address Reference (one grammar, several parsers; bare address = all instances) | 2026-08-21 | [tf-resource-addressing](tf-resource-addressing.md) |
+| `terraform state` command hub (forced backups; hub omits `state push`) | 2026-08-21 | [tf-cmd-state](tf-cmd-state.md) |
