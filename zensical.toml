@@ -79,6 +79,7 @@ nav = [
                     { "Disaster Recovery" = [
                         { "Overview" = "sources/terraform-docs/tf-cli-state-recover.md" },
                         { "state pull" = "sources/terraform-docs/tf-cmd-state-pull.md" },
+                        { "state push" = "sources/terraform-docs/tf-cmd-state-push.md" },
                         { "force-unlock" = "sources/terraform-docs/tf-cmd-force-unlock.md" },
                     ]},
                 ]},

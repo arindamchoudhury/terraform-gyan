@@ -34,6 +34,8 @@ The subcommands it lists:
 
     So the one subcommand that **overwrites** a state file wholesale is missing from the index of state subcommands. [[tut-cloud-state-api]] does the equivalent operation through the HCP API instead, and [[tf-state-refactor]] pairs `pull` with a redirect to a backup file rather than with `push`. Read the sidebar, not this list, when you need the full set.
 
+    It is documented at [[tf-cli-state-recover]] instead — and captured as [[tf-cmd-state-push]], where the omission turns out to matter twice over, because that command also breaks the backup rule below.
+
 ## Backups — the rule worth knowing
 
 > "All `terraform state` subcommands that modify the state write backup files. The path of these backup file can be controlled with `-backup`."
@@ -43,6 +45,9 @@ The subcommands it lists:
 Three consequences.
 
 **Read-only subcommands write nothing.** `list` and `show` are named as the read-only case, so a `state list` leaves no residue.
+
+!!! danger "The rule is not true of every writer — `state push` writes no backup"
+    Verified on v1.15.8 and confirmed in the source at that tag: an accepted `terraform state push` leaves no backup file, and `internal/command/state_push.go` has no backup handling at all, where `state_mv.go` threads a backup path through ([[tf-cmd-state-push]]). *"All `terraform state` subcommands that modify the state write backup files"* is therefore an overstatement by exactly the most destructive member of the family.
 
 **The backup is not optional and not silent.** [[tf-cli-state]] tells you to keep backups before modifying state by hand; this page says the CLI already writes one for you on this particular path. That is a narrower guarantee than it looks — it covers `terraform state <subcommand>` only. A `removed` block or a `moved` block goes through `apply`, not through these commands, so the forced backup does not apply there.
 
