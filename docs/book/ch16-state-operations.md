@@ -219,7 +219,12 @@ Nothing about the bucket changed. Its name is identical on both sides of the pla
 
 `# (because X is not in configuration)` is the line to recognise. It means "state has something configuration does not claim", and it appears whether you deleted the resource, renamed it, moved it into a module, or forgot to `git add` a file.
 
-"Indistinguishable" is meant literally, and it is worth proving rather than asserting. Apply one bucket, then produce the two situations separately and save each plan: **delete** the `resource` block outright, and **rename** its label. Then diff the two whole plans:
+"Indistinguishable" is meant literally, and it is worth proving rather than asserting. Apply one bucket, then make two different edits against that same state, planning each one without applying it.
+
+1. **Delete** the `resource` block outright. Plan, and save the output as `deleted.txt`.
+2. Put the block back and **rename** its label instead. Plan again, and save that as `renamed.txt`.
+
+Neither plan is applied, so both are computed against the same state, holding the same one bucket. Now diff them:
 
 ```text
 $ diff deleted.txt renamed.txt
