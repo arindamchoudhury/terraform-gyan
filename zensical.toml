@@ -77,6 +77,7 @@ nav = [
                         { "state replace-provider" = "sources/terraform-docs/tf-cmd-state-replace-provider.md" },
                     ]},
                     { "Disaster Recovery" = [
+                        { "Overview" = "sources/terraform-docs/tf-cli-state-recover.md" },
                         { "force-unlock" = "sources/terraform-docs/tf-cmd-force-unlock.md" },
                     ]},
                 ]},

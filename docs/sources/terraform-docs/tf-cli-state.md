@@ -40,7 +40,7 @@ The five interactions the page lists, each a link into a sub-section:
 | Re-create resources | `cli/state/taint` | [[tf-cli-state-taint]] |
 | Move resources | `cli/state/move` | [[tf-state-refactor]] (the cross-configuration case), [[tf-block-moved]] (the config-driven alternative) |
 | Import existing resources | `cli/import` | [[tf-import]] and its children, [[tf-block-import]] |
-| Recover state from backup | `cli/state/recover` | [[tf-cmd-force-unlock]] (one of its three pages) |
+| Recover state from backup | `cli/state/recover` | [[tf-cli-state-recover]], [[tf-cmd-force-unlock]] |
 
 !!! note "The naming here is tainting-flavoured; the destination is not"
     *Re-create resources* points at `cli/state/taint`, and its sub-group is named **Forcing Re-creation (Tainting)**. Neither name mentions `terraform apply -replace`, which superseded `taint`/`untaint` in 0.15.2.
@@ -53,12 +53,12 @@ The sidebar (rung 1, `__NEXT_DATA__`) gives *Manually Update State* one loose pa
 
 | Sub-group | Pages | Captured |
 |---|---|---|
-| — | Resource Addressing (`state/resource-addressing`) | no |
-| — | `state` command reference (`cli/commands/state`) | no |
-| Inspecting State | Overview, `state list`, `state show`, `refresh` | 3 of 4 |
-| Forcing Re-creation (Tainting) | Overview, `taint`, `untaint` | 1 of 3 |
-| Moving Resources | Overview, `state mv`, `state rm`, `state replace-provider` | none |
-| Disaster Recovery | Overview, `state pull`, `state push`, `force-unlock` | 1 of 4 |
+| — | Resource Addressing (`state/resource-addressing`) | [[tf-resource-addressing]] |
+| — | `state` command reference (`cli/commands/state`) | [[tf-cmd-state]] |
+| Inspecting State | Overview, `state list`, `state show`, `refresh` | 4 of 4 |
+| Forcing Re-creation (Tainting) | Overview, `taint`, `untaint` | 2 of 3 |
+| Moving Resources | Overview, `state mv`, `state rm`, `state replace-provider` | 3 of 4 |
+| Disaster Recovery | Overview, `state pull`, `state push`, `force-unlock` | 2 of 4 |
 
 Two structural facts fall out of that table.
 
