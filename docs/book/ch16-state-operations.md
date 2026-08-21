@@ -52,7 +52,7 @@ All five have the same headline: configuration and state stop agreeing. What sep
 |---|---|---|
 | 1 | **Neither. Terraform was never told.** The object was created outside Terraform, so state has no entry for it. Nothing was broken here, because nothing was ever joined. | Section 6 |
 | 2, 3 | **The configuration moved, state stayed put.** You renamed the resource or pulled it into a module; the entry still holds the old address, bound to an object that never changed. | Sections 4 and 7 |
-| 4 | **The object moved, state stayed put.** Someone changed a *managed* object by hand. The entry still points at the right thing; what it records about that thing is out of date. | Section 8 |
+| 4 | **The object moved, state stayed put.** Someone changed a *managed* object by hand. | Section 8 |
 | 5 | A run died partway and left one of the shapes above. Sometimes only a lock nobody released. | Section 11 |
 
 Note how close rows 1 and 4 look and how differently they end. Both involve someone working outside Terraform, but row 1 has no entry to correct and row 4 has an entry that is merely stale, so one is answered by `import` and the other by `apply -refresh-only`.
