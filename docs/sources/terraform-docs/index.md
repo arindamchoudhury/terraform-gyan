@@ -91,3 +91,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Update state manually (section index; taint still fronted, `replace-provider` filed as a move) | 2026-08-21 | [tf-cli-state](tf-cli-state.md) |
 | Resource Address Reference (one grammar, several parsers; bare address = all instances) | 2026-08-21 | [tf-resource-addressing](tf-resource-addressing.md) |
 | `terraform state` command hub (forced backups; hub omits `state push`) | 2026-08-21 | [tf-cmd-state](tf-cmd-state.md) |
+| Inspect state overview (four sentences; presents `refresh` without its deprecation) | 2026-08-21 | [tf-cli-state-inspect](tf-cli-state-inspect.md) |

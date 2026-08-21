@@ -64,6 +64,7 @@ nav = [
                     { "Resource Addressing" = "sources/terraform-docs/tf-resource-addressing.md" },
                     { "state" = "sources/terraform-docs/tf-cmd-state.md" },
                     { "Inspecting State" = [
+                        { "Overview" = "sources/terraform-docs/tf-cli-state-inspect.md" },
                         { "refresh" = "sources/terraform-docs/tf-cmd-refresh.md" },
                     ]},
                     { "Disaster Recovery" = [
