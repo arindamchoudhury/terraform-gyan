@@ -69,12 +69,12 @@ Three shapes, and each is addressed differently: `aws_s3_bucket.notes`, `aws_s3_
 
 | Field | Present when | What it holds |
 |---|---|---|
-| `attributes` | almost always | The provider's record of the object. See below. |
+| `attributes` | any state written since 0.12 | The provider's record of the object. See below. |
 | `schema_version` | always | Which version of the provider's schema `attributes` was written against. |
 | `index_key` | `count` or `for_each` | The instance key: a number, or a string. |
 | `sensitive_attributes` | provider marks any | Paths *within* `attributes` whose values are sensitive. |
 | `status` | only when tainted | The one value Terraform writes here is `"tainted"`, which section 9 comes back to. |
-| `deposed` | create-before-destroy left one behind | Marks an old object still awaiting destruction. |
+| `deposed` | create-before-destroy left one behind | An eight-character deposed key naming an old object still awaiting destruction. |
 | `dependencies` | the instance has any | Addresses this instance depended on, kept so `destroy` can order correctly. |
 | `create_before_destroy` | that lifecycle is set | Recorded so the ordering survives into a later destroy. |
 | `identity` | provider supplies one | The provider's own identity for the object, such as `{ "bucket": "…", "region": "…" }`. |
@@ -82,7 +82,7 @@ Three shapes, and each is addressed differently: `aws_s3_bucket.notes`, `aws_s3_
 | `private` | provider uses it | An opaque blob only the provider reads. |
 | `attributes_flat` | pre-0.12 state | The legacy flatmap form, replaced by `attributes`. |
 
-Only `schema_version` and `identity_schema_version` are written unconditionally; every other field is omitted when it does not apply. The entry shown earlier looks shorter than it is because it was trimmed. The real instance element for that one bucket also carries `identity`, `private` and `sensitive_attributes`, and it has no `index_key`, no `status` and no `dependencies`, because none of those apply to a single bucket that depends on nothing and is not tainted.
+Only `schema_version` and `identity_schema_version` are written unconditionally; every other field is omitted when it does not apply. Data sources are thinner still: an `aws_region` instance carries neither `identity` nor `private`, because neither means anything for something Terraform only reads. The entry shown earlier looks shorter than it is because it was trimmed. The real instance element for that one bucket also carries `identity`, `private` and `sensitive_attributes`, and it has no `index_key`, no `status` and no `dependencies`, because none of those apply to a single bucket that depends on nothing and is not tainted.
 
 **`attributes` has no fixed schema, and that is the point.** Terraform stores it as raw JSON and never looks inside at the state layer, which the source is explicit about: the value is carried straight through as `AttrsJSON`. Its shape comes from the provider's schema for that resource type, so an `aws_s3_bucket` records `bucket`, `arn`, `tags` and the rest, while an `aws_instance` records something entirely different. `schema_version` is what lets a provider recognise an older layout and migrate it during an upgrade.
 
