@@ -9,7 +9,7 @@ directories.
 | Directory | Operation | Ends up |
 |---|---|---|
 | `lab1/` | `import` a bucket created out of band, with and without `-generate-config-out` | `imports.tf` + a pruned `bucket.tf` |
-| `lab2/` | `moved`: a rename, then a `count` → `for_each` migration | three `moved` blocks, empty plan |
+| `lab2/` | `moved`: a rename, then a `count` → `for_each` migration; also the deletion-versus-rename diff quoted in section 1 | three `moved` blocks, empty plan |
 | `lab3/` | `removed` with and without `destroy = false`, then re-import | `main.tf` + `keytest.tf` |
 | `lab4/source`, `lab4/dest` | splitting one configuration into two with `removed` + `import` | empty plan on both sides |
 | `lab5/` | drift: `plan -refresh-only`, revert, adopt | configuration matching the drifted tag |

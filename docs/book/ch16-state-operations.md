@@ -29,7 +29,14 @@ Every one of those is the same failure at bottom. HashiCorp's [Move Resources](h
 
 > "Terraform's state associates each real-world object with a configured resource **at a specific resource address**. This is seamless when changing a resource's attributes, but Terraform will **lose track** of a resource if you change its name, move it to a different module, or **change its provider**."
 
-Three ways to break the binding, and the third is the one people never guess. A provider change is an address change, because the provider source is part of what binds an object to a configured resource. That is why `terraform state replace-provider` is documented on this page at all, in the sidebar's *Moving Resources* group, rather than anywhere provider-shaped.
+Three ways to break the binding, and the third is the one people never guess. Be precise about why, because it is easy to overstate: the provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, as a sibling field of the type and name:
+
+```json
+{ "mode": "managed", "type": "aws_s3_bucket", "name": "notes",
+  "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]" }
+```
+
+So a provider change breaks the **binding** without changing the address, which is precisely why it needs a command of its own. A `moved` block rewrites addresses, and there is no address here to rewrite. `terraform state replace-provider` exists to edit that one field, and it is documented on this page, in the sidebar's *Moving Resources* group, rather than anywhere provider-shaped.
 
 What happens when the binding breaks is worth quoting too, because the docs' tone is the correct one:
 
@@ -71,7 +78,19 @@ Plan: 1 to add, 0 to change, 1 to destroy.
 
 Nothing about the bucket changed. Its name is identical on both sides of the plan. The only edit was the label in the `resource` block, and Terraform read it as a deletion plus an unrelated creation, because to Terraform, **an address in state with no matching block in configuration is indistinguishable from a resource you deleted on purpose**.
 
-`# (because X is not in configuration)` is the line to recognise. It means "state has something configuration does not claim", and it appears identically whether you deleted the resource, renamed it, moved it into a module, or forgot to `git add` a file.
+`# (because X is not in configuration)` is the line to recognise. It means "state has something configuration does not claim", and it appears whether you deleted the resource, renamed it, moved it into a module, or forgot to `git add` a file.
+
+"Indistinguishable" is meant literally, and it is worth proving rather than asserting. Apply one bucket, then produce the two situations separately: **delete** the `resource` block outright, and **rename** its label. Diff the destroy half of the two plans:
+
+```text
+$ diff <(sed -n '/will be destroyed/,/^    }/p' deleted.txt) \
+       <(sed -n '/will be destroyed/,/^    }/p' renamed.txt)
+$
+```
+
+No output. The two are **byte-identical**, down to the reason line and every attribute. A deliberate deletion and an accidental rename produce the same plan text, so nothing in that half of the output can tell you which one you are looking at. The only difference between the two plans is elsewhere: the rename also carries a `+ create` block for the new address, and its counters read `1 to add, 0 to change, 1 to destroy` where the deletion reads `0 to add, 0 to change, 1 to destroy`.
+
+That is the practical reading rule. **The `+` half is the tell, not the `-` half.** A destroy you did not expect, paired with a creation of something suspiciously similar, is a rename you forgot to declare.
 
 !!! note "The two directions this chapter covers"
     **Configuration has something state does not** is the import case: an object exists, nothing tracks it. **State has something configuration does not** is the destroy case, and `moved` and `removed` are the two ways of saying "not what it looks like". Everything else here is the machinery for getting the two files back into agreement after something knocked them apart.
@@ -1336,7 +1355,21 @@ Try re-running the generation with the file still present, to see `Error: Target
 tflocal init && tflocal apply
 ```
 
-Rename the label from `notes` to `team_notes` and plan **without** a `moved` block. Read the `# (because aws_s3_bucket.notes is not in configuration)` line and the `1 to add, 1 to destroy` counters. Then add:
+Rename the label from `notes` to `team_notes` and plan **without** a `moved` block. Read the `# (because aws_s3_bucket.notes is not in configuration)` line and the `1 to add, 1 to destroy` counters.
+
+Before fixing it, prove section 1's claim for yourself. Save that plan, then **delete** the `notes` block entirely and save a second one, and diff the destroy halves:
+
+```shell
+tflocal plan -no-color > renamed.txt      # with the label renamed
+# now delete the resource block instead, and:
+tflocal plan -no-color > deleted.txt
+diff <(sed -n '/will be destroyed/,/^    }/p' deleted.txt) \
+     <(sed -n '/will be destroyed/,/^    }/p' renamed.txt)
+```
+
+Empty diff. The counters are where they differ: `0 to add, 0 to change, 1 to destroy` for the deletion against `1 to add, 0 to change, 1 to destroy` for the rename.
+
+Then add:
 
 ```hcl
 moved {
