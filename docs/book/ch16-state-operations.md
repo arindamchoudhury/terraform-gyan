@@ -19,9 +19,24 @@ By the end you can:
 
 ## 1. The problem: an address is an identity
 
-Chapter 9 established that state binds a configuration address to a real object, one to one. Chapter 15 moved that file somewhere a team can share. Both chapters assumed the binding was made by an ordinary apply and never needed adjusting afterwards.
+Chapter 9 established that state binds a configuration address to a real object, one to one. Chapter 15 moved that file somewhere a team can share.
 
-That assumption breaks constantly, and it breaks in five recognisable ways.
+Before watching that binding break, it is worth seeing what it physically is, because the word gets used loosely. Applying a single bucket produces one entry in state. Trimmed to the parts that matter, it looks like this:
+
+```json
+{
+  "mode": "managed", "type": "aws_s3_bucket", "name": "notes",
+  "instances": [
+    { "attributes": { "id": "ch16-binding-demo", "arn": "arn:aws:s3:::ch16-binding-demo" } }
+  ]
+}
+```
+
+That entry has two halves. `mode` records that this is a managed resource rather than a data source, and `type` and `name` spell the **configuration address**, `aws_s3_bucket.notes`, which is just the labels on the `resource` block. The `id` inside `instances` names the **real object**, the bucket the provider actually created. The binding is nothing more than the fact that those two sit in the same entry, and Terraform reads it in both directions: given the address it knows which object to modify, and given the object it knows which block is responsible for it.
+
+Nothing outside that entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. Break the entry and both sides still exist, perfectly healthy and no longer acquainted.
+
+Both earlier chapters could assume this entry, once written by an ordinary apply, never needed adjusting. That assumption breaks constantly, and it breaks in five recognisable ways.
 
 - **Some infrastructure predates your configuration.** A bucket exists, someone created it in a console two years ago, and nothing in Terraform knows about it.
 - **Some of it gets renamed.** `aws_s3_bucket.notes` was a fine name until three teams started using it.
@@ -39,7 +54,7 @@ Take the binding failures first. HashiCorp's [Move Resources](https://developer.
 
 > "Terraform's state associates each real-world object with a configured resource **at a specific resource address**. This is seamless when changing a resource's attributes, but Terraform will **lose track** of a resource if you change its name, move it to a different module, or **change its provider**."
 
-Three ways to break the binding, and the third is the one people never guess. Be precise about why, because it is easy to overstate: the provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, as a sibling field of the type and name:
+Three ways to break the binding, and the third is the one people never guess. Be precise about why, because it is easy to overstate: the provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, in the same entry shown earlier, as a sibling field of the type and name:
 
 ```json
 { "mode": "managed", "type": "aws_s3_bucket", "name": "notes",
