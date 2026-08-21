@@ -65,7 +65,7 @@ Compare those two blocks carefully, because the difference is the whole subject 
 
 Three shapes, and each is addressed differently: `aws_s3_bucket.notes`, `aws_s3_bucket.archive[0]`, `aws_s3_bucket.archive["cold"]`. Section 3 turns that into a grammar. It is also why the migration is a state operation rather than an edit: every `index_key` has to be rewritten, one instance at a time, and the objects have to be left alone while it happens.
 
-The **binding** is the pairing inside one of those instance elements. On one side the address, spelled by `type` and `name`, with `module` and `index_key` joining them when they apply. On the other the `id` in `attributes`, naming the object the provider actually created. That pairing is how Terraform gets from an address in your configuration to the object it has to modify.
+The **binding** is the pairing inside one of those instance elements. On one side the address, spelled by `type` and `name`, with `module` and `index_key` joining them when they apply. On the other the `id` inside `attributes`, naming the object the provider actually created. `attributes` is the provider's whole record of that object, which is why `arn` sits in there too, but `id` is the half the binding turns on. That pairing is how Terraform gets from an address in your configuration to the object it has to modify.
 
 Nothing outside the entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. The connection survives only while the address recorded in state still corresponds to an address your configuration declares.
 
