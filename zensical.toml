@@ -60,6 +60,7 @@ nav = [
                     { "state show" = "sources/terraform-docs/tf-cmd-state-show.md" },
                 ]},
                 { "Manually Update State" = [
+                    { "Overview" = "sources/terraform-docs/tf-cli-state.md" },
                     { "Inspecting State" = [
                         { "refresh" = "sources/terraform-docs/tf-cmd-refresh.md" },
                     ]},
