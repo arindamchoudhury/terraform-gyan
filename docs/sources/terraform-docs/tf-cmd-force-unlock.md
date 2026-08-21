@@ -2,13 +2,20 @@
 
 > **Source:** [developer.hashicorp.com/terraform/cli/commands/force-unlock](https://developer.hashicorp.com/terraform/cli/commands/force-unlock)
 > **Added:** 2026-08-19
-> **Source updated:** undated command reference; captured 2026-08-19 against v1.15.x (latest)
+> **Source updated:** undated command reference; captured 2026-08-19, re-verified 2026-08-21 — still v1.15.x (latest)
 > **Tags:** cli, force-unlock, state-locking, lock-id, disaster-recovery, backends
 > **Type:** documentation
 
 *Developer › Terraform › Terraform CLI › Manually Update State › Disaster Recovery › `force-unlock` · v1.15.x*
 
 The command half of [[tf-state-locking]], which is where the *policy* on using it lives. This page is almost entirely usage, about 900 characters, and adds three facts that page does not carry.
+
+!!! note "Re-verified 2026-08-21 — byte-identical, and its section is now fully captured"
+    Re-fetched and diffed against the August 19 capture: **no change**.
+
+    What has arrived around it is the rest of *Disaster Recovery*. This command is **step one** of a three-step workflow — unlock, then [[tf-cmd-state-pull]], then [[tf-cmd-state-push]] — and the section index states the sequencing rule this page does not: *"We do not recommend unlocking until you **determine what caused the lock to get stuck**"* ([[tf-cli-state-recover]]). Diagnose first. The required `LOCK_ID` argument enforces that structurally, since the only place to get the nonce is the error Terraform printed when the lock was taken.
+
+    One thing the neighbours make sharper. The two commands this unblocks handle the state very differently: `state pull` **upgrades the state format on the way out**, and `state push` **writes no backup at all** and can be talked past its own safety checks. So the recovery path this command opens is the least protected sequence in the topic — worth knowing before unlocking something in a hurry.
 
 > "This command removes the lock on the state for the current configuration. **The behavior of this lock is dependent on the backend being used. Local state files cannot be unlocked by another process.** The `terraform force-unlock` command does not modify your infrastructure."
 
