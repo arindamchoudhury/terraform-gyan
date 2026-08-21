@@ -21,7 +21,7 @@ By the end you can:
 
 Chapter 9 established that state binds a configuration address to a real object, one to one. Chapter 15 moved that file somewhere a team can share. Both chapters assumed the binding was made by an ordinary apply and never needed adjusting afterwards.
 
-Real infrastructure does not cooperate.
+Real infrastructure breaks that assumption constantly, and it breaks it in five recognisable ways.
 
 Some of it predates your configuration. A bucket exists, someone created it in a console two years ago, and nothing in Terraform knows about it. Some of it gets renamed, because `aws_s3_bucket.notes` was a fine name until three teams started using it. Some of it moves into a module during a refactor. Some of it changes underneath you at three in the morning, when an on-call engineer edits a security group to stop an outage. And occasionally an apply dies halfway and leaves state describing a world that no longer exists.
 
