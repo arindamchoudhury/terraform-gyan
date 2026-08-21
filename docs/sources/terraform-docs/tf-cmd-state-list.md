@@ -2,13 +2,18 @@
 
 > **Source:** [developer.hashicorp.com/terraform/cli/commands/state/list](https://developer.hashicorp.com/terraform/cli/commands/state/list)
 > **Added:** 2026-07-30
-> **Source updated:** undated CLI reference; captured 2026-07-30 against v1.15.x (latest)
+> **Source updated:** undated CLI reference; captured 2026-07-30, re-verified 2026-08-21 — still v1.15.x (latest)
 > **Tags:** cli, state-list, resource-addressing, filtering, id-lookup, inspection
 > **Type:** documentation
 
 *Developer › Terraform › Terraform CLI › Inspecting Infrastructure › `state list` · v1.15.x*
 
 Lists the resource addresses in state. The command everyone already uses; the page has two things most people never learn about it — a defined **sort order** and a **reverse ID lookup**.
+
+!!! note "Re-verified 2026-08-21 — byte-identical"
+    Re-fetched and diffed against the July capture: **no change at all** in three weeks, unlike [[tf-block-removed]], which had drifted by a typo fix. Everything below still holds against v1.15.x.
+
+    Two things learned about this page since, both from its neighbours rather than from it. Its filter argument is described upstream as taking a **“partial resource address”** ([[tf-cli-state-inspect]]), which is [[tf-resource-addressing]]'s incomplete-address rule under another name — and the reason a bare address here returns every instance. And it is **read-only**, so it is one of the subcommands exempt from the forced state backup that [[tf-cmd-state]] says every modifying subcommand writes.
 
 ## Usage
 
