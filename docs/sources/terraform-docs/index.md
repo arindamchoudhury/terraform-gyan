@@ -96,3 +96,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | `terraform untaint` command (survives the deprecation; `-backup` here is legacy, not forced) | 2026-08-21 | [tf-cmd-untaint](tf-cmd-untaint.md) |
 | Move Resources overview (a provider change *is* an address change; language-first, minus `removed`) | 2026-08-21 | [tf-cli-state-move](tf-cli-state-move.md) |
 | `terraform state mv` command (race window; PowerShell row verified broken; cross-state case omitted) | 2026-08-21 | [tf-cmd-state-mv](tf-cmd-state-mv.md) |
+| `terraform state replace-provider` command (the one that prompts; shorthand FQNs verified) | 2026-08-21 | [tf-cmd-state-replace-provider](tf-cmd-state-replace-provider.md) |

@@ -25,7 +25,7 @@ The subcommands it lists:
 | `state list` | [[tf-cmd-state-list]] |
 | `state mv` | [[tf-cmd-state-mv]] |
 | `state pull` | no |
-| `state replace-provider` | no |
+| `state replace-provider` | [[tf-cmd-state-replace-provider]] |
 | `state rm` | no |
 | `state show` | [[tf-cmd-state-show]] |
 
