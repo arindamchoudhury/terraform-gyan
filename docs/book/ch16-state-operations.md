@@ -46,17 +46,20 @@ Both earlier chapters could assume this entry, once written by an ordinary apply
 4. **Some of it changes underneath you** at three in the morning, when an on-call engineer edits a security group to stop an outage.
 5. **Some applies die halfway**, having created objects state never recorded, or recorded objects they never finished destroying.
 
-Those five are not one failure with five faces. They split into two kinds, and telling the two apart is what gives this chapter its shape.
+All five have the same headline: configuration and state stop agreeing. What separates them is **which side moved**, and that is what decides the fix.
 
-| Which | What actually went wrong | Handled in |
+| Which | Which side moved | Handled in |
 |---|---|---|
-| 1, 2, 3 | **There is no usable binding**, because the address moved out from under its entry, or because the entry was never written in the first place. In none of the three does the object change, which is exactly why the destroy Terraform then plans is so alarming. | Sections 4–7 |
-| 4 | The **binding is fine, the contents are stale**. State still points at the right object; what it records *about* that object is out of date. | Section 8 |
-| 5 | Either of the above, depending on how far the run got before it died. Sometimes just a lock nobody released. | Section 11 |
+| 1 | **Neither. Terraform was never told.** The object was created outside Terraform, so state has no entry for it. Nothing was broken here, because nothing was ever joined. | Section 6 |
+| 2, 3 | **The configuration moved, state stayed put.** You renamed the resource or pulled it into a module, and the entry still holds the old address. The object never changes, which is why the destroy Terraform then plans is so alarming. | Sections 4 and 7 |
+| 4 | **The object moved, state stayed put.** Someone changed a *managed* object by hand. The entry still points at the right thing; what it records about that thing is out of date. | Section 8 |
+| 5 | A run died partway and left one of the shapes above. Sometimes only a lock nobody released. | Section 11 |
 
-Two sections sit outside that table. Section 9 is for an object that is damaged while state is entirely correct, which is why it needs a manual instruction rather than a repair. Section 10 is the command surface all of them reach for.
+Note how close rows 1 and 4 look and how differently they end. Both involve someone working outside Terraform, but row 1 has no entry to correct and row 4 has an entry that is merely stale, so one is answered by `import` and the other by `apply -refresh-only`.
 
-Take the binding failures first. HashiCorp's [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move) page states them in one sentence:
+Three sections sit outside the table. Section 5 answers a want rather than a failure, when you have decided to stop managing something that must keep running. Section 9 is for an object that is damaged while state is entirely correct. Section 10 is the command surface all of them reach for.
+
+Take rows 2 and 3 first, where the configuration is what moved. HashiCorp's [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move) page states that case in one sentence:
 
 > "Terraform's state associates each real-world object with a configured resource **at a specific resource address**. This is seamless when changing a resource's attributes, but Terraform will **lose track** of a resource if you change its name, move it to a different module, or **change its provider**."
 
