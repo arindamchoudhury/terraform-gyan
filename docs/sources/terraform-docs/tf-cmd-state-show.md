@@ -2,13 +2,18 @@
 
 > **Source:** [developer.hashicorp.com/terraform/cli/commands/state/show](https://developer.hashicorp.com/terraform/cli/commands/state/show)
 > **Added:** 2026-07-30
-> **Source updated:** undated CLI reference; captured 2026-07-30 against v1.15.x (latest)
+> **Source updated:** undated CLI reference; captured 2026-07-30, re-verified 2026-08-21 — still v1.15.x (latest)
 > **Tags:** cli, state-show, resource-addressing, for-each, quoting, powershell, human-readable
 > **Type:** documentation
 
 *Developer › Terraform › Terraform CLI › Inspecting Infrastructure › `state show` · v1.15.x*
 
 Prints every attribute of **one** resource instance in state. The last of the five *Inspecting Infrastructure* commands to be captured, and the one [[tf-state-refactor]] step 2 depends on for finding an import ID. Most of the page is addressing and shell-quoting examples — and its PowerShell advice does not work on PowerShell 7.
+
+!!! note "Re-verified 2026-08-21 — byte-identical, so the broken advice is still shipping"
+    Re-fetched and diffed against the July capture: **no change in three weeks**. The PowerShell row below still tells readers to backslash-escape inside single quotes, and that still fails on PowerShell 7 — the correction in this note is not a stale complaint about a page that has since been fixed.
+
+    Two things its neighbours have added since. This command is the **strict** parser of the shared address grammar: [[tf-cli-state-inspect]] describes `state list`'s filter as taking a *"partial resource address"*, while this one requires an address resolving to exactly one instance — same notation, opposite tolerance, which is [[tf-resource-addressing]]'s *one grammar, several parsers* rule in its smallest form. And it is **read-only**, so it writes none of the forced state backups [[tf-cmd-state]] requires of every modifying subcommand.
 
 ## Usage
 
