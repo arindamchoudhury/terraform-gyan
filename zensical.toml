@@ -73,6 +73,7 @@ nav = [
                     ]},
                     { "Moving Resources" = [
                         { "Overview" = "sources/terraform-docs/tf-cli-state-move.md" },
+                        { "state mv" = "sources/terraform-docs/tf-cmd-state-mv.md" },
                     ]},
                     { "Disaster Recovery" = [
                         { "force-unlock" = "sources/terraform-docs/tf-cmd-force-unlock.md" },

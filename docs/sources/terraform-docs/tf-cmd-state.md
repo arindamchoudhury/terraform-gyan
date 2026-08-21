@@ -23,7 +23,7 @@ The subcommands it lists:
 | Subcommand | Captured |
 |---|---|
 | `state list` | [[tf-cmd-state-list]] |
-| `state mv` | no — used in [[tf-state-refactor]] and [[tut-state-cli]] |
+| `state mv` | [[tf-cmd-state-mv]] |
 | `state pull` | no |
 | `state replace-provider` | no |
 | `state rm` | no |
@@ -51,8 +51,10 @@ Three consequences.
 !!! danger "`-backup` on PowerShell"
     Write it as `-backup path\to\file` or quote it. PowerShell splits an unquoted `-flag=value` into separate arguments, which is the same trap the address quoting in [[tf-cmd-state-show]] runs into — and here the consequence is a backup written somewhere other than where you meant.
 
-!!! note "This collides with the manual backup step"
-    [[tf-state-refactor]] instructs you to run `terraform state pull > terraform.tfstate.backup` before a migration, which was already flagged there for reusing the local backend's own automatic backup filename. With this page in view the overlap is wider: the `state mv` that follows will write **its own** backup too. Name the manual one after the operation and the date, not `.backup`.
+!!! note "How this sits next to the manual backup step"
+    [[tf-state-refactor]] instructs you to run `terraform state pull > terraform.tfstate.backup` before a migration, which was already flagged there for reusing the local backend's own automatic backup filename. The `state mv` that follows writes **its own** backup as well.
+
+    **Measured afterwards** ([[tf-cmd-state-mv]]): the automatic one is named `terraform.tfstate.<unix-timestamp>.backup`, so it does not overwrite the manual file or any earlier automatic one. The three kinds of backup accumulate rather than collide — which makes the *"remove these files manually"* line above the operative half of the rule. The refactor page's filename problem is unchanged on its own terms: writing by hand to `terraform.tfstate.backup` still collides with the local backend's file.
 
 ## Remote state
 
@@ -65,4 +67,4 @@ And: "backups are still written **to disk**". So operating on a remote state fil
 The output shape is deliberate: designed for "Unix command-line tools such as `grep`, `awk`, and similar PowerShell commands", with piping recommended for "advanced filtering and modification". That is the design intent behind [[tf-cmd-state-list]]'s defined sort order — a stable, greppable line format is only useful if the order is specified.
 
 ---
-Related: [[tf-cli-state]] — the section index above this page; this one adds the rules that span the family. · [[tf-cmd-state-list]] · [[tf-cmd-state-show]] — the two subcommands captured so far, both read-only and so both backup-free. · [[tf-state-refactor]] — where the forced backup and the hand-written one collide. · [[tut-state-cli]] — `state mv` and the rest of the family in one narrative. · [[tf-resource-addressing]] — the grammar every one of these subcommands parses.
+Related: [[tf-cli-state]] — the section index above this page; this one adds the rules that span the family. · [[tf-cmd-state-list]] · [[tf-cmd-state-show]] — the two subcommands captured so far, both read-only and so both backup-free. · [[tf-cmd-state-mv]] — the first subcommand captured that actually writes, and where the backup rule was measured. · [[tut-state-cli]] — `state mv` and the rest of the family in one narrative. · [[tf-resource-addressing]] — the grammar every one of these subcommands parses.

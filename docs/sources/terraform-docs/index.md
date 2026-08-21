@@ -95,3 +95,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Recreate resources overview (`-replace` first; `taint` deprecated with its reason) | 2026-08-21 | [tf-cli-state-taint](tf-cli-state-taint.md) |
 | `terraform untaint` command (survives the deprecation; `-backup` here is legacy, not forced) | 2026-08-21 | [tf-cmd-untaint](tf-cmd-untaint.md) |
 | Move Resources overview (a provider change *is* an address change; language-first, minus `removed`) | 2026-08-21 | [tf-cli-state-move](tf-cli-state-move.md) |
+| `terraform state mv` command (race window; PowerShell row verified broken; cross-state case omitted) | 2026-08-21 | [tf-cmd-state-mv](tf-cmd-state-mv.md) |
