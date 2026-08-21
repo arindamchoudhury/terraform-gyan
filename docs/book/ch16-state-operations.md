@@ -50,7 +50,7 @@ Those five are not one failure with five faces. They split into two kinds, and t
 
 | Which | What actually went wrong | Handled in |
 |---|---|---|
-| 1, 2, 3 | The **binding is severed**. The address side moved, or its entry was never written at all. The object is untouched throughout, still sitting there under the `id` it always had. | Sections 4–7 |
+| 1, 2, 3 | **There is no usable binding**, because the address moved out from under its entry, or because the entry was never written in the first place. In none of the three does the object change, which is exactly why the destroy Terraform then plans is so alarming. | Sections 4–7 |
 | 4 | The **binding is fine, the contents are stale**. State still points at the right object; what it records *about* that object is out of date. | Section 8 |
 | 5 | Either of the above, depending on how far the run got before it died. Sometimes just a lock nobody released. | Section 11 |
 
