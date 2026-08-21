@@ -21,9 +21,13 @@ By the end you can:
 
 Chapter 9 established that state binds a configuration address to a real object, one to one. Chapter 15 moved that file somewhere a team can share. Both chapters assumed the binding was made by an ordinary apply and never needed adjusting afterwards.
 
-Real infrastructure breaks that assumption constantly, and it breaks it in five recognisable ways.
+That assumption breaks constantly, and it breaks in five recognisable ways.
 
-Some of it predates your configuration. A bucket exists, someone created it in a console two years ago, and nothing in Terraform knows about it. Some of it gets renamed, because `aws_s3_bucket.notes` was a fine name until three teams started using it. Some of it moves into a module during a refactor. Some of it changes underneath you at three in the morning, when an on-call engineer edits a security group to stop an outage. And occasionally an apply dies halfway and leaves state describing a world that no longer exists.
+- **Some infrastructure predates your configuration.** A bucket exists, someone created it in a console two years ago, and nothing in Terraform knows about it.
+- **Some of it gets renamed.** `aws_s3_bucket.notes` was a fine name until three teams started using it.
+- **Some of it moves into a module** during a refactor.
+- **Some of it changes underneath you** at three in the morning, when an on-call engineer edits a security group to stop an outage.
+- **Some applies die halfway**, leaving state that describes a world which no longer exists.
 
 Those are not all the same failure, and separating them is what gives this chapter its shape. The first three break the **binding** between a configuration address and an object: the address moved, or never existed, while the object sat still. The last two leave the binding intact and make its **contents** wrong: the address still points at the right object, and what state records about that object no longer matches reality. Sections 4 to 7 are the first kind, and sections 8, 9 and 11 are the second. Section 10 belongs to neither, because it is the command surface both families reach for.
 
