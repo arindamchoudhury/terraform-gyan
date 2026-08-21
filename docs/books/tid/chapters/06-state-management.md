@@ -926,7 +926,7 @@ resource "aws_instance" "myinstance" {
 - S3 backend (`use_lockfile`, native locking) — <https://developer.hashicorp.com/terraform/language/backend/s3>
 - Managing state / `terraform state` commands — <https://developer.hashicorp.com/terraform/cli/state>
 - `moved` block — <https://developer.hashicorp.com/terraform/language/modules/develop/refactoring>
-- `removed` block — <https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources>
+- `removed` block — <https://developer.hashicorp.com/terraform/language/block/removed>
 - `terraform_remote_state` data source — <https://developer.hashicorp.com/terraform/language/state/remote-state-data>
 - Workspaces — <https://developer.hashicorp.com/terraform/language/state/workspaces>
 - `terraform_data` resource — <https://developer.hashicorp.com/terraform/language/resources/terraform-data>
