@@ -42,11 +42,11 @@ Both earlier chapters could assume this entry, once written by an ordinary apply
 
 - **Some infrastructure predates your configuration.** A bucket exists, someone created it in a console two years ago, and nothing in Terraform knows about it.
 - **Some of it gets renamed.** `aws_s3_bucket.notes` was a fine name until three teams started using it.
-- **Some of it moves into a module** during a refactor.
+- **Some of it moves into a module** during a refactor, which changes the address without touching the object.
 - **Some of it changes underneath you** at three in the morning, when an on-call engineer edits a security group to stop an outage.
 - **Some applies die halfway**, having created objects state never recorded, or recorded objects they never finished destroying.
 
-Those are not all the same failure, and separating them is what gives this chapter its shape. The first three break the **binding** between a configuration address and an object: the address moved, or never existed, while the object sat still. Sections 4 to 7 are the repair kit for those. The fourth leaves the binding intact and makes state's **contents** stale, because the address still points at the right object and what state records about it no longer matches reality. That is section 8.
+Those are not all the same failure, and separating them is what gives this chapter its shape. The first three break the **binding** between a configuration address and an object. Either the address moved, or the state entry was never created in the first place. In every one of them the edit leaves the object alone, still sitting there under the `id` it always had, and only the address side of the entry moves. Sections 4 to 7 are the repair kit for those. The fourth leaves the binding intact and makes state's **contents** stale, because the address still points at the right object and what state records about it no longer matches reality. That is section 8.
 
 The fifth is the awkward one. A run that dies partway can produce either shape, an object nobody tracks or a binding pointing at something already destroyed, and sometimes just a lock nobody released. Section 11 is the recovery.
 
