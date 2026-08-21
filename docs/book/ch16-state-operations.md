@@ -19,7 +19,7 @@ By the end you can:
 
 ## 1. The problem: an address is an identity
 
-Chapter 9 established that state binds a configuration address to a real object, one to one, and named the fields the file carries. Chapter 15 moved that file somewhere a team can share. Neither opened the part this chapter spends all its time inside: how one `resource` block is actually laid out, and where an *instance* lives. Every operation ahead moves entries, or pieces of entries, so the anatomy is worth a few minutes first.
+Chapter 9 established that state binds a configuration address to a real object, one to one, and named the fields the file carries down to the `instances` array. Chapter 15 moved that file somewhere a team can share. Neither took an entry apart, and every operation ahead moves entries or single instance elements, so the anatomy is worth a few minutes first.
 
 Apply a single bucket and `resources` holds one entry. Trimmed to the fields that matter here:
 
@@ -44,27 +44,29 @@ Apply a single bucket and `resources` holds one entry. Trimmed to the fields tha
 | `type`, `name` | The two labels on the block. Together they spell the **configuration address**, `aws_s3_bucket.notes`. |
 | `module` | Absent at the root. A resource inside `module "wrapped"` carries `"module": "module.wrapped"`. |
 | `provider` | Which provider configuration created the object. Note that it sits *beside* the address, not inside it. |
-| `instances` | One element per instance. This is the field that matters most, and the one chapter 9 passed over. |
+| `instances` | One element per instance. This is the field every operation in this chapter works on. |
 
 **A `resource` block is not one object.** It is a template, and `instances` is where the objects it produced are recorded. Without `count` or `for_each` it produces exactly one, as above, and that instance carries no key. Add `count = 2` and the same entry grows a second element, each tagged with its position:
 
 ```json
 { "instances": [
-  { "index_key": 0, "attributes": { "id": "ch16-anat-archive-0" } },
-  { "index_key": 1, "attributes": { "id": "ch16-anat-archive-1" } }
+  { "index_key": 0, "attributes": { "id": "ch16-moved-archive-0" } },
+  { "index_key": 1, "attributes": { "id": "ch16-moved-archive-1" } }
 ] }
 ```
 
-Use `for_each` instead and the keys are strings rather than numbers:
+Migrate that same resource to `for_each`, which is what section 4 does with it, and the keys become strings:
 
 ```json
 { "instances": [
-  { "index_key": "alpha", "attributes": { "id": "ch16-anat-team-alpha" } },
-  { "index_key": "beta",  "attributes": { "id": "ch16-anat-team-beta"  } }
+  { "index_key": "cold", "attributes": { "id": "ch16-moved-archive-0" } },
+  { "index_key": "warm", "attributes": { "id": "ch16-moved-archive-1" } }
 ] }
 ```
 
-Three shapes, and each one is addressed differently: `aws_s3_bucket.notes`, `aws_s3_bucket.archive[0]`, `aws_s3_bucket.team["alpha"]`. Section 3 turns that into a grammar. It is also why migrating `count` to `for_each` in section 4 is a state operation and not just an edit: every `index_key` has to change from a number to a string, one instance at a time, and nothing about the buckets themselves changes while it happens.
+Compare those two blocks carefully, because the difference is the whole subject of this chapter. The `id` values are identical. Only the keys changed, from positions to names, and the apply that did it reported `0 added, 0 changed, 0 destroyed`. Two buckets were rewritten in state without either one being touched in S3.
+
+Three shapes, and each is addressed differently: `aws_s3_bucket.notes`, `aws_s3_bucket.archive[0]`, `aws_s3_bucket.archive["cold"]`. Section 3 turns that into a grammar. It is also why the migration is a state operation rather than an edit: every `index_key` has to be rewritten, one instance at a time, and the objects have to be left alone while it happens.
 
 The **binding** is the pairing inside one of those instance elements. On one side the address, spelled by `module`, `type`, `name` and the instance's `index_key`. On the other the `id` in `attributes`, naming the object the provider actually created. That pairing is how Terraform gets from an address in your configuration to the object it has to modify.
 
