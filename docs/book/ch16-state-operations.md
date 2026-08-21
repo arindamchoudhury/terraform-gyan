@@ -65,6 +65,29 @@ Compare those two blocks carefully, because the difference is the whole subject 
 
 Three shapes, and each is addressed differently: `aws_s3_bucket.notes`, `aws_s3_bucket.archive[0]`, `aws_s3_bucket.archive["cold"]`. Section 3 turns that into a grammar. It is also why the migration is a state operation rather than an edit: every `index_key` has to be rewritten, one instance at a time, and the objects have to be left alone while it happens.
 
+`index_key` is the field this chapter changes most, but it is not the only one an instance element carries. The full set is fixed by Terraform, not by the provider, and is declared in `internal/states/statefile/version4.go`. At v1.15.8:
+
+| Field | Present when | What it holds |
+|---|---|---|
+| `attributes` | almost always | The provider's record of the object. See below. |
+| `schema_version` | always | Which version of the provider's schema `attributes` was written against. |
+| `index_key` | `count` or `for_each` | The instance key: a number, or a string. |
+| `sensitive_attributes` | provider marks any | Paths *within* `attributes` whose values are sensitive. |
+| `status` | only when tainted | The one value Terraform writes here is `"tainted"`, which section 9 comes back to. |
+| `deposed` | create-before-destroy left one behind | Marks an old object still awaiting destruction. |
+| `dependencies` | the instance has any | Addresses this instance depended on, kept so `destroy` can order correctly. |
+| `create_before_destroy` | that lifecycle is set | Recorded so the ordering survives into a later destroy. |
+| `identity` | provider supplies one | The provider's own identity for the object, such as `{ "bucket": "…", "region": "…" }`. |
+| `identity_schema_version` | always | The same versioning idea, applied to `identity`. |
+| `private` | provider uses it | An opaque blob only the provider reads. |
+| `attributes_flat` | pre-0.12 state | The legacy flatmap form, replaced by `attributes`. |
+
+Only `schema_version` and `identity_schema_version` are written unconditionally; every other field is omitted when it does not apply. The entry shown earlier looks shorter than it is because it was trimmed. The real instance element for that one bucket also carries `identity`, `private` and `sensitive_attributes`, and it has no `index_key`, no `status` and no `dependencies`, because none of those apply to a single bucket that depends on nothing and is not tainted.
+
+**`attributes` has no fixed schema, and that is the point.** Terraform stores it as raw JSON and never looks inside at the state layer, which the source is explicit about: the value is carried straight through as `AttrsJSON`. Its shape comes from the provider's schema for that resource type, so an `aws_s3_bucket` records `bucket`, `arn`, `tags` and the rest, while an `aws_instance` records something entirely different. `schema_version` is what lets a provider recognise an older layout and migrate it during an upgrade.
+
+Two consequences run through this chapter. Terraform cannot tell you whether an `attributes` block is *right*, only whether it parses, which is why drift in section 8 has to be detected by asking the provider rather than by reading state. And it is why hand-editing state is so dangerous: nothing validates your edit against the provider's schema until something else tries to use it.
+
 The **binding** is the pairing inside one of those instance elements. On one side the address, spelled by `type` and `name`, with `module` and `index_key` joining them when they apply. On the other the `id` inside `attributes`, naming the object the provider actually created. `attributes` is the provider's whole record of that object, which is why `arn` sits in there too, but `id` is the half the binding turns on. That pairing is how Terraform gets from an address in your configuration to the object it has to modify.
 
 Nothing outside the entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. The connection survives only while the address recorded in state still corresponds to an address your configuration declares.
