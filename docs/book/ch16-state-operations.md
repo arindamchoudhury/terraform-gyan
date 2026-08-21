@@ -27,9 +27,13 @@ That assumption breaks constantly, and it breaks in five recognisable ways.
 - **Some of it gets renamed.** `aws_s3_bucket.notes` was a fine name until three teams started using it.
 - **Some of it moves into a module** during a refactor.
 - **Some of it changes underneath you** at three in the morning, when an on-call engineer edits a security group to stop an outage.
-- **Some applies die halfway**, leaving state that describes a world which no longer exists.
+- **Some applies die halfway**, having created objects state never recorded, or recorded objects they never finished destroying.
 
-Those are not all the same failure, and separating them is what gives this chapter its shape. The first three break the **binding** between a configuration address and an object: the address moved, or never existed, while the object sat still. The last two leave the binding intact and make its **contents** wrong: the address still points at the right object, and what state records about that object no longer matches reality. Sections 4 to 7 are the first kind, and sections 8, 9 and 11 are the second. Section 10 belongs to neither, because it is the command surface both families reach for.
+Those are not all the same failure, and separating them is what gives this chapter its shape. The first three break the **binding** between a configuration address and an object: the address moved, or never existed, while the object sat still. Sections 4 to 7 are the repair kit for those. The fourth leaves the binding intact and makes state's **contents** stale, because the address still points at the right object and what state records about it no longer matches reality. That is section 8.
+
+The fifth is the awkward one. A run that dies partway can produce either shape, an object nobody tracks or a binding pointing at something already destroyed, and sometimes just a lock nobody released. Section 11 is the recovery.
+
+Two sections sit outside that taxonomy. Section 9 is for objects that are damaged while state is entirely correct, which is why it takes a manual instruction rather than a repair. Section 10 is the command surface all of them reach for.
 
 Take the binding failures first. HashiCorp's [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move) page states them in one sentence:
 
