@@ -34,7 +34,9 @@ Before watching that binding break, it is worth seeing what it physically is, be
 
 That entry has two halves. `mode` records that this is a managed resource rather than a data source, and `type` and `name` spell the **configuration address**, `aws_s3_bucket.notes`, which is just the labels on the `resource` block. The `id` inside `instances` names the **real object**, the bucket the provider actually created. The binding is nothing more than the fact that those two sit in the same entry, and Terraform reads it in both directions: given the address it knows which object to modify, and given the object it knows which block is responsible for it.
 
-Nothing outside that entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. Break the entry and both sides still exist, perfectly healthy and no longer acquainted.
+Nothing outside that entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. The connection survives only while the address recorded in state still corresponds to an address your configuration declares.
+
+That correspondence is what breaks, and it takes very little. Rename the label on the `resource` block and the state entry does not follow: state still holds `aws_s3_bucket.notes` while the configuration now declares `aws_s3_bucket.team_notes`. The bucket is untouched and `terraform validate` reports the configuration valid, so each half is individually in perfect order. They have simply stopped referring to each other, and Terraform has no way to guess that they were ever a pair. The diagnostic below is exactly this case.
 
 Both earlier chapters could assume this entry, once written by an ordinary apply, never needed adjusting. That assumption breaks constantly, and it breaks in five recognisable ways.
 
