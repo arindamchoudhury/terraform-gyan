@@ -559,12 +559,14 @@ Three refactoring blocks (full treatment in Ch9), added over successive releases
 |---|---|---|
 | `import` | v1.5.0 | Bring existing (e.g. console-created) infrastructure under Terraform without recreating it. |
 | `moved` | **v1.1.0** | Tell Terraform a resource moved/renamed in your code, re-associating existing state. (The book §2.9 says v1.5.0 — that's an error; `moved` shipped in **1.1**, only `import` was v1.5.0.) |
-| `removed` | v1.7.0 | Mark an item removed *without* destroying it. **⚠️ Stale on current Terraform — see the version box below.** |
+| `removed` | v1.7.0 | Take an item out of state, destroying the object **unless** you write `lifecycle { destroy = false }`. **⚠️ The book states this backwards — see the box below.** |
 
-!!! warning "📌 Version drift — `removed` now destroys by default"
-    The book describes **v1.7** behavior, where `removed` was *forget-only*: "a resource was removed from Terraform configuration but … its managed object **should not be destroyed**" (v1.7.x + v1.11.x docs).
+!!! warning "📌 Book error — `removed` has always destroyed by default"
+    **Corrected 2026-08-21.** This box previously called the book stale, claiming `removed` was *forget-only* in v1.7 and gained `destroy` later. That is wrong, and the correction matters because it changes who is at fault.
 
-    On **current Terraform** the block takes a `lifecycle { destroy = <bool> }` argument whose **default is `true`**. A bare `removed` block **destroys the object**. To get the book's behavior you must now write:
+    Verified in the source: `internal/configs/removed.go` at tag **`v1.7.0`**, the release the block shipped in, already declares `Destroy bool`, already parses `lifecycle { destroy }`, and already defaults it to **`true`**. The v1.7.0 CHANGELOG announces both directions, and the v1.7 docs already showed `destroy = false` in their only example.
+
+    So there is **no version in which a bare `removed` block was safe**, and the book's "mark an item removed *without* destroying it" was imprecise when written rather than overtaken by a change. To get the behaviour the book describes you must write:
 
     ```hcl
     removed {

@@ -865,7 +865,7 @@ You are ready to advance when you can:
     }
     ```
 
-    Verified on **v1.15.6**: without the `lifecycle` block, `plan` reports `1 to destroy`; with `destroy = false` it reports `0 to destroy` and warns "will no longer be managed by Terraform, but will not be destroyed." The `removed` block was **forget-only in v1.7**, so older material (including TID Ch2 §2.9) describes the old behavior. (See [[tf-block-removed]].)
+    Verified on **v1.15.6**: without the `lifecycle` block, `plan` reports `1 to destroy`; with `destroy = false` it reports `0 to destroy` and warns "will no longer be managed by Terraform, but will not be destroyed." **Corrected 2026-08-21:** this used to read "the `removed` block was forget-only in v1.7, so older material describes the old behavior." Verified in the source instead — `internal/configs/removed.go` at tag `v1.7.0` already defaults `Destroy` to `true` and already parses `lifecycle { destroy }`, and the v1.7.0 CHANGELOG announces both directions. There is no version in which a bare block was safe, so TID Ch2 §2.9 was imprecise when written rather than overtaken by a change. (See [[tf-block-removed]].)
 
     Two more constraints from [[tf-state-remove]]. `from` **cannot take an instance key** — `aws_instance.example[1]` is rejected, so a `count`/`for_each` resource is forgotten in full or not at all. And you must delete every reference to the resource's attributes before applying; `terraform validate` enumerates them.
 

@@ -415,7 +415,16 @@ removed {
 
     The reason line is the ordinary "not in configuration" one from section 1, which tells you what is happening: without `destroy = false`, the `removed` block adds nothing to simply deleting the resource block.
 
-    The [block reference](https://developer.hashicorp.com/terraform/language/block/removed) states the default plainly in its `lifecycle` section — *"**By default, Terraform removes the resource from state and destroys the actual resource.** Set `destroy` to `false` to remove the resource from state without destroying the actual resource"* — and then contradicts itself in its own opening sentence, which still describes the block as removing a resource *"without changing the underlying infrastructure"*. That opening sentence was true in **1.7**, when the block was forget-only. The `destroy` argument arrived later with a default of `true`. Older material, including TID Ch 2 §2.9, describes the 1.7 behaviour and is stale rather than wrong.
+    The [block reference](https://developer.hashicorp.com/terraform/language/block/removed) states the default plainly in its `lifecycle` section — *"**By default, Terraform removes the resource from state and destroys the actual resource.** Set `destroy` to `false` to remove the resource from state without destroying the actual resource"* — and then contradicts itself in its own opening sentence, which still describes the block as removing a resource *"without changing the underlying infrastructure"*.
+
+    **That is a documentation bug, not a leftover from older behaviour**, and it is worth being exact because the opposite story is widely repeated. Verified in the source: `internal/configs/removed.go` at tag **v1.7.0**, the release the block shipped in, already carries a `Destroy bool`, already parses `lifecycle { destroy }`, and already sets `removed.Destroy = true` *before* it looks for a `lifecycle` block. The v1.7 documentation matched: both of its examples, the resource form and the module form, were written with `destroy = false`, and it said outright that `destroy` "determines whether Terraform will attempt to destroy the object managed by the resource or not".
+
+    So `destroy` shipped **with** the block in 1.7 and has defaulted to `true` since day one. There is no version in which a bare `removed` block was safe. Material that says otherwise, including TID Ch 2 §2.9, was wrong when it was written rather than overtaken by a change.
+
+!!! warning "The docs call `lifecycle` required. The parser does not."
+    Both the 1.7 page and the current configuration model describe the `lifecycle` block as **required**, yet `terraform validate` accepts a `removed` block without one and the plan proceeds to destroy. The schema explains why. In `removed.go` at **v1.15.8**, only `from` carries `Required: true`; `lifecycle` is an ordinary optional block, and `destroy` inside it is an optional attribute.
+
+    That also settles what a missing `lifecycle` means, which the plan output alone leaves ambiguous. It is **not** that Terraform ignores the block and destroys the object merely for being absent from configuration. `Destroy` is initialised to `true` and nothing overrides it, so the block is honoured and asked to destroy. The observable outcome is the same either way; the reason matters if you are trying to predict behaviour from the docs, which here disagree with the parser.
 
 ### The `.` symbol, and the empty legend
 

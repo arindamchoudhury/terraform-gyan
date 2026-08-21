@@ -45,13 +45,25 @@ Its `lifecycle` section says the default *does* destroy. Both cannot be true. Th
 
 **2. `lifecycle` is documented as `required`** in the configuration model (`lifecycle   block | required`), but Terraform **accepts a `removed` block without it** — `terraform validate` returns `Success! The configuration is valid.` and `plan` proceeds to destroy.
 
-> ❓ Unverified: whether Terraform treats a missing `lifecycle` as `destroy = true`, or ignores the `removed` block entirely and destroys the object simply because it is absent from configuration. The plan's reason line reads `# (because terraform_data.keep is not in configuration)`, which hints at the latter. Either way the observable outcome is identical: **the object is destroyed.**
+!!! note "Settled 2026-08-21 in the source — it is `destroy = true`, not “ignored”"
+    The open question here was whether a missing `lifecycle` means `destroy = true`, or whether Terraform ignores the `removed` block and destroys the object simply for being absent from configuration. The plan's reason line, `# (because terraform_data.keep is not in configuration)`, hinted at the latter. **It is the former.**
 
-**3. The behavior changed across versions.** The **v1.7.x** and **v1.11.x** docs both describe the block as:
+    `internal/configs/removed.go` at tag `v1.15.8` sets `removed.Destroy = true` *before* it iterates the block's contents looking for `lifecycle`, so an omitted `lifecycle` simply leaves the default standing. The same file shows `lifecycle` is **not** required: only `from` carries `Required: true`, and `destroy` inside `removedLifecycleBlockSchema` is an optional attribute. The docs' "required" is wrong at both 1.7 and 1.15.
 
-> "To declare that a resource was removed from Terraform configuration but that its managed object **should not be destroyed** …"
+**3. ~~The behavior changed across versions.~~ Corrected 2026-08-21 — it never changed.**
 
-So `removed` began (1.7) as forget-only, and `destroy` arrived later as an argument whose default is `true`. TID's "mark an item removed *without* destroying it" was correct for the version it was written against and is now **stale**. This is version drift, not a book error.
+!!! danger "This note previously had the version history backwards"
+    It read: *"So `removed` began (1.7) as forget-only, and `destroy` arrived later as an argument whose default is `true`. TID's 'mark an item removed without destroying it' was correct for the version it was written against and is now stale. This is version drift, not a book error."*
+
+    **All of that is false.** Verified in the source: `internal/configs/removed.go` at tag **`v1.7.0`**, the release the block shipped in, already declares `Destroy bool`, already parses `lifecycle { destroy }`, and already defaults `removed.Destroy = true`. The Terraform **v1.7.0 CHANGELOG** announces the block as letting authors *"inform Terraform whether the corresponding object should be deleted or simply removed from state"* — both directions, from the first release.
+
+    The **v1.7 documentation agreed**. Both of its examples, the resource form and the module form, were written with `destroy = false`, and it stated: *"The `destroy` argument determines whether Terraform will attempt to destroy the object managed by the resource or not."*
+
+    **Where the error came from:** the sentence quoted below was read in isolation. It is the lead-in to that `destroy = false` example, not a description of the default.
+
+    > "To declare that a resource was removed from Terraform configuration but that its managed object **should not be destroyed**, remove the `resource` block from your configuration and replace it with a `removed` block:"
+
+    The clause after the comma is the half that was dropped. Consequence for the collection: **there is no version in which a bare `removed` block was safe**, so TID's phrasing was imprecise when written rather than overtaken by a change, and the current page's self-contradicting opening sentence is a live documentation bug rather than a stale leftover.
 
 ## Configuration model
 
