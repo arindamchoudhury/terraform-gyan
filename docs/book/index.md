@@ -19,3 +19,4 @@ Synthesized chapters, one per learning-path topic. Each chapter blends every sou
 | [13](ch13-using-modules.md) | I4 — Using modules | ✅ 2026-08-08 |
 | [14](ch14-authoring-modules.md) | I5 — Authoring modules | ✅ 2026-08-17 |
 | [15](ch15-remote-state-backends.md) | I6 — Remote state & backends | ✅ 2026-08-19 |
+| [16](ch16-state-operations.md) | I7 — State management operations | ✅ 2026-08-21 |

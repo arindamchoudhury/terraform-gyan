@@ -715,7 +715,7 @@ You are ready to advance when you can:
 
 ---
 
-### ⬜ I7 — State management operations
+### ✅ I7 — State management operations
 
 **What it is:** The state-surgery toolkit — `import` (+ `import` blocks), `state mv`/`rm`, `refresh`, detecting and reconciling drift, and `moved`/`removed` config blocks.
 
@@ -1098,6 +1098,19 @@ You are ready to advance when you can:
     Its migration advice is the same shape as this topic’s state advice — go incrementally, start with the least critical resources, and run *“CloudFormation and Terraform in parallel during the transition period”* with the stack retained as the rollback. It is the only migrating-from-another-tool material in this path; **B1** compares the two tools but does not move anything between them. Cached: `cache/web/vp-migrate-from-cloudformation.txt`.
 
 **Milestone:** You can adopt an unmanaged cloud resource via an `import` block and rename a resource with a `moved` block — both with an empty plan afterward.
+
+!!! success "Written up — Book [Chapter 16](book/ch16-state-operations.md) (2026-08-21)"
+    Blends this topic's reading notes, TID Ch 6 §6.5–6.6 and TUR Ch 3's isolation half into one treatment: address-as-identity, the three arguments for config-driven refactoring, the addressing grammar and its several parsers, `moved` / `removed` / `import`, splitting a state, drift, `-replace` and `-target`, and the `state` CLI family's backup rule.
+
+    **Measured for the chapter** on Terraform 1.15.8 with AWS provider 6.61.0, plus OpenTofu 1.12.5, against the emulator (`labs/chapter16/`):
+
+    - A **minimal** `resource` block on an imported bucket plans `1 to import, 0 to add, 1 to change, 0 to destroy`, and the change **strips the tags the bucket already had**. The defaults trap on a real resource, not on the tutorial's Docker container.
+    - The `removed` + `destroy = false` plan prints its **symbol legend empty**, because Terraform has no legend entry for `.`.
+    - **OpenTofu reports a fifth counter**, `Plan: 0 to add, 0 to change, 0 to destroy, 1 to forget`, and documents the symbol as `. forget`. Terraform reports `0 to destroy` and says nothing about the state write.
+    - OpenTofu 1.12.5 accepts **`lifecycle { destroy = false }` on the resource itself**; `tofu destroy` then forgets the object and **exits non-zero** with `Destroy was successful but left behind forgotten instances` unless `-suppress-forget-errors` is passed. Terraform 1.15.8 rejects the argument: `An argument named "destroy" is not expected here`.
+    - `apply -refresh-only` reported `0 added, 0 changed, 0 destroyed` while `serial` went **1 → 2**.
+    - On 1.15.8 the refresh-only drift line reads **`has changed`**, not the `has been changed` in HashiCorp's tutorial transcripts, and the surrounding note has gained *"which may have affected this plan"*.
+    - Re-running `plan -generate-config-out` with the file present: `Error: Target generated file already exists`.
 
 ---
 
@@ -2173,7 +2186,7 @@ Advanced (A1–A10)       → ~76 hrs  →  [Authoring & Operations Professional
 Expert (E1–E6)          → ~70 hrs
 ```
 
-**You are currently here:** Beginner complete, Intermediate in progress — B1–B9, I1–I6 done (Ch 1–15 written). Next up: **I7 (State management operations)**.
+**You are currently here:** Beginner complete, Intermediate nearly done — B1–B9, I1–I7 done (Ch 1–16 written). Next up: **I8 (Provider configuration in depth)**, the last Intermediate topic.
 
 ---
 

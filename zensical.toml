@@ -29,6 +29,7 @@ nav = [
         { "13. Using modules" = "book/ch13-using-modules.md" },
         { "14. Authoring modules" = "book/ch14-authoring-modules.md" },
         { "15. Remote state & backends" = "book/ch15-remote-state-backends.md" },
+        { "16. State management operations" = "book/ch16-state-operations.md" },
     ]},
     { "Topics" = [
         { "All Topics" = "topics/index.md" },

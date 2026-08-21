@@ -45,7 +45,8 @@ TUR's own text is the best evidence the first row was a real gap rather than a n
 
 - Want the whole backend story in one place, with measured transcripts? → [Book Ch 15 — Remote state & backends](../book/ch15-remote-state-backends.md), which blends both books with the reference pages and four verified labs.
 - Need to decide how to lay out repositories and backends? → **TUR Ch3**, then TID Ch8 for the alternatives it declines to choose between.
-- Need to understand what is *in* the file, or to operate on it? → **TID Ch6** ([[06-state-management]]).
+- Need to *operate* on state — adopt, rename, forget, split, or repair it? → [Book Ch 16 — State management operations](../book/ch16-state-operations.md), which puts `import`, `moved`, `removed`, drift and the `state` CLI family in one place with measured transcripts on both engines.
+- Need to understand what is *in* the file? → **TID Ch6** ([[06-state-management]]).
 - Need the rule rather than the narrative? → [[tf-state]] for the model, [[tf-state-purpose]] for why a stateless design was rejected, [[tf-state-backends]] for what a backend owes you.
 - About to set up locking? → [[tf-state-locking]] and [[tf-backend-configure]], not either book.
 - About to move a local state file to HCP Terraform? → [[tut-cloud-migrate]], which is the whole migration in nine minutes and needs no cloud provider account.
