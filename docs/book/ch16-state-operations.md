@@ -29,7 +29,7 @@ Every one of those is the same failure at bottom. HashiCorp's [Move Resources](h
 
 > "Terraform's state associates each real-world object with a configured resource **at a specific resource address**. This is seamless when changing a resource's attributes, but Terraform will **lose track** of a resource if you change its name, move it to a different module, or **change its provider**."
 
-Three ways to break the binding, and the third is the one people never guess. A provider change is an address change, because the provider source is part of what binds an object to a configured resource. That is why `terraform state replace-provider` is filed under *Moving Resources* and not under anything provider-shaped.
+Three ways to break the binding, and the third is the one people never guess. A provider change is an address change, because the provider source is part of what binds an object to a configured resource. That is why `terraform state replace-provider` is documented on this page at all, in the sidebar's *Moving Resources* group, rather than anywhere provider-shaped.
 
 What happens when the binding breaks is worth quoting too, because the docs' tone is the correct one:
 
@@ -42,6 +42,11 @@ Destroy-and-recreate is the *right* answer to a renamed address most of the time
 Rename a resource in a lab configuration and plan it. Measured on Terraform **v1.15.8** with AWS provider **v6.61.0**:
 
 ```text
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  - destroy
+
 Terraform will perform the following actions:
 
   # aws_s3_bucket.notes will be destroyed
@@ -54,6 +59,9 @@ Terraform will perform the following actions:
 
   # aws_s3_bucket.team_notes will be created
   + resource "aws_s3_bucket" "team_notes" {
+      + acceleration_status         = (known after apply)
+      + acl                         = (known after apply)
+      + arn                         = (known after apply)
       + bucket                      = "ch16-moved-notes"
       ...
     }
