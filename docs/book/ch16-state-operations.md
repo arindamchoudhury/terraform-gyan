@@ -19,7 +19,7 @@ By the end you can:
 
 ## 1. The problem: an address is an identity
 
-Chapter 9 established that state binds a configuration address to a real object, one to one, and named the fields the file carries down to the `instances` array. Chapter 15 moved that file somewhere a team can share. This section looks closer, because everything in this chapter depends on understanding that layout properly.
+Chapter 9 established that state binds a configuration address to a real object, one to one, and named the fields the file carries down to the `instances` array. Chapter 15 moved that file somewhere a team can share. This section looks closer at a resource entry, and at its `instances` array in particular, because everything in this chapter depends on understanding that layout properly.
 
 Apply a single bucket and `resources` holds one entry. Trimmed to the fields that matter here:
 
