@@ -43,7 +43,7 @@ Apply a single bucket and `resources` holds one entry. Trimmed to the fields tha
 | `provider` | Which provider configuration created the object. Note that it sits *beside* the address, not inside it. |
 | `instances` | One element per instance. This is the field every operation in this chapter works on. |
 
-**A `resource` block is not one object.** It is a template, and `instances` is where the objects it produced are recorded. Without `count` or `for_each` it produces exactly one, as above, and that instance carries no key. Add `count = 2` and the same entry grows a second element, each tagged with its position:
+**A `resource` block is not one object.** It is a template, and `instances` is where the objects it produced are recorded. Without `count` or `for_each` it produces exactly one, as above, and that instance carries no key. Give a different resource `count = 2` and its entry holds two elements, each tagged with its position:
 
 ```json
 { "instances": [
