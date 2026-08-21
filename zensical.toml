@@ -69,6 +69,7 @@ nav = [
                     ]},
                     { "Forcing Re-creation (Tainting)" = [
                         { "Overview" = "sources/terraform-docs/tf-cli-state-taint.md" },
+                        { "untaint" = "sources/terraform-docs/tf-cmd-untaint.md" },
                     ]},
                     { "Disaster Recovery" = [
                         { "force-unlock" = "sources/terraform-docs/tf-cmd-force-unlock.md" },
