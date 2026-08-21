@@ -53,7 +53,7 @@ All five have the same headline: configuration and state stop agreeing. What sep
 | 1 | **Neither. Terraform was never told.** The object was created outside Terraform, so state has no entry for it. Nothing was broken here, because nothing was ever joined. | Section 6 |
 | 2, 3 | **The configuration moved, state stayed put.** You renamed the resource or pulled it into a module; the entry still holds the old address, bound to an object that never changed. | Sections 4 and 7 |
 | 4 | **The object moved, state stayed put.** Someone changed a *managed* object by hand. | Section 8 |
-| 5 | **Terraform moved the object, then failed to record it.** The run created or destroyed something for real and died before the state write landed. The dangerous half is a resource created but never recorded, because the next run creates a second one. | Sections 8 and 11 |
+| 5 | **Terraform moved the object, then failed to record it.** The run created or destroyed something for real and died before the state write landed. The dangerous half is a resource created but never recorded, because the next run plans to create it again. | Sections 8 and 11 |
 
 Note how close rows 1 and 4 look and how differently they end. Both involve someone working outside Terraform, but row 1 has no entry to correct and row 4 has an entry that is merely stale, so one is answered by `import` and the other by `apply -refresh-only`.
 
@@ -63,7 +63,7 @@ Take rows 2 and 3 first, where the configuration is what moved. HashiCorp's [Mov
 
 > "Terraform's state associates each real-world object with a configured resource **at a specific resource address**. This is seamless when changing a resource's attributes, but Terraform will **lose track** of a resource if you change its name, move it to a different module, or **change its provider**."
 
-Three ways to break the binding, and the third is the one people never guess. Be precise about why, because it is easy to overstate: the provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, in the same entry shown earlier, as a sibling field of the type and name:
+Three ways to break the binding, and the third is the one people never guess. It is deliberately not one of the five above, because it is the only case in which nothing about the address changes at all. Be precise about why, because it is easy to overstate: the provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, in the same entry shown earlier, as a sibling field of the type and name:
 
 ```json
 { "mode": "managed", "type": "aws_s3_bucket", "name": "notes",
@@ -1026,7 +1026,7 @@ The second is that drift is a **symptom**. Infrastructure rarely changes itself.
 - **Accidental manual changes.** Wrong account, wrong command. Treat it as a systems problem rather than an individual's fault: restrict production access, enforce CI/CD. These are the easiest to fix, because a plain `terraform plan` usually works out exactly how to restore the intended state.
 - **Intentional manual changes.** Someone fixed an outage by hand. Harder, because the change was *wanted* and the next Terraform run will revert it. Until the change is in code, **it is not safe to run Terraform at all**.
 - **Conflicting automated changes.** New machine images, an orchestrator adding tags, autoscaling running at a different count, an RDS minor-version bump in a maintenance window. None are errors. `ignore_changes` exists mainly for this.
-- **Terraform's own errors.** A crash before state was saved, a mid-run credential expiry, a corrupted write. The dangerous shape is a resource that was **created but never recorded**, so the next run creates a second one.
+- **Terraform's own errors.** A crash before state was saved, a mid-run credential expiry, a corrupted write. The dangerous shape is a resource that was **created but never recorded**, so the next run plans to create it again. What follows depends on the resource: a genuine duplicate where the provider allocates the identifier, or a hard failure where the name must be unique. Measured on the emulator, dropping a bucket's entry and re-applying gives the second outcome, `Error: creating S3 Bucket (ch16-dup-demo): BucketAlreadyExists`. Neither is recoverable by re-running.
 
 ### `plan -refresh-only`: see it without acting on it
 
