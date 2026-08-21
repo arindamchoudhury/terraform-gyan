@@ -196,7 +196,7 @@ That third shape is also exactly why `terraform taint` was deprecated. It wrote 
 Deferred with a gap, or immediate with no review. Either way the state write escapes the plan, and putting it back inside one is what every preferred route in the left-hand column has in common. Most of them do it with a configuration block; two of them, `-refresh-only` and `-replace`, do it with a planning flag instead.
 
 !!! tip "The fourth argument, which is yours rather than HashiCorp's"
-    A `moved`, `removed` or `import` block goes through **plan**, so it arrives in a pull request, gets reviewed, and leaves a diff in the history. A CLI state operation leaves a line in someone's shell history and a `terraform.tfstate.1787302875.backup` file on the machine that ran it. When a state operation goes wrong six months later, the configuration is the only artefact anyone can read.
+    A `moved`, `removed` or `import` block goes through **plan**, so it arrives in a pull request, gets reviewed, and leaves a diff in the history. A CLI state operation leaves a line in someone's shell history and, at best, a `terraform.tfstate.1787302875.backup` file on the machine that ran it. At best, because three of these commands do not write a backup at all, which section 10 takes up. When a state operation goes wrong six months later, the configuration is the only artefact anyone can read.
 
 ---
 
