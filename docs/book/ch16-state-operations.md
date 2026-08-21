@@ -175,8 +175,8 @@ There are three differences. Two exist only in the rename: an extra `+ create` e
 
 That is the practical reading rule. **The `+` half is the tell, not the `-` half.** An unexpected destroy on its own is ambiguous. An unexpected destroy paired with the creation of something suspiciously similar, and `1 to add` where you expected `0 to add`, is a rename you forgot to declare.
 
-!!! note "Binding failures come in two directions, and they need different tools"
-    Among failures 1 to 3, which way the mismatch points decides which block you reach for. **Configuration has something state does not** is the import case: an object exists and nothing tracks it, so section 6 adopts it. **State has something configuration does not** is the destroy case, and `moved` and `removed` in sections 4 and 5 are the two ways of telling Terraform it is not what it looks like — a rename rather than a deletion, or a handover rather than a deletion.
+!!! note "Failures 1 to 3 point in two directions, and need different tools"
+    Which way the mismatch points decides which block you reach for. **Configuration has something state does not** is the import case: an object exists and nothing tracks it, so section 6 adopts it. **State has something configuration does not** is the destroy case, and it is where `moved` and `removed` come in, in sections 4 and 5. Both tell Terraform that the missing address is not what it looks like. One says the resource was renamed; the other says it was handed to someone else. Neither means deleted.
 
 ---
 
