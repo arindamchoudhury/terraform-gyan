@@ -36,7 +36,7 @@ That entry has two halves. `mode` records that this is a managed resource rather
 
 Nothing outside that entry holds the two together. Terraform writes no ownership marker onto the bucket itself, so the object cannot tell you which resource block claims it. The connection survives only while the address recorded in state still corresponds to an address your configuration declares.
 
-Breaking that correspondence takes one word. Rename the label on the `resource` block and the state entry does not follow: state still holds `aws_s3_bucket.notes` while the configuration now declares `aws_s3_bucket.team_notes`. The bucket is untouched and `terraform validate` reports the configuration valid, so each half is individually in perfect order. They have simply stopped referring to each other, and Terraform has no way to guess that they were ever a pair. The diagnostic below is exactly this case.
+Breaking that correspondence takes one word. Rename the label on the `resource` block and the state entry does not follow: state still holds `aws_s3_bucket.notes` while the configuration now declares `aws_s3_bucket.team_notes`. The bucket is untouched and `terraform validate` reports the configuration valid, so each half is individually in perfect order. They have simply stopped referring to each other, and Terraform has no way to guess that they were ever a pair.
 
 Both earlier chapters could assume this entry, once written by an ordinary apply, never needed adjusting. That assumption breaks constantly, and it breaks in five recognisable ways.
 
