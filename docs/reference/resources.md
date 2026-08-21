@@ -57,3 +57,22 @@ What **TID Ch12** builds on, and what **E1** needs. Versions checked 2026-08-16.
 | **Publishing (OpenTofu)** | Provider and signing-key submissions, **via the GitHub issue forms only** | https://github.com/opentofu/registry |
 | **Mastodon provider** | TID Ch12's finished project — the reference when a listing looks wrong | https://github.com/TerraformInDepth/terraform-provider-mastodon |
 | **corefunc** | The book's example of a functions-only provider — "utilities that should have been Terraform core functions", built on the Plugin Framework, also usable as a Go library. Community-maintained (northwood-labs), not HashiCorp | https://github.com/northwood-labs/terraform-provider-corefunc |
+
+## Secrets management
+
+The tools **TUR Ch6** names, with what they are today. Versions checked 2026-08-21.
+
+| Tool / doc | What it is | URL |
+|---|---|---|
+| **Manage sensitive data** | The HashiCorp umbrella page: hide vs omit vs both, and the version matrix for `sensitive` / ephemeral / write-only | https://developer.hashicorp.com/terraform/language/manage-sensitive-data |
+| **Write-only arguments** | The `_wo` / `_wo_version` reference; the mechanism that closed the plaintext-in-state problem | https://developer.hashicorp.com/terraform/language/resources/ephemeral/write-only |
+| **Dynamic provider credentials** | HCP Terraform mints a workload identity token per run and exchanges it for temporary AWS/GCP/Azure/Kubernetes/Vault/HCP credentials | https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials |
+| **sops** | File encryption with a KMS or `age` key, editable in place; left Mozilla for the CNCF (Sandbox, 2023-05-17), now `v3.13.3` | https://github.com/getsops/sops |
+| `carlpett/sops` provider | The Terraform side of sops; **v1.3.0 added an ephemeral resource**, so decrypted values need not enter state. `v1.4.1` current | https://github.com/carlpett/terraform-provider-sops |
+| **aws-vault** | Stores AWS keys in the OS keychain and hands commands temporary STS credentials. `99designs/aws-vault` is abandoned; the maintained fork is ByteNess (`v7.13.5`) | https://github.com/ByteNess/aws-vault |
+| **1Password CLI** | `op item get … --fields label=…` and `op read "op://vault/item/field"`; the book's `op get item` calls are v1 syntax | https://www.1password.dev/cli/reference/ |
+| **OpenBao** | MPL-2.0 fork of Vault under LF Projects / OpenSSF, after Vault's relicensing. `v2.6.2` | https://github.com/openbao/openbao |
+| **AWS Secrets Manager pricing** | $0.40 per secret per month, $0.05 per 10,000 API calls — the numbers TUR Ch6 quotes, still exact | https://aws.amazon.com/secrets-manager/pricing/ |
+| **AWS KMS pricing** | $1/month per customer managed key, $0.03 per 10,000 requests | https://aws.amazon.com/kms/pricing/ |
+| **GitHub OIDC in AWS** | Creating the IAM OIDC identity provider; thumbprints are now the fallback for IdPs outside AWS's trusted-CA library | https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html |
+| **EC2 instance metadata** | The IMDSv1 vs IMDSv2 request forms, and what a token-less GET returns when IMDSv2 is required | https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html |
