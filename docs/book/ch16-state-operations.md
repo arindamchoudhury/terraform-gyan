@@ -113,12 +113,12 @@ That is the practical reading rule. **The `+` half is the tell, not the `-` half
 
 ## 2. The toolkit, ranked
 
-There are three tiers, and TID Ch 6 §6.5 puts them in the order you should reach for them: **code**, then the **CLI**, then hand-editing.
+There are three tiers, and TID Ch 6 §6.5 puts them in the order you should reach for them: **code**, then the **CLI**, then hand-editing. The table below splits the first two into columns. The third tier is the last row, where there is no better option left.
 
-| Intent | Configuration (preferred) | CLI fallback | Introduced |
+| Intent | Preferred: goes through a plan | Fallback: writes state directly | Preferred route introduced |
 |---|---|---|---|
 | Adopt an existing object | `import` block | `terraform import` | block: 1.5 |
-| Adopt many objects | `list` block + `terraform query` | — | 1.14 |
+| Adopt many objects | `list` blocks + `terraform query`, then the `import` blocks it generates | — | 1.14 |
 | Rename or relocate an address | `moved` block | `terraform state mv` | block: 1.1 |
 | Forget an object, keep it running | `removed` + `lifecycle { destroy = false }` | `terraform state rm` | block: 1.7 |
 | Move an object to another state file | `removed` + `import` in two configurations | `state mv -state -state-out` | 1.7 |
@@ -127,7 +127,7 @@ There are three tiers, and TID Ch 6 §6.5 puts them in the order you should reac
 | Force one object to be rebuilt | `apply -replace=ADDR` | `terraform taint` (deprecated) | flag: 0.15.2 |
 | Repair a corrupted state | — | `state pull` → edit → `state push` | — |
 
-Read the middle column as an escape hatch, not as a parallel workflow. Every deprecated row in it was deprecated for the same reason, which is worth stating once and then reusing for the rest of the chapter.
+Read the fallback column as an escape hatch, not as a parallel workflow. The two deprecated rows share one flaw: each writes state outside a plan anybody could have reviewed. They arrive at it from opposite directions, though, so they are worth keeping apart rather than collapsing into a single rule.
 
 ### Why configuration wins, three times over
 
@@ -151,7 +151,11 @@ A `state mv` fixes your state. A `moved` block fixes everyone's. You cannot ship
 
 A CLI refactor is two operations with a gap between them, and during that gap the repository describes a rename that state has not heard about. Anyone who plans in that window gets a correct-looking destroy. A `moved` block makes the rename part of the same apply as the configuration change, so the window does not exist.
 
-That third shape is also exactly why `terraform taint` was deprecated. Intent recorded in state ahead of the action, with a gap in which someone else can act, is the recurring flaw behind every deprecated row in the table above.
+That third shape is also exactly why `terraform taint` was deprecated. It wrote an interim state snapshot to record the intent, and the replacement happened on a later apply, leaving the same window open in between.
+
+`terraform refresh` is deprecated for the mirror-image reason, and it is worth not conflating the two. It leaves no window at all, because it writes state immediately with no preview. Terraform's [v0.15.4 changelog](https://github.com/hashicorp/terraform/blob/v0.15.4/CHANGELOG.md), which introduced `-refresh-only`, says so directly: the new planning mode "serves as a plannable replacement for `terraform refresh`", recommended "because it will provide an opportunity to review what Terraform detected before updating the Terraform state".
+
+Deferred with a gap, or immediate with no review. Either way the state write escapes the plan, and putting it back inside one is what every preferred route in the left-hand column has in common. Most of them do it with a configuration block; two of them, `-refresh-only` and `-replace`, do it with a planning flag instead.
 
 !!! tip "The fourth argument, which is yours rather than HashiCorp's"
     A `moved`, `removed` or `import` block goes through **plan**, so it arrives in a pull request, gets reviewed, and leaves a diff in the history. A CLI state operation leaves a line in someone's shell history and a `terraform.tfstate.1787302875.backup` file on the machine that ran it. When a state operation goes wrong six months later, the configuration is the only artefact anyone can read.
