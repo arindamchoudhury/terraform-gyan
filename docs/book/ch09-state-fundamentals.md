@@ -281,7 +281,12 @@ So nothing stops two configurations from pointing at the same state file during 
 
 ### `resources` and `outputs`
 
-Each entry in `resources` carries the identity triple **`module` + `type` + `name`** — together unique, and together the resource address you type on the command line — plus the `provider` it was created with, and an `attributes` object holding every computed attribute and supplied argument. A provider-set `schema_version` lets the provider migrate its own attribute layout across upgrades.
+Each entry in `resources` identifies a resource by **`mode`**, **`module`**, **`type`** and **`name`**. `mode` is `managed` for a `resource` block and `data` for a data source, so both kinds share the one array. `module` is absent for a root resource and reads `"module.wrapped"` for one declared inside `module "wrapped"`. `type` and `name` are the two labels on the block. Together those spell the resource address you type on the command line. The entry also records the `provider` that created the object.
+
+The attributes are one level further down, and the distinction matters. Each entry holds an **`instances`** array with one element per *instance*, because a `resource` block is a template rather than an object: it yields one instance on its own, and one per element with `count` or `for_each`. It is that instance element, not the entry, which carries the `attributes` object holding every computed attribute and supplied argument. The provider-set `schema_version` that lets a provider migrate its own attribute layout across upgrades sits there too, alongside an `index_key` whenever the resource uses `count` or `for_each`.
+
+!!! note "The instance layout is Chapter 16's subject"
+    This chapter needs `instances` only to place `attributes` correctly. Chapter 16 opens by taking the entry apart field by field, because every operation it covers moves entries or single instance elements around: what an `index_key` looks like for `count` against `for_each`, why that difference makes a `count` to `for_each` migration a state operation rather than an edit, and why a `provider` recorded beside the address rather than inside it needs its own command to rewrite.
 
 `outputs` is an object, not an array, and holds **only the root module's** outputs, each with its type recorded so another configuration can consume it without access to the generating code.
 
