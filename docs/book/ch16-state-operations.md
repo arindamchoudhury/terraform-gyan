@@ -63,7 +63,13 @@ Take rows 2 and 3 first, where the configuration is what moved. HashiCorp's [Mov
 
 > "Terraform's state associates each real-world object with a configured resource **at a specific resource address**. This is seamless when changing a resource's attributes, but Terraform will **lose track** of a resource if you change its name, move it to a different module, or **change its provider**."
 
-Three ways to break the binding, and the third is the one people never guess. It is deliberately not one of the five above, because it is the only case in which nothing about the address changes at all. Be precise about why, because it is easy to overstate: the provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, in the same entry shown earlier, as a sibling field of the type and name:
+Three ways to break the binding, and the first two are already on the table above.
+
+1. **Change its name.** That is failure 2.
+2. **Move it to a different module.** That is failure 3.
+3. **Change its provider.** This one is deliberately not among the five, because it is the only case in which nothing about the address changes at all.
+
+The third is the one people never guess, and it is also the one easiest to get wrong in the retelling, so be precise. The provider is **not** part of the resource address. Section 3's grammar is `[module path][resource spec]` and has no provider component anywhere in it. What state does is record the provider **beside** the address, in the same entry shown earlier, as a sibling field of the type and name:
 
 ```json
 { "mode": "managed", "type": "aws_s3_bucket", "name": "notes",
