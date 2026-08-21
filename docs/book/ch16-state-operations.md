@@ -179,7 +179,7 @@ The state rename happens *before* the plan is computed. By the time Terraform di
 
 **The audience argument**, from [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move):
 
-> "we recommend using the Terraform language's **refactoring features** to document in your module exactly how the resource names have changed over time. Terraform reacts to this information automatically during planning, so **users of your module do not need to take any unusual extra steps**."
+> "**For most cases** we recommend using the Terraform language's **refactoring features** to document in your module exactly how the resource names have changed over time. Terraform reacts to this information automatically during planning, so **users of your module do not need to take any unusual extra steps**."
 
 A `state mv` fixes your state. A `moved` block fixes everyone's. You cannot ship a CLI command to a hundred module consumers and expect all hundred to run it correctly against their own state.
 
@@ -191,7 +191,7 @@ A CLI refactor is two operations with a gap between them, and during that gap th
 
 That third shape is also exactly why `terraform taint` was deprecated. It wrote an interim state snapshot to record the intent, and the replacement happened on a later apply, leaving the same window open in between.
 
-`terraform refresh` is deprecated for the mirror-image reason, and it is worth not conflating the two. It leaves no window at all, because it writes state immediately with no preview. Terraform's [v0.15.4 changelog](https://github.com/hashicorp/terraform/blob/v0.15.4/CHANGELOG.md), which introduced `-refresh-only`, says so directly: the new planning mode "serves as a plannable replacement for `terraform refresh`", recommended "because it will provide an opportunity to review what Terraform detected before updating the Terraform state".
+`terraform refresh` is deprecated for the mirror-image reason. It leaves no window at all, because it writes state immediately with no preview. Terraform's [v0.15.4 changelog](https://github.com/hashicorp/terraform/blob/v0.15.4/CHANGELOG.md), which introduced `-refresh-only`, says so directly: the new planning mode "serves as a plannable replacement for `terraform refresh`", recommended "because it will provide an opportunity to review what Terraform detected before updating the Terraform state".
 
 Deferred with a gap, or immediate with no review. Either way the state write escapes the plan, and putting it back inside one is what every preferred route in the left-hand column has in common. Most of them do it with a configuration block; two of them, `-refresh-only` and `-replace`, do it with a planning flag instead.
 
