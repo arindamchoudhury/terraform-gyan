@@ -94,3 +94,4 @@ Notes captured from the official Terraform documentation at [developer.hashicorp
 | Inspect state overview (four sentences; presents `refresh` without its deprecation) | 2026-08-21 | [tf-cli-state-inspect](tf-cli-state-inspect.md) |
 | Recreate resources overview (`-replace` first; `taint` deprecated with its reason) | 2026-08-21 | [tf-cli-state-taint](tf-cli-state-taint.md) |
 | `terraform untaint` command (survives the deprecation; `-backup` here is legacy, not forced) | 2026-08-21 | [tf-cmd-untaint](tf-cmd-untaint.md) |
+| Move Resources overview (a provider change *is* an address change; language-first, minus `removed`) | 2026-08-21 | [tf-cli-state-move](tf-cli-state-move.md) |

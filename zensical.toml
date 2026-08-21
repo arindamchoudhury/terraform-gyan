@@ -71,6 +71,9 @@ nav = [
                         { "Overview" = "sources/terraform-docs/tf-cli-state-taint.md" },
                         { "untaint" = "sources/terraform-docs/tf-cmd-untaint.md" },
                     ]},
+                    { "Moving Resources" = [
+                        { "Overview" = "sources/terraform-docs/tf-cli-state-move.md" },
+                    ]},
                     { "Disaster Recovery" = [
                         { "force-unlock" = "sources/terraform-docs/tf-cmd-force-unlock.md" },
                     ]},
