@@ -21,7 +21,7 @@ directories.
 | `section6/` | the `import` case lab1 cannot hold: an `id` that only resolves after apply | plan-only, nothing to clean up |
 | `section5/` | three `removed` cases lab3 cannot hold: `from` given an instance key, a reference left dangling, and OpenTofu's bare block, which forgets where Terraform's destroys | two validate-only, one `TF_CMD=tofu` |
 | `lab4/source`, `lab4/dest` | splitting one configuration into two with `removed` + `import`. `source/main.tf.before` is the pre-split configuration | empty plan on both sides |
-| `lab5/` | drift: `plan -refresh-only`, revert, adopt | configuration matching the drifted tag |
+| `lab5/` | drift: `plan -refresh-only`, revert, adopt. `main.tf.before` is the pre-drift configuration | configuration matching the drifted tag |
 | `opentofu/` | OpenTofu's resource-level `lifecycle { destroy = false }` | run with `tofu`, not `terraform` |
 
 Each directory holds the **end state** of its lab, `section1/` included. The intermediate edits — the

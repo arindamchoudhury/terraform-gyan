@@ -1,0 +1,20 @@
+# The pre-drift configuration section 8 starts from. The committed main.tf is
+# the same file after the drift has been adopted into configuration.
+#
+#   cp main.tf main.tf.after       # keep the adopted config
+#   cp main.tf.before main.tf      # the owner tag Terraform believes in
+#   tflocal apply -auto-approve
+#   awslocal s3api put-bucket-tagging --bucket ch16-drift-site \
+#     --tagging 'TagSet=[{Key=owner,Value=oncall-hotfix}]'
+#
+# Then work the three answers: tflocal plan -refresh-only to see it,
+# tflocal apply to revert it, tflocal apply -refresh-only to adopt it into
+# state, and finally cp main.tf.after main.tf to adopt it into configuration,
+# after which the plan is empty.
+resource "aws_s3_bucket" "site" {
+  bucket = "ch16-drift-site"
+
+  tags = {
+    owner = "platform-team"
+  }
+}

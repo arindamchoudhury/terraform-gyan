@@ -1448,6 +1448,8 @@ The second is that drift is a **symptom**. Infrastructure rarely changes itself.
 
 ### `plan -refresh-only`: see it without acting on it
 
+Everything below is measured in `labs/chapter16/lab5`, whose `main.tf.before` is the configuration Terraform believes in and whose committed `main.tf` is the same file after the drift has been adopted. Manufacture the drift with one `awslocal s3api put-bucket-tagging` and the three answers are all reachable from there.
+
 ```text
 $ terraform plan -refresh-only
 
@@ -1472,7 +1474,7 @@ these.
 The **verb tense is the fastest way to tell the two kinds of plan apart**. A refresh-only plan reports the past, `has changed`, where a normal plan reports intent in the future: `will be updated in-place`.
 
 !!! note "The exact wording moved between versions"
-    HashiCorp's drift tutorial transcript reads `# aws_instance.example has been changed`. Measured on **v1.15.8** the line is `# aws_s3_bucket.site has changed`, and the surrounding note has gained a clause: *"since the last `terraform apply` **which may have affected this plan**"*. Same mechanism, shorter sentence. If you are matching on these strings in tooling, they are not stable across releases.
+    HashiCorp's drift tutorial transcript reads `# aws_instance.example has been changed`. Measured on **v1.15.8** in `lab5` the line is `# aws_s3_bucket.site has changed`, and the surrounding note has gained a clause: *"since the last `terraform apply` **which may have affected this plan**"*. Same mechanism, shorter sentence. If you are matching on these strings in tooling, they are not stable across releases.
 
 ### The three answers
 
@@ -1556,7 +1558,11 @@ The [command reference](https://developer.hashicorp.com/terraform/cli/commands/r
 
     The correct fix if the object really is in another region is the `provider` alias on an `import` block from section 6, not a change to the default provider.
 
-Two more facts about the deprecation, neither of which is on the reference page. `terraform refresh` is **not supported at all in workspaces using HCP Terraform as a remote backend**, while `-refresh-only` is, so on a `cloud` block the choice is already made for you. And the deprecation is explicitly not a removal: *"Though Terraform will continue to support the `refresh` subcommand in future versions, it is deprecated."* That is why it keeps reappearing in material written years apart, including in one page of HashiCorp's own State tutorial collection, which still reconciles an out-of-band delete with a bare `terraform refresh` and no warning at all.
+Two more facts about the deprecation, neither of which is on the reference page. Both are in one sentence of the [refresh tutorial](https://developer.hashicorp.com/terraform/tutorials/state/refresh):
+
+> "Though Terraform will **continue to support the `refresh` subcommand** in future versions, it is deprecated, and we encourage you to use the `-refresh-only` flag instead. This allows you to review any updates to your state file. **Unlike the `refresh` subcommand, `-refresh-only` mode is supported in workspaces using HCP Terraform as a remote backend**, allowing your team to collaboratively review any modifications."
+
+So the deprecation is explicitly not a removal, and on a `cloud` block the choice is already made for you. Being supported indefinitely is why the command keeps reappearing in material written years apart, including [Manage resources in Terraform state](https://developer.hashicorp.com/terraform/tutorials/state/state-cli), still in the same State collection, which reconciles an out-of-band delete with a bare `terraform refresh` and no warning at all.
 
 The closing advice on the reference page goes one step further than "prefer the flag":
 
