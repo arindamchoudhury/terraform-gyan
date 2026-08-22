@@ -332,7 +332,7 @@ Zero or more. An address is a **set**, and how big the set is depends on how muc
 !!! warning "Omitting the index is not shorthand for “the first one”"
     From the same page: *"Omitting an index when addressing a resource where `count > 1` means that the address **references all instances**."* The page states that rule for `count` only, and says nothing of the kind under `for_each`. The measured table below is a `for_each` resource, and it behaves the same way, so read the rule as being about instance keys rather than about `count`.
 
-    The same holds one level up. `module.foo` is every resource in every instance of that module call, and `module.foo[0]` is the narrowing.
+    The same holds one level up, for an address that **stops at the module**. `module.foo` is every resource in every instance of that module call, and `module.foo[0]` is the narrowing. Once a resource spec follows an un-indexed module path the rule inverts and the address matches nothing at all, which is measured later in this section.
 
     In a `terraform state list` that is a convenience. In a `terraform state rm` it is the difference between forgetting one object and forgetting every instance the resource has.
 
