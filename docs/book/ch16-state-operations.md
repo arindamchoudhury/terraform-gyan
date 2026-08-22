@@ -413,7 +413,7 @@ One grammar, three rules: required, optional, forbidden. Nothing in the grammar 
 
 ## 4. `moved`: rename without destroying
 
-Two arguments, both required, both references rather than strings:
+Two arguments, both required, and both **references rather than strings**:
 
 ```hcl
 moved {
@@ -421,6 +421,21 @@ moved {
   to   = aws_s3_bucket.team_notes  # the address that is now declared
 }
 ```
+
+Quoting them is the first mistake, and Terraform's answer says more than it looks:
+
+```text
+Error: Invalid expression
+
+  on main.tf line 6, in moved:
+   6:   from = "aws_s3_bucket.a"
+
+A single static variable reference is required: only attribute access and
+indexing with constant keys. No calculations, function calls, template
+expressions, etc are allowed here.
+```
+
+*Static* is the operative word, and it rules out more than quoting. A `moved` block takes no `for_each` either, answering `An argument named "for_each" is not expected here`, so `each.key` has nothing to refer to. Both measured on **v1.15.8**. This is the constraint behind the one-block-per-instance rule below: an `import` block can be generated per instance from a `for_each`, and a `moved` block has to be written out.
 
 The direction reads backwards to most people the first time. The rule that fixes it: **a `moved` block migrates state to match configuration, and configuration is the truth.** `to` must be an address that exists in your configuration right now. `from` must be an address that is gone from configuration but still present in state from the last apply.
 
@@ -596,7 +611,15 @@ The misspelling is the tutorial's, quoted as written.
 
 ### Keeping the blocks
 
-The tutorial states the retention rule absolutely: *"We strongly recommend you retain all `moved` blocks in your configuration as a record of your changes. Removing a `moved` block plans to delete that existing resource instead of moving it."* The reference qualifies it, and the qualification is the part that matters:
+The tutorial states the retention rule absolutely: *"We strongly recommend you retain all `moved` blocks in your configuration as a record of your changes. Removing a `moved` block plans to delete that existing resource instead of moving it."* That second sentence is the whole cost, and it is worth seeing rather than trusting. State holding the old address, configuration declaring the new one, block deleted:
+
+```text
+  # aws_s3_bucket.a will be destroyed
+  # aws_s3_bucket.c will be created
+Plan: 1 to add, 0 to change, 1 to destroy.
+```
+
+Section 1's diagnostic line, arrived at by deleting three lines of configuration that appeared to be finished work. The reference qualifies it, and the qualification is the part that matters:
 
 > "It can be safe to remove `moved` blocks when you are **maintaining private modules within an organization** and you are **certain that all users have successfully run `terraform apply`** with your new module version."
 
