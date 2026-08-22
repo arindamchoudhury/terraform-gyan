@@ -1379,7 +1379,7 @@ terraform state mv -state-out=../terraform.tfstate aws_instance.example_new aws_
 ```
 
 !!! warning "`state mv` moves state and leaves the configuration behind"
-    *"The move command will update the resource in state, but not in your configuration file."* So a successful move leaves the destination exactly one plan away from undoing it:
+    *"The move command will update the resource in state, but not in your configuration file."* So the object lands in a state file that no configuration describes, and the destination's next plan is section 1's diagnostic line:
 
     ```text
       # aws_instance.example_new will be destroyed
@@ -1387,12 +1387,12 @@ terraform state mv -state-out=../terraform.tfstate aws_instance.example_new aws_
     Plan: 0 to add, 0 to change, 1 to destroy.
     ```
 
-    That is section 1's diagnostic line again, produced this time by an operation whose entire purpose was to preserve the object. The fix is manual: paste the `resource` block into the destination configuration, then the next plan is empty.
+    An operation whose entire purpose was to preserve the object, proposing to delete it. The fix is manual: paste the `resource` block into the destination configuration. The measurement below shows the mirror-image case, where the block was pasted into the destination and left behind in the source as well.
 
 Measured on **v1.15.8** in `labs/chapter16/section7/cross-state`, two directories with their own state files and a bucket handed from one to the other:
 
 ```text
-$ terraform state mv -state terraform.tfstate -state-out ../dst/terraform.tfstate     aws_s3_bucket.moves aws_s3_bucket.moves
+$ terraform state mv -state terraform.tfstate     -state-out ../dst/terraform.tfstate     aws_s3_bucket.moves aws_s3_bucket.moves
 Move "aws_s3_bucket.moves" to "aws_s3_bucket.moves"
 Successfully moved 1 object(s).
 ```
