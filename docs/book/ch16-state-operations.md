@@ -1843,6 +1843,8 @@ tflocal destroy     # in each lab directory
 
 Every lab's `destroy` is worth running deliberately rather than skipping, because in labs 1 and 3 it deletes a bucket Terraform did not create. That is section 6's commitment, arriving.
 
+The `section3/` and `section4/` directories that the earlier sections follow along with need a word of their own. Several never apply anything, since their whole purpose is an error at validate or plan time, and `section3/bare-address/` ends with a `state rm` that leaves two buckets nothing tracks, so `destroy` there has nothing to act on and the cleanup is `awslocal s3 rb`. Each directory's README says which case it is.
+
 ---
 
 ## Common pitfalls
