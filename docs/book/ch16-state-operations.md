@@ -435,7 +435,7 @@ indexing with constant keys. No calculations, function calls, template
 expressions, etc are allowed here.
 ```
 
-*Static* is the operative word, and it rules out more than quoting. A `moved` block takes no `for_each` either, answering `An argument named "for_each" is not expected here`, so `each.key` has nothing to refer to. Both measured on **v1.15.8**. This is the constraint behind the one-block-per-instance rule below: an `import` block can be generated per instance from a `for_each`, and a `moved` block has to be written out.
+*Static* is the operative word, and the count-to-`for_each` migration below runs into the rest of what it rules out. Measured on **v1.15.8**.
 
 The direction reads backwards to most people the first time. The rule that fixes it: **a `moved` block migrates state to match configuration, and configuration is the truth.** `to` must be an address that exists in your configuration right now. `from` must be an address that is gone from configuration but still present in state from the last apply.
 
@@ -512,7 +512,9 @@ Start with what happens without them. Measured on this chapter's lab: two bucket
 Plan: 2 to add, 0 to change, 2 to destroy.
 ```
 
-The fix is one `moved` block per instance. The rule from [Refactor modules](https://developer.hashicorp.com/terraform/language/modules/develop/refactoring) is that **an instance key on either side switches the whole block into instance mode**:
+The fix is one `moved` block per instance, and *per instance* is a requirement rather than a style. The static-reference rule from the top of the section rules out generating them: a `moved` block takes no `for_each`, measured on **v1.15.8** as `An argument named "for_each" is not expected here`, which leaves `each.key` with nothing to refer to. An `import` block can be driven by a `for_each`, as section 6 does; a `moved` block has to be written out, one per instance, by hand.
+
+The rule from [Refactor modules](https://developer.hashicorp.com/terraform/language/modules/develop/refactoring) is that **an instance key on either side switches the whole block into instance mode**:
 
 ```hcl
 resource "aws_s3_bucket" "archive" {

@@ -13,7 +13,7 @@ directories.
 |---|---|---|
 | `section1/` | the three-stage state anatomy walkthrough: one bucket, then `count`, then `for_each` | applied in stages, see its own README |
 | `section3/` | module addressing: `count = 2` on a module call plus a single-instance one, for the parser-disagreement table | applied, see its own README |
-| `section4/` | five `moved` edge cases: both addresses declared at once, a block written backwards, a module call renamed without a re-`init`, the `count` auto-move that `for_each` does not get, and a two-hop chain that collapses | plan-only; three of the five fail on purpose |
+| `section4/` | six `moved` edge cases: both addresses declared at once, a block written backwards, a quoted or `for_each`-driven address, a module call renamed without a re-`init`, the `count` auto-move that `for_each` does not get, and a two-hop chain that collapses | plan-only; four of the six fail on purpose |
 | `lab1/` | `import` a bucket created out of band, with and without `-generate-config-out` | `imports.tf` + a pruned `bucket.tf` |
 | `lab2/` | `moved`: a rename, then a `count` → `for_each` migration; also the deletion-versus-rename diff quoted in section 1 | three `moved` blocks, empty plan |
 | `lab3/` | `removed` with and without `destroy = false`, then re-import | `main.tf` + `keytest.tf` |
