@@ -43,6 +43,7 @@ nav = [
         { "Workspaces" = "topics/workspaces.md" },
         { "Secrets & state" = "topics/secrets-and-state.md" },
         { "Testing" = "topics/testing.md" },
+        { "Deployment & GitOps" = "topics/deployment-and-gitops.md" },
     ]},
     { "Notes" = [
         { "All Notes" = "sources/index.md" },

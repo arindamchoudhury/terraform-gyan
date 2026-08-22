@@ -105,3 +105,15 @@ What **TUR Ch9** and **TID Ch9** build on. Status checked 2026-08-21; version de
 | **Open Policy Agent** | The Rego policy engine behind the chapter's plan-testing example (`terraform show -json` → `opa eval`) | https://www.openpolicyagent.org/ |
 | **Goss** | YAML-defined server validation; the liveliest of the three server-testing tools the chapter compares | https://github.com/goss-org/goss |
 | **Chef InSpec** | Still Apache-2.0 at the source, but **5.0+ requires accepting the Chef EULA** and a license ID to run | https://github.com/inspec/inspec |
+
+## Team workflow & deployment
+
+What **TUR Ch10** and **TID Ch8** name. Status checked 2026-08-22; Terragrunt detail in [terragrunt-facts](../research-cache/terragrunt-facts.md).
+
+| Tool / doc | What it is | URL |
+|---|---|---|
+| **Terragrunt** | The wrapper TUR Ch10 uses to keep the live repo DRY. **v1.1.3**; the pre-1.0 CLI redesign dropped the `terragrunt-` flag prefix, removed the `*-all` commands and made a root `terragrunt.hcl` an anti-pattern | https://terragrunt.gruntwork.io/ |
+| **Migrating from root `terragrunt.hcl`** | The official guide away from the exact layout the chapter teaches; rename the root file and pass it to `find_in_parent_folders("root.hcl")` | https://terragrunt.gruntwork.io/docs/migrate/migrating-from-root-terragrunt-hcl/ |
+| **Atlantis** | Plan and apply from pull-request comments. **v0.47.1**, OpenTofu-capable, now "a Series of LF Projects, LLC" | https://www.runatlantis.io/ |
+| **HCP Terraform** | Terraform Cloud, renamed **effective 2024-04-22**. Standard edition adds automated drift detection and continuous validation — the Golden Rule's health check as a product | https://developer.hashicorp.com/terraform/cloud-docs |
+| **OpenGitOps** | The CNCF's four principles TID Ch8 cites, including the caveat that "continuous" means recurring rather than instantaneous | https://opengitops.dev/ |

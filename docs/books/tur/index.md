@@ -7,6 +7,8 @@ The second book on this site, alongside [Terraform in Depth](../tid/index.md). T
 !!! warning "The running example does not run as written"
     Every chapter from 2 onward builds on an Auto Scaling Group driven by **`aws_launch_configuration`**. AWS has since closed that door: accounts created on or after **2024-10-01 cannot create launch configurations by any method**, and no instance type released after **2023-01-01** works in one. Read the chapters for their ideas; substitute `aws_launch_template` if you actually deploy. Details and quotes: [[launch-configurations-eol]].
 
+**All ten chapters are captured.** Read alongside the [topic pages](../../topics/index.md), which is where TUR is reconciled against TID and the reference docs — several of TUR's conclusions have been overtaken by releases since 2022, and each chapter note ends with a **Version reckoning** section saying exactly which.
+
 | Status | Chapter | Topic page(s) |
 | ------ | ------- | ------------- |
 | ✅ done | 1. Why Terraform | [IaC fundamentals](../../topics/iac-fundamentals.md) |
@@ -18,7 +20,7 @@ The second book on this site, alongside [Terraform in Depth](../tid/index.md). T
 | ✅ done | 7. Working with Multiple Providers | [Providers](../../topics/providers.md) |
 | ✅ done | 8. Production-Grade Terraform Code | [Modules](../../topics/modules.md) — (backlog: checks-and-conditions, provisioners-and-escape-hatches, module-versioning-and-registries) |
 | ✅ done | 9. How to Test Terraform Code | [Testing](../../topics/testing.md) |
-| ⬜ todo | 10. How to Use Terraform as a Team | — |
+| ✅ done | 10. How to Use Terraform as a Team | [Deployment and GitOps](../../topics/deployment-and-gitops.md) |
 
 ## Conventions
 
