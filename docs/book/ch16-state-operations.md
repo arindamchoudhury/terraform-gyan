@@ -1437,7 +1437,7 @@ No preview, no prompt, and a plan afterwards that undoes the move. The one thing
 
 **Drift** is infrastructure that changed outside Terraform, so state no longer matches reality.
 
-The first thing to know is that you are already detecting it. Every `plan`, `apply` and `destroy` runs an **implicit in-memory refresh** before doing anything else, so an ordinary plan already sees drift and already proposes to undo it. There is no detection step to add.
+The first thing to know is that you are already detecting it. Every `plan`, `apply` and `destroy` runs an **implicit in-memory refresh** before doing anything else, which the [refresh tutorial](https://developer.hashicorp.com/terraform/tutorials/state/refresh) states as *"Terraform plan and apply operations first run an in-memory refresh to determine which changes to propose to your infrastructure"*. So an ordinary plan already sees drift and already proposes to undo it. There is no detection step to add.
 
 The second is that drift is a **symptom**. Infrastructure rarely changes itself. TID Ch 6 §6.6 sorts the causes on two axes, machine versus human and accidental versus intentional:
 
@@ -1564,7 +1564,7 @@ Two more facts about the deprecation, neither of which is on the reference page.
 
 So the deprecation is explicitly not a removal, and on a `cloud` block the choice is already made for you. Being supported indefinitely is why the command keeps reappearing in material written years apart, including [Manage resources in Terraform state](https://developer.hashicorp.com/terraform/tutorials/state/state-cli), still in the same State collection, which reconciles an out-of-band delete with a bare `terraform refresh` and no warning at all.
 
-The closing advice on the reference page goes one step further than "prefer the flag":
+The closing advice on the [reference page](https://developer.hashicorp.com/terraform/cli/commands/refresh) goes one step further than "prefer the flag":
 
 > "Wherever possible, **avoid using `terraform refresh` explicitly** and instead rely on Terraform's behavior of automatically refreshing existing objects as part of creating a normal plan."
 
