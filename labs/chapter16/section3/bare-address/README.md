@@ -99,8 +99,8 @@ Step 4 leaves both buckets running and untracked, which is the point of it, so
 `tflocal destroy` has nothing left to destroy. Delete them directly:
 
 ```shell
-aws --endpoint-url http://localhost:4566 s3 rb s3://ch16-parsers-a
-aws --endpoint-url http://localhost:4566 s3 rb s3://ch16-parsers-b
+awslocal s3 rb s3://ch16-parsers-a
+awslocal s3 rb s3://ch16-parsers-b
 ```
 
 The other way back is an `import` block per instance, which is section 5's

@@ -350,14 +350,39 @@ There is one grammar and several parsers, and every answer below can be reproduc
 | `state list`, `state rm` | `addrs.ParseTargetStr`, via `StateMeta.lookupResourceInstanceAddr` | expands the target against state into a set of instances |
 | `plan -target` | `addrs.ParseTarget`, on the already-parsed traversal | hands the target to the graph walk as a filter |
 
-So "several parsers" means several doors into one grammar, plus what each caller does after walking through. Measured on **v1.15.8** against a state holding `aws_s3_bucket.shard["a"]` and `aws_s3_bucket.shard["b"]`:
+So "several parsers" means several doors into one grammar, plus what each caller does after walking through.
+
+This one is worth running rather than reading, and the configuration is committed at `labs/chapter16/section3/bare-address/`. Two instances of one resource, which is all it takes:
+
+```hcl
+resource "aws_s3_bucket" "shard" {
+  for_each = toset(["a", "b"])
+  bucket   = "ch16-parsers-${each.key}"
+}
+```
+
+```shell
+tflocal apply -auto-approve            # two buckets, two instance keys in state
+```
+
+Now hand the same bare `aws_s3_bucket.shard` to each operation in turn:
+
+```shell
+terraform state list aws_s3_bucket.shard            # both instances
+terraform state show aws_s3_bucket.shard            # error
+tflocal plan -destroy -target aws_s3_bucket.shard   # a plan, not an apply
+terraform state rm -dry-run aws_s3_bucket.shard     # the preview rm does not otherwise offer
+terraform state rm aws_s3_bucket.shard              # both, no prompt
+```
+
+Measured on **v1.15.8**:
 
 | Operation given the bare `aws_s3_bucket.shard` | Result |
 |---|---|
 | `terraform state list aws_s3_bucket.shard` | filters to **both** instances |
 | `terraform state show aws_s3_bucket.shard` | **error** — `No instance found for the given address!` |
 | `terraform state rm aws_s3_bucket.shard` | **removes both**, no prompt |
-| `-target=aws_s3_bucket.shard` | the whole set. A targeted destroy plan reported `2 to destroy`, and the dependency walk is per resource anyway |
+| `-target aws_s3_bucket.shard` | the whole set. A targeted destroy plan reported `2 to destroy`, and the dependency walk is per resource anyway |
 
 ```text
 $ terraform state show aws_s3_bucket.shard
@@ -369,6 +394,9 @@ the address to reference a specific instance.
 ```
 
 The command that refuses to guess is the one that only prints. The command that rewrites state accepts the same address and acts on everything it matches, without asking, and section 5 has that transcript next to the argument it settles.
+
+!!! warning "The last command leaves two buckets nobody is tracking"
+    That is the point of it, so `tflocal destroy` afterwards has nothing left to act on. Delete them directly with `awslocal s3 rb s3://ch16-parsers-a` and the same for `-b`, or stop after the targeted plan and destroy normally. The other way back is an `import` block per instance, which is section 5's subject.
 
 All four rows behave identically under **OpenTofu 1.12.5**, measured on the same configuration. The only difference is presentation: `tofu state show` refuses through its normal diagnostic renderer, as a boxed `Error: No instance found for the given address` with no exclamation mark, rather than the bare line Terraform prints. Worth knowing if you are grepping output for the string.
 
