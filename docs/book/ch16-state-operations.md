@@ -1257,7 +1257,17 @@ And it gives two ways to move them, with a clear ranking:
 
 ### The recommended route, measured end to end
 
-Two configurations, `source/` and `dest/`, and a bucket moving from one to the other. They are committed at `labs/chapter16/lab4`, where `source/main.tf.before` is the pre-split configuration holding both buckets and the committed `source/main.tf` is the same file after the swap.
+Two configurations, `source/` and `dest/`, and a bucket moving from one to the other. They are committed at `labs/chapter16/lab4`, where `source/main.tf.before` is the pre-split configuration holding both buckets and the committed `source/main.tf` is the same file after the swap. The whole sequence is five commands:
+
+```shell
+cd source
+cp main.tf main.tf.after && cp main.tf.before main.tf
+tflocal apply -auto-approve      # both buckets in one state file
+cp main.tf.after main.tf         # customer_data becomes a removed block
+tflocal apply -auto-approve      # it leaves this state, and survives
+cd ../dest
+tflocal apply -auto-approve      # it arrives in that one
+```
 
 **Back up first.** The section index for manual state changes makes this instruction unconditional, and it is the one that fits here:
 
