@@ -1536,7 +1536,14 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 **Keep it and stop planning against it.** `ignore_changes`, from Chapter 11. Correct for the conflicting-automation bucket, where the drift is expected and permanent.
 
 !!! warning "Outputs drift too, and other configurations read them"
-    A computed output over a drifted attribute is rewritten by the same refresh-only apply. Anything reading this state through `terraform_remote_state` then consumes drift it never asked for.
+    A computed output over a drifted attribute is rewritten by the same refresh-only apply. Anything reading this state through `terraform_remote_state` then consumes drift it never asked for. Measured on **v1.15.8** in `labs/chapter16/section8/output-drift`, where the plan announces it plainly and the counters still do not:
+
+    ```text
+    Changes to Outputs:
+      ~ owner_tag = "platform-team" -> "oncall-hotfix"
+
+    Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+    ```
 
     The docs frame this both ways and both are right. The drift tutorial calls it a hazard; the refresh tutorial calls it a feature, because *"the `-refresh-only` mode allows you to **anticipate the downstream effects**"*. Same mechanism. The plan step is what turns the hazard into a preview.
 
@@ -1569,6 +1576,8 @@ The [command reference](https://developer.hashicorp.com/terraform/cli/commands/r
     The tutorial's instruction at this point is the only one of its kind in the collection: *"refreshing your state file would drop your resources, so **do not run the apply operation**."* That refusal is the lesson. `terraform refresh` would have done it unprompted, and the instance would have become unmanaged infrastructure nobody is tracking. Cleanup starts with `rm terraform.tfvars`, because removing the misconfiguration is a step rather than an afterthought.
 
     The correct fix if the object really is in another region is the `provider` alias on an `import` block from section 6, not a change to the default provider.
+
+    This is one exercise the emulator cannot stage. Pointing the provider at `us-west-2` with the bucket created under `us-east-1` answers *"No changes. Your infrastructure still matches the configuration."*, because the emulator serves one store to every region. The tutorial needs real AWS to show what it shows, which is the *emulation ≠ AWS* warning from the lab arriving in the one place where it changes what you can practise.
 
 Two more facts about the deprecation, neither of which is on the reference page. Both are in one sentence of the [refresh tutorial](https://developer.hashicorp.com/terraform/tutorials/state/refresh):
 

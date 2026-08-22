@@ -23,6 +23,9 @@ import sys
 # Quotes grounded somewhere other than a fetched web page.
 # Key: a distinctive fragment. Value: where it comes from.
 ALLOWED_NON_WEB = {
+    "no changes. your infrastructure still matches the configuration": (
+        "Terraform v1.15.8 CLI output, measured against the emulator with the provider pointed at another region (section 8)"
+    ),
     "since the last terraform apply which may have affected this plan": (
         "Terraform v1.15.8 CLI output, measured in labs/chapter16/lab5 (plan -refresh-only)"
     ),
