@@ -342,7 +342,15 @@ The address page admits it outright:
 
 > "In some contexts Terraform might allow for an **incomplete resource address**… the meaning depends on the context, so you'll need to refer to the documentation for the **specific feature** you are using which parses resource addresses."
 
-There is one grammar and several parsers. Measured on **v1.15.8** against a state holding `aws_s3_bucket.shard["a"]` and `aws_s3_bucket.shard["b"]`:
+There is one grammar and several parsers. That word is doing real work, so it is worth pinning down: every address goes through the same package, `internal/addrs`, but commands reach it by different entry points and then apply their own tolerance for an address that matches nothing. Read at **v1.15.8**:
+
+| Operation | Entry point | Then |
+|---|---|---|
+| `state show` | `addrs.ParseAbsResourceInstanceStr` | demands an address naming exactly one instance |
+| `state list`, `state rm` | `addrs.ParseTargetStr`, via `StateMeta.lookupResourceInstanceAddr` | expands the target against state into a set of instances |
+| `plan -target` | `addrs.ParseTarget`, on the already-parsed traversal | hands the target to the graph walk as a filter |
+
+So "several parsers" means several doors into one grammar, plus what each caller does after walking through. Measured on **v1.15.8** against a state holding `aws_s3_bucket.shard["a"]` and `aws_s3_bucket.shard["b"]`:
 
 | Operation given the bare `aws_s3_bucket.shard` | Result |
 |---|---|
@@ -377,6 +385,8 @@ Put a resource spec after an **un-indexed** multi-instance module path, though, 
 | `terraform plan -destroy -target=…` | `No changes. No objects need to be destroyed.` |
 
 Two controls on the same state say the address is the only thing wrong. `module.shards[0].aws_s3_bucket.one` plans `1 to destroy`, and `module.solo.aws_s3_bucket.one`, naming a module call declared without `count`, lists its bucket with no index at all. So the omission is only fatal where there is more than one instance to be ambiguous about, and the index that means *every instance* when the address stops at the module means *no instance* once a resource follows it.
+
+That `state list` and `state rm` differ at all is the surprise, because the table above puts them on the same entry point. They do share it, and the split is one boolean: `lookupResourceInstanceAddr` takes an `allowMissing` argument, `state list` passes `false` and turns an empty match into `Unknown resource`, and `state rm` passes `true` and reports that nothing was removed. The `-target` answer is not a parsing difference either. The address parses, and the graph walk simply finds nothing to select.
 
 The third row is the dangerous one. A hard error tells you to fix the address, and `Would have removed nothing` at least says nothing happened. A targeted plan reporting `No changes` reads as "your infrastructure is already in the desired state", which is a sentence about the infrastructure rather than about your typo.
 
