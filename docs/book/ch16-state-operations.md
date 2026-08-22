@@ -334,7 +334,7 @@ Zero or more. An address is a **set**, and how big the set is depends on how muc
 
     The same holds one level up. `module.foo` is every resource in every instance of that module call, and `module.foo[0]` is the narrowing.
 
-    In a `terraform state list` that is a convenience. In a `terraform state rm` it is the difference between forgetting one object and forgetting six.
+    In a `terraform state list` that is a convenience. In a `terraform state rm` it is the difference between forgetting one object and forgetting every instance the resource has.
 
 ### The parsers disagree, and the docs say so
 
@@ -349,7 +349,7 @@ There is one grammar and several parsers. Measured on **v1.15.8** against a stat
 | `terraform state list aws_s3_bucket.shard` | filters to **both** instances |
 | `terraform state show aws_s3_bucket.shard` | **error** — `No instance found for the given address!` |
 | `terraform state rm aws_s3_bucket.shard` | **removes both**, no prompt |
-| `-target=aws_s3_bucket.shard` | the whole set — a targeted destroy plan reported `2 to destroy` — and its dependency walk is per resource anyway |
+| `-target=aws_s3_bucket.shard` | the whole set. A targeted destroy plan reported `2 to destroy`, and the dependency walk is per resource anyway |
 
 ```text
 $ terraform state show aws_s3_bucket.shard
@@ -360,20 +360,15 @@ To view the available instances, use "terraform state list". Please modify
 the address to reference a specific instance.
 ```
 
-The command that refuses to guess is the one that only prints. The command that rewrites state accepts the same address and acts on everything it matches, without asking:
+The command that refuses to guess is the one that only prints. The command that rewrites state accepts the same address and acts on everything it matches, without asking, and section 5 has that transcript next to the argument it settles.
 
-```text
-$ terraform state rm aws_s3_bucket.shard
-Removed aws_s3_bucket.shard["a"]
-Removed aws_s3_bucket.shard["b"]
-Successfully removed 2 resource instance(s).
-```
+All four rows behave identically under **OpenTofu 1.12.5**, measured on the same configuration. The only difference is presentation: `tofu state show` refuses through its normal diagnostic renderer, as a boxed `Error: No instance found for the given address` with no exclamation mark, rather than the bare line Terraform prints. Worth knowing if you are grepping output for the string.
 
 That asymmetry also explains something the three refactoring blocks do that looks arbitrary until you know the rule:
 
 | Block | Instance keys in the address? |
 |---|---|
-| **`import`** — `to` | **Yes.** `aws_instance.example[0]`, `aws_instance.example["env"]` |
+| **`import`** — `to` | **Yes**, and both forms were measured: `aws_instance.example[0]` for `count`, `aws_instance.example["env"]` for `for_each` |
 | **`moved`** — `from` / `to` | **Yes, on either side**, and mixing an index with a key is exactly how a `count` → `for_each` migration is written |
 | **`removed`** — `from` | **No.** Rejected outright |
 
