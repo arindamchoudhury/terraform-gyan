@@ -1681,6 +1681,8 @@ Two consequences to plan around. The two warnings Terraform prints say different
 !!! info "OpenTofu — `-exclude` is the inverse, and the two families never mix"
     OpenTofu **1.9** added `-exclude`, the deny-list form, and **1.10** added `-target-file` and `-exclude-file`. When one resource is broken and you want to apply everything else, enumerating every *other* resource with `-target` is far worse than one `-exclude`.
 
+    The two also close in opposite directions, which the 1.9 changelog states in one line: *"`-target` specifies the objects to include and skips everything not needed for the selected objects, `-exclude` instead specifies objects to skip. OpenTofu will exclude the selected objects **and everything that depends on them**."* So `-target` pulls in what the target needs, upstream, and `-exclude` pushes out what needs the excluded object, downstream. Between them they cover both halves of the edge that `-target` alone leaves stale.
+
     Any target-side option combined with any exclude-side option **fails at argument parsing**, before planning begins:
 
     ```text
@@ -1688,7 +1690,7 @@ Two consequences to plan around. The two warnings Terraform prints say different
     must use either only the target options or only the exclude options.
     ```
 
-    Verified in `internal/command/arguments/extended.go`. At 1.9 the check guarded only the two direct flags; 1.10 widened it to the two families on the same commit that added the file variants. The consequence for recovery work is that you cannot express "everything except X, but only within module Y" in one run. Terraform has neither flag, so this is an OpenTofu-only escape hatch and an OpenTofu-only constraint.
+    Verified in `internal/command/arguments/extended.go` at **1.12.5**. The message quoted above is 1.10's: at **1.9** the same collision answered `-target and -exclude flags cannot be used together. Please remove one of the flags`, guarding only the two direct flags, and 1.10 both widened the check to the two families and rewrote the text. Another string not worth matching on. The consequence for recovery work is that you cannot express "everything except X, but only within module Y" in one run. Terraform has neither flag, so this is an OpenTofu-only escape hatch and an OpenTofu-only constraint.
 
 ---
 
