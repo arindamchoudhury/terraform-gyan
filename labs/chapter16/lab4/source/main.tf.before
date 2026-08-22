@@ -1,0 +1,17 @@
+# The state section 7 splits: both buckets in one configuration.
+#
+#   cp main.tf main.tf.after       # keep the post-split source config
+#   cp main.tf.before main.tf      # go back to the starting point
+#   tflocal apply -auto-approve    # 2 added
+#   cp main.tf.after main.tf       # app_logs stays, customer_data is removed
+#   tflocal apply -auto-approve    # 0/0/0, and the bucket survives
+#
+# Then in ../dest, `tflocal apply` imports it: Resources: 1 imported.
+# A plan in each directory afterwards must report No changes.
+resource "aws_s3_bucket" "app_logs" {
+  bucket = "ch16-split-app-logs"
+}
+
+resource "aws_s3_bucket" "customer_data" {
+  bucket = "ch16-split-customer-data"
+}

@@ -1257,7 +1257,7 @@ And it gives two ways to move them, with a clear ranking:
 
 ### The recommended route, measured end to end
 
-Two configurations, `source/` and `dest/`, and a bucket moving from one to the other.
+Two configurations, `source/` and `dest/`, and a bucket moving from one to the other. They are committed at `labs/chapter16/lab4`, where `source/main.tf.before` is the pre-split configuration holding both buckets and the committed `source/main.tf` is the same file after the swap.
 
 **Back up first.** The section index for manual state changes makes this instruction unconditional, and it is the one that fits here:
 
@@ -1268,7 +1268,21 @@ terraform state pull > customer-split.backup.tfstate
 !!! warning "Do not use the docs' own backup filename"
     HashiCorp's example writes to `terraform.tfstate.backup`, which is exactly the filename the **local backend** uses for its own automatic backup of the previous state. On a local backend that command overwrites Terraform's backup with yours. Pick any other name.
 
-    And note what `state pull` actually gives you. It *"upgrades the local copy to the latest state file version"* on the way out, so a file written by 1.9.0 comes back stamped `1.15.8` with a `check_results` field materialised that the older format never had. `serial` and `lineage` survive, which is what keeps the pull-edit-push loop legal, but the result is a **format-upgraded** copy rather than the bytes the backend holds.
+    And note what `state pull` actually gives you. The [command reference](https://developer.hashicorp.com/terraform/cli/commands/state/pull) says it *"upgrades the local copy to the latest state file version that is compatible with locally-installed Terraform"*. Measured in `labs/chapter16/section7/pull-upgrade`, pulling a file whose header says `1.9.0`:
+
+    ```json
+    {
+      "version": 4,
+      "terraform_version": "1.15.8",
+      "serial": 7,
+      "lineage": "1f2e3d4c-5b6a-7980-1234-56789abcdef0",
+      "outputs": {},
+      "resources": [],
+      "check_results": null
+    }
+    ```
+
+    The version stamp is rewritten and `check_results` is materialised where the input had no such key. `serial` and `lineage` survive, which is what keeps the pull-edit-push loop legal, but the result is a **format-upgraded** copy rather than the bytes the backend holds.
 
 **Find the ID** the destination will import by:
 
@@ -1365,7 +1379,7 @@ terraform state mv -state-out=../terraform.tfstate aws_instance.example_new aws_
 
     That is section 1's diagnostic line again, produced this time by an operation whose entire purpose was to preserve the object. The fix is manual: paste the `resource` block into the destination configuration, then the next plan is empty.
 
-Reproduced in the lab within a single state file, which is enough to show the shape. Measured on **v1.15.8**:
+Reproduced in `labs/chapter16/lab2` within a single state file, which is enough to show the shape. Measured on **v1.15.8**, and run from PowerShell 7.6.5 so the quoting below is the form that works there:
 
 ```text
 $ terraform state mv 'aws_s3_bucket.archive["cold"]' 'aws_s3_bucket.archive["frozen"]'
