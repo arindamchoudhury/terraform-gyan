@@ -1137,8 +1137,6 @@ It is a draft, not an answer. `force_destroy`, `object_lock_enabled` and `region
 
 ### `for_each`, aliases, and modules
 
-Three things the `import` block accepts that the tutorials never show.
-
 **`for_each`** (Terraform **1.7**, and OpenTofu **1.7.0** by way of [#1492](https://github.com/opentofu/opentofu/pull/1492)) adopts an estate from one block. Measured in `labs/chapter16/lab3`, whose `keytest.tf` re-adopts two buckets after a `state rm`:
 
 ```hcl
