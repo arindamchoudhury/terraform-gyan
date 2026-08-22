@@ -342,7 +342,7 @@ The address page admits it outright:
 
 > "In some contexts Terraform might allow for an **incomplete resource address**… the meaning depends on the context, so you'll need to refer to the documentation for the **specific feature** you are using which parses resource addresses."
 
-There is one grammar and several parsers. That word is doing real work, so it is worth pinning down: every address goes through the same package, `internal/addrs`, but commands reach it by different entry points and then apply their own tolerance for an address that matches nothing. Read at **v1.15.8**:
+There is one grammar and several parsers, and every answer below can be reproduced from `labs/chapter16/section3/bare-address/`, which applies the two instances and then walks the four commands one at a time. That word, parser, is doing real work, so it is worth pinning down: every address goes through the same package, `internal/addrs`, but commands reach it by different entry points and then apply their own tolerance for an address that matches nothing. Read at **v1.15.8**:
 
 | Operation | Entry point | Then |
 |---|---|---|

@@ -48,6 +48,14 @@ not about module paths in general.
 `state rm -dry-run` is used throughout rather than `state rm`, so the state
 survives the walkthrough. Finish with `tflocal destroy`.
 
+## One bare address, four answers
+
+`bare-address/` is the configuration behind section 3's four-row table: two
+instances of one resource, then `state list`, `state show`, `plan -target` and
+`state rm` each given the bare `aws_s3_bucket.shard`. It has its own README
+with the expected output at every step, and its bucket names are unique so it
+can be applied alongside everything else here.
+
 ## The block address rules
 
 Two more configurations, each measuring what one refactoring block does with an
