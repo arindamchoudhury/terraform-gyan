@@ -768,7 +768,7 @@ removed {
 
     The [block reference](https://developer.hashicorp.com/terraform/language/block/removed) states the default plainly in its `lifecycle` section — *"**By default, Terraform removes the resource from state and destroys the actual resource.** Set `destroy` to `false` to remove the resource from state without destroying the actual resource"* — and then contradicts itself in its own opening sentence, which still describes the block as removing a resource *"without changing the underlying infrastructure"*.
 
-    **That is a documentation bug, not a leftover from older behaviour**, and it is worth being exact because the opposite story is widely repeated. Verified in the source: `internal/configs/removed.go` at tag **v1.7.0**, the release the block shipped in, already carries a `Destroy bool`, already parses `lifecycle { destroy }`, and already sets `removed.Destroy = true` *before* it looks for a `lifecycle` block. The v1.7 documentation matched: both of its examples, the resource form and the module form, were written with `destroy = false`, and it said outright that `destroy` "determines whether Terraform will attempt to destroy the object managed by the resource or not".
+    **That is a documentation bug, not a leftover from older behaviour**, and it is worth being exact because the opposite story is widely repeated. Verified in the source: `internal/configs/removed.go` at tag **v1.7.0**, the release the block shipped in, already carries a `Destroy bool`, already parses `lifecycle { destroy }`, and already sets `removed.Destroy = true` *before* it looks for a `lifecycle` block. The v1.7 documentation matched. Its two examples of the block, the resource form on *Resource Blocks* and the module form on *Module Blocks*, were both written with `destroy = false`, and the resource page said outright that `destroy` "determines whether Terraform will attempt to destroy the object managed by the resource or not".
 
     So `destroy` shipped **with** the block in 1.7 and has defaulted to `true` since day one. There is no version in which a bare `removed` block was safe. Material that says otherwise, including TID Ch 2 §2.9, was wrong when it was written rather than overtaken by a change.
 
@@ -867,7 +867,7 @@ The warning in the plan output names the exit cost, and it is not reversible by 
 
 > "You will need to import them into Terraform to manage them again."
 
-Not an undo, not a re-added `resource` block. An import. Measured, adding the `resource` block back plus an `import` block pointing at the same bucket:
+Not an undo, not a re-added `resource` block. An import. Measured on **v1.15.8** in the same `lab3` directory, adding the `resource` block back plus an `import` block pointing at the same bucket:
 
 ```text
 aws_s3_bucket.handover: Importing... [id=ch16-handover]
