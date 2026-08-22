@@ -1156,7 +1156,27 @@ import {
 Apply complete! Resources: 2 imported, 0 added, 0 changed, 0 destroyed.
 ```
 
-Driving the destination resource's own `for_each` from the same expression is what keeps the addresses aligned. The reference's second example goes further, looping over a list of objects into *module* instances with `to = module.group[each.value.group].aws_s3_bucket.this[each.value.key]`. A module instance key and a resource instance key in one address, both computed. That is the shape adopting a real estate takes.
+Driving the destination resource's own `for_each` from the same expression is what keeps the addresses aligned.
+
+The [block reference](https://developer.hashicorp.com/terraform/language/block/import) goes further in its second `for_each` example, which is the one worth copying. It loops over a list of objects and lands each one inside a *module* instance:
+
+```hcl
+locals {
+  buckets = [
+    { group = "one", key = "bucket1", id = "one_1" },
+    { group = "one", key = "bucket2", id = "one_2" },
+    # ... two more, one per group
+  ]
+}
+
+import {
+  for_each = local.buckets
+  id       = each.value.id
+  to       = module.group[each.value.group].aws_s3_bucket.this[each.value.key]
+}
+```
+
+A module instance key and a resource instance key in one address, both computed from the same loop. That is the shape adopting a real estate takes, and unlike several samples on that page it parses: checked on **v1.15.8** against a matching `module "group"` with `terraform validate`.
 
 **A `provider` alias**, which is how you import an object the default provider configuration cannot see. Written unquoted, because it is a reference rather than a string, and validated in that form on **v1.15.8**:
 
