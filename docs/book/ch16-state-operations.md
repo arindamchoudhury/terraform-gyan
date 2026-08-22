@@ -509,7 +509,20 @@ The mapping from index to key is yours to decide and yours to get right. Terrafo
 !!! info "Adding `count` to a bare resource is free; renaming never is"
     > "When you add `count` to an existing resource that didn't previously have the argument, **Terraform automatically proposes moving the original object to instance `0`** unless you write a `moved` block that explicitly mentions that resource. However, we recommend writing out the corresponding `moved` block explicitly to make the change clearer to future readers of the module."
 
-    There is no equivalent auto-move for `for_each`, because `for_each` needs a key that only you can choose. So `aws_instance.a` → `aws_instance.a[0]` costs nothing, and `aws_instance.a` → `aws_instance.a["small"]` needs the block.
+    There is no equivalent auto-move for `for_each`, because `for_each` needs a key that only you can choose. Measured on **v1.15.8**, one bucket taken through both edits with its name unchanged and no `moved` block written:
+
+    ```text
+    # adding count = 1
+      # aws_s3_bucket.a has moved to aws_s3_bucket.a[0]
+    Plan: 0 to add, 0 to change, 0 to destroy.
+
+    # swapping count for for_each = toset(["small"])
+      # aws_s3_bucket.a will be destroyed
+      # aws_s3_bucket.a["small"] will be created
+    Plan: 1 to add, 0 to change, 1 to destroy.
+    ```
+
+    So `aws_instance.a` → `aws_instance.a[0]` costs nothing, and `aws_instance.a` → `aws_instance.a["small"]` needs the block.
 
 ### Modules
 
