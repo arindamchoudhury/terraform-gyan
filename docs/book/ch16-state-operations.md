@@ -311,7 +311,7 @@ Containment, distribution, atomicity. Sections 4 to 6 take the blocks one at a t
 
 ## 3. Resource addressing: one grammar, several parsers
 
-Nearly every operation in this chapter takes an address. The exceptions are the ones whose unit is larger than a resource: `state pull`, `state push` and `replace-provider`, which section 10 returns to, and `refresh`, which section 8 does. Everything else parses the same grammar, and the parsers do not agree about what an incomplete address means, so it is worth ten minutes before the rest of the chapter.
+Nearly every operation in this chapter takes an address. The exceptions are the ones whose unit is larger than a resource, `state pull`, `state push` and `replace-provider`, which section 10 returns to, and `refresh`, which section 8 does. Section 6's `terraform query` is the other one, and it is address-free for the opposite reason: a `list` block searches by type and filter precisely because you do not know the addresses yet. Everything else parses the same grammar, and the parsers do not agree about what an incomplete address means, so it is worth ten minutes before the rest of the chapter.
 
 Section 1 read three of these straight out of a state file: `aws_s3_bucket.notes`, `aws_s3_bucket.archive[0]` and `aws_s3_bucket.archive["cold"]`, spelled by `type`, `name` and `index_key`, with `module` joining them when the resource lives in a child module. That is the state file's side of it. [The address reference](https://developer.hashicorp.com/terraform/cli/state/resource-addressing) gives the grammar those three are instances of, in two halves:
 
