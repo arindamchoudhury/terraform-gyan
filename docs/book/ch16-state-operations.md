@@ -364,7 +364,25 @@ The command that refuses to guess is the one that only prints. The command that 
 
 All four rows behave identically under **OpenTofu 1.12.5**, measured on the same configuration. The only difference is presentation: `tofu state show` refuses through its normal diagnostic renderer, as a boxed `Error: No instance found for the given address` with no exclamation mark, rather than the bare line Terraform prints. Worth knowing if you are grepping output for the string.
 
-That asymmetry also explains something the three refactoring blocks do that looks arbitrary until you know the rule:
+#### The module half disagrees harder
+
+A bare module path behaves as the reference describes. Measured on **v1.15.8** against a state holding two instances of `module.shards`, each containing two buckets: `state list module.shards` returns all four, `state list 'module.shards[0]'` narrows to the two in that instance, and a targeted destroy plan on `module.shards` reports `4 to destroy`.
+
+Put a resource spec after an **un-indexed** multi-instance module path, though, and the index stops being optional. Three parsers, one address, three answers:
+
+| `module.shards.aws_s3_bucket.one` given to | Answer |
+|---|---|
+| `terraform state list` | `Error: Unknown resource` |
+| `terraform state rm -dry-run` | `Would have removed nothing.` |
+| `terraform plan -destroy -target=…` | `No changes. No objects need to be destroyed.` |
+
+Two controls on the same state say the address is the only thing wrong. `module.shards[0].aws_s3_bucket.one` plans `1 to destroy`, and `module.solo.aws_s3_bucket.one`, naming a module call declared without `count`, lists its bucket with no index at all. So the omission is only fatal where there is more than one instance to be ambiguous about, and the index that means *every instance* when the address stops at the module means *no instance* once a resource follows it.
+
+The third row is the dangerous one. A hard error tells you to fix the address, and `Would have removed nothing` at least says nothing happened. A targeted plan reporting `No changes` reads as "your infrastructure is already in the desired state", which is a sentence about the infrastructure rather than about your typo.
+
+`state show` adds a fourth voice: given `module.shards` it answers `Error parsing instance address: module.shards`, not the `No instance found for the given address!` it gives for a resource. Same refusal, different wording, in the same command.
+
+The instance-key asymmetry also explains something the three refactoring blocks do that looks arbitrary until you know the rule:
 
 | Block | Instance keys in the address? |
 |---|---|

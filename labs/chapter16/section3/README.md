@@ -1,0 +1,49 @@
+# Chapter 16 §3 — module addresses, and the parsers that disagree
+
+Two module calls against the same child module: `module.shards` with `count = 2`,
+and `module.solo` with no `count`. Six buckets in all. Everything section 3 says
+about module paths was measured here on **Terraform 1.15.8** with AWS provider
+**6.61.0** against the Floci emulator.
+
+```bash
+docker compose -f labs/docker-compose.yml up -d
+source "$(git rev-parse --show-toplevel)/labs/lab-env.sh"
+
+cd labs/chapter16/section3
+tflocal init
+tflocal apply
+```
+
+## The measurements
+
+A bare module path expands, and the index narrows it:
+
+```shell
+terraform state list module.shards          # all four buckets, both instances
+terraform state list 'module.shards[0]'     # the two in instance 0
+```
+
+A resource spec after an un-indexed multi-instance module path matches nothing,
+and each parser says so differently:
+
+```shell
+terraform state list 'module.shards.aws_s3_bucket.one'      # Error: Unknown resource
+terraform state rm -dry-run 'module.shards.aws_s3_bucket.one'   # Would have removed nothing.
+tflocal plan -destroy -target 'module.shards.aws_s3_bucket.one' # No changes.
+```
+
+The controls, on the same state:
+
+```shell
+terraform state list 'module.shards[0].aws_s3_bucket.one'        # one bucket
+terraform state list 'module.solo.aws_s3_bucket.one'             # one bucket, no index needed
+tflocal plan -destroy -target 'module.shards[0].aws_s3_bucket.one'  # 1 to destroy
+tflocal plan -destroy -target 'module.shards'                       # 4 to destroy
+```
+
+`module.solo` is the contrast that matters: omitting the index is fine when the
+module call has only one instance, so the failure is about multiple instances,
+not about module paths in general.
+
+`state rm -dry-run` is used throughout rather than `state rm`, so the state
+survives the walkthrough. Finish with `tflocal destroy`.
