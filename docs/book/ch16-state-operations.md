@@ -1187,7 +1187,13 @@ list "aws_instance" "prod" {
 }
 ```
 
-Two labels like a `resource` block, for the type queried and a local name. `provider` is **required**. `config` is provider-specific, `filter` included. `include_resource` defaults to `false`, so only identities come back unless you need attributes. `limit` defaults to 100 per block and is a **hard stop rather than a filter** — *"when the number of results reaches the specified limit, Terraform breaks the connection to the provider and stops reporting results"* — so raising it is how you find out whether you were seeing everything. `list` blocks are legal **only in `.tfquery.hcl` files**, and they take `count`, `for_each`, `variable` and `locals`, so one query file is reusable across accounts.
+Two labels like a `resource` block, for the type queried and a local name. `provider` is **required**. `config` is provider-specific, `filter` included. `include_resource` defaults to `false`, so only identities come back unless you need attributes. `list` blocks are legal **only in `.tfquery.hcl` files**, and they take `count`, `for_each`, `variable` and `locals`, so one query file is reusable across accounts. That block validates as printed on **v1.15.8**, with `terraform validate -query`.
+
+`limit` deserves its own sentence, because it defaults to 100 per block and is a **hard stop rather than a filter**. From the [`list` block reference](https://developer.hashicorp.com/terraform/language/block/list):
+
+> "When the number of results reaches the specified limit, Terraform breaks the connection to the provider and stops reporting results."
+
+So a query returns the first hundred the provider happened to produce, not the hundred that matter most, and raising the number is the only way to learn whether you were seeing everything.
 
 !!! warning "`-generate-config-out` is a flag on two commands and they do different jobs"
     | Command | Input | Generates |
