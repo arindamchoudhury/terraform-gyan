@@ -875,13 +875,13 @@ resource instance (e.g. "test_instance.foo[1]").
 
 So a `count` or `for_each` resource is forgotten in full or not at all. This is the asymmetry from section 3, met in the field.
 
-**Every reference to the resource's attributes must go first.** The `resource` block is gone, so anything still pointing at it now points at nothing, and `terraform validate` says so before a plan is attempted:
+**Every reference to the resource's attributes must go first.** The `resource` block is gone, so anything still pointing at it now points at nothing, and `terraform validate` says so before a plan is attempted. Measured in `labs/chapter16/section5/dangling-ref`, another validate-only directory:
 
 ```text
 Error: Reference to undeclared resource
 
-  on main.tf line 10, in output "bucket_id":
-  10:   value = aws_s3_bucket.keep.id
+  on main.tf line 19, in output "bucket_id":
+  19:   value = aws_s3_bucket.keep.id
 
 A managed resource "aws_s3_bucket" "keep" has not been declared in the root
 module.

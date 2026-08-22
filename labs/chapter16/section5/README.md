@@ -36,6 +36,21 @@ Measured on **Terraform 1.15.8**. The consequence section 5 draws from it: a
 `count` or `for_each` resource is forgotten in full or not at all, where
 `import` adopts per instance and `moved` re-keys per instance.
 
+## `dangling-ref/` — references have to go before the block lands
+
+Validate-only as well. A `removed` block deletes the `resource` block, so any
+reference left behind points at nothing:
+
+```text
+Error: Reference to undeclared resource
+
+  on main.tf line 19, in output "bucket_id":
+  19:   value = aws_s3_bucket.keep.id
+
+A managed resource "aws_s3_bucket" "keep" has not been declared in the root
+module.
+```
+
 ## `opentofu-bare/` — the same bare block, the opposite default
 
 Run with `TF_CMD=tofu`. Apply the file as committed, then replace it with a
