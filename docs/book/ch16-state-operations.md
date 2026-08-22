@@ -988,7 +988,7 @@ Terraform **1.12** added an alternative, `identity`, mutually exclusive with `id
 
 Its own example is the argument. An AWS `s3_bucket` identity is three attributes, `account_id`, `bucket` and `region`, because a bucket name is not unique on its own and the same name in another account or region is a different object. An `aws_instance` ID already is globally unique, so `id` suffices there. Structured identity exists for objects whose identity is genuinely compound.
 
-What each accepts is settled by the [block reference](https://developer.hashicorp.com/terraform/language/block/import). `id` takes *"a string or an expression that evaluates to a string"* whose value must be **known during the plan operation**, so a variable, a local or `each.value` are all legal and another managed resource's attribute is not, because that is `(known after apply)`. `identity` is an object of key-value pairs rather than a string.
+What each accepts is settled by the [block reference](https://developer.hashicorp.com/terraform/language/block/import). `id` takes *"a string or an expression that evaluates to a string"* whose value must be **known during the plan operation**, so a variable, a local or `each.value` are all legal and another managed resource's attribute is not, because that is `(known after apply)`.
 
 That rule is enforced rather than advisory. Measured on **v1.15.8** in `labs/chapter16/section6/id-not-known`, pointing `id` at another resource's attribute:
 
@@ -1002,7 +1002,7 @@ The import block "id" argument depends on resource attributes that cannot be
 determined until apply, so Terraform cannot plan to import this resource.
 ```
 
-`internal/terraform/eval_import.go` carries the same diagnostic for `identity`, so the constraint belongs to importing rather than to one of the two arguments.
+`identity` is an object of key-value pairs rather than a string. `internal/terraform/eval_import.go` carries the same diagnostic for `identity`, so the constraint belongs to importing rather than to one of the two arguments.
 
 ### The defaults trap, measured
 
