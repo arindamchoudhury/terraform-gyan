@@ -1642,7 +1642,19 @@ But **tainted is not only a command**. It is a **state field Terraform sets on i
 
 > "Terraform automatically marks an object as 'tainted' if an error occurs during a **multi-step 'create' action**, because Terraform can't be sure that the object was left in a fully-functional state."
 
-A failed provisioner is the common case, since a provisioner is a step of the create action. Measured in the same lab, the round trip is two commands and two plans:
+A failed provisioner is the common case, since a provisioner is a step of the create action. A tainted object also **poisons everything downstream of it**, and the mechanism is worth seeing because it is not a special rule about taint. Measured in `labs/chapter16/section9/taint-downstream`, a bucket with a versioning resource attached to it:
+
+```text
+  # aws_s3_bucket.upstream is tainted, so must be replaced
+  # aws_s3_bucket_versioning.downstream must be replaced
+    ~ bucket = "ch16-taintdown" -> (known after apply) # forces replacement
+
+Plan: 2 to add, 0 to change, 2 to destroy.
+```
+
+The downstream resource is replaced because the upstream `id` it points at becomes `(known after apply)` the moment the upstream is scheduled for replacement, and `bucket` is a forced-new argument. That is the same unknown-value rule section 6 met on an `import` block's `id`, arriving here as blast radius. One tainted object, two replacements, and only the first line says why.
+
+The round trip itself is two commands and two plans, measured in the same `lab5`:
 
 ```text
 $ terraform taint aws_s3_bucket.site
