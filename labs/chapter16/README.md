@@ -17,6 +17,7 @@ directories.
 | `lab1/` | `import` a bucket created out of band, with and without `-generate-config-out` | `imports.tf` + a pruned `bucket.tf` |
 | `lab2/` | `moved`: a rename, then a `count` → `for_each` migration; also the deletion-versus-rename diff quoted in section 1. `main.tf.before` is the state to apply first, and its header carries the copy-apply-copy-plan sequence | three `moved` blocks, empty plan |
 | `lab3/` | `removed` with and without `destroy = false`, then re-import | `main.tf` + `keytest.tf` |
+| `section6/` | the `import` case lab1 cannot hold: an `id` that only resolves after apply | plan-only, nothing to clean up |
 | `section5/` | three `removed` cases lab3 cannot hold: `from` given an instance key, a reference left dangling, and OpenTofu's bare block, which forgets where Terraform's destroys | two validate-only, one `TF_CMD=tofu` |
 | `lab4/source`, `lab4/dest` | splitting one configuration into two with `removed` + `import` | empty plan on both sides |
 | `lab5/` | drift: `plan -refresh-only`, revert, adopt | configuration matching the drifted tag |
