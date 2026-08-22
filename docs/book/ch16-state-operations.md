@@ -19,7 +19,7 @@ By the end you can:
 
 ## 1. The problem: an address is an identity
 
-Chapter 9 established that state binds a configuration address to a real object, one to one, and named the fields the file carries down to the `instances` array. Chapter 15 moved that file somewhere a team can share. This section looks closer at a resource entry, and at its `instances` array in particular, because everything in this chapter depends on understanding that layout properly.
+Chapter 9 established that state binds a resource address to a real object, one to one, and named the fields the file carries down to the `instances` array. Chapter 15 moved that file somewhere a team can share. This section looks closer at a resource entry, and at its `instances` array in particular, because everything in this chapter depends on understanding that layout properly.
 
 Everything below can be followed along, and the configurations are in `labs/chapter16/section1/`. Chapter 1's `tflocal` wrapper points Terraform at the local emulator, so nothing here costs money or touches a real account. Start with one bucket:
 
@@ -50,7 +50,7 @@ Open `terraform.tfstate` and `resources` holds one entry. Trimmed to the fields 
 | Field | What it holds |
 |---|---|
 | `mode` | `managed` for a `resource`, `data` for a data source. Both live in the same array. |
-| `type`, `name` | The two labels on the block. Together they spell the **configuration address**, `aws_s3_bucket.notes`. |
+| `type`, `name` | The two labels on the block. Together they spell the **resource address**, `aws_s3_bucket.notes`. |
 | `module` | Absent at the root. A resource inside `module "wrapped"` carries `"module": "module.wrapped"`. |
 | `provider` | Which provider configuration created the object. Note that it sits *beside* the address, not inside it. |
 | `instances` | One element per instance. This is the field every operation in this chapter works on. |
@@ -313,7 +313,7 @@ Containment, distribution, atomicity. Sections 4 to 6 take the blocks one at a t
 
 Nearly every operation in this chapter takes an address. The exceptions are the ones whose unit is larger than a resource: `state pull`, `state push` and `replace-provider`, which section 10 returns to, and `refresh`, which section 8 does. Everything else parses the same grammar, and the parsers do not agree about what an incomplete address means, so it is worth ten minutes before the rest of the chapter.
 
-[The address reference](https://developer.hashicorp.com/terraform/cli/state/resource-addressing) defines it in two halves:
+Section 1 read three of these straight out of a state file: `aws_s3_bucket.notes`, `aws_s3_bucket.archive[0]` and `aws_s3_bucket.archive["cold"]`, spelled by `type`, `name` and `index_key`, with `module` joining them when the resource lives in a child module. That is the state file's side of it. [The address reference](https://developer.hashicorp.com/terraform/cli/state/resource-addressing) gives the grammar those three are instances of, in two halves:
 
 ```text
 [module path][resource spec]
