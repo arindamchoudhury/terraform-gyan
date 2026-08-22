@@ -1188,7 +1188,7 @@ import {
 }
 ```
 
-**A `module.` prefix** on `to`, so the destination `resource` block can live in a child module while the `import` block stays in the root.
+**A `module.` prefix** on `to`, which the `for_each` example above already used. The placement is the part worth naming: the `resource` block lives in the child module, and the `import` block stays in the root, because that is where you are writing the migration. A module you consume from a registry cannot be edited to hold it.
 
 ### Leave the block in
 
