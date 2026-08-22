@@ -779,7 +779,7 @@ removed {
 
 ### The `.` symbol, and the empty legend
 
-With `destroy = false` in place, the same plan becomes something you will not see anywhere else. Measured on **v1.15.8**:
+With `destroy = false` in place, the same plan becomes something you will not see anywhere else. Measured on **v1.15.8** in `labs/chapter16/lab3`, which is also where the bare-block plan above comes from:
 
 ```text
 Terraform used the selected providers to generate the following execution
@@ -791,7 +791,10 @@ Terraform will perform the following actions:
  # (destroy = false is set in the configuration)
  . resource "aws_s3_bucket" "handover" {
         id                          = "ch16-handover"
+        tags                        = {}
         # (15 unchanged attributes hidden)
+
+        # (4 unchanged blocks hidden)
     }
 
 Plan: 0 to add, 0 to change, 0 to destroy.
@@ -814,7 +817,7 @@ Three things in that output are worth naming.
 
 **`0 to destroy` on a plan that rewrites state.** The counters count *infrastructure* actions, and forgetting is not one. The same counter behaviour shows up in `apply -refresh-only` in section 8.
 
-Applying it reports `Apply complete! Resources: 0 added, 0 changed, 0 destroyed`, `terraform state list` comes back empty, and the bucket is still there:
+Applying it reports `Apply complete! Resources: 0 added, 0 changed, 0 destroyed`, the address is gone from `terraform state list`, and the bucket is still there:
 
 ```text
 $ awslocal s3api list-buckets --query 'Buckets[?Name==`ch16-handover`].Name' --output text
@@ -842,13 +845,13 @@ ch16-handover
 
 ### The two constraints
 
-**`from` takes no instance keys.** Measured on **v1.15.8** against a `for_each` resource:
+**`from` takes no instance keys.** Measured on **v1.15.8** in `labs/chapter16/section5/removed-key`, which fails at `validate` and needs no apply:
 
 ```text
 Error: Resource instance keys not allowed
 
-  on keytest.tf line 7, in removed:
-   7:   from = aws_s3_bucket.shard["a"]
+  on main.tf line 13, in removed:
+  13:   from = aws_s3_bucket.shard["a"]
 
 Resource address must be a resource (e.g. "test_instance.foo"), not a
 resource instance (e.g. "test_instance.foo[1]").
@@ -876,7 +879,7 @@ Apply complete! Resources: 1 imported, 0 added, 0 changed, 0 destroyed.
 Forgetting is reversible, but only by re-adopting. That round trip, `removed` with `destroy = false` and then `import`, is also the entire cross-configuration migration in section 7.
 
 !!! info "OpenTofu — `lifecycle { destroy = false }` on the resource itself, and it fails the destroy"
-    OpenTofu **1.12** puts the same argument on the resource's own `lifecycle` block, with no `removed` block involved. Measured on **1.12.5**: `tofu validate` accepts it, and `tofu destroy` forgets the object rather than deleting it, then **exits non-zero**:
+    OpenTofu **1.12** puts the same argument on the resource's own `lifecycle` block, with no `removed` block involved. Measured on **1.12.5** in `labs/chapter16/opentofu`, which is the one directory here that must be run with `TF_CMD=tofu`: `tofu validate` accepts it, and `tofu destroy` forgets the object rather than deleting it, then **exits non-zero**:
 
     ```text
     Error: Destroy was successful but left behind forgotten instances
@@ -894,8 +897,8 @@ Forgetting is reversible, but only by re-adopting. That round trip, `removed` wi
     ```text
     Error: Unsupported argument
 
-      on main.tf line 5, in resource "aws_s3_bucket" "ot":
-       5:     destroy = false
+      on main.tf line 10, in resource "aws_s3_bucket" "ot":
+      10:     destroy = false
 
     An argument named "destroy" is not expected here.
     ```
