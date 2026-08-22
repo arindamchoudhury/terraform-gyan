@@ -954,7 +954,11 @@ It does write a forced **timestamped** backup, which the `removed` block does no
 
 Import runs the workflow backwards. Infrastructure exists first, and configuration and state have to be made to describe it.
 
-Since **Terraform 1.5** the supported way is a configuration block, and the three reasons given for it are the same three from section 2 in different clothes. It is **safer**, because the import goes through plan. It **works in CI**, because nothing is typed at a terminal. And it can **generate a first draft** of the configuration.
+Since **Terraform 1.5** the supported way is a configuration block, and the reasons HashiCorp gives for it in the [import tutorial](https://developer.hashicorp.com/terraform/tutorials/state/state-import) are section 2's three arguments in different clothes:
+
+> "You can still use the `terraform import` command, but configuration-driven import is **safer**, **works with CICD pipelines**, and allows you to **preview the import operation before modifying state**. You can also optionally use Terraform to generate an initial configuration for the resources you will import."
+
+Safer and previewable are containment. Working in a pipeline is distribution, since nothing has to be typed at a terminal by a particular person. Generation is the one addition import brings that neither `moved` nor `removed` has an equivalent for.
 
 An import needs **two** things, not one:
 
@@ -1140,7 +1144,7 @@ Apply complete! Resources: 2 imported, 0 added, 0 changed, 0 destroyed.
 
 Driving the destination resource's own `for_each` from the same expression is what keeps the addresses aligned. The reference's second example goes further, looping over a list of objects into *module* instances with `to = module.group[each.value.group].aws_s3_bucket.this[each.value.key]`. A module instance key and a resource instance key in one address, both computed. That is the shape adopting a real estate takes.
 
-**A `provider` alias**, which is how you import an object the default provider configuration cannot see:
+**A `provider` alias**, which is how you import an object the default provider configuration cannot see. Written unquoted, because it is a reference rather than a string, and validated in that form on **v1.15.8**:
 
 ```hcl
 import {
