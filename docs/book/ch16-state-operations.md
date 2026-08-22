@@ -1651,6 +1651,9 @@ No changes. Your infrastructure matches the configuration.
 
 Worth noticing what is missing from that transcript: `taint` prints **no deprecation warning at all** on v1.15.8, and exits zero. The command is deprecated in the documentation and silent at the terminal, which is how it keeps getting used.
 
+!!! info "OpenTofu — one word apart, and equally silent"
+    Measured on **OpenTofu 1.12.5**: `tofu taint` is just as quiet, `-replace` renders identically as `will be replaced, as requested`, and the tainted plan line differs by a single word, `is tainted, so **it** must be replaced`. The strings come from the same file in both trees, `internal/command/jsonformat/plan.go`, which is where the fork shows: Terraform writes `is tainted, so must be` and OpenTofu writes `is tainted, so it must be`. Behaviour is identical; a grep for the Terraform wording will miss every OpenTofu run.
+
 That is why `terraform untaint` survives the deprecation. It answers a question `-replace` cannot, which is *Terraform thinks this is damaged and I disagree*. And you do not have to re-taint to change your mind back: if you later decide it was degraded after all, `apply -replace=` schedules the rebuild directly.
 
 ### `-target`: a subgraph, not a filter
