@@ -1672,11 +1672,26 @@ Targeting walks **upstream only**. The tutorial's measurement, on one configurat
 So a target is a **subgraph selection closed under "depends on" in one direction**, not a filter over the plan. Everything the target needs comes along; everything that needs the target is left stale.
 
 !!! warning "Instance-level targeting gives no upstream precision at all"
-    Targeting `aws_s3_object.objects[2]` planned the replacement of **all four** `random_pet.object_names` instances, because `objects[2] → object_names[2]` is not an edge Terraform has. `objects → object_names` is.
+    Targeting `aws_s3_object.objects[2]` planned the replacement of **all four** `random_pet.object_names` instances, because `objects[2] → object_names[2]` is not an edge Terraform has. `objects → object_names` is. Read that count off the tutorial's transcript, which lists instances `[0]` through `[3]`, rather than off its prose, which says five.
 
     This is Chapter 10's dependency-graph fact showing up as behaviour: edges are built between **resource** nodes, not between instance nodes. If your intent was to touch one object, an instance-level target achieves the opposite of blast-radius reduction.
 
-Two consequences to plan around. The two warnings Terraform prints say different things: plan-time says `Resource targeting is in effect`, and apply-time says `Applied changes may be incomplete` and tells you to run `terraform plan` to see what is still pending. And a targeted apply leaves state **internally inconsistent rather than corrupt**. In the tutorial, one output described the new bucket name and another described the old bucket, every value correctly recorded, describing different moments. Always follow a targeted run with an untargeted apply. In that exercise the follow-up cost `7 to add, 7 to destroy`, so the partial apply deferred and fragmented the work rather than reducing it.
+Two consequences to plan around. The two warnings Terraform prints say different things, measured on **v1.15.8** in `labs/chapter16/section9/targeting`:
+
+```text
+Warning: Resource targeting is in effect          # plan time
+You are creating a plan with the -target option, which means that the result
+of this plan may not represent all of the changes requested by the current
+configuration.
+
+Warning: Applied changes may be incomplete        # apply time
+The plan was created with the -target option in effect, so some changes
+requested in the configuration may have been ignored and the output values
+may not be fully updated. Run the following command to verify that no other
+changes are pending: terraform plan
+```
+
+The first says the plan is partial; the second says your infrastructure now is, and hands you the command that tells you by how much. In that lab the follow-up plan answers `aws_s3_bucket.two will be created`, `1 to add`: the deferred half, still waiting. And a targeted apply leaves state **internally inconsistent rather than corrupt**. In the tutorial, one output described the new bucket name and another described the old bucket, every value correctly recorded, describing different moments. Always follow a targeted run with an untargeted apply. In that exercise the follow-up cost `7 to add, 7 to destroy`, so the partial apply deferred and fragmented the work rather than reducing it.
 
 !!! info "OpenTofu — `-exclude` is the inverse, and the two families never mix"
     OpenTofu **1.9** added `-exclude`, the deny-list form, and **1.10** added `-target-file` and `-exclude-file`. When one resource is broken and you want to apply everything else, enumerating every *other* resource with `-target` is far worse than one `-exclude`.
