@@ -467,7 +467,7 @@ expressions, etc are allowed here.
 
 The direction reads backwards to most people the first time. The rule that fixes it: **a `moved` block migrates state to match configuration, and configuration is the truth.** `to` must be an address that exists in your configuration right now. `from` must be an address that is gone from configuration but still present in state from the last apply.
 
-Flip them and Terraform stops you, which is worth knowing because the usual warning about this is scarier than the behaviour. After a rename it is `to` that configuration declares, so a flipped block points `from` at the address you have just written. Measured on **v1.15.8**, with state holding `notes` and configuration declaring `team_notes`:
+Flip them and Terraform stops you, which is worth knowing because the usual warning about this is scarier than the behaviour. `labs/chapter16/section4/flipped` is the pair of files. After a rename it is `to` that configuration declares, so a flipped block points `from` at the address you have just written. Measured on **v1.15.8**, with state holding `notes` and configuration declaring `team_notes`:
 
 ```text
 Error: Moved object still exists
@@ -494,7 +494,7 @@ That is the same error the next callout covers, arriving for the same reason: `f
     aws_s3_bucket.other instead.
     ```
 
-    Measured on **v1.15.8**. The rename **is** the edit to the existing block's label. There is no stage where both addresses are declared, and the error names the edit it wants.
+    Measured on **v1.15.8** from `labs/chapter16/section4/both-declared`, which needs no apply because it fails before a plan exists. The rename **is** the edit to the existing block's label. There is no stage where both addresses are declared, and the error names the edit it wants.
 
 ### What a clean move looks like
 
@@ -566,7 +566,7 @@ Start with what happens without them. Measured on this chapter's lab: two bucket
 Plan: 2 to add, 0 to change, 2 to destroy.
 ```
 
-The fix is one `moved` block per instance, and *per instance* is a requirement rather than a style. The static-reference rule from the top of the section rules out generating them: a `moved` block takes no `for_each`, measured on **v1.15.8** as `An argument named "for_each" is not expected here`, which leaves `each.key` with nothing to refer to. An `import` block can be driven by a `for_each`, as section 6 does; a `moved` block has to be written out, one per instance, by hand.
+The fix is one `moved` block per instance, and *per instance* is a requirement rather than a style. The same `labs/chapter16/lab2` sequence shows it, since the committed file migrates `archive` alongside the rename. The static-reference rule from the top of the section rules out generating them: a `moved` block takes no `for_each`, measured on **v1.15.8** as `An argument named "for_each" is not expected here`, which leaves `each.key` with nothing to refer to. An `import` block can be driven by a `for_each`, as section 6 does; a `moved` block has to be written out, one per instance, by hand.
 
 The rule from [Refactor modules](https://developer.hashicorp.com/terraform/language/modules/develop/refactoring) is that **an instance key on either side switches the whole block into instance mode**:
 
@@ -599,7 +599,7 @@ The mapping from index to key is yours to decide and yours to get right. Terrafo
 !!! info "Adding `count` to a bare resource is free; renaming never is"
     > "When you add `count` to an existing resource that didn't previously have the argument, **Terraform automatically proposes moving the original object to instance `0`** unless you write a `moved` block that explicitly mentions that resource. However, we recommend writing out the corresponding `moved` block explicitly to make the change clearer to future readers of the module."
 
-    There is no equivalent auto-move for `for_each`, because `for_each` needs a key that only you can choose. Measured on **v1.15.8**, one bucket taken through both edits with its name unchanged and no `moved` block written:
+    There is no equivalent auto-move for `for_each`, because `for_each` needs a key that only you can choose. Measured on **v1.15.8** in `labs/chapter16/section4/auto-move`, one bucket taken through both edits with its name unchanged and no `moved` block written:
 
     ```text
     # adding count = 1
@@ -641,7 +641,7 @@ moved {
 The exception is the direction that *adds* the meta-argument. Moving a resource **into** an instance of a module call that uses `count` or `for_each` requires you to say which instance: *"you must specify a specific instance key to use in order to match with the new location of the resource configuration"*, as in `to = module.new[2].aws_instance.example`.
 
 !!! warning "Renaming a module call requires a re-`init`"
-    Modules are installed under a key derived from the **call name**, so the new name has nothing installed against it and the next plan refuses to start. Measured on **v1.15.8**, renaming a call whose source is a local directory:
+    Modules are installed under a key derived from the **call name**, so the new name has nothing installed against it and the next plan refuses to start. Measured on **v1.15.8** in `labs/chapter16/section4/module-rename`, renaming a call whose source is a local directory:
 
     ```text
     Error: Module not installed
@@ -697,7 +697,7 @@ moved {
 
 > "Recording a sequence of moves in this way allows for successful upgrades for **both** configurations with objects at `aws_instance.a` **and** configurations with objects at `aws_instance.b`."
 
-A consumer arriving from the oldest address is not walked through the chain one release at a time. Measured on **v1.15.8** with the same two-block shape, buckets standing in for the instances, state holding `a` and configuration declaring `c`, the intermediate hop does not appear in the plan at all:
+A consumer arriving from the oldest address is not walked through the chain one release at a time. Measured on **v1.15.8** in `labs/chapter16/section4/chained`, with the same two-block shape, buckets standing in for the instances, state holding `a` and configuration declaring `c`, the intermediate hop does not appear in the plan at all:
 
 ```text
   # aws_s3_bucket.a has moved to aws_s3_bucket.c
