@@ -1439,6 +1439,18 @@ No preview, no prompt, and a plan afterwards that undoes the move. The one thing
 
 The first thing to know is that you are already detecting it. Every `plan`, `apply` and `destroy` runs an **implicit in-memory refresh** before doing anything else, which the [refresh tutorial](https://developer.hashicorp.com/terraform/tutorials/state/refresh) states as *"Terraform plan and apply operations first run an in-memory refresh to determine which changes to propose to your infrastructure"*. So an ordinary plan already sees drift and already proposes to undo it. There is no detection step to add.
 
+`destroy` refreshes too, which is worth proving because it does not announce it. Measured in `lab5`, with the bucket deleted out of band:
+
+```text
+$ terraform plan -destroy
+No changes. No objects need to be destroyed.
+
+$ terraform plan -destroy -refresh=false
+Plan: 0 to add, 0 to change, 1 to destroy.
+```
+
+The first run asked the provider and found the object already gone; the second skipped that and planned to delete something that no longer exists. Neither prints the drift note below, because a destroy plan suppresses it. Detection happens, reporting does not.
+
 The second is that drift is a **symptom**. Infrastructure rarely changes itself. TID Ch 6 §6.6 sorts the causes on two axes, machine versus human and accidental versus intentional:
 
 - **Accidental manual changes.** Wrong account, wrong command. Treat it as a systems problem rather than an individual's fault: restrict production access, enforce CI/CD. These are the easiest to fix, because a plain `terraform plan` usually works out exactly how to restore the intended state.
@@ -1474,7 +1486,7 @@ these.
 The **verb tense is the fastest way to tell the two kinds of plan apart**. A refresh-only plan reports the past, `has changed`, where a normal plan reports intent in the future: `will be updated in-place`.
 
 !!! note "The exact wording moved between versions"
-    HashiCorp's drift tutorial transcript reads `# aws_instance.example has been changed`. Measured on **v1.15.8** in `lab5` the line is `# aws_s3_bucket.site has changed`, and the surrounding note has gained a clause: *"since the last `terraform apply` **which may have affected this plan**"*. Same mechanism, shorter sentence. If you are matching on these strings in tooling, they are not stable across releases.
+    HashiCorp's drift tutorial transcript reads `# aws_instance.example has been changed`. Measured on **v1.15.8** in `lab5` the line is `# aws_s3_bucket.site has changed`, and the surrounding note has gained a clause: *"since the last `terraform apply` **which may have affected this plan**"*. Same mechanism, shorter sentence. **OpenTofu 1.12.5** prints the same structure with its own nouns, `Objects have changed outside of OpenTofu` and `since the last "tofu apply"`. If you are matching on these strings in tooling, they are stable across neither releases nor CLIs.
 
 ### The three answers
 
@@ -1571,7 +1583,7 @@ The closing advice on the [reference page](https://developer.hashicorp.com/terra
 Prefer *neither*. The ordinary answer to drift is a normal plan.
 
 !!! note "A standalone refresh does have one remaining job"
-    The `state` subcommands do not refresh. Anything you read through `terraform state list` or `terraform state show` is as stale as the last plan left it, which is the one gap the automatic refresh does not cover.
+    The `state` subcommands do not refresh. Anything you read through `terraform state list` or `terraform state show` is as stale as the last plan left it, which is the one gap the automatic refresh does not cover. Measured in `lab5` with the drift live: `terraform state show aws_s3_bucket.site` still reports `"owner" = "platform-team"` while the emulator holds `oncall-hotfix`.
 
 ---
 
