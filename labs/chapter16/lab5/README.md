@@ -64,6 +64,30 @@ skipped the refresh and planned to delete something that no longer exists. Note
 that neither prints the `Objects have changed outside of Terraform` note, which
 a destroy plan suppresses.
 
+## Section 9 uses this directory too
+
+With the pre-drift configuration applied and no drift, the same bucket carries
+section 9's measurements:
+
+```text
+$ tflocal plan -replace aws_s3_bucket.site
+  # aws_s3_bucket.site will be replaced, as requested
+-/+ resource "aws_s3_bucket" "site" {
+
+$ terraform taint aws_s3_bucket.site
+Resource instance aws_s3_bucket.site has been marked as tainted.
+
+$ tflocal plan
+  # aws_s3_bucket.site is tainted, so must be replaced
+Plan: 1 to add, 0 to change, 1 to destroy.
+
+$ terraform untaint aws_s3_bucket.site
+Resource instance aws_s3_bucket.site has been successfully untainted.
+```
+
+`taint` prints no deprecation warning and exits zero, which is worth seeing for
+yourself.
+
 ## Cleaning up
 
 `tflocal destroy` from the directory, unless you ran the out-of-band delete

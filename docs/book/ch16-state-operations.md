@@ -1618,27 +1618,44 @@ $ terraform plan -replace=aws_s3_bucket.site
       ...
 ```
 
-`as requested` is the plan distinguishing an operator-forced replacement from one the diff demanded. Measured on **v1.15.8**.
+`as requested` is the plan distinguishing an operator-forced replacement from one the diff demanded. Measured on **v1.15.8** in `labs/chapter16/lab5`.
 
 ### `taint` is dead, `untaint` is not, and the asymmetry is the interesting part
 
-`terraform taint` was deprecated in **0.15.2** in favour of `-replace`, and the reason given is a mechanism rather than a preference:
+`terraform taint` was deprecated in **0.15.2** in favour of `-replace`, and the reason [Recreate Resources](https://developer.hashicorp.com/terraform/cli/state/taint) gives is a mechanism rather than a preference:
 
 > "that approach is **deprecated in favor of the `-replace=...` option, which avoids the need to create an interim state snapshot with a tainted object**."
 
 `taint` had to write state to record the intent, and the next apply acted on the mark. Two operations with a gap between them, which is the same flaw as the `state mv` race in section 2.
 
-But **tainted is not only a command**. It is a **state field Terraform sets on its own** when it can infer that an object was left half-built:
+But **tainted is not only a command**. It is a **state field Terraform sets on its own** when it can infer that an object was left half-built, which the [`untaint` reference](https://developer.hashicorp.com/terraform/cli/commands/untaint) is the page that says out loud:
 
 > "Terraform automatically marks an object as 'tainted' if an error occurs during a **multi-step 'create' action**, because Terraform can't be sure that the object was left in a fully-functional state."
 
-A failed provisioner is the common case, since a provisioner is a step of the create action. A tainted object plans as `# aws_instance.example is tainted, so must be replaced`, and it poisons everything downstream of it, not just itself.
+A failed provisioner is the common case, since a provisioner is a step of the create action. Measured in the same lab, the round trip is two commands and two plans:
+
+```text
+$ terraform taint aws_s3_bucket.site
+Resource instance aws_s3_bucket.site has been marked as tainted.
+
+$ terraform plan
+  # aws_s3_bucket.site is tainted, so must be replaced
+Plan: 1 to add, 0 to change, 1 to destroy.
+
+$ terraform untaint aws_s3_bucket.site
+Resource instance aws_s3_bucket.site has been successfully untainted.
+
+$ terraform plan
+No changes. Your infrastructure matches the configuration.
+```
+
+Worth noticing what is missing from that transcript: `taint` prints **no deprecation warning at all** on v1.15.8, and exits zero. The command is deprecated in the documentation and silent at the terminal, which is how it keeps getting used.
 
 That is why `terraform untaint` survives the deprecation. It answers a question `-replace` cannot, which is *Terraform thinks this is damaged and I disagree*. And you do not have to re-taint to change your mind back: if you later decide it was degraded after all, `apply -replace=` schedules the rebuild directly.
 
 ### `-target`: a subgraph, not a filter
 
-The most-misused flag in the CLI. Its legitimate uses, in the docs' own words, are *"exceptional situations such as recovering from errors or mistakes, **or when Terraform specifically suggests to use it as part of an error message**"*. That last clause is the one case where reaching for it is following instructions rather than improvising.
+The most-misused flag in the CLI. Its legitimate uses are named in the warning Terraform itself prints, quoted here from the [targeting tutorial](https://developer.hashicorp.com/terraform/tutorials/state/resource-targeting): the flag *"is not suitable for routine use, and is provided only for exceptional situations such as recovering from errors or mistakes, **or when Terraform specifically suggests to use it as part of an error message**"*. That last clause is the one case where reaching for it is following instructions rather than improvising.
 
 The mechanical fact, stated in one sentence by HashiCorp's [targeting tutorial](https://developer.hashicorp.com/terraform/tutorials/state/resource-targeting):
 
