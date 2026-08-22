@@ -649,9 +649,12 @@ A module's `moved` blocks accumulate for the same reason a database's migrations
 !!! note "What `moved` cannot do"
     **It cannot cross state files.** Everything above happens inside one state file; splitting a state needs section 7's machinery.
 
-    **It cannot change a resource's type**, except where a provider explicitly supports it. Each resource type has its own schema, so whether `aws_x` can become `aws_y` is a question for the provider docs.
+    **It cannot change a resource's type** on its own. Each resource type has its own schema, so whether `aws_x` can become `aws_y` is a question for the provider. Terraform **1.8** opened the door: its [v1.8.0 changelog](https://github.com/hashicorp/terraform/blob/v1.8.0/CHANGELOG.md) says the block supports moving between two resource types *"only if the provider for the target resource type declares that it can convert from the source resource type"*. Note which side declares it. The provider you are moving **to** is the one that has to know about the type you are moving **from**.
 
     **It cannot turn a `resource` into a `data` block.** That boundary is absolute. To stop managing something and start reading it, you `removed` it with `destroy = false` and add a `data` block separately.
+
+!!! info "OpenTofu — no provider-assisted type changes as of 1.12.5"
+    The cross-type move is the one part of this section with no OpenTofu equivalent. The difference is visible in the function signature: Terraform's `ApplyMoves` takes a `providerFactory map[addrs.Provider]providers.Factory` and returns diagnostics, while OpenTofu's at **1.12.5** is `ApplyMoves(stmts, state) MoveResults`, with no provider plumbing at all. Nothing in the OpenTofu changelogs from 1.7 to 1.10 mentions moving between resource types either. Renaming, re-keying and module moves all behave the same in both, and were measured that way for this chapter.
 
 ---
 
