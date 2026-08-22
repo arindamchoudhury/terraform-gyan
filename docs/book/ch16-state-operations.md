@@ -772,6 +772,22 @@ removed {
 
     So `destroy` shipped **with** the block in 1.7 and has defaulted to `true` since day one. There is no version in which a bare `removed` block was safe. Material that says otherwise, including TID Ch 2 §2.9, was wrong when it was written rather than overtaken by a change.
 
+!!! info "OpenTofu — the same bare block forgets, and warns twice"
+    The default is inverted, so this section's danger does not carry across. Measured on **OpenTofu 1.12.5** in `labs/chapter16/section5/opentofu-bare`, given a bare `removed` block with no `lifecycle`:
+
+    ```text
+    Plan: 0 to add, 0 to change, 0 to destroy, 1 to forget.
+
+    Warning: Resource will be removed from the state
+
+    Warning: Missing lifecycle from the removed block
+    It is recommended for each 'removed' block configured to have also the
+    'lifecycle' block defined. By not specifying if the resource should be
+    destroyed or not, could lead to unwanted behavior.
+    ```
+
+    The source states the difference plainly. OpenTofu's `internal/configs/removed.go` at **1.12.5** initialises `Destroy: false` and keeps a `DestroySet` flag so it can warn when nothing set it; Terraform's sets `removed.Destroy = true` before it looks for a `lifecycle` block. Same block, same syntax, opposite behaviour when you leave the safety argument out, and only one of the two tells you.
+
 !!! warning "The docs call `lifecycle` required. The parser does not."
     Both the 1.7 page and the current configuration model describe the `lifecycle` block as **required**, yet `terraform validate` accepts a `removed` block without one and the plan proceeds to destroy. The schema explains why. In `removed.go` at **v1.15.8**, only `from` carries `Required: true`; `lifecycle` is an ordinary optional block, and `destroy` inside it is an optional attribute.
 
@@ -859,7 +875,17 @@ resource instance (e.g. "test_instance.foo[1]").
 
 So a `count` or `for_each` resource is forgotten in full or not at all. This is the asymmetry from section 3, met in the field.
 
-**Every reference to the resource's attributes must go first.** A dangling `aws_s3_bucket.handover.id` elsewhere in the configuration blocks the plan, and `terraform validate` enumerates them for you.
+**Every reference to the resource's attributes must go first.** The `resource` block is gone, so anything still pointing at it now points at nothing, and `terraform validate` says so before a plan is attempted:
+
+```text
+Error: Reference to undeclared resource
+
+  on main.tf line 10, in output "bucket_id":
+  10:   value = aws_s3_bucket.keep.id
+
+A managed resource "aws_s3_bucket" "keep" has not been declared in the root
+module.
+```
 
 ### Getting back in
 
@@ -903,7 +929,7 @@ Forgetting is reversible, but only by re-adopting. That round trip, `removed` wi
     An argument named "destroy" is not expected here.
     ```
 
-    Terraform **1.16** adds the resource-level form, so this converges rather than staying a permanent fork difference. Until 1.16 is stable, the `removed` block is Terraform's only route. Note the design difference that survives the convergence: OpenTofu makes leaving objects behind an **error you opt out of**, where Terraform's plan says `0 to destroy` and moves on.
+    Terraform **1.16** adds the resource-level form — its changelog reads *"Resource `lifecycle` blocks now support `destroy = false` to prevent a resource from being destroyed"* ([#38784](https://github.com/hashicorp/terraform/issues/38784)), and `internal/configs/resource.go` parses it at `v1.16.0-rc1` — so this converges rather than staying a permanent fork difference. Until 1.16 is stable, the `removed` block is Terraform's only route. Note the design difference that survives the convergence: OpenTofu makes leaving objects behind an **error you opt out of**, where Terraform's plan says `0 to destroy` and moves on.
 
 ### The CLI alternative, and why the docs argue against it
 
@@ -920,7 +946,7 @@ Removed aws_s3_bucket.shard["b"]
 Successfully removed 2 resource instance(s).
 ```
 
-It does write a forced backup, which the `removed` block does not. See section 10 for why that consolation is smaller than it sounds.
+It does write a forced **timestamped** backup, which the `removed` block does not: measured on **v1.15.8**, an apply that forgets an object leaves the local backend's ordinary `terraform.tfstate.backup` and no `terraform.tfstate.<timestamp>.backup` at all. See section 10 for why that consolation is smaller than it sounds.
 
 ---
 

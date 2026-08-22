@@ -35,3 +35,28 @@ raise a different error and hide this one.
 Measured on **Terraform 1.15.8**. The consequence section 5 draws from it: a
 `count` or `for_each` resource is forgotten in full or not at all, where
 `import` adopts per instance and `moved` re-keys per instance.
+
+## `opentofu-bare/` — the same bare block, the opposite default
+
+Run with `TF_CMD=tofu`. Apply the file as committed, then replace it with a
+bare `removed` block naming `aws_s3_bucket.gone` and plan. OpenTofu **1.12.5**
+forgets rather than destroys, and says so twice:
+
+```text
+Plan: 0 to add, 0 to change, 0 to destroy, 1 to forget.
+
+Warning: Resource will be removed from the state
+After this plan is applied, the resource aws_s3_bucket.gone will not be
+managed anymore by OpenTofu.
+In case you want to manage the resource again, you will have to import it.
+
+Warning: Missing lifecycle from the removed block
+It is recommended for each 'removed' block configured to have also the
+'lifecycle' block defined. By not specifying if the resource should be
+destroyed or not, could lead to unwanted behavior.
+```
+
+Terraform 1.15.8 given the identical block plans `1 to destroy` and warns about
+nothing, which is the divergence section 5's danger box now carries. Clean up
+with `awslocal s3 rb s3://ch16-otremoved` after the forget, since `tofu
+destroy` no longer tracks it.
