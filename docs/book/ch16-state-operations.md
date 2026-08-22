@@ -284,25 +284,30 @@ Read the fallback column as an escape hatch, not as a parallel workflow. The two
 
 ### Why configuration wins, three times over
 
-The case for `moved` blocks over `terraform state mv` is never made in one place. Three docs pages each carry one piece of it, and no page repeats another's. Together they are the whole case.
+The ranking above is a preference until you know what is behind it. The case is never made in one place, and where the docs argue it at all they argue about a single block: `moved`, the rename case. Read the three arguments as being about the **route** rather than that one block. Each is a property of any state change you declare in configuration and apply through a plan, which is `import` and `removed` as much as `moved`.
 
-**The mechanism argument.** [The `moved` block reference](https://developer.hashicorp.com/terraform/language/block/moved) is the only page that says how the block actually works:
+!!! note "`moved` in one sentence, because the arguments below quote its pages"
+    A `moved` block names two addresses: `from`, the one that has left configuration, and `to`, the one that replaced it. Section 4 has the syntax, the direction rule and the plan it produces, and nothing below needs more than that sentence.
+
+**The mechanism argument.** [The `moved` block reference](https://developer.hashicorp.com/terraform/language/block/moved) is the only page that says how a block of this kind actually works:
 
 > "**Before creating a new plan** for the resource specified in the `to` field, Terraform **checks the state** for an existing object at the address specified in the `from` field. Terraform **renames existing objects** to the string specified in the `to` field and **then creates a plan**. […] **As a result, Terraform does not destroy the resource during the Terraform run.**"
 
-The state rename happens *before* the plan is computed. By the time Terraform diffs configuration against state, the new address already has an object bound to it and there is nothing to create. That also explains why the block is harmless to leave in place forever: a `from` matching nothing in state finds nothing to rename, and planning proceeds unchanged.
+The state change is part of the run Terraform plans, rather than a step you take beside it. Here it happens *before* the plan is computed, so by the time Terraform diffs configuration against state the new address already has an object bound to it and there is nothing to create. That is also why such a block is harmless to leave in configuration forever: an address that matches nothing in state has nothing to act on, and planning proceeds unchanged.
+
+The other blocks time the write differently — an `import` block binds the object during apply, and the plan announces it in advance as `# aws_s3_bucket.legacy will be imported` with its own counter, `1 to import`. What generalises is not the timing but the containment: the state change is described by the plan you reviewed and happens inside the run that plan authorised.
 
 **The audience argument**, from [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move):
 
 > "**For most cases** we recommend using the Terraform language's **refactoring features** to document in your module exactly how the resource names have changed over time. Terraform reacts to this information automatically during planning, so **users of your module do not need to take any unusual extra steps**."
 
-A `state mv` fixes your state. A `moved` block fixes everyone's. You cannot ship a CLI command to a hundred module consumers and expect all hundred to run it correctly against their own state.
+A CLI state operation fixes your state. A block in the module fixes everyone's. You cannot ship a command to a hundred module consumers and expect all hundred to run it correctly against their own state. Note that the page says *refactoring features*, plural, and not `moved` specifically: the same reasoning is why a module author announces a removal with a `removed` block rather than telling consumers to run `terraform state rm`.
 
 **The atomicity argument**, from the [`state mv` reference](https://developer.hashicorp.com/terraform/cli/commands/state/mv), and the sharpest of the three:
 
 > "If you are using Terraform in a collaborative environment, you must ensure that when you are using `terraform state mv` for a code refactoring purpose you **communicate carefully with your coworkers** to ensure that nobody makes any other changes between your configuration change and your `terraform state mv` command, because otherwise they might inadvertently **create a plan that will destroy the old object and create a new object** at the new address."
 
-A CLI refactor is two operations with a gap between them, and during that gap the repository describes a rename that state has not heard about. Anyone who plans in that window gets a correct-looking destroy. A `moved` block makes the rename part of the same apply as the configuration change, so the window does not exist.
+A CLI refactor is two operations with a gap between them, and during that gap the repository describes a change that state has not heard about. Anyone who plans in that window gets a correct-looking destroy. Nothing in that warning is specific to renaming, either: `terraform state rm` followed by a configuration edit, or an edit followed by `terraform import`, opens the same window in the same way. A block closes it by making the state change part of the same apply as the configuration change.
 
 That third shape is also exactly why `terraform taint` was deprecated. It wrote an interim state snapshot to record the intent, and the replacement happened on a later apply, leaving the same window open in between.
 
