@@ -1768,12 +1768,22 @@ For the second half, convert `archive` from `count` to `for_each` with the bucke
 
 ### Lab 3 — forget a bucket, then take it back
 
-`labs/chapter16/lab3` creates `ch16-handover`. Replace the `resource` block with a **bare** `removed` block and plan. Do not apply: the plan says `1 to destroy`, which is the whole point of the exercise.
+`labs/chapter16/lab3` adopts `ch16-handover` rather than creating it, so make it first and let Terraform import it:
+
+```shell
+awslocal s3api create-bucket --bucket ch16-handover
+awslocal s3api create-bucket --bucket ch16-shard-a       # keytest.tf adopts these two
+awslocal s3api create-bucket --bucket ch16-shard-b
+tflocal init
+tflocal apply -auto-approve                              # Resources: 3 imported
+```
+
+Now replace the `resource` block with a **bare** `removed` block and plan. Do not apply: the plan says `1 to destroy`, which is the whole point of the exercise.
 
 Add the `lifecycle` block, plan again, and look closely at three things: the empty symbol legend, the lone `.`, and the `Warning: Some objects will no longer be managed by Terraform`. Then apply and verify:
 
 ```shell
-tflocal state list                                    # empty
+tflocal state list                                    # handover is gone, the shard pair is not
 awslocal s3 ls | grep ch16-handover                   # still there
 ```
 
