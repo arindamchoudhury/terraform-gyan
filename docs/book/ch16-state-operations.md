@@ -311,7 +311,7 @@ Containment, distribution, atomicity. Sections 4 to 6 take the blocks one at a t
 
 ## 3. Resource addressing: one grammar, several parsers
 
-Nearly every operation in this chapter takes an address, the exceptions being the ones whose unit is a whole state file or a whole provider: `state pull`, `state push`, `refresh`, and `replace-provider`, which section 10 returns to. The rest parse the same grammar and do not agree about what an incomplete address means, so it is worth ten minutes before the rest of the chapter.
+Nearly every operation in this chapter takes an address. The exceptions are the ones whose unit is larger than a resource: `state pull`, `state push` and `replace-provider`, which section 10 returns to, and `refresh`, which section 8 does. Everything else parses the same grammar, and the parsers do not agree about what an incomplete address means, so it is worth ten minutes before the rest of the chapter.
 
 [The address reference](https://developer.hashicorp.com/terraform/cli/state/resource-addressing) defines it in two halves:
 
@@ -384,7 +384,7 @@ The third row is the dangerous one. A hard error tells you to fix the address, a
 
 OpenTofu **1.12.5** answers all three the same way, measured on the same configuration, down to `Would have removed nothing.` and `No changes. No objects need to be destroyed.` Whatever the disagreement is, it is not a quirk of one distribution.
 
-The instance-key asymmetry also explains something the three refactoring blocks do that looks arbitrary until you know the rule:
+The three refactoring blocks parse that same grammar, and each imposes its own rule on top of it. The rules look arbitrary side by side, and each one is checkable:
 
 | Block | Instance key in the address | Measured on **v1.15.8** |
 |---|---|---|
