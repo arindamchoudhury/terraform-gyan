@@ -422,7 +422,7 @@ The third row is the dangerous one. A hard error tells you to fix the address, a
 
 **OpenTofu 1.12.5** answers all three the same way, measured on the same configuration, down to `Would have removed nothing.` and `No changes. No objects need to be destroyed.` Whatever the disagreement is, it is not a quirk of one distribution.
 
-The three refactoring blocks parse that same grammar, and each imposes its own rule on top of it. The rules look arbitrary side by side, and each one is checkable, in `labs/chapter16/section3/import-bare`, in the same directory's `moved-bare`, and in `lab3/keytest.tf` for the third:
+The three refactoring blocks parse that same grammar, and each imposes its own rule on top of it. The rules look arbitrary side by side, and each one is checkable, in `labs/chapter16/section3/import-bare`, in the same directory's `moved-bare`, and in `labs/chapter16/section5/removed-key` for the third:
 
 | Block | Instance key in the address | Measured on **v1.15.8** |
 |---|---|---|

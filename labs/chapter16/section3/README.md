@@ -84,4 +84,5 @@ Plan: 0 to add, 0 to change, 0 to destroy.
 ```
 
 The third block, `removed`, rejects an instance key outright, and that
-measurement lives in `../lab3/keytest.tf` where section 5 uses it.
+measurement lives in `../section5/removed-key`, which fails at validate and so
+cannot share a directory with a lab that has to apply.
