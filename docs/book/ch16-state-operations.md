@@ -621,7 +621,7 @@ The tutorial states the retention rule absolutely: *"We strongly recommend you r
 Plan: 1 to add, 0 to change, 1 to destroy.
 ```
 
-Section 1's diagnostic line, arrived at by deleting three lines of configuration that appeared to be finished work. The reference qualifies it, and the qualification is the part that matters:
+Section 1's diagnostic line, reached by deleting a block that looked like completed work. The reference qualifies it, and the qualification is the part that matters:
 
 > "It can be safe to remove `moved` blocks when you are **maintaining private modules within an organization** and you are **certain that all users have successfully run `terraform apply`** with your new module version."
 
@@ -643,7 +643,7 @@ moved {
 
 > "Recording a sequence of moves in this way allows for successful upgrades for **both** configurations with objects at `aws_instance.a` **and** configurations with objects at `aws_instance.b`."
 
-A consumer arriving from the oldest address is not walked through the chain one release at a time. Measured on **v1.15.8**, with state holding `a` and both blocks present, the intermediate hop does not appear in the plan at all:
+A consumer arriving from the oldest address is not walked through the chain one release at a time. Measured on **v1.15.8** with the same two-block shape, buckets standing in for the instances, state holding `a` and configuration declaring `c`, the intermediate hop does not appear in the plan at all:
 
 ```text
   # aws_s3_bucket.a has moved to aws_s3_bucket.c
@@ -667,7 +667,7 @@ any other statements, and which typically also refers to an object still
 declared in the configuration.
 ```
 
-The last sentence of that error is the rule for maintaining a long chain: exactly one address in it is a destination and nothing else, and that address is the one your configuration declares today.
+`[*]` in that output is Terraform saying *every instance of this resource*, since neither statement named a key. The last sentence of the error is the rule for maintaining a long chain: exactly one address in it is a destination and nothing else, and that address is the one your configuration declares today.
 
 A module's `moved` blocks accumulate for the same reason a database's migrations do: each one covers consumers arriving from a different starting version. That is the migration half of the module-API story whose deprecation half was `deprecated` on variables and outputs in Chapter 14.
 
