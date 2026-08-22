@@ -23,6 +23,9 @@ import sys
 # Quotes grounded somewhere other than a fetched web page.
 # Key: a distinctive fragment. Value: where it comes from.
 ALLOWED_NON_WEB = {
+    "does not have any error situations itself": (
+        "Terraform v1.15.8 source, internal/refactoring/move_execute.go:26 (doc comment)"
+    ),
     "terraform acquires a state lock to protect": (
         "Terraform v1.15.8 source, internal/command/clistate/state.go:26 (CLI output)"
     ),

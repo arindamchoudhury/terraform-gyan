@@ -618,6 +618,32 @@ moved {
 
 > "Recording a sequence of moves in this way allows for successful upgrades for **both** configurations with objects at `aws_instance.a` **and** configurations with objects at `aws_instance.b`."
 
+A consumer arriving from the oldest address is not walked through the chain one release at a time. Measured on **v1.15.8**, with state holding `a` and both blocks present, the intermediate hop does not appear in the plan at all:
+
+```text
+  # aws_s3_bucket.a has moved to aws_s3_bucket.c
+Plan: 0 to add, 0 to change, 0 to destroy.
+```
+
+That collapse is deliberate. `ApplyMoves` in `internal/refactoring/move_execute.go` builds a graph of the move statements, where an edge means one statement chains from another, and walks it in topological order so an object can pass through *"potentially multiple moves each"* before the plan is computed. The same function documents the tolerance the earlier section relied on: it *"does not have any error situations itself, and will instead just ignore any unresolvable move statements."*
+
+Which is why the one arrangement it cannot accept is a chain with no end. Point two blocks at each other and validation stops the run before planning:
+
+```text
+Error: Cyclic dependency in move statements
+
+The following chained move statements form a cycle, and so there is no final
+location to move objects to:
+  - main.tf:10,1: aws_s3_bucket.e[*] → aws_s3_bucket.d[*]
+  - main.tf:5,1: aws_s3_bucket.d[*] → aws_s3_bucket.e[*]
+
+A chain of move statements must end with an address that doesn't appear in
+any other statements, and which typically also refers to an object still
+declared in the configuration.
+```
+
+The last sentence of that error is the rule for maintaining a long chain: exactly one address in it is a destination and nothing else, and that address is the one your configuration declares today.
+
 A module's `moved` blocks accumulate for the same reason a database's migrations do: each one covers consumers arriving from a different starting version. That is the migration half of the module-API story whose deprecation half was `deprecated` on variables and outputs in Chapter 14.
 
 !!! note "What `moved` cannot do"
