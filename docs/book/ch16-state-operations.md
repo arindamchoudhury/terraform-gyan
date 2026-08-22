@@ -1409,7 +1409,7 @@ Which side gets the surprise depends on which configuration you forgot to edit. 
 
 One thing the command does do for you: it writes a timestamped backup of **every state file it touches**, which `terraform state mv -help` promises and the lab confirms, one beside the source and one beside the destination when both already exist. Section 10 has the three state-writing paths that leave no backup at all, and this is not one of them.
 
-The rename form is worth seeing too, run from PowerShell 7.6.5 so the quoting is the form that works there:
+The rename form is worth seeing too, measured in `labs/chapter16/lab2` and run from PowerShell 7.6.5, so the quoting below is the form that works there:
 
 ```text
 $ terraform state mv 'aws_s3_bucket.archive["cold"]' 'aws_s3_bucket.archive["frozen"]'
