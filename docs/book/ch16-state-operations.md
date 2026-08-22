@@ -1188,8 +1188,6 @@ import {
 }
 ```
 
-Section 8 has the case that makes the alias matter, where a provider pointed at the wrong region reports a running object as deleted. Note which half of that case this fixes. If the region is simply wrong, the fix is to correct the provider configuration and nothing needs importing. The alias is for the other half: the object really does live in another region or account, and you want to adopt it there without moving the default provider to follow it.
-
 **A `module.` prefix** on `to`, so the destination `resource` block can live in a child module while the `import` block stays in the root.
 
 ### Leave the block in
