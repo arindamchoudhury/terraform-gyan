@@ -414,7 +414,16 @@ moved {
 
 The direction reads backwards to most people the first time. The rule that fixes it: **a `moved` block migrates state to match configuration, and configuration is the truth.** `to` must be an address that exists in your configuration right now. `from` must be an address that is gone from configuration but still present in state from the last apply.
 
-Flip them and you get the destroy-and-recreate you wrote the block to avoid, because `from = team_notes, to = notes` renames the state entry to an address nothing declares.
+Flip them and Terraform stops you, which is worth knowing because the usual warning about this is scarier than the behaviour. After a rename it is `to` that configuration declares, so a flipped block points `from` at the address you have just written. Measured on **v1.15.8**, with state holding `notes` and configuration declaring `team_notes`:
+
+```text
+Error: Moved object still exists
+
+This statement declares a move from aws_s3_bucket.team_notes, but that
+resource is still declared at main.tf:1,1.
+```
+
+That is the same error the next callout covers, arriving for the same reason: `from` must be an address configuration no longer declares. So the destroy-and-recreate this block exists to prevent comes from writing **no** block, not from writing one backwards.
 
 !!! warning "You never declare both resources at once"
     A tempting misreading is that the old and new `resource` blocks coexist during the transition, with `moved` linking them. Terraform rejects that before producing any plan:

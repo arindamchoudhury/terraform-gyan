@@ -558,7 +558,16 @@ removed {
     - **`to`** must be an address that **exists in your current config**. Here that's `random_password.main`, the resource you just declared.
     - **`from`** must be an address that is **gone from config** but still present in state from the last apply. Here that's the old name, `random_password.my_password`.
 
-    Flip them and you break it. `from = main, to = my_password` renames the state entry to an address nothing declares, so Terraform plans a destroy of `my_password` plus a create of `main`. That's the destroy/recreate you used the block to avoid.
+    Flip them and you break it, though **not the way the book implies**. Measured on **Terraform v1.15.8**: with state holding the old address and configuration declaring the new one, a flipped block points `from` at the address configuration *does* declare, so validation rejects it before any plan exists:
+
+    ```text
+    Error: Moved object still exists
+
+    This statement declares a move from aws_s3_bucket.team_notes, but that
+    resource is still declared at main.tf:1,1.
+    ```
+
+    The destroy-plus-create the book describes is what you get from writing **no** block at all. A backwards one is caught.
 
     The `removed` block follows the same convention: its `from` is likewise an address no longer in config.
 
