@@ -15,7 +15,7 @@ The second book on this site, alongside [Terraform in Depth](../tid/index.md). T
 | ✅ done | 4. How to Create Reusable Infrastructure with Terraform Modules | [Modules](../../topics/modules.md) |
 | ✅ done | 5. Terraform Tips and Tricks: Loops, If-Statements, Deployment, and Gotchas | [Meta-arguments](../../topics/meta-arguments-lifecycle.md) — (backlog: count-for_each, dynamic-blocks, for-expression-splat, refactoring) |
 | ✅ done | 6. Managing Secrets with Terraform | [Secrets and state](../../topics/secrets-and-state.md) |
-| ⬜ todo | 7. Working with Multiple Providers | — |
+| ✅ done | 7. Working with Multiple Providers | [Providers](../../topics/providers.md) |
 | ✅ done | 8. Production-Grade Terraform Code | [Modules](../../topics/modules.md) — (backlog: checks-and-conditions, provisioners-and-escape-hatches, module-versioning-and-registries) |
 | ⬜ todo | 9. How to Test Terraform Code | — |
 | ⬜ todo | 10. How to Use Terraform as a Team | — |

@@ -1,6 +1,6 @@
 # Providers
 
-> **Sources:** HCDocs "What is Terraform?" · HCDocs "Providers" ([[tf-providers]]) · Hafner, *Terraform in Depth* Ch1 §1.2.3–1.2.4, Ch2 §2.4 · Registry provider pages [[aws-provider]], [[google-provider]]
+> **Sources:** HCDocs "What is Terraform?" · HCDocs "Providers" ([[tf-providers]]) · Hafner, *Terraform in Depth* Ch1 §1.2.3–1.2.4, Ch2 §2.4 · Brikman, *Terraform: Up & Running* Ch7 · Registry provider pages [[aws-provider]], [[google-provider]]
 
 ## In one paragraph
 
@@ -12,6 +12,15 @@ A provider is the plugin layer that lets Terraform talk to a specific vendor's A
 - **Scale of the ecosystem** — HCDocs says "thousands of providers." TID gives a specific (book-vintage, 2025) figure: **3,280+ providers** in the registry — a number that will drift and shouldn't be treated as current without re-verifying.
 - **Provider ↔ vendor relationship** — TID-only detail: generally one-to-one (AWS → AWS provider), though some vendors ship multiple providers (Azure). Providers are written in Go and communicate over gRPC; authoring one requires no gRPC knowledge unless you're building a *custom* provider (deferred to TID Ch12).
 - **Declare vs. configure** (TID Ch2 §2.4) — the split HCDocs's intro glosses: `required_providers` (inside `terraform`) declares *what to install* + version constraint; the separate `provider` block *configures* it (auth + scoping). Provider blocks are **root-module only**. If you omit `required_providers`, Terraform *infers* the provider from the resource name prefix under the `hashicorp` namespace (`aws_instance` → `hashicorp/aws`) — convenient but discouraged, since you lose version pinning.
+- **`provider` singular, `providers` plural** (TUR Ch7) — the distinction that trips people up. A resource or data source takes `provider = aws.primary`, a single value, because it deploys into exactly one provider. A module takes `providers = { aws = aws.primary }`, a map, because it may hold resources using several. The map's keys are the local names *inside* the module, which is one of two reasons TUR argues every module should declare `required_providers` explicitly.
+- **No `provider` blocks in reusable modules** (TUR Ch7) — the strongest statement of the rule the reference pages imply. Three separate failures: **configuration** (a `provider` block inside a module means the module owns roughly 50 AWS provider settings, or exposes variables for them), **duplication** (callers combining several such modules copy-paste those settings into each), and **performance**, for which TUR supplies the only measured example anywhere in these notes.
+- **Aliases are a coupling decision, not a convenience** (TUR Ch7) — a module aliased into two regions **cannot plan or apply while either region is unreachable**, so the outage you built multiregion infrastructure to survive is exactly when the code stops working. Aliases fit where the infrastructure is genuinely inseparable: CloudFront with an ACM certificate that AWS requires in `us-east-1`, or GuardDuty, which AWS wants in every region you use.
+
+!!! quote "The cost of a provider block, measured (TUR Ch7)"
+    Each `provider` block is a **separate process** speaking RPC to core. Brikman built one reusable module each for CloudTrail, AWS Config, GuardDuty, IAM Access Analyzer and Macie, each carrying a `provider` block per AWS region (~25 at the time). One root module combining all five meant **125 provider blocks**: 125 processes, hundreds of API and RPC calls each, **20-minute plans**, a thrashing CPU, and an overloaded network stack producing intermittent API failures.
+
+    This is the concrete argument behind `configuration_aliases`, and it is also the case OpenTofu's provider `for_each` was built for.
+
 - **Aliases = multiple connections** (TID Ch2 §2.4.4) — like multiple SDK clients: one default `provider` block plus named `alias` blocks (`alias = "west"`), and data/resource blocks pick one via the `provider` meta argument. This is the Terraform-CLI equivalent of what OpenTofu generalizes further with [[ot-provider-for-each]].
 
 !!! danger "OpenTofu provider `for_each` — the provider's collection must outlive the resources'"
@@ -80,6 +89,7 @@ The one claim to distrust on that page is its statement that supplying `provider
 ## Where the sources differ
 
 - HCDocs treats providers as one bullet inside the broader "How does Terraform work?" section — brief, illustrative.
+- TUR comes at providers from the **operational** side and barely defines them: one page on core-versus-plugins, then forty on what goes wrong when one module spans two regions, two accounts or two platforms. It is the only source that argues *against* the features it is teaching.
 - TID gives providers their own subsection with an architecture diagram and draws the vendor/authentication distinction out explicitly (§1.2.4 "Vendors" is a separate subsection from §1.2.3 "Providers").
 
 ## When to read which
@@ -87,6 +97,7 @@ The one claim to distrust on that page is its statement that supplying `provider
 - Quick framing of what a provider is and why it matters? → HCDocs [[terraform-intro]] or [[terraform-use-cases]] (multi-cloud section).
 - Want the plugin architecture (gRPC, Go, one-to-one vendor mapping)? → TID Ch1 §1.2.3–1.2.4. For hands-on registry navigation, see learning-path **B5 — Providers & resources**.
 - Want to declare and configure a provider for real (`required_providers`, `source`, version constraint, `provider` block)? → [[tf-aws-create]].
+- Deciding whether a module *should* span two regions, accounts or clouds? → [TUR Ch7](../books/tur/chapters/07-multiple-providers.md), for the three warnings and the 125-provider story.
 
 ## Sources
 
@@ -96,6 +107,7 @@ The one claim to distrust on that page is its statement that supplying `provider
 - [`providers` reference](../sources/terraform-docs/tf-meta-providers.md) — the `providers` map's remap semantics, when it becomes mandatory, Stacks applicability
 - [TID Ch 1 — A brief overview of Terraform](../books/tid/chapters/01-brief-overview.md)
 - [TID Ch 2 — Terraform HCL components](../books/tid/chapters/02-hcl-components.md) §2.4 — declare/configure/alias mechanics
+- [TUR Ch 7 — Working with Multiple Providers](../books/tur/chapters/07-multiple-providers.md) — aliases, `assume_role` across accounts, `configuration_aliases`, and why reusable modules should hold no `provider` blocks
 - [Create infrastructure (AWS Get Started)](../sources/terraform-tutorials/tf-aws-create.md) — hands-on `required_providers` + `provider` block
 - [AWS Provider (Registry)](../sources/terraform-registry/aws-provider.md) — AWS auth precedence, `default_tags`, key arguments
 - [Google Cloud Provider (Registry)](../sources/terraform-registry/google-provider.md) — GCP ADC/impersonation auth, `project`/`region`/`zone`, quota-project routing

@@ -7,7 +7,7 @@ Cross-source notes synthesizing multiple sources on the same topic.
 
 - [IaC fundamentals](iac-fundamentals.md) — [[terraform-intro]], TID Ch1, TUR Ch1
 - [Core workflow (Write/Plan/Apply)](core-workflow.md) — [[terraform-intro]], TID Ch1 + Ch5, TUR Ch2
-- [Providers](providers.md) — [[terraform-intro]], TID Ch1 + Ch2
+- [Providers](providers.md) — [[terraform-intro]], TID Ch1 + Ch2, TUR Ch7, [[tf-provider-block]] + [[tf-meta-providers]] + [[tf-modules-providers]], [[ot-provider-for-each]]
 - [Modules](modules.md) — [[terraform-intro]], TID Ch2 §2.8 + Ch3, TUR Ch4 + Ch8, [[tf-aws-manage]]
 - [Meta-arguments and `lifecycle`](meta-arguments-lifecycle.md) — [[tf-meta-arguments]], TID Ch2 §2.7, TUR Ch2 (the `create_before_destroy` deadlock) + Ch5 (the reindex demo and the count-for-conditionals rule), [[tf-configure-resource]], [[ot-dynamic-prevent-destroy]], [[tf-style-guide]]
 - [The dependency graph](dependency-graph.md) — [[tf-cmd-graph]], [[tf-meta-depends-on]], TID Ch2 §2.2.5 + §2.7.3, TUR Ch2, [[tf-configure-resource]]; includes locally verified experiments

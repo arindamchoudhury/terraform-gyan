@@ -76,3 +76,17 @@ The tools **TUR Ch6** names, with what they are today. Versions checked 2026-08-
 | **AWS KMS pricing** | $1/month per customer managed key, $0.03 per 10,000 requests | https://aws.amazon.com/kms/pricing/ |
 | **GitHub OIDC in AWS** | Creating the IAM OIDC identity provider; thumbprints are now the fallback for IdPs outside AWS's trusted-CA library | https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html |
 | **EC2 instance metadata** | The IMDSv1 vs IMDSv2 request forms, and what a token-less GET returns when IMDSv2 is required | https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html |
+
+## Kubernetes & EKS with Terraform
+
+What **TUR Ch7** builds on, with current status. Versions checked 2026-08-21; details in [multi-provider facts](../research-cache/multi-provider-facts.md).
+
+| Tool / doc | What it is | URL |
+|---|---|---|
+| **Kubernetes provider** | Now on **3.x** (`v3.2.1`); 3.0.0 deprecated the unversioned resource names in favour of `_v1` | https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs |
+| **Kubernetes provider — exec plugins** | The documented way to feed short-lived cloud tokens (`aws eks get-token`); never mix with `token` | https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs#exec-plugins |
+| **EKS version lifecycle** | Standard/extended support lists, the release calendar, and the 14+12-month rule | https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html |
+| **`aws_eks_cluster`** | Access entries, EKS Auto Mode, `bootstrap_self_managed_addons`, `upgrade_policy` | https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_cluster |
+| **Stacks — declare providers** | Provider `for_each` in Stacks, and which providers support deferred changes | https://developer.hashicorp.com/terraform/language/stacks/component/declare-providers |
+| **Stacks — EKS deferred-changes tutorial** | Deploys a cluster and an app in one Stack; the official answer to TUR Ch7's ordering hack | https://developer.hashicorp.com/terraform/tutorials/cloud/stacks-eks-deferred |
+| **Multi-Cloud is the Worst Practice** | Corey Quinn, Last Week in AWS, 2020-08-05 — the footnote TUR Ch7 hangs its multicloud refusal on | https://www.lastweekinaws.com/blog/multi-cloud-is-the-worst-practice/ |
