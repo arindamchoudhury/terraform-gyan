@@ -535,7 +535,11 @@ The mapping from index to key is yours to decide and yours to get right. Terrafo
 
 ### Modules
 
-`moved` names addresses on both sides, and either side may reach into a child module. The block lives where the refactor is being made, which is usually the root, not where the resource lives:
+`moved` names addresses on both sides, and either side may reach into a child module. Where the block itself lives is not a matter of taste, and [Refactor modules](https://developer.hashicorp.com/terraform/language/modules/develop/refactoring) gives the rule:
+
+> "Terraform resolves module references in `moved` blocks relative to the **module instance they are defined in**. […] A module may only make `moved` statements about **its own objects and objects of its child modules**."
+
+So a block that pulls a root resource down into a child module belongs in the root, because the root is the only place that can name both ends of that move:
 
 ```hcl
 moved {
@@ -544,7 +548,7 @@ moved {
 }
 ```
 
-Renaming a whole module call moves everything beneath it with one block, index keys included:
+Renaming a whole module call moves everything beneath it with one block, and the docs are explicit that this covers every instance when the call uses `count` or `for_each`, *"without the need to specify each one separately"*:
 
 ```hcl
 moved {
@@ -552,6 +556,8 @@ moved {
   to   = module.learn_vpc
 }
 ```
+
+The exception is the direction that *adds* the meta-argument. Moving a resource **into** an instance of a module call that uses `count` or `for_each` requires you to say which instance: *"you must specify a specific instance key to use in order to match with the new location of the resource configuration"*, as in `to = module.new[2].aws_instance.example`.
 
 !!! warning "Renaming a module call requires a re-`init`"
     Modules are installed under a key derived from the **call name**, so the new name has nothing installed against it and the next plan refuses to start. Measured on **v1.15.8**, renaming a call whose source is a local directory:
