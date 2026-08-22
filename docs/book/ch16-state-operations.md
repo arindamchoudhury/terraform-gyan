@@ -681,6 +681,8 @@ Section 1's diagnostic line, reached by deleting a block that looked like comple
 
 The question is never "has enough time passed", it is **whose state still holds the old address**. A root module you alone apply is the easy case. A configuration applied across several workspaces needs all of them to have applied. A published module keeps its blocks forever, because you cannot know which version a consumer is upgrading from.
 
+Note what is *not* on that list: the backend. Moving from local state to `s3` or HCP Terraform does not retire a single `moved` block. A remote backend does remove one failure mode, the team where every engineer carries a private copy of `terraform.tfstate` and each copy needs its own apply. It leaves the cases that actually motivate the rule alone. Several workspaces are several state objects in the same bucket. Separate dev, staging and production root configurations are separate state objects sharing one module. A consumer of a published module keeps state wherever they like, and you never see it. The reference states the condition in terms of users and applies, not storage: *"certain that all users have successfully run `terraform apply`"*.
+
 Which is why the docs tell module authors to **chain** them rather than rewrite them:
 
 ```hcl
