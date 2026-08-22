@@ -1724,7 +1724,7 @@ Every lab's `destroy` is worth running deliberately rather than skipping, becaus
 ## Common pitfalls
 
 - **Writing a bare `removed` block when you meant to forget.** It destroys the object. `lifecycle { destroy = false }` is the whole operation, and the block's own documentation still opens by describing the safe behaviour as the default.
-- **Getting the `moved` direction backwards.** `to` is the address in your configuration now; `from` is the one that has gone. Reversed, you get the destroy you were avoiding.
+- **Getting the `moved` direction backwards.** `to` is the address in your configuration now; `from` is the one that has gone. Reversed, the plan does not run at all: `from` names something configuration still declares, and Terraform answers `Moved object still exists`.
 - **Declaring both resources during a `moved` migration.** Terraform rejects it. The rename is the edit to the existing block's label.
 - **Deleting `moved` blocks too early.** The question is whether any state anywhere still holds the old address, not how long ago the change was. Published modules keep theirs forever, and chain them.
 - **Importing with a minimal `resource` block.** Every argument you omit is silently the schema default. Measured here, that stripped two tags from a bucket on the very apply that adopted it.
