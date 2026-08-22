@@ -382,6 +382,8 @@ The third row is the dangerous one. A hard error tells you to fix the address, a
 
 `state show` adds a fourth voice: given `module.shards` it answers `Error parsing instance address: module.shards`, not the `No instance found for the given address!` it gives for a resource. Same refusal, different wording, in the same command.
 
+OpenTofu **1.12.5** answers all three the same way, measured on the same configuration, down to `Would have removed nothing.` and `No changes. No objects need to be destroyed.` Whatever the disagreement is, it is not a quirk of one distribution.
+
 The instance-key asymmetry also explains something the three refactoring blocks do that looks arbitrary until you know the rule:
 
 | Block | Instance keys in the address? |
