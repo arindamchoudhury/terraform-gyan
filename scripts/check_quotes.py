@@ -68,7 +68,11 @@ def looks_like_code(text):
 
 def norm(text):
     # Chapters often wrap a quotation in literal quote marks; sources do not.
-    text = re.sub(r"[`*“”‘’\"']", "", text)
+    # Underscores go too: markdown sources emphasise with _word_, and chapters
+    # re-emphasise the same word with ** ** or drop the emphasis entirely.
+    # Stripping them from both sides keeps snake_case identifiers comparable,
+    # since the same collapse applies to quote and source alike.
+    text = re.sub(r"[`*_“”‘’\"']", "", text)
     text = re.sub(r"\s+", " ", text)
     return text.lower().strip()
 

@@ -1681,7 +1681,7 @@ Two consequences to plan around. The two warnings Terraform prints say different
 !!! info "OpenTofu — `-exclude` is the inverse, and the two families never mix"
     OpenTofu **1.9** added `-exclude`, the deny-list form, and **1.10** added `-target-file` and `-exclude-file`. When one resource is broken and you want to apply everything else, enumerating every *other* resource with `-target` is far worse than one `-exclude`.
 
-    The two also close in opposite directions, which the 1.9 changelog states in one line: *"`-target` specifies the objects to include and skips everything not needed for the selected objects, `-exclude` instead specifies objects to skip. OpenTofu will exclude the selected objects **and everything that depends on them**."* So `-target` pulls in what the target needs, upstream, and `-exclude` pushes out what needs the excluded object, downstream. Between them they cover both halves of the edge that `-target` alone leaves stale.
+    The two also close in opposite directions, which the [1.9 changelog](https://github.com/opentofu/opentofu/blob/v1.9.0/CHANGELOG.md) states in one line: *"While `-target` specifies the objects to **include** and skips everything not needed for the selected objects, `-exclude` instead specifies objects to skip. OpenTofu will exclude the selected objects **and everything that depends on them**."* So `-target` pulls in what the target needs, upstream, and `-exclude` pushes out what needs the excluded object, downstream. Between them they cover both halves of the edge that `-target` alone leaves stale.
 
     Any target-side option combined with any exclude-side option **fails at argument parsing**, before planning begins:
 
