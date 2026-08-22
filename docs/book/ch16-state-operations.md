@@ -279,9 +279,12 @@ There are three tiers, and TID Ch 6 §6.5 puts them in the order you should reac
 
 Read the fallback column as an escape hatch, not as a parallel workflow. The two deprecated rows share one flaw: each writes state outside a plan anybody could have reviewed. They get there from opposite directions, though. `taint` deferred the action behind a state write; `refresh` writes state with no preview at all.
 
+!!! info "OpenTofu — the same blocks, and no `query` at all"
+    The version column is Terraform's. OpenTofu forked from Terraform 1.5, so it inherited the `moved` and `import` blocks and both have worked since its first release, **v1.6.0**. `removed` arrived in **OpenTofu 1.7.0** ([#1158](https://github.com/opentofu/opentofu/pull/1158)), the same number Terraform used. The bulk-adoption row has no OpenTofu counterpart: **1.12.5** carries no `query` command and no `list` block, so there the fallback column is the only route.
+
 ### Why configuration wins, three times over
 
-The docs make three different arguments for `moved` blocks over `terraform state mv`, on three different pages, and none of them mentions the other two. Together they are the whole case.
+The case for `moved` blocks over `terraform state mv` is never made in one place. Three docs pages each carry one piece of it, and no page repeats another's. Together they are the whole case.
 
 **The mechanism argument.** [The `moved` block reference](https://developer.hashicorp.com/terraform/language/block/moved) is the only page that says how the block actually works:
 
@@ -308,7 +311,7 @@ That third shape is also exactly why `terraform taint` was deprecated. It wrote 
 Deferred with a gap, or immediate with no review. Either way the state write escapes the plan, and putting it back inside one is what every preferred route in the left-hand column has in common. Most of them do it with a configuration block; two of them, `-refresh-only` and `-replace`, do it with a planning flag instead.
 
 !!! tip "The fourth argument, which is yours rather than HashiCorp's"
-    A `moved`, `removed` or `import` block goes through **plan**, so it arrives in a pull request, gets reviewed, and leaves a diff in the history. A CLI state operation leaves a line in someone's shell history and, at best, a `terraform.tfstate.1787302875.backup` file on the machine that ran it. At best, because three of these commands do not write a backup at all, which section 10 takes up. When a state operation goes wrong six months later, the configuration is the only artefact anyone can read.
+    A `moved`, `removed` or `import` block goes through **plan**, so it arrives in a pull request, gets reviewed, and leaves a diff in the history. A CLI state operation leaves a line in someone's shell history and, at best, a `terraform.tfstate.1787302875.backup` file on the machine that ran it. At best, because three state-writing paths leave no backup at all, which section 10 takes up. When a state operation goes wrong six months later, the configuration is the only artefact anyone can read.
 
 ---
 
