@@ -330,7 +330,9 @@ The sentence that governs everything else:
 Zero or more. An address is a **set**, and how big the set is depends on how much you left off.
 
 !!! warning "Omitting the index is not shorthand for “the first one”"
-    From the same page: *"Omitting an index when addressing a resource where `count > 1` means that the address **references all instances**."* The same holds one level up. `module.foo` is every resource in every instance of that module call, and `module.foo[0]` is the narrowing.
+    From the same page: *"Omitting an index when addressing a resource where `count > 1` means that the address **references all instances**."* The page states that rule for `count` only, and says nothing of the kind under `for_each`. The measured table below is a `for_each` resource, and it behaves the same way, so read the rule as being about instance keys rather than about `count`.
+
+    The same holds one level up. `module.foo` is every resource in every instance of that module call, and `module.foo[0]` is the narrowing.
 
     In a `terraform state list` that is a convenience. In a `terraform state rm` it is the difference between forgetting one object and forgetting six.
 
@@ -342,12 +344,12 @@ The address page admits it outright:
 
 There is one grammar and several parsers. Measured on **v1.15.8** against a state holding `aws_s3_bucket.shard["a"]` and `aws_s3_bucket.shard["b"]`:
 
-| Command given the bare `aws_s3_bucket.shard` | Result |
+| Operation given the bare `aws_s3_bucket.shard` | Result |
 |---|---|
 | `terraform state list aws_s3_bucket.shard` | filters to **both** instances |
 | `terraform state show aws_s3_bucket.shard` | **error** — `No instance found for the given address!` |
 | `terraform state rm aws_s3_bucket.shard` | **removes both**, no prompt |
-| `-target="aws_s3_bucket.shard"` | the whole set, and its dependency walk is per resource anyway |
+| `-target=aws_s3_bucket.shard` | the whole set — a targeted destroy plan reported `2 to destroy` — and its dependency walk is per resource anyway |
 
 ```text
 $ terraform state show aws_s3_bucket.shard
@@ -356,6 +358,15 @@ No instance found for the given address!
 This command requires that the address references one specific instance.
 To view the available instances, use "terraform state list". Please modify
 the address to reference a specific instance.
+```
+
+The command that refuses to guess is the one that only prints. The command that rewrites state accepts the same address and acts on everything it matches, without asking:
+
+```text
+$ terraform state rm aws_s3_bucket.shard
+Removed aws_s3_bucket.shard["a"]
+Removed aws_s3_bucket.shard["b"]
+Successfully removed 2 resource instance(s).
 ```
 
 That asymmetry also explains something the three refactoring blocks do that looks arbitrary until you know the rule:
@@ -369,7 +380,9 @@ That asymmetry also explains something the three refactoring blocks do that look
 Nothing in the grammar forbids `removed` from taking an instance key. `removed` declines to accept one. So a multi-instance resource can be **adopted per instance** and **rearranged per instance**, but only **forgotten wholesale**. Plan a staged migration into Terraform and you can go one instance at a time; plan a staged migration out and you cannot.
 
 !!! info "Two legacy rules that changed what an unchanged address means"
-    **Module indexes need v0.13+**, because before that a module could not have multiple instances. And **a bare resource spec has meant the root module only since v0.12**. Earlier versions matched the same type and name in *any* descendant module, so a pre-0.12 `terraform taint aws_instance.web` could reach inside a child module where today's identical command cannot.
+    **Module indexes need v0.13+**, because before that a module could not have multiple instances. And **a bare resource spec has meant the root module only since v0.12**. Earlier versions matched the same type and name in *any* descendant module, so a pre-0.12 `terraform state rm aws_instance.web` removed every `aws_instance.web` in the tree, children included, where today's identical command reaches only the root.
+
+    The mechanism is visible in the v0.11 source: `State.Remove` filtered through `StateFilter`, whose module test was a **prefix match** on the module path, and an address carrying no module path is a prefix of every path in the state. Commands with their own module flag were the exception rather than the rule. `terraform taint` took `-module`, defaulting to `root`, so its bare address never left the root module in the first place.
 
 ---
 
