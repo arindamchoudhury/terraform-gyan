@@ -90,3 +90,18 @@ What **TUR Ch7** builds on, with current status. Versions checked 2026-08-21; de
 | **Stacks — declare providers** | Provider `for_each` in Stacks, and which providers support deferred changes | https://developer.hashicorp.com/terraform/language/stacks/component/declare-providers |
 | **Stacks — EKS deferred-changes tutorial** | Deploys a cluster and an app in one Stack; the official answer to TUR Ch7's ordering hack | https://developer.hashicorp.com/terraform/tutorials/cloud/stacks-eks-deferred |
 | **Multi-Cloud is the Worst Practice** | Corey Quinn, Last Week in AWS, 2020-08-05 — the footnote TUR Ch7 hangs its multicloud refusal on | https://www.lastweekinaws.com/blog/multi-cloud-is-the-worst-practice/ |
+
+## Testing
+
+What **TUR Ch9** and **TID Ch9** build on. Status checked 2026-08-21; version detail in [terraform-testing](../research-cache/terraform-testing.md) and [terratest-facts](../research-cache/terratest-facts.md).
+
+| Tool / doc | What it is | URL |
+|---|---|---|
+| **`terraform test`** | The native framework TUR Ch9 predates: HCL `.tftest.hcl` files, `run` blocks, mocks. GA in 1.6.0 | https://developer.hashicorp.com/terraform/language/tests |
+| **Mocking in tests** | `mock_provider`, `override_resource`, `override_data` — apply-mode tests with no cloud account | https://developer.hashicorp.com/terraform/language/tests/mocking |
+| **Terratest** | The Go library the chapter teaches. Now **v1.0.1**, with v2 betas splitting it into 16 modules; bare `terraform.Apply`-style calls are deprecated in favour of `…Context` forms | https://github.com/gruntwork-io/terratest |
+| **cloud-nuke** | Gruntwork's sandbox cleaner; the `--older-than 48h` cron the chapter recommends | https://github.com/gruntwork-io/cloud-nuke |
+| **aws-nuke** | `rebuy-de/aws-nuke` is archived (2024-10-15); the maintained fork is ekristen's | https://github.com/ekristen/aws-nuke |
+| **Open Policy Agent** | The Rego policy engine behind the chapter's plan-testing example (`terraform show -json` → `opa eval`) | https://www.openpolicyagent.org/ |
+| **Goss** | YAML-defined server validation; the liveliest of the three server-testing tools the chapter compares | https://github.com/goss-org/goss |
+| **Chef InSpec** | Still Apache-2.0 at the source, but **5.0+ requires accepting the Chef EULA** and a license ID to run | https://github.com/inspec/inspec |

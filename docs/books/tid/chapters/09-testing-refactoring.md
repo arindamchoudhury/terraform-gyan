@@ -6,7 +6,7 @@
 >
 > 📌 **The testing framework has moved a long way since this was written, and one cited tool is dead.** Terraform **1.12** added **parallel test runs**, which undercuts the CI workaround in §9.4.6 (the book states the framework "only runs one test at a time"). **Mocks are 1.7 on Terraform but 1.8 on OpenTofu**, so the book's matrix comment is wrong for one engine. The `rebuy-de/aws-nuke` in Listing 9.5 is **archived** (use [`cloud-nuke`](https://github.com/gruntwork-io/cloud-nuke)). And the Copilot material (§9.3.7, §9.4.7) is a 2023 snapshot that has not aged. Each is flagged in place; versions in [[ci-quality-tooling-versions]] and [[version-facts]].
 
-> 🔗 **See also:** owns learning-path **A2** (testing Terraform) and feeds **I5** (authoring modules), **A3** (tests in CI) and **I4** (semver and breaking changes). Builds directly on [Ch7](07-code-quality-ci.md) (the makefile, `TF_ENGINE`, the CI matrix) and [Ch8](08-cd-deployment.md) (semver, OIDC for test credentials). Source-derived detail: [[terratest-facts]] and [[terraform-testing]]. Topic pages: `testing` on the [topics backlog](../../../topics/index.md), plus `refactoring`, which this chapter completes.
+> 🔗 **See also:** owns learning-path **A2** (testing Terraform) and feeds **I5** (authoring modules), **A3** (tests in CI) and **I4** (semver and breaking changes). Builds directly on [Ch7](07-code-quality-ci.md) (the makefile, `TF_ENGINE`, the CI matrix) and [Ch8](08-cd-deployment.md) (semver, OIDC for test credentials). Source-derived detail: [[terratest-facts]] and [[terraform-testing]]. Topic pages: [Testing](../../../topics/testing.md), which pairs this chapter with TUR Ch9, plus `refactoring` on the [topics backlog](../../../topics/index.md), which this chapter completes.
 
 ---
 

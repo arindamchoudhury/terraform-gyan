@@ -42,6 +42,7 @@ nav = [
         { "State" = "topics/state.md" },
         { "Workspaces" = "topics/workspaces.md" },
         { "Secrets & state" = "topics/secrets-and-state.md" },
+        { "Testing" = "topics/testing.md" },
     ]},
     { "Notes" = [
         { "All Notes" = "sources/index.md" },

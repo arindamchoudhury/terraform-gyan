@@ -17,7 +17,7 @@ The second book on this site, alongside [Terraform in Depth](../tid/index.md). T
 | ✅ done | 6. Managing Secrets with Terraform | [Secrets and state](../../topics/secrets-and-state.md) |
 | ✅ done | 7. Working with Multiple Providers | [Providers](../../topics/providers.md) |
 | ✅ done | 8. Production-Grade Terraform Code | [Modules](../../topics/modules.md) — (backlog: checks-and-conditions, provisioners-and-escape-hatches, module-versioning-and-registries) |
-| ⬜ todo | 9. How to Test Terraform Code | — |
+| ✅ done | 9. How to Test Terraform Code | [Testing](../../topics/testing.md) |
 | ⬜ todo | 10. How to Use Terraform as a Team | — |
 
 ## Conventions
