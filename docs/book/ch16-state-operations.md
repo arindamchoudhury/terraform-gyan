@@ -284,39 +284,28 @@ Read the fallback column as an escape hatch, not as a parallel workflow. The two
 
 ### Why configuration wins, three times over
 
-The ranking above is a preference until you know what is behind it. The case is never made in one place, and where the docs argue it at all they argue about a single block: `moved`, the rename case. Read the three arguments as being about the **route** rather than that one block. Each is a property of any state change you declare in configuration and apply through a plan, which is `import` and `removed` as much as `moved`.
+The ranking above is a preference until you know what is behind it. No docs page argues the case as a whole, and the pages that argue a piece of it do so while explaining one particular block or one particular command. Stated as properties of the **route** rather than of any syntax, there are three: **containment**, **distribution**, **atomicity**. Every entry in the preferred column has all three. No CLI state command has any.
 
-!!! note "`moved` in one sentence, because the arguments below quote its pages"
-    A `moved` block names two addresses: `from`, the one that has left configuration, and `to`, the one that replaced it. Section 4 has the syntax, the direction rule and the plan it produces, and nothing below needs more than that sentence.
+**Containment.** A state change written in configuration is proposed by a plan before it happens, so it is reviewed and approved in the same step that approves everything else in the run. The two deprecated commands in the table are the negative evidence, and they fail this from opposite directions. `terraform taint` deferred the real work: it wrote an interim state snapshot recording the intent, and the replacement happened on some later apply. `terraform refresh` did the opposite, writing state immediately with no preview at all. Terraform's [v0.15.4 changelog](https://github.com/hashicorp/terraform/blob/v0.15.4/CHANGELOG.md), which introduced `-refresh-only`, gives the reason for replacing it: the new planning mode "serves as a plannable replacement for `terraform refresh`", recommended "because it will provide an opportunity to review what Terraform detected before updating the Terraform state".
 
-**The mechanism argument.** [The `moved` block reference](https://developer.hashicorp.com/terraform/language/block/moved) is the only page that says how a block of this kind actually works:
+That sentence is about a planning flag rather than a block, which is the point. Containment is a property of the route, not of the syntax, and it is why `-refresh-only` and `-replace` sit in the preferred column alongside the blocks.
 
-> "**Before creating a new plan** for the resource specified in the `to` field, Terraform **checks the state** for an existing object at the address specified in the `from` field. Terraform **renames existing objects** to the string specified in the `to` field and **then creates a plan**. […] **As a result, Terraform does not destroy the resource during the Terraform run.**"
-
-The state change is part of the run Terraform plans, rather than a step you take beside it. Here it happens *before* the plan is computed, so by the time Terraform diffs configuration against state the new address already has an object bound to it and there is nothing to create. That is also why such a block is harmless to leave in configuration forever: an address that matches nothing in state has nothing to act on, and planning proceeds unchanged.
-
-The other blocks time the write differently — an `import` block binds the object during apply, and the plan announces it in advance as `# aws_s3_bucket.legacy will be imported` with its own counter, `1 to import`. What generalises is not the timing but the containment: the state change is described by the plan you reviewed and happens inside the run that plan authorised.
-
-**The audience argument**, from [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move):
+**Distribution**, from [Move Resources](https://developer.hashicorp.com/terraform/cli/state/move):
 
 > "**For most cases** we recommend using the Terraform language's **refactoring features** to document in your module exactly how the resource names have changed over time. Terraform reacts to this information automatically during planning, so **users of your module do not need to take any unusual extra steps**."
 
-A CLI state operation fixes your state. A block in the module fixes everyone's. You cannot ship a command to a hundred module consumers and expect all hundred to run it correctly against their own state. Note that the page says *refactoring features*, plural, and not `moved` specifically: the same reasoning is why a module author announces a removal with a `removed` block rather than telling consumers to run `terraform state rm`.
+A CLI state operation fixes your state. Configuration fixes everyone's, because it travels with the code and Terraform acts on it wherever the code is applied. You cannot ship a command to a hundred module consumers and expect all hundred to run it correctly against their own state. Note the plural in *refactoring features*: the recommendation is about the language's refactoring blocks as a family, not about any one of them.
 
-**The atomicity argument**, from the [`state mv` reference](https://developer.hashicorp.com/terraform/cli/commands/state/mv), and the sharpest of the three:
+**Atomicity**, from the [`state mv` reference](https://developer.hashicorp.com/terraform/cli/commands/state/mv), and the sharpest of the three:
 
 > "If you are using Terraform in a collaborative environment, you must ensure that when you are using `terraform state mv` for a code refactoring purpose you **communicate carefully with your coworkers** to ensure that nobody makes any other changes between your configuration change and your `terraform state mv` command, because otherwise they might inadvertently **create a plan that will destroy the old object and create a new object** at the new address."
 
-A CLI refactor is two operations with a gap between them, and during that gap the repository describes a change that state has not heard about. Anyone who plans in that window gets a correct-looking destroy. Nothing in that warning is specific to renaming, either: `terraform state rm` followed by a configuration edit, or an edit followed by `terraform import`, opens the same window in the same way. A block closes it by making the state change part of the same apply as the configuration change.
+A CLI refactor is two operations with a gap between them, and during that gap the repository describes a change that state has not heard about. Anyone who plans in that window gets a correct-looking destroy. Nothing in the warning is specific to renaming: `terraform state rm` followed by a configuration edit, or an edit followed by `terraform import`, opens the same window in the same way. Declaring the change instead closes it, because the state change and the configuration change arrive in the same apply.
 
-That third shape is also exactly why `terraform taint` was deprecated. It wrote an interim state snapshot to record the intent, and the replacement happened on a later apply, leaving the same window open in between.
-
-`terraform refresh` is deprecated for the mirror-image reason. It leaves no window at all, because it writes state immediately with no preview. Terraform's [v0.15.4 changelog](https://github.com/hashicorp/terraform/blob/v0.15.4/CHANGELOG.md), which introduced `-refresh-only`, says so directly: the new planning mode "serves as a plannable replacement for `terraform refresh`", recommended "because it will provide an opportunity to review what Terraform detected before updating the Terraform state".
-
-Deferred with a gap, or immediate with no review. Either way the state write escapes the plan, and putting it back inside one is what every preferred route in the left-hand column has in common. Most of them do it with a configuration block; two of them, `-refresh-only` and `-replace`, do it with a planning flag instead.
+Containment, distribution, atomicity. Sections 4 to 6 take the blocks one at a time, and each one is an instance of this argument rather than a new argument of its own.
 
 !!! tip "The fourth argument, which is yours rather than HashiCorp's"
-    A `moved`, `removed` or `import` block goes through **plan**, so it arrives in a pull request, gets reviewed, and leaves a diff in the history. A CLI state operation leaves a line in someone's shell history and, at best, a `terraform.tfstate.1787302875.backup` file on the machine that ran it. At best, because three state-writing paths leave no backup at all, which section 10 takes up. When a state operation goes wrong six months later, the configuration is the only artefact anyone can read.
+    A state change declared in configuration goes through **plan**, so it arrives in a pull request, gets reviewed, and leaves a diff in the history. A CLI state operation leaves a line in someone's shell history and, at best, a `terraform.tfstate.1787302875.backup` file on the machine that ran it. At best, because three state-writing paths leave no backup at all, which section 10 takes up. When a state operation goes wrong six months later, the configuration is the only artefact anyone can read.
 
 ---
 
@@ -429,6 +418,14 @@ Plan: 0 to add, 0 to change, 0 to destroy.
 ```
 
 `has moved to`, and **no action symbol** in front of the resource line. That is what a pure move looks like: a plan that proposes no infrastructure action at all. Applying it reports `Apply complete! Resources: 0 added, 0 changed, 0 destroyed`, and `terraform state list` shows the new address.
+
+[The `moved` block reference](https://developer.hashicorp.com/terraform/language/block/moved) is the only page that says why that plan can be empty:
+
+> "**Before creating a new plan** for the resource specified in the `to` field, Terraform **checks the state** for an existing object at the address specified in the `from` field. Terraform **renames existing objects** to the string specified in the `to` field and **then creates a plan**. […] **As a result, Terraform does not destroy the resource during the Terraform run.**"
+
+The rename happens *before* the plan is computed. By the time Terraform diffs configuration against state, the new address already has an object bound to it, so there is nothing to create and nothing orphaned to destroy. This is section 2's containment argument in its concrete form: the state change is not a step you take beside the run, it is part of the run the plan describes.
+
+It also means a `from` that matches nothing in state has nothing to rename, and planning proceeds unchanged. Leaving the block in place costs nothing, which turns retention into a question about other people's state rather than about risk to your own.
 
 ### `count` to `for_each`, the migration everyone needs
 
