@@ -402,7 +402,7 @@ All four rows behave identically under **OpenTofu 1.12.5**, measured on the same
 
 #### The module half disagrees harder
 
-A bare module path behaves as the reference describes. Measured on **v1.15.8** against a state holding two instances of `module.shards`, each containing two buckets: `state list module.shards` returns all four, `state list 'module.shards[0]'` narrows to the two in that instance, and a targeted destroy plan on `module.shards` reports `4 to destroy`.
+A bare module path behaves as the reference describes. Measured on **v1.15.8** in `labs/chapter16/section3`, whose root configuration calls one module twice with `count` and another once, against a state holding two instances of `module.shards`, each containing two buckets: `state list module.shards` returns all four, `state list 'module.shards[0]'` narrows to the two in that instance, and a targeted destroy plan on `module.shards` reports `4 to destroy`.
 
 Put a resource spec after an **un-indexed** multi-instance module path, though, and the index stops being optional. Three parsers, one address, three answers:
 
@@ -422,7 +422,7 @@ The third row is the dangerous one. A hard error tells you to fix the address, a
 
 **OpenTofu 1.12.5** answers all three the same way, measured on the same configuration, down to `Would have removed nothing.` and `No changes. No objects need to be destroyed.` Whatever the disagreement is, it is not a quirk of one distribution.
 
-The three refactoring blocks parse that same grammar, and each imposes its own rule on top of it. The rules look arbitrary side by side, and each one is checkable:
+The three refactoring blocks parse that same grammar, and each imposes its own rule on top of it. The rules look arbitrary side by side, and each one is checkable, in `labs/chapter16/section3/import-bare`, in the same directory's `moved-bare`, and in `lab3/keytest.tf` for the third:
 
 | Block | Instance key in the address | Measured on **v1.15.8** |
 |---|---|---|
