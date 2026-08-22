@@ -17,7 +17,7 @@ directories.
 | `lab1/` | `import` a bucket created out of band, with and without `-generate-config-out` | `imports.tf` + a pruned `bucket.tf` |
 | `lab2/` | `moved`: a rename, then a `count` → `for_each` migration; also the deletion-versus-rename diff quoted in section 1. `main.tf.before` is the state to apply first, and its header carries the copy-apply-copy-plan sequence | three `moved` blocks, empty plan |
 | `lab3/` | `removed` with and without `destroy = false`, then re-import | `main.tf` + `keytest.tf` |
-| `section7/` | what `state pull` does to an older state file's header | no emulator, no init |
+| `section7/` | `pull-upgrade/` for what `state pull` does to an older state file's header, and `cross-state/` for the legacy `state mv` across two state files | one needs no emulator; the other applies two buckets |
 | `section6/` | the `import` case lab1 cannot hold: an `id` that only resolves after apply | plan-only, nothing to clean up |
 | `section5/` | three `removed` cases lab3 cannot hold: `from` given an instance key, a reference left dangling, and OpenTofu's bare block, which forgets where Terraform's destroys | two validate-only, one `TF_CMD=tofu` |
 | `lab4/source`, `lab4/dest` | splitting one configuration into two with `removed` + `import`. `source/main.tf.before` is the pre-split configuration | empty plan on both sides |

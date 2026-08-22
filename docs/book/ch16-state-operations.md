@@ -1389,7 +1389,27 @@ terraform state mv -state-out=../terraform.tfstate aws_instance.example_new aws_
 
     That is section 1's diagnostic line again, produced this time by an operation whose entire purpose was to preserve the object. The fix is manual: paste the `resource` block into the destination configuration, then the next plan is empty.
 
-Reproduced in `labs/chapter16/lab2` within a single state file, which is enough to show the shape. Measured on **v1.15.8**, and run from PowerShell 7.6.5 so the quoting below is the form that works there:
+Measured on **v1.15.8** in `labs/chapter16/section7/cross-state`, two directories with their own state files and a bucket handed from one to the other:
+
+```text
+$ terraform state mv -state terraform.tfstate -state-out ../dst/terraform.tfstate     aws_s3_bucket.moves aws_s3_bucket.moves
+Move "aws_s3_bucket.moves" to "aws_s3_bucket.moves"
+Successfully moved 1 object(s).
+```
+
+The object arrives: a plan in `dst` reports `No changes`. The bill arrives in the directory you moved it *out* of, because its `resource` block is still there and its state entry is not:
+
+```text
+$ terraform plan     # in src, configuration untouched
+  # aws_s3_bucket.moves will be created
+Plan: 1 to add, 0 to change, 0 to destroy.
+```
+
+Which side gets the surprise depends on which configuration you forgot to edit. Leave the block in the source and it offers to build a second bucket; leave it out of the destination and you get the destroy from section 1 instead. Both are the same fact stated from opposite ends.
+
+One thing the command does do for you: it writes a timestamped backup of **every state file it touches**, which `terraform state mv -help` promises and the lab confirms, one beside the source and one beside the destination when both already exist. Section 10 has the three state-writing paths that leave no backup at all, and this is not one of them.
+
+The rename form is worth seeing too, run from PowerShell 7.6.5 so the quoting is the form that works there:
 
 ```text
 $ terraform state mv 'aws_s3_bucket.archive["cold"]' 'aws_s3_bucket.archive["frozen"]'
