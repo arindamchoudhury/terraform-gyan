@@ -47,3 +47,33 @@ not about module paths in general.
 
 `state rm -dry-run` is used throughout rather than `state rm`, so the state
 survives the walkthrough. Finish with `tflocal destroy`.
+
+## The block address rules
+
+Two more configurations, each measuring what one refactoring block does with an
+address that has no instance key. Both were run on **Terraform 1.15.8**.
+
+`import-bare/` is a failing plan. The `to` argument must name an instance when
+the target resource uses `count` or `for_each`:
+
+```text
+Error: Invalid import 'to' expression
+
+  on main.tf line 7, in import:
+   7:   to = aws_s3_bucket.shard
+
+The target resource is using for_each.
+```
+
+`moved-bare/` is the opposite. Apply it once with the resource named `old` and
+no `moved` block, then rename the resource to `new` and add the block the file
+carries. Both instances move, keys intact, with nothing else in the plan:
+
+```text
+  # aws_s3_bucket.old["a"] has moved to aws_s3_bucket.new["a"]
+  # aws_s3_bucket.old["b"] has moved to aws_s3_bucket.new["b"]
+Plan: 0 to add, 0 to change, 0 to destroy.
+```
+
+The third block, `removed`, rejects an instance key outright, and that
+measurement lives in `../lab3/keytest.tf` where section 5 uses it.

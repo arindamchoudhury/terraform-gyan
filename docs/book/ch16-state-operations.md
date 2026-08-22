@@ -311,7 +311,7 @@ Containment, distribution, atomicity. Sections 4 to 6 take the blocks one at a t
 
 ## 3. Resource addressing: one grammar, several parsers
 
-Every operation in this chapter takes an address. They all parse the same grammar and they do not agree about what an incomplete one means, so it is worth ten minutes before the rest of the chapter.
+Nearly every operation in this chapter takes an address, the exceptions being the ones whose unit is a whole state file or a whole provider: `state pull`, `state push`, `refresh`, and `replace-provider`, which section 10 returns to. The rest parse the same grammar and do not agree about what an incomplete address means, so it is worth ten minutes before the rest of the chapter.
 
 [The address reference](https://developer.hashicorp.com/terraform/cli/state/resource-addressing) defines it in two halves:
 
@@ -386,13 +386,13 @@ OpenTofu **1.12.5** answers all three the same way, measured on the same configu
 
 The instance-key asymmetry also explains something the three refactoring blocks do that looks arbitrary until you know the rule:
 
-| Block | Instance keys in the address? |
-|---|---|
-| **`import`** — `to` | **Yes**, and both forms were measured: `aws_instance.example[0]` for `count`, `aws_instance.example["env"]` for `for_each` |
-| **`moved`** — `from` / `to` | **Yes, on either side**, and mixing an index with a key is exactly how a `count` → `for_each` migration is written |
-| **`removed`** — `from` | **No.** Rejected outright |
+| Block | Instance key in the address | Measured on **v1.15.8** |
+|---|---|---|
+| **`import`** — `to` | **Required**, once the target uses `count` or `for_each` | `[0]` and `["env"]` both import cleanly; a bare address fails the plan with `Invalid import 'to' expression` and `The target resource is using for_each`, or `using count` |
+| **`moved`** — `from` / `to` | **Optional, on either side** | bare on both sides moves every instance and keeps its key, `0 to add, 0 to change, 0 to destroy`; a key on one side switches to instance mode, which is how a `count` → `for_each` migration is written |
+| **`removed`** — `from` | **Forbidden** | `Resource address must be a resource … not a resource instance`, in section 5 |
 
-Nothing in the grammar forbids `removed` from taking an instance key. `removed` declines to accept one. So a multi-instance resource can be **adopted per instance** and **rearranged per instance**, but only **forgotten wholesale**. Plan a staged migration into Terraform and you can go one instance at a time; plan a staged migration out and you cannot.
+One grammar, three rules: required, optional, forbidden. Nothing in the grammar forbids `removed` from taking an instance key, and nothing in it demands one of `import`. Each block decides for itself, and the consequence is asymmetric. A multi-instance resource can be **adopted per instance** and **rearranged per instance**, but only **forgotten wholesale**. Plan a staged migration into Terraform and you can go one instance at a time; plan a staged migration out and you cannot.
 
 !!! info "Two legacy rules that changed what an unchanged address means"
     **Module indexes need v0.13+**, because before that a module could not have multiple instances. And **a bare resource spec has meant the root module only since v0.12**. Earlier versions matched the same type and name in *any* descendant module, so a pre-0.12 `terraform state rm aws_instance.web` removed every `aws_instance.web` in the tree, children included, where today's identical command reaches only the root.
