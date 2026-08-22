@@ -988,7 +988,7 @@ What each accepts is settled by the [block reference](https://developer.hashicor
 
 This is the part that bites, and it bites in both directions.
 
-For the lab a bucket was created outside Terraform with two tags and versioning enabled, then adopted with a **minimal** resource block naming only `bucket`. Measured on **v1.15.8** with AWS provider **v6.61.0**:
+In `labs/chapter16/lab1` a bucket is created outside Terraform with two tags and versioning enabled, then adopted with a **minimal** resource block naming only `bucket`. Measured on **v1.15.8** with AWS provider **v6.61.0**:
 
 ```text
   # aws_s3_bucket.legacy will be updated in-place
@@ -1041,7 +1041,7 @@ Apply complete! Resources: 1 imported, 0 added, 0 changed, 0 destroyed.
 
 ### Generating a draft
 
-Write only the `import` block, leave the `resource` block out, and `terraform plan -generate-config-out=FILE` writes a first draft. Measured:
+Write only the `import` block, leave the `resource` block out, and `terraform plan -generate-config-out=FILE` writes a first draft. Measured in the same `lab1`, whose `imports.tf` is exactly that and nothing else:
 
 ```text
 $ terraform plan -generate-config-out=generated.tf
@@ -1119,7 +1119,7 @@ It is a draft, not an answer. `force_destroy`, `object_lock_enabled` and `region
 
 Three things the `import` block accepts that the tutorials never show.
 
-**`for_each`** (Terraform and OpenTofu **1.7**) adopts an estate from one block. Measured in the lab, re-adopting two buckets after a `state rm`:
+**`for_each`** (Terraform **1.7**, and OpenTofu **1.7.0** by way of [#1492](https://github.com/opentofu/opentofu/pull/1492)) adopts an estate from one block. Measured in `labs/chapter16/lab3`, whose `keytest.tf` re-adopts two buckets after a `state rm`:
 
 ```hcl
 resource "aws_s3_bucket" "shard" {
@@ -1161,7 +1161,7 @@ $ terraform plan     # after the import has been applied
 No changes. Your infrastructure matches the configuration.
 ```
 
-Measured: the second plan does not even print a `Preparing import...` line.
+Measured: the second plan does not even print a `Preparing import...` line. [Import a single resource](https://developer.hashicorp.com/terraform/language/import/single-resource) says why:
 
 > "Because the import block is **idempotent**, applying an import action and running another plan does not generate another import action as long as that resource remains in your state. Furthermore, attempting to import a resource into the same address more than once **has no impact**."
 
@@ -1200,7 +1200,7 @@ Two labels like a `resource` block, for the type queried and a local name. `prov
 On HCP Terraform there is one more payoff: *"HCP Terraform uses resource identities to determine when resources are managed by another workspace."* That is the guard against a bulk import quietly adopting something another team already owns, which is Chapter 9's one-to-one mapping broken in the least visible way possible, two states over one object with neither aware.
 
 !!! warning "Take syntax from the workflow pages, not the block references"
-    The `import` and `list` block reference pages carry six and seven defects respectively: examples that do not parse, `count` written inside a `config` block, an Azure resource declared with `provider = aws`, summary boxes contradicting their own prose. The argument tables and behavioural sentences are authoritative; the samples are unproofread.
+    The [`import` block reference](https://developer.hashicorp.com/terraform/language/block/import) and the [`list` block reference](https://developer.hashicorp.com/terraform/language/block/list) carry six and seven defects respectively, counted page by page. Among them: examples that do not parse, `count` written inside a `config` block, an Azure resource declared with `provider = aws`, `for_each` declared twice in one block, and Summary boxes contradicting their own prose. The argument tables and behavioural sentences are authoritative; the samples are unproofread.
 
 ### What adopting commits you to
 
