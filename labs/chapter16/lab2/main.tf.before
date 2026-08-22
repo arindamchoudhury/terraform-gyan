@@ -1,0 +1,21 @@
+# The state section 4 starts from: a bucket named `notes`, and an `archive`
+# resource still using `count`.
+#
+#   cp main.tf main.tf.after      # keep the migrated config
+#   cp main.tf.before main.tf     # go back to the starting point
+#   tflocal apply -auto-approve
+#   cp main.tf.after main.tf      # the rename, the for_each, the moved blocks
+#   tflocal plan                  # 0 to add, 0 to change, 0 to destroy
+#
+# The committed main.tf is the end state: `notes` renamed to `team_notes`,
+# `archive` migrated from `count` to `for_each`, and the three `moved` blocks
+# that make both changes free. Delete the blocks and re-plan to see what they
+# were buying.
+resource "aws_s3_bucket" "notes" {
+  bucket = "ch16-moved-notes"
+}
+
+resource "aws_s3_bucket" "archive" {
+  count  = 2
+  bucket = "ch16-moved-archive-${count.index}"
+}

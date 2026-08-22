@@ -455,8 +455,8 @@ Quoting them is the first mistake, and Terraform's answer says more than it look
 ```text
 Error: Invalid expression
 
-  on main.tf line 6, in moved:
-   6:   from = "aws_s3_bucket.a"
+  on main.tf line 17, in moved:
+  17:   from = "aws_s3_bucket.a"
 
 A single static variable reference is required: only attribute access and
 indexing with constant keys. No calculations, function calls, template
@@ -498,7 +498,33 @@ That is the same error the next callout covers, arriving for the same reason: `f
 
 ### What a clean move looks like
 
-Add the block to the renamed configuration from section 1 and re-plan. Measured on **v1.15.8**:
+Follow along from `labs/chapter16/lab2`, which ships both ends of the edit:
+
+```shell
+cp main.tf main.tf.after          # the migrated configuration, committed
+cp main.tf.before main.tf         # the state this section starts from
+tflocal apply -auto-approve       # a bucket named notes, plus an archive pair under count
+```
+
+Now put the migrated configuration back. For the rename, the whole of it is a new label and a block naming the old one:
+
+```hcl
+resource "aws_s3_bucket" "team_notes" {
+  bucket = "ch16-moved-notes"
+}
+
+moved {
+  from = aws_s3_bucket.notes
+  to   = aws_s3_bucket.team_notes
+}
+```
+
+```shell
+cp main.tf.after main.tf
+tflocal plan                      # no apply needed to see the answer
+```
+
+Measured on **v1.15.8**, and excerpted, because that file also migrates `archive` from `count` to `for_each` in the same commit, so the real plan carries three `has moved to` lines rather than one:
 
 ```text
 Terraform will perform the following actions:
@@ -620,8 +646,8 @@ The exception is the direction that *adds* the meta-argument. Moving a resource 
     ```text
     Error: Module not installed
 
-      on main.tf line 1:
-       1: module "only" {
+      on main.tf line 15:
+      15: module "only" {
 
     This module is not yet installed. Run "terraform init" to install all modules
     required by this configuration.
