@@ -974,13 +974,13 @@ resource "aws_s3_bucket" "legacy" {
 
 ### `id` is provider-specific, and `identity` exists for a reason
 
-There is no general rule for `id`. A Docker container wants a full SHA256, an S3 bucket wants its name, an IAM role wants its name rather than its ARN, and an `aws_security_group_rule` wants the five-field composite `sg-04c74100cc8b9fc8c_ingress_tcp_8080_8080_0.0.0.0/0`, which the provider assembles itself and nothing about the resource block hints at. Every import page says the same thing: ask the provider's documentation.
+There is no general rule for `id`. A Docker container wants a full SHA256, an S3 bucket wants its name, an IAM role wants its name rather than its ARN, and an `aws_security_group_rule` wants the five-field composite `sg-04c74100cc8b9fc8c_ingress_tcp_8080_8080_0.0.0.0/0`, which the provider assembles itself and nothing about the resource block hints at. The composite comes from HashiCorp's own [drift tutorial](https://developer.hashicorp.com/terraform/tutorials/state/resource-drift), which imports a rule with it. Every page in the import tree ends at the same instruction: ask the provider's documentation.
 
 Terraform **1.12** added an alternative, `identity`, mutually exclusive with `id`. [The import overview](https://developer.hashicorp.com/terraform/language/import) explains why it is not a stylistic choice:
 
 > "Terraform uniquely identifies resources according to **either the ID assigned by the cloud provider or a collection of specific attributes defined by the provider**."
 
-Its own example is the argument. An AWS `s3_bucket` identity is three attributes — `account_id`, `bucket`, `region` — because a bucket name is not unique on its own, and the same name in another account or region is a different object. An `aws_instance` ID already is globally unique, so `id` suffices there. Structured identity exists for objects whose identity is genuinely compound.
+Its own example is the argument. An AWS `s3_bucket` identity is three attributes, `account_id`, `bucket` and `region`, because a bucket name is not unique on its own and the same name in another account or region is a different object. An `aws_instance` ID already is globally unique, so `id` suffices there. Structured identity exists for objects whose identity is genuinely compound.
 
 What each accepts is settled by the [block reference](https://developer.hashicorp.com/terraform/language/block/import). `id` takes *"a string or an expression that evaluates to a string"* whose value must be **known during the plan operation**, so a variable, a local or `each.value` are all legal and another managed resource's attribute is not, because that is `(known after apply)`. `identity` is an object of key-value pairs rather than a string.
 
@@ -1169,7 +1169,7 @@ Terraform records that it *imported* the resource and did not create it, so the 
 
 ### Bulk adoption: `list` blocks and `terraform query`
 
-Every tutorial in this space does discovery by hand, with `docker inspect --format="{{.ID}}"` or `aws ec2 create-security-group` followed by `echo $SG_ID`. Terraform **1.14** replaced that step with a query language, and no HashiCorp tutorial covers it.
+Every tutorial in this space does discovery by hand, with `docker inspect --format="{{.ID}}"` or `aws ec2 create-security-group` followed by `echo $SG_ID`. Terraform **1.14** replaced that step with a query language, and nothing in HashiCorp's State tutorial collection uses it.
 
 ```hcl
 # queries.tfquery.hcl
