@@ -420,11 +420,19 @@ Flip them and you get the destroy-and-recreate you wrote the block to avoid, bec
     A tempting misreading is that the old and new `resource` blocks coexist during the transition, with `moved` linking them. Terraform rejects that before producing any plan:
 
     ```text
-    Moved object still exists: This statement declares a move from test.single,
-    but that resource is still declared at ....tf:27,1.
+    Error: Moved object still exists
+
+      on both.tf line 9:
+       9: moved {
+
+    This statement declares a move from aws_s3_bucket.single, but that resource
+    is still declared at both.tf:1,1.
+
+    Change your configuration so that this resource will be declared as
+    aws_s3_bucket.other instead.
     ```
 
-    The rename **is** the edit to the existing block's label. There is no stage where both addresses are declared.
+    Measured on **v1.15.8**. The rename **is** the edit to the existing block's label. There is no stage where both addresses are declared, and the error names the edit it wants.
 
 ### What a clean move looks like
 
@@ -457,9 +465,9 @@ It also means a `from` that matches nothing in state has nothing to rename, and 
 
 ### `count` to `for_each`, the migration everyone needs
 
-Chapter 10 recommended `for_each` over `count` for named things and showed what `count`'s reindexing does when you delete an element. What it did not show is how to *get* from one to the other on a resource that already exists.
+Chapter 10 recommended `for_each` over `count` for named things, measured what `count`'s reindexing costs when you delete an element, and closed with a lab that migrates a `count` set to `for_each` and gets an empty plan. This section is the rule behind that lab: what the blocks are doing, and which part of the mapping is yours rather than Terraform's.
 
-Without help, you cannot. Measured on the same lab: two buckets created under `count`, then converted to `for_each` with the bucket names left identical and the keys changed from positions to names.
+Start with what happens without them. Measured on this chapter's lab: two buckets created under `count`, then converted to `for_each` with the bucket names left identical and the keys changed from positions to names.
 
 ```text
   # aws_s3_bucket.archive[0] will be destroyed
@@ -524,13 +532,27 @@ moved {
 ```
 
 !!! warning "Renaming a module call requires a re-`init`"
-    The install key changes with the name, so Terraform re-downloads the module under the new key and the working directory is stale until you run `terraform init` again. Renaming is not a plan-only operation, which surprises people who expect a `moved` block to be pure bookkeeping.
+    Modules are installed under a key derived from the **call name**, so the new name has nothing installed against it and the next plan refuses to start. Measured on **v1.15.8**, renaming a call whose source is a local directory:
+
+    ```text
+    Error: Module not installed
+
+      on main.tf line 1:
+       1: module "only" {
+
+    This module is not yet installed. Run "terraform init" to install all modules
+    required by this configuration.
+    ```
+
+    `.terraform/modules/modules.json` is where that key lives, still reading `{"Key":"solo","Source":"./mod","Dir":"mod"}` after the rename. Nothing is downloaded in this case, so the requirement is not about fetching a remote module: the `init` is needed even when the source is a directory next door. The tutorial says as much in passing, *"Run `terraform init` to update your VPC module's name."* Re-run it and the move is clean, both resources reporting `has moved to` with `0 to add, 0 to change, 0 to destroy`.
 
 ### A zero-destroy plan is not a zero-impact plan
 
 The most useful thing in HashiCorp's [Use configuration to move resources](https://developer.hashicorp.com/terraform/tutorials/modules/move-config) tutorial is that its worked example does *not* come out empty. Four resources are moved and the plan reports `0 to add, 3 to change, 0 to destroy`, because the exercise swaps a hand-written security-group module for a registry one at the same time. The tutorial's explanation:
 
-> "The security group and its rules were updated in-place when they moved because the new module includes default values for some attributes that the old module did not."
+> "The security group and its rules were updated **in-pace** when they moved because the new module includes default values for some attributes that the old module did not."
+
+The misspelling is the tutorial's, quoted as written.
 
 **`moved` preserves identity, not configuration.** Extracting your own code into your own module is normally a clean move. Swapping a homegrown module for a registry module is a move *and* a configuration change, and both arrive in the same apply. Read the `~` lines, not just the destroy count.
 
