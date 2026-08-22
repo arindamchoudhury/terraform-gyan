@@ -67,8 +67,8 @@ the target resource uses `count` or `for_each`:
 ```text
 Error: Invalid import 'to' expression
 
-  on main.tf line 7, in import:
-   7:   to = aws_s3_bucket.shard
+  on main.tf line 15, in import:
+  15:   to = aws_s3_bucket.shard
 
 The target resource is using for_each.
 ```
