@@ -1628,6 +1628,16 @@ $ terraform plan -replace=aws_s3_bucket.site
 
 `taint` had to write state to record the intent, and the next apply acted on the mark. Two operations with a gap between them, which is the same flaw as the `state mv` race in section 2.
 
+The state write is visible in the file. Measured on **v1.15.8** in `labs/chapter16/section9/tainted-field`, the instance object gains one key and the serial moves, twice:
+
+| | instance keys | `serial` |
+|---|---|---|
+| after apply | `attributes`, `identity`, `identity_schema_version`, `private`, `schema_version`, `sensitive_attributes` | 1 |
+| after `taint` | the same, plus `status` | 2 |
+| after `untaint` | back to the first list | 3 |
+
+`status` holds the string `tainted`, which is section 1's field table met in the field. Two state writes to schedule and unschedule a replacement that `-replace` expresses as a planning flag, writing nothing until you apply.
+
 But **tainted is not only a command**. It is a **state field Terraform sets on its own** when it can infer that an object was left half-built, which the [`untaint` reference](https://developer.hashicorp.com/terraform/cli/commands/untaint) is the page that says out loud:
 
 > "Terraform automatically marks an object as 'tainted' if an error occurs during a **multi-step 'create' action**, because Terraform can't be sure that the object was left in a fully-functional state."

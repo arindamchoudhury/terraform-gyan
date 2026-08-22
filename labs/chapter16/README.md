@@ -17,7 +17,7 @@ directories.
 | `lab1/` | `import` a bucket created out of band, with and without `-generate-config-out` | `imports.tf` + a pruned `bucket.tf` |
 | `lab2/` | `moved`: a rename, then a `count` → `for_each` migration; also the deletion-versus-rename diff quoted in section 1. `main.tf.before` is the state to apply first, and its header carries the copy-apply-copy-plan sequence | three `moved` blocks, empty plan |
 | `lab3/` | `removed` with and without `destroy = false`, then re-import | `main.tf` + `keytest.tf` |
-| `section9/` | both targeting warnings, and the work a targeted apply defers | two buckets, one targeted |
+| `section9/` | `targeting/` for both warnings and the work a targeted apply defers, and `tainted-field/` for the state key `taint` writes and `untaint` removes | two buckets, one targeted; one bucket, two state writes |
 | `section8/` | `lost-record/` for a bucket whose state entry vanished and the retry that cannot succeed, and `output-drift/` for an output rewritten by a refresh-only apply | one fails on purpose, one applies cleanly |
 | `section7/` | `pull-upgrade/` for what `state pull` does to an older state file's header, and `cross-state/` for the legacy `state mv` across two state files | one needs no emulator; the other applies two buckets |
 | `section6/` | the `import` case lab1 cannot hold: an `id` that only resolves after apply | plan-only, nothing to clean up |
