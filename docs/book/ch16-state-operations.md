@@ -445,7 +445,7 @@ Flip them and Terraform stops you, which is worth knowing because the usual warn
 Error: Moved object still exists
 
 This statement declares a move from aws_s3_bucket.team_notes, but that
-resource is still declared at main.tf:1,1.
+resource is still declared at main.tf:14,1.
 ```
 
 That is the same error the next callout covers, arriving for the same reason: `from` must be an address configuration no longer declares. So the destroy-and-recreate this block exists to prevent comes from writing **no** block, not from writing one backwards.
@@ -456,11 +456,11 @@ That is the same error the next callout covers, arriving for the same reason: `f
     ```text
     Error: Moved object still exists
 
-      on both.tf line 9:
-       9: moved {
+      on main.tf line 17:
+      17: moved {
 
     This statement declares a move from aws_s3_bucket.single, but that resource
-    is still declared at both.tf:1,1.
+    is still declared at main.tf:9,1.
 
     Change your configuration so that this resource will be declared as
     aws_s3_bucket.other instead.

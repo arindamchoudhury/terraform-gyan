@@ -3,7 +3,7 @@
 #
 #   Error: Moved object still exists
 #   This statement declares a move from aws_s3_bucket.single, but that resource
-#   is still declared at both.tf:1,1.
+#   is still declared at main.tf:9,1.
 #
 # The fix is to delete the `single` block: the rename IS the edit to the label.
 resource "aws_s3_bucket" "single" {
