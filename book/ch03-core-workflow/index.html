@@ -1,0 +1,2085 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Personal notes and book from learning Terraform (and OpenTofu).">
+      
+      
+        <meta name="author" content="arindam@live.com">
+      
+      
+        <link rel="canonical" href="https://arindamchoudhury.github.io/terraform-gyan/book/ch03-core-workflow/">
+      
+      
+        <link rel="prev" href="../ch02-install-providers-first-project/">
+      
+      
+        <link rel="next" href="../ch04-hcl-language-basics/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Chapter 3 — The core workflow: init / plan / apply / destroy - Terraform Learning Notes</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-3-the-core-workflow-init-plan-apply-destroy" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Terraform Learning Notes" class="md-header__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terraform Learning Notes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 3 — The core workflow: init / plan / apply / destroy
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Terraform Learning Notes" class="md-nav__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Terraform Learning Notes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Learning Path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Book
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Book
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch01-iac-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  1. Infrastructure as Code & where Terraform fits
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch02-install-providers-first-project/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  2. Install, providers & your first project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  3. The core workflow: init / plan / apply / destroy
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  3. The core workflow: init / plan / apply / destroy
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-loop-is-the-whole-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The loop is the whole job
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-init-prepare-the-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform init</code> — prepare the directory
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="terraform init — prepare the directory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checksums-trust-on-first-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Checksums: trust on first use
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-a-lock-file-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading a lock-file diff
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-plan-compute-the-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform plan</code> — compute the diff
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="terraform plan — compute the diff">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#saved-plans-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Saved plans: <code>-out</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-plan-returns-to-the-shell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What <code>plan</code> returns to the shell
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-apply-execute-the-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform apply</code> — execute the diff
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-plan-the-four-symbols" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading the plan: the four symbols
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-ordering-you-declare-what-the-graph-decides-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dependency ordering — you declare <em>what</em>, the graph decides <em>when</em>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-destroy-two-verbs-two-blast-radii" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform destroy</code> — two verbs, two blast radii
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-apply-replace-force-one-rebuild-deliberately" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform apply -replace</code> — force one rebuild deliberately
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-everyday-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The everyday utilities
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-escape-hatches-refresh-only-and-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The escape hatches: <code>-refresh-only</code> and <code>-target</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-read-every-plan-symbol-on-localstack" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: read every plan symbol on LocalStack
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch04-hcl-language-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  4. HCL language basics
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch05-providers-resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  5. Providers & resources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch06-input-variables-outputs-locals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  6. Input variables, outputs & locals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch07-expressions-operators-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  7. Expressions, operators & functions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch08-data-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  8. Data sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch09-state-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  9. State fundamentals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch10-meta-arguments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  10. Meta-arguments: count, for_each, depends_on
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch11-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  11. The lifecycle meta-argument
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch12-dynamic-blocks-complex-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  12. Dynamic blocks & complex types
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch13-using-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  13. Using modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch14-authoring-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  14. Authoring modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch15-remote-state-backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  15. Remote state & backends
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch16-state-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  16. State management operations
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch17-provider-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  17. Provider configuration in depth
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch18-provisioners-escape-hatches/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  18. Provisioners, terraform_data & escape hatches
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-loop-is-the-whole-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The loop is the whole job
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-init-prepare-the-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform init</code> — prepare the directory
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="terraform init — prepare the directory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checksums-trust-on-first-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Checksums: trust on first use
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-a-lock-file-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading a lock-file diff
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-plan-compute-the-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform plan</code> — compute the diff
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="terraform plan — compute the diff">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#saved-plans-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Saved plans: <code>-out</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-plan-returns-to-the-shell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What <code>plan</code> returns to the shell
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-apply-execute-the-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform apply</code> — execute the diff
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-plan-the-four-symbols" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading the plan: the four symbols
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-ordering-you-declare-what-the-graph-decides-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dependency ordering — you declare <em>what</em>, the graph decides <em>when</em>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-destroy-two-verbs-two-blast-radii" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform destroy</code> — two verbs, two blast radii
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-apply-replace-force-one-rebuild-deliberately" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform apply -replace</code> — force one rebuild deliberately
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-everyday-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The everyday utilities
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-escape-hatches-refresh-only-and-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The escape hatches: <code>-refresh-only</code> and <code>-target</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-read-every-plan-symbol-on-localstack" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: read every plan symbol on LocalStack
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="chapter-3-the-core-workflow-init-plan-apply-destroy">Chapter 3 — The core workflow: init / plan / apply / destroy<a class="headerlink" href="#chapter-3-the-core-workflow-init-plan-apply-destroy" title="Permanent link">&para;</a></h1>
+<h2 id="learning-outcomes">Learning outcomes<a class="headerlink" href="#learning-outcomes" title="Permanent link">&para;</a></h2>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>Run the four-command loop of <code>init</code>, <code>plan</code>, <code>apply</code> and <code>destroy</code>, and say what each one reads and writes.</li>
+<li>Read a <code>terraform plan</code> and predict, before you apply, what every <code>+</code> / <code>~</code> / <code>-/+</code> / <code>-</code> line will do.</li>
+<li>Save a plan with <code>-out</code> and apply that exact artifact, so review and execution can't drift apart.</li>
+<li>Tear infrastructure down two ways, by removing one resource from config or by destroying the whole workspace, and know which blast radius each has.</li>
+<li>Reach for the everyday utilities (<code>fmt</code>, <code>validate</code>, <code>show</code>, <code>output</code>, <code>graph</code>) and the escape hatches (<code>-replace</code>, <code>-refresh-only</code>, <code>-target</code>) at the right moment.</li>
+</ul>
+<h2 id="the-loop-is-the-whole-job">The loop is the whole job<a class="headerlink" href="#the-loop-is-the-whole-job" title="Permanent link">&para;</a></h2>
+<p>Chapter 2 ran the loop once, end to end, to get a resource on the board. This chapter slows it down.</p>
+<p>Everything you will ever do with Terraform is some rotation of four verbs. You <strong>init</strong> a directory once (and again whenever its providers or modules change). You <strong>plan</strong> to see what a change would do. You <strong>apply</strong> to make it happen. You <strong>destroy</strong> when you're done. Modules, remote state, CI pipelines, policy checks — all of it is scaffolding around this loop. Learn to read it precisely and the rest is elaboration.</p>
+<p>The single most important skill in this chapter is reading a plan. A plan is a contract: it tells you exactly what Terraform is about to add, change, or remove, <em>before</em> it touches anything real. The safety of the entire tool rests on you actually reading that contract and catching the surprise — the in-place edit that is secretly a destroy-and-recreate, the one line that says <code>1 to destroy</code> next to a production database. Predicting the plan is the milestone for this topic, so it gets the most room below.</p>
+<pre class="mermaid"><code>flowchart LR
+    W["Write / edit&lt;br/&gt;.tf files"] --&gt; I["init&lt;br/&gt;(once, + on dep change)"]
+    I --&gt; P["plan&lt;br/&gt;compute the diff"]
+    P --&gt; A["apply&lt;br/&gt;execute the diff"]
+    A --&gt;|iterate| P
+    A --&gt; D["destroy&lt;br/&gt;tear down"]
+    classDef core fill:#264653,color:#fff;
+    class I,P,A,D core;</code></pre>
+<h2 id="terraform-init-prepare-the-directory"><code>terraform init</code> — prepare the directory<a class="headerlink" href="#terraform-init-prepare-the-directory" title="Permanent link">&para;</a></h2>
+<p><code>init</code> turns a plain directory of <code>.tf</code> files into a working directory Terraform can operate in. It is the first command you run in any new project, and it is safe to re-run at any time. It does three things:</p>
+<ol>
+<li><strong>Initializes the backend</strong> — decides <em>where state lives</em> (locally by default; a remote backend later, in I6).</li>
+<li><strong>Installs providers</strong> — resolves each <code>required_providers</code> constraint against the registry, downloads the plugin binary into <code>.terraform/</code>, and records the exact version and checksums in <code>.terraform.lock.hcl</code>.</li>
+<li><strong>Installs modules</strong> — downloads any <code>module</code> blocks' source into <code>.terraform/modules/</code>.</li>
+</ol>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>terraform<span class="w"> </span>init
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Initializing the backend...
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Initializing provider plugins...
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>- Finding hashicorp/aws versions matching "~&gt; 6.0"...
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>- Installing hashicorp/aws v6.53.0...
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>- Installed hashicorp/aws v6.53.0 (signed by HashiCorp)
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>Terraform has created a lock file .terraform.lock.hcl to record the provider
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>selections it made above.
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>Terraform has been successfully initialized!
+</span></code></pre></div>
+<p>You re-run <code>init</code> when you <strong>add a provider</strong>, <strong>add or change a module</strong>, or <strong>change the backend</strong>. On an existing workspace, <code>init</code> detects those changes and installs only what's new:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>terraform<span class="w"> </span>init<span class="w">      </span><span class="c1"># after adding a module block</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Initializing modules...
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>Downloading registry.terraform.io/terraform-aws-modules/vpc/aws 6.6.1 for vpc...
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>- vpc in .terraform/modules/vpc
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>Initializing provider plugins...
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>- Reusing previous version of hashicorp/aws from the dependency lock file
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>- Using previously-installed hashicorp/aws v6.53.0
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>Terraform has been successfully initialized!
+</span></code></pre></div>
+<p>Notice the provider was <strong>reused from the lock file</strong>, not re-resolved. That is the lock file doing its job: once <code>init</code> has chosen a version, every later <code>init</code>, <code>plan</code>, and <code>apply</code> uses that exact version until you deliberately upgrade.</p>
+<div class="admonition warning">
+<p class="admonition-title">The lock file locks <strong>providers only</strong> — never module versions</p>
+<p>A configuration has two kinds of external dependency, and <code>.terraform.lock.hcl</code> records exactly one of them. Module version selections are <strong>not</strong> locked. When <code>init</code> installs a module it selects the newest version matching the constraint, and records that choice in <code>.terraform/modules/modules.json</code> — which is <em>not</em> committed. Within your working directory that manifest holds the version steady, so re-running <code>init</code> reuses it. But a teammate's fresh clone, or a CI runner with an empty <code>.terraform/</code>, resolves the constraint from scratch and can land on a newer module than you ever tested. Nothing in version control pins it. The fix is an <strong>exact version constraint</strong> — <code>version = "6.6.1"</code> rather than a range. Modules can also come from places other than the registry, and those pin differently; that comes with module sources later.</p>
+<p>Three things also make <code>init</code> discard the recorded module and re-resolve: <code>-upgrade</code>, a changed <code>source</code>, or a recorded version that no longer satisfies the constraint.</p>
+</div>
+<p>Commit the lock file — dependency changes then go through code review like configuration changes. In CI, add <code>terraform init -lockfile=readonly</code> so a run <em>fails</em> rather than silently rewriting the lock you committed.</p>
+<p>When you <em>want</em> a newer allowed version, a plain <code>init</code> won't give it to you — it honors the lock. The two upgrade cases:</p>
+<ul>
+<li><strong>Locked version still satisfies the constraint, you want the newest allowed</strong> → <code>terraform init -upgrade</code>. It ignores the lock, re-resolves to the newest permitted version, and rewrites the lock file.</li>
+<li><strong>Locked version now violates the constraint</strong> (you bumped <code>~&gt; 5.0</code> to <code>~&gt; 6.0</code>) → a plain <code>init</code> is forced to re-select and rewrites the lock on its own.</li>
+</ul>
+<p>Modules follow the same two cases against their own record in <code>.terraform/modules/modules.json</code>:</p>
+<ul>
+<li><strong>Recorded version still satisfies the constraint</strong> → <code>terraform init -upgrade</code> re-resolves it. So does <code>terraform get -update</code>, which upgrades modules only and leaves providers alone.</li>
+<li><strong>Recorded version now violates the constraint</strong> → a plain <code>init</code> re-selects on its own.</li>
+</ul>
+<p>There is a governance consequence. A provider upgrade rewrites the committed <code>.terraform.lock.hcl</code>, so it lands in the diff and a reviewer sees it; <code>-lockfile=readonly</code> makes CI fail if it changes unexpectedly. A module upgrade rewrites uncommitted <code>modules.json</code>, so it leaves no trace in version control and there is nothing for <code>-lockfile=readonly</code> to check. That is why the exact constraint above matters more than it looks: it is the only part of a module's version selection that lives in code.</p>
+<h3 id="checksums-trust-on-first-use">Checksums: trust on first use<a class="headerlink" href="#checksums-trust-on-first-use" title="Permanent link">&para;</a></h3>
+<p>The lock file has been a black box so far. Pin <code>hashicorp/random</code> to an exact <code>3.9.0</code> in <code>required_providers</code>, run <code>init</code>, and this is what lands:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="err">provider</span><span class="w"> </span><span class="s2">"registry.terraform.io/hashicorp/random"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="na">version</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"3.9.0"</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="na">constraints</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"3.9.0"</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="na">hashes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="s2">"h1:q/uaUTBdKgAmZESrwsoeDQff9uUA/cI/N5ZKNgVwa9c="</span><span class="p">,</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="s2">"zh:161ad0bd9a75768c82f53fb6e7172a9d8be2d4889b012645a34795031aaf1bf1"</span><span class="p">,</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="s2">"zh:19dc9a5b17729725ccfc4f45b0500af0ee5bc6b6b160c7adb8f2bf617d2c80ea"</span><span class="p">,</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="s2">"zh:269eda8fe42daa7974d5a34d166c3ba9defe80cde86c01e4dadcfdf2e1f05e5f"</span><span class="p">,</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="s2">"zh:373f7c65566f8f2cc7f45d698654feb9d988996957e1266a69ca00c52d6d16d0"</span><span class="p">,</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c1">    # … nine more zh: entries</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="p">]</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>version</code> is the selection <code>init</code> made and <code>constraints</code> records what the configuration asked for. They match here only because the pin was exact; under a range like <code>~&gt; 3.6</code> the constraint would still read <code>~&gt; 3.6</code> while <code>version</code> showed whichever release <code>init</code> picked. Then <code>hashes</code>, where the thing to notice is that a <em>single</em> version carries <em>many</em> checksums.</p>
+<p>The count comes from platforms. A provider ships a separate package for each one, meaning <code>linux_amd64</code>, <code>darwin_arm64</code>, <code>windows_amd64</code> and the rest, and every package has its own hash. Fourteen entries here for a provider published on thirteen platforms.</p>
+<p>The prefixes are a second axis. Terraform is midway through a migration between two hashing schemes, and a fresh install records a <code>zh:</code> for every published platform but an <code>h1:</code> only for the platform <code>init</code> actually ran on. That is why the list above is thirteen <code>zh:</code> and a single <code>h1:</code>. The migration is covered below; for now read both prefixes as ways of fingerprinting a package.</p>
+<p>So the list is not one fingerprint for the provider. It is the <strong>set of packages Terraform will accept</strong> as legitimate for that version, which gives the verification rule: every package <code>init</code> installs must match <strong>at least one</strong> entry in its version's set. Your download matches your platform's hash, and the entries for other platforms are what let one committed lock file satisfy a teammate on a different OS. When a package matches nothing, <code>init</code> refuses:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Error: Failed to install provider
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>Error while installing hashicorp/random v3.9.0: the current package for
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>registry.terraform.io/hashicorp/random 3.9.0 doesn't match any of the
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>checksums previously recorded in the dependency lock file; for more
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>information:
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>https://developer.hashicorp.com/terraform/language/files/dependency-lock#checksum-verification
+</span></code></pre></div>
+<p>That is a <strong>trust-on-first-use</strong> model, and the name is the whole security story. Terraform does not know whether a provider is trustworthy. It knows whether <em>today's</em> package matches what you accepted the <em>first</em> time. So the verification you owe happens once, when the provider first enters the lock file. That means checking the signing key fingerprint <code>init</code> prints, reading who published it, and whatever else your compliance regime demands. After that Terraform enforces your decision for you.</p>
+<p>Where the package comes from on that first install decides whether the lock file is portable:</p>
+<ul>
+<li><strong>From an origin registry with signed checksums</strong> — Terraform treats every signed checksum as valid once one matches, so it records hashes for <strong>your platform and every other published platform</strong> at once. The lock file works everywhere.</li>
+<li><strong>From a filesystem or network mirror</strong> — Terraform can only verify the platform it is actually running on, so it records only that platform's hashes. <strong>The configuration is now unusable on any other platform.</strong> A macOS-generated lock file then breaks a teammate's Linux CI with an <em>inconsistent dependency lock file</em> error.</li>
+</ul>
+<p>Pre-seed every platform your team uses, which downloads and verifies the official packages for each:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>terraform<span class="w"> </span>providers<span class="w"> </span>lock<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span>-platform<span class="o">=</span>linux_amd64<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>-platform<span class="o">=</span>darwin_arm64<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>-platform<span class="o">=</span>windows_amd64
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — cross-platform checksums, automatically</p>
+<p><code>tofu init</code> records the <strong>full cross-platform hash set</strong> on its own (OpenTofu 1.12), so the <code>providers lock -platform=…</code> step above is Terraform-specific. The gate is that <code>init</code> must reach the origin registry directly, which is the default — point <code>provider_installation</code> at a mirror and the per-platform behavior above returns. The lock file is still named <code>.terraform.lock.hcl</code> and is byte-compatible, so a mixed team can share one. This removes the single most common <code>init</code> footgun for teams on mixed operating systems.</p>
+</div>
+<h3 id="reading-a-lock-file-diff">Reading a lock-file diff<a class="headerlink" href="#reading-a-lock-file-diff" title="Permanent link">&para;</a></h3>
+<p><code>init</code> rewrites this file on its own, so it shows up in code review constantly. Four diffs, four meanings:</p>
+<table>
+<thead>
+<tr>
+<th>Diff</th>
+<th>What happened</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A whole new <code>provider</code> block</td>
+<td>You added a provider requirement (directly, or via a module that has one). Review the version and the signing key.</td>
+</tr>
+<tr>
+<td><code>version</code> changed, all <code>hashes</code> replaced</td>
+<td>An upgrade. Each version ships its own packages, so the entire hash set turns over.</td>
+</tr>
+<tr>
+<td>Only new <code>hashes</code> lines, nothing else</td>
+<td>Not an upgrade — Terraform is migrating hashing schemes. Safe.</td>
+</tr>
+<tr>
+<td>A <code>provider</code> block deleted</td>
+<td>The provider is gone from <strong>both</strong> config and state. Re-adding it later is treated as brand new: no guarantee of the same version, and no checksum continuity.</td>
+</tr>
+</tbody>
+</table>
+<p>The third row is the one that confuses people, and the prefixes explain it. <code>zh:</code> ("zip hash") is the legacy scheme — a SHA256 of the official <code>.zip</code> package indexed by the registry protocol. <code>h1:</code> ("hash scheme 1") is the current one, computed from the package <strong>contents</strong>, which is why it works for an unpacked mirror directory or a recompressed zip while <code>zh:</code> does not. Both coexist because the registry protocol still serves <code>zh:</code>, so a first install is mostly <code>zh:</code> entries, and Terraform opportunistically adds the matching <code>h1:</code> each time it installs the provider on a new platform. Running <code>providers lock -platform=…</code> records both schemes for every listed platform up front, which stops the drip.</p>
+<h2 id="terraform-plan-compute-the-diff"><code>terraform plan</code> — compute the diff<a class="headerlink" href="#terraform-plan-compute-the-diff" title="Permanent link">&para;</a></h2>
+<p><code>plan</code> answers one question: <em>if I applied right now, what would change?</em> It computes a diff and shows it. It changes nothing.</p>
+<p>To build that diff, Terraform compares three inputs:</p>
+<pre class="mermaid"><code>flowchart LR
+    S["Prior state&lt;br/&gt;(last-known)"] --&gt; P{plan}
+    C["Configuration&lt;br/&gt;(your .tf files)"] --&gt; P
+    R["Refreshed reality&lt;br/&gt;(read from providers)"] --&gt; P
+    P --&gt; D["The diff&lt;br/&gt;+ / ~ / -/+ / -"]</code></pre>
+<ol>
+<li><strong>Prior state</strong> — what Terraform last recorded as existing.</li>
+<li><strong>Configuration</strong> — the desired end state you wrote in <code>.tf</code>.</li>
+<li><strong>Refreshed reality</strong> — a fresh read of each tracked object from its provider, so out-of-band drift is detected.</li>
+</ol>
+<p>That third input matters. <code>plan</code> and <code>apply</code> run an <strong>implicit in-memory refresh</strong> before computing the diff. If someone resized your instance in the AWS console, the refresh sees it, and the plan proposes to correct the drift back to what your config says. The refresh is in-memory only — a bare <code>plan</code> does not write the refreshed values to your state file.</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>terraform<span class="w"> </span>plan
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>data.aws_ami.ubuntu: Reading...
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>data.aws_ami.ubuntu: Read complete after 1s [id=ami-0026a04369a3093cc]
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  # aws_instance.app_server will be created
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  + resource "aws_instance" "app_server" {
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>      + ami                                  = "ami-0026a04369a3093cc"
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>      + arn                                  = (known after apply)
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>      + instance_type                        = "t2.micro"
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>      + tags                                 = {
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>          + "Name" = "learn-terraform"
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>        }
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>      + tags_all                             = {
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>          + "Name" = "learn-terraform"
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>        }
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>      # ... many more attributes (known after apply) ...
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>    }
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>
+</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>Plan: 1 to add, 0 to change, 0 to destroy.
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Three planning modes, one engine</p>
+<p>Everything above is the <strong>default</strong> mode: reconcile infrastructure to config. There are two others, and both appear later in this chapter. <strong>Destroy</strong> mode (<code>plan -destroy</code>, or the <code>terraform destroy</code> alias) plans the removal of everything in the configuration. <strong>Refresh-only</strong> mode (<code>plan -refresh-only</code>) updates state from reality and proposes no infrastructure change at all. The mechanics are the same each time. Terraform builds the graph, walks it, and diffs; only the target end state differs. And <strong>every mode begins with a refresh</strong>, which is why refresh-only is the niche one: the other two already did it.</p>
+</div>
+<p>Two things to read here. The <code>Plan:</code> summary line is your headline — <em>add / change / destroy</em> counts you can sanity-check at a glance. And <code>(known after apply)</code> marks attributes AWS won't assign until the resource actually exists (an instance's ARN, its public IP). Terraform can't show you a value it doesn't have yet, so it names it as pending rather than guessing.</p>
+<h3 id="saved-plans-out">Saved plans: <code>-out</code><a class="headerlink" href="#saved-plans-out" title="Permanent link">&para;</a></h3>
+<p>A bare <code>plan</code> is throwaway. Run it, read it, and if you then run <code>apply</code>, Terraform computes a <strong>fresh</strong> plan and asks you to confirm that one. Between the two, your config or the real infrastructure could have shifted. Terraform warns you about exactly this:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Note: You didn't use the -out option to save this plan, so Terraform can't
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>guarantee to take exactly these actions if you run "terraform apply" now.
+</span></code></pre></div>
+<p>To close that gap, save the plan to a file and apply <em>that file</em>:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>terraform<span class="w"> </span>plan<span class="w"> </span>-out<span class="o">=</span>tfplan<span class="w">     </span><span class="c1"># compute and freeze the plan</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>terraform<span class="w"> </span>apply<span class="w"> </span>tfplan<span class="w">         </span><span class="c1"># execute exactly the frozen plan — no new plan, no prompt</span>
+</span></code></pre></div>
+<p>The saved plan is a frozen artifact. <code>apply tfplan</code> executes precisely what you reviewed, with no re-planning and no confirmation prompt (you already confirmed by choosing to apply the file). This is the backbone of a CI/CD pipeline: one job plans and saves, a human reviews the saved plan, a later job applies the exact bytes. Review and execution can't drift apart because they're the same artifact.</p>
+<div class="admonition warning">
+<p class="admonition-title">A saved plan is frozen — you can't re-plan it</p>
+<p>Every planning decision is baked into the file when you create it. So <code>apply tfplan</code> takes no planning options at all: the options that shape a plan (the escape hatches later in this chapter) are only accepted on an <code>apply</code> that plans for itself, never on one handed a saved plan. The saved plan is also perishable: it embeds specific resource states, so apply it soon. If the real infrastructure moves underneath it, <code>apply tfplan</code> can fail rather than apply a stale diff — which is the safe outcome.</p>
+</div>
+<h3 id="what-plan-returns-to-the-shell">What <code>plan</code> returns to the shell<a class="headerlink" href="#what-plan-returns-to-the-shell" title="Permanent link">&para;</a></h3>
+<p>The plan you just read is for you. A pipeline needs the same answer as a <strong>number</strong>, and by default
+it does not get one. A plain <code>plan</code> exits <code>0</code> whether or not it found changes — measured on 1.15.8,
+with one <code>terraform_data</code> resource pending creation and then again with nothing to do:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>terraform<span class="w"> </span>plan<span class="w">                 </span><span class="c1"># 1 to add   → exit 0</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>terraform<span class="w"> </span>plan<span class="w">                 </span><span class="c1"># No changes → exit 0</span>
+</span></code></pre></div>
+<p>Both zero. Anything scripted on top of that cannot tell "nothing to do" from "five things about to
+be destroyed". The flag that makes the distinction is <strong><code>-detailed-exitcode</code></strong>, which replaces the
+two-value convention with three:</p>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Meaning</th>
+<th>Plain <code>plan</code> returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>succeeded, <strong>no changes</strong></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><strong>error</strong> — the plan did not complete</td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>succeeded, <strong>changes pending</strong></td>
+<td><code>0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Measured across all three cases on Terraform <strong>1.15.8</strong>, and identical on <strong>OpenTofu 1.12.4</strong>. Note
+that <code>1</code> is the same either way; the flag only splits the success case in two.</p>
+<p>This is what makes a <strong>drift-detection</strong> job possible — plan on a schedule, treat <code>2</code> as "the world
+moved, tell someone" — and what makes a pull-request gate able to say "this PR changes
+infrastructure" without parsing English out of the log.</p>
+<div class="admonition danger">
+<p class="admonition-title"><code>2</code> means success, and your shell disagrees</p>
+<p>Every trap here comes from the same fact: <strong>the value meaning "there is work to do" is non-zero</strong>,
+so ordinary error handling treats a perfectly good plan as a failure. A CI step that runs
+<code>terraform plan -detailed-exitcode</code> fails the build on any pending change, which is why people
+reach for <code>|| true</code> — and that is where the second trap lives:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>terraform<span class="w"> </span>plan<span class="w"> </span>-detailed-exitcode<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$?</span><span class="w"> </span>&gt;<span class="w"> </span>code.txt<span class="w">        </span><span class="c1"># WRONG: $? is now the exit code of `true`, always 0</span>
+</span></code></pre></div>
+<p>That pipeline can never fail, because the file always says <code>0</code>. Capture the code first, then
+decide what to do with it:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">set</span><span class="w"> </span>+e
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>terraform<span class="w"> </span>plan<span class="w"> </span>-detailed-exitcode
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="nv">code</span><span class="o">=</span><span class="nv">$?</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nb">set</span><span class="w"> </span>-e
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">case</span><span class="w"> </span><span class="nv">$code</span><span class="w"> </span><span class="k">in</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span><span class="m">0</span><span class="o">)</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"no changes"</span><span class="w"> </span><span class="p">;;</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">  </span><span class="m">2</span><span class="o">)</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"changes pending"</span><span class="w"> </span><span class="p">;;</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span>*<span class="o">)</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"plan failed"</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="p">;;</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="k">esac</span>
+</span></code></pre></div>
+<p>The mirror-image mistake is a script that opens with <code>set -e</code> and <em>does</em> capture correctly: under
+<code>set -e</code>, the <code>2</code> aborts the script before the capture line ever runs, so the branch written to
+handle "changes pending" is unreachable. Both failures are real, both have been shipped in
+published Terraform CI harnesses, and both come from treating <code>2</code> as an error rather than as one
+of two success values. Chapter 20 (A3) builds the full pipeline; the exit code is the piece
+everything else in it is wired to.</p>
+</div>
+<h2 id="terraform-apply-execute-the-diff"><code>terraform apply</code> — execute the diff<a class="headerlink" href="#terraform-apply-execute-the-diff" title="Permanent link">&para;</a></h2>
+<p><code>apply</code> makes the plan real. Run without a saved plan, it plans first, shows you the diff, and waits for a literal <code>yes</code> before doing anything:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>terraform<span class="w"> </span>apply
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>  # aws_instance.app_server will be created
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  + resource "aws_instance" "app_server" {
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>      + ami           = "ami-0026a04369a3093cc"
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>      + instance_type = "t2.micro"
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>      ...
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    }
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>Plan: 1 to add, 0 to change, 0 to destroy.
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>Do you want to perform these actions?
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>  Enter a value: yes
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>aws_instance.app_server: Creating...
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>aws_instance.app_server: Creation complete after 14s [id=i-0c636e158c30e48f9]
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>
+</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+</span></code></pre></div>
+<p>That interactive prompt is the safety gate for a human at a keyboard. It is your last chance to read the diff and cancel. Only the exact word <code>yes</code> proceeds; anything else aborts.</p>
+<p>Then <code>apply</code> writes <strong><code>terraform.tfstate</code></strong> — the record of what now exists — and prints any <code>output</code> values. Later plans compare against this updated state.</p>
+<div class="admonition danger">
+<p class="admonition-title"><code>-auto-approve</code> belongs in CI, never on your keyboard</p>
+<p><code>terraform apply -auto-approve</code> skips the confirmation prompt. It exists for non-interactive automation, where a saved plan (<code>apply tfplan</code>) already served as the review gate. Typing <code>-auto-approve</code> in your own shell throws away the one moment that catches an accidental destroy. In examples meant for a human, always let the prompt stand.</p>
+</div>
+<h2 id="reading-the-plan-the-four-symbols">Reading the plan: the four symbols<a class="headerlink" href="#reading-the-plan-the-four-symbols" title="Permanent link">&para;</a></h2>
+<p>This is the milestone. Terraform's plan is Git-diff-like, and every proposed action is one of four symbols. Learn to predict them and you can approve a plan with confidence.</p>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Action</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>+</code></td>
+<td>create</td>
+<td>The resource is in config but not in state. Terraform will build it.</td>
+</tr>
+<tr>
+<td><code>~</code></td>
+<td>update in-place</td>
+<td>An attribute changed, and the provider can patch it live without recreating.</td>
+</tr>
+<tr>
+<td><code>-/+</code></td>
+<td>destroy then create (replace)</td>
+<td>A <strong>forced-new</strong> attribute changed. The provider can't patch it, so Terraform destroys the old resource and creates a new one.</td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td>destroy</td>
+<td>The resource is in state but no longer in config. Terraform will tear it down.</td>
+</tr>
+</tbody>
+</table>
+<p>The dangerous one is <code>-/+</code>. It hides inside what looks like an edit. Change an EC2 instance's <code>instance_type</code> and you get a benign in-place <code>~</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>  # aws_instance.app_server will be updated in-place
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  ~ resource "aws_instance" "app_server" {
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>        id                           = "i-0c636e158c30e48f9"
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>      ~ instance_type                = "t2.micro" -&gt; "t2.large"
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>      ~ public_dns                   = "ec2-34-216-...amazonaws.com" -&gt; (known after apply)
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>      ~ public_ip                    = "34.216.162.36" -&gt; (known after apply)
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>        tags                         = {
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>            "Name" = "learn-terraform"
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>        }
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>        # (36 unchanged attributes hidden)
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>        # (8 unchanged blocks hidden)
+</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>    }
+</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>
+</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>Plan: 0 to add, 1 to change, 0 to destroy.
+</span></code></pre></div>
+<p>The <code>~</code> on <code>instance_type</code> is the change you asked for. The <code>~</code> on <code>public_dns</code> and <code>public_ip</code> are <em>consequences</em> — a resize can reassign them, so they show <code>old -&gt; (known after apply)</code>. Nothing is destroyed here.</p>
+<p>But move that same instance into a new VPC (by wiring <code>subnet_id</code> to a VPC module) and AWS <strong>cannot</strong> relocate a running instance. The <code>subnet_id</code> is a forced-new attribute, so the plan flips to a replacement:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Resource actions are indicated with the following symbols:
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>  + create
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>-/+ destroy and then create replacement
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>  # aws_instance.app_server must be replaced
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>-/+ resource "aws_instance" "app_server" {
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>      ~ arn                         = "arn:aws:ec2:...i-0c63..." -&gt; (known after apply)
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>      ~ availability_zone           = "us-west-2b" -&gt; (known after apply)
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>      ~ subnet_id                   = "subnet-0a1b2c3d" -&gt; (known after apply) # forces replacement
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>      ...
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>    }
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>Plan: 16 to add, 0 to change, 1 to destroy.
+</span></code></pre></div>
+<p>Same intent — "put the instance in the VPC" — but a completely different blast radius. The <code>1 to destroy</code> in the summary and the <code>must be replaced</code> header are the signal. For a stateless web server, a replacement is fine. For a database holding customer data, <code>-/+</code> means data loss unless you take care. This is exactly why you read the plan: the summary counts and the per-resource header tell you whether an "edit" is really a rebuild.</p>
+<div class="admonition tip">
+<p class="admonition-title">The plan summary is your fastest sanity check</p>
+<p>Before scrolling the full diff, read the <code>Plan: N to add, N to change, N to destroy</code> line. If you renamed a variable and expected zero infrastructure change, but the summary says <code>2 to destroy</code>, stop — something forces replacement or a resource fell out of config. The headline number catches the surprise before you read a single attribute.</p>
+</div>
+<h2 id="dependency-ordering-you-declare-what-the-graph-decides-when">Dependency ordering — you declare <em>what</em>, the graph decides <em>when</em><a class="headerlink" href="#dependency-ordering-you-declare-what-the-graph-decides-when" title="Permanent link">&para;</a></h2>
+<p>You never write out an <em>explicit</em> sequence — no "do this, then that." But you do tell Terraform the order, implicitly, through your references. When one resource reads another's attribute — <code>subnet_id = module.vpc.private_subnets[0]</code> — that reference <em>is</em> an implicit dependency, and it <em>is</em> you specifying order. Terraform derives the sequence from those references. Terraform builds a <strong>dependency graph</strong> at plan time and, on apply, walks it: create or update in dependency order, and <strong>in parallel wherever the graph allows</strong> (default up to 10 concurrent operations).</p>
+<p>So in the VPC move above, Terraform ran: destroy the old instance, create the VPC and its subnets/routes/gateways, then create the new instance last — because the instance depends on the subnet, which depends on the VPC. You wrote none of that as an explicit sequence. Your references encoded it.</p>
+<p><code>destroy</code> walks the same graph in <strong>reverse</strong>. Dependents die before their dependencies: route-table associations first, then subnets and the internet gateway, and the VPC last. It is the mirror image of creation order, for the same reason — you can't delete a VPC while subnets still live inside it.</p>
+<p>The graph is <em>acyclic</em> by requirement, not by convention. Suppose your references form a loop, where A reads an attribute of B, which reads C, which reads A. There is no valid order, so Terraform refuses to plan at all:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>Error: Cycle: aws_security_group.app, aws_security_group.db
+</span></code></pre></div>
+<p>The error names every node in the loop, which is usually enough to find it. The fix is to break one edge. Most accidental cycles come from two resources that merely need to <em>share a value</em>, wired to each other's attributes to get it; route that value through a <code>variable</code> or <code>locals</code> instead and the edge disappears without changing behavior. Cycles are rare, and a persistent one usually means the architecture wants simplifying rather than a clever workaround.</p>
+<div class="admonition note">
+<p class="admonition-title">Prefer implicit dependencies to <code>depends_on</code></p>
+<p>Because a reference creates the dependency, most ordering is automatic and correct. The explicit <code>depends_on</code> meta-argument (I1) is a fallback for the rare case where a dependency is real but <em>invisible</em> to Terraform — an IAM policy that must exist before an app can use a bucket, with no attribute linking them. Reach for it only when there's no attribute to reference. An over-used <code>depends_on</code> serializes work the graph could have parallelized.</p>
+</div>
+<h2 id="terraform-destroy-two-verbs-two-blast-radii"><code>terraform destroy</code> — two verbs, two blast radii<a class="headerlink" href="#terraform-destroy-two-verbs-two-blast-radii" title="Permanent link">&para;</a></h2>
+<p>There are two distinct ways to destroy, and confusing them is how people delete more than they meant to.</p>
+<p><strong>1. Remove a resource from config, then <code>apply</code>.</strong> This is the everyday, surgical teardown — retire one component while the rest of the workspace stays up. Delete (or comment out) the <code>resource</code> block. Anything referencing it must go too, or the config is invalid:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># main.tf</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="cm">/*</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="cm">resource "aws_instance" "app_server" {</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="cm">  ami           = data.aws_ami.ubuntu.id</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="cm">  instance_type = var.instance_type</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="cm">  ...</span>
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="cm">}</span>
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="cm">*/</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># outputs.tf — the output referenced the now-removed instance, so it must go too</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="cm">/*</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="cm">output "instance_hostname" {</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="cm">  value = aws_instance.app_server.private_dns</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="cm">}</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="cm">*/</span>
+</span></code></pre></div>
+<p><code>apply</code> now sees a resource in state with no matching config block, and plans a single <code>-</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>Plan: 0 to add, 0 to change, 1 to destroy.
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>Changes to Outputs:
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>  - instance_hostname = "ip-10-0-1-75.us-west-2.compute.internal" -&gt; null
+</span></code></pre></div>
+<p>The output drops to <code>null</code> because the value it depended on is gone. Removing a resource from config <em>is</em> a destroy operation. This is the <code>-</code> symbol in ordinary iteration.</p>
+<p><strong>2. <code>terraform destroy</code> — tear down the whole workspace.</strong> For decommissioning an environment or a short-lived test stack. It destroys <em>everything</em> the workspace manages, regardless of config:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>terraform<span class="w"> </span>destroy
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>Plan: 0 to add, 0 to change, 15 to destroy.
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>Do you really want to destroy all resources?
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>  Terraform will destroy all your managed infrastructure, as shown above.
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>  There is no undo. Only 'yes' will be accepted to confirm.
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>  Enter a value: yes
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>module.vpc.aws_route_table_association.private[1]: Destroying...
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>...
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>module.vpc.aws_vpc.this[0]: Destruction complete after 1s
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a>Destroy complete! Resources: 15 destroyed.
+</span></code></pre></div>
+<p>Under the hood, <code>terraform destroy</code> is <code>terraform apply</code> of a plan that removes every managed resource — the two are literally the same engine, and <code>apply -destroy</code> is the explicit form. The confirmation is worded harder than a normal apply on purpose: <strong>"There is no undo."</strong> Destroy is irreversible. The only safety gate is reading the plan before you type <code>yes</code>.</p>
+<p>Data sources are refreshed but never destroyed — they only ever read, so there's nothing to tear down.</p>
+<div class="admonition note">
+<p class="admonition-title"><code>destroy</code> works from state, not config</p>
+<p>Destroy tears down whatever is <strong>in state</strong>, not what's in your <code>.tf</code> files. A resource that exists in state but has been removed from (or edited out of) config still gets destroyed — the reverted or changed configuration doesn't matter. This is why you can always tear a workspace down even after gutting its <code>.tf</code>: the state is the record of what's real. (The corollary bites in reverse too — a resource in config but not yet in state is nothing for <code>destroy</code> to act on.)</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title"><code>destroy</code> does not know what's precious</p>
+<p><code>terraform destroy</code> deletes whatever the workspace manages, and prod databases look exactly like scratch VMs to it. Two habits protect you. Mark irreplaceable resources with <code>lifecycle { prevent_destroy = true }</code> (I2), which makes Terraform <em>error</em> rather than destroy them. And never point a <code>destroy</code> at a workspace whose state you haven't just read. The recovery story for an accidental destroy is re-running <code>apply</code> from config — which recreates the resource but does <strong>not</strong> bring a database's data back.</p>
+</div>
+<h2 id="terraform-apply-replace-force-one-rebuild-deliberately"><code>terraform apply -replace</code> — force one rebuild deliberately<a class="headerlink" href="#terraform-apply-replace-force-one-rebuild-deliberately" title="Permanent link">&para;</a></h2>
+<p>Sometimes you want to recreate a resource that hasn't actually changed — a VM that drifted into a bad state, a certificate you want reissued. The modern way is <code>-replace</code>:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>terraform<span class="w"> </span>apply<span class="w"> </span>-replace<span class="o">=</span><span class="s2">"aws_instance.app_server"</span>
+</span></code></pre></div>
+<p>It shows the recreation as a <code>-/+</code> in the plan first, so you review it before it happens.</p>
+<div class="admonition note">
+<p class="admonition-title"><code>-replace</code> supersedes the deprecated <code>taint</code> / <code>untaint</code></p>
+<p>Older material shows <code>terraform taint &lt;addr&gt;</code> to force a rebuild. <code>taint</code> mutated state out-of-band — it marked the resource for replacement immediately, with no plan to review. <code>-replace</code> (Terraform 0.15.2+) is strictly better: the recreation appears in the plan, so you see it before approving. <code>taint</code>/<code>untaint</code> still exist but are deprecated; use <code>-replace</code>.</p>
+</div>
+<h2 id="the-everyday-utilities">The everyday utilities<a class="headerlink" href="#the-everyday-utilities" title="Permanent link">&para;</a></h2>
+<p>The four-verb loop is the core, but a fluent operator leans on a handful of supporting commands constantly. None of them touch real infrastructure except through the loop above.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terraform fmt</code></td>
+<td>Rewrite <code>.tf</code> files to canonical style. Prints the filenames it changed. Run before every commit.</td>
+</tr>
+<tr>
+<td><code>terraform validate</code></td>
+<td>Check syntax and internal consistency. No provider calls, no network. Catches typos before you plan.</td>
+</tr>
+<tr>
+<td><code>terraform show</code></td>
+<td>Render the current state (or a saved plan) as human-readable text. <code>-json</code> for machine output.</td>
+</tr>
+<tr>
+<td><code>terraform output</code></td>
+<td>Print output values from state. <code>-json</code> for scripts; <code>terraform output -raw name</code> for a single bare value.</td>
+</tr>
+<tr>
+<td><code>terraform graph</code></td>
+<td>Emit the dependency graph in Graphviz DOT format (pipe to <code>dot -Tsvg</code> to see it).</td>
+</tr>
+<tr>
+<td><code>terraform state list</code></td>
+<td>List every resource address Terraform tracks — your fastest "what's in here?" check.</td>
+</tr>
+<tr>
+<td><code>terraform get</code></td>
+<td>Download the config's modules only, without the rest of <code>init</code>. Already-downloaded modules are reused and not even checked for updates unless you pass <code>-update</code>.</td>
+</tr>
+<tr>
+<td><code>terraform providers</code></td>
+<td>Show the providers the config requires (and <code>providers lock</code> / <code>mirror</code> / <code>schema</code> subcommands).</td>
+</tr>
+<tr>
+<td><code>terraform version</code></td>
+<td>Show the CLI version and whether a newer one is available.</td>
+</tr>
+</tbody>
+</table>
+<p><code>fmt</code> and <code>validate</code> are the two you run reflexively:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>terraform<span class="w"> </span>fmt<span class="w">        </span><span class="c1"># canonical formatting</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>terraform<span class="w"> </span>validate<span class="w">   </span><span class="c1"># syntax + consistency, no infrastructure touched</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>Success! The configuration is valid.
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title"><code>-chdir</code> runs a command as if you'd <code>cd</code>'d there</p>
+<p>The global option <code>terraform -chdir=DIR &lt;cmd&gt;</code> runs any subcommand as though it were launched in <code>DIR</code>. In automation it's cleaner than <code>cd</code>-ing around:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>terraform<span class="w"> </span>-chdir<span class="o">=</span>environments/production<span class="w"> </span>apply
+</span></code></pre></div>
+<p>Two things still use the original directory: the CLI configuration file, and <code>path.cwd</code> in your config (use <code>path.root</code> for the module directory). Enable shell tab-completion once with <code>terraform -install-autocomplete</code>.</p>
+</div>
+<h2 id="the-escape-hatches-refresh-only-and-target">The escape hatches: <code>-refresh-only</code> and <code>-target</code><a class="headerlink" href="#the-escape-hatches-refresh-only-and-target" title="Permanent link">&para;</a></h2>
+<p>Two options change <em>which</em> resources a plan considers. Both are for exceptional situations, not daily use.</p>
+<p><strong><code>-refresh-only</code></strong> reconciles state with reality without proposing infrastructure changes. Someone edited a resource in the cloud console; you want your state file to record the drift, but not "fix" it back. A plain <code>plan</code> would propose reverting the drift. <code>plan -refresh-only</code> instead shows you the drift and offers to update <em>state</em> to match reality:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>terraform<span class="w"> </span>apply<span class="w"> </span>-refresh-only<span class="w">    </span><span class="c1"># update state to match the real world; change no infra</span>
+</span></code></pre></div>
+<p>This is the correct, supported replacement for the old standalone <code>terraform refresh</code> command, because it shows you the drift and asks before writing it.</p>
+<p><strong><code>-target=ADDRESS</code></strong> restricts the operation to one resource (and its dependencies). It is a recovery tool, not a workflow:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>terraform<span class="w"> </span>apply<span class="w"> </span>-target<span class="o">=</span><span class="s2">"aws_instance.app_server"</span><span class="w">   </span><span class="c1"># exceptional use only</span>
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title"><code>-target</code> is for emergencies, and it lies by omission</p>
+<p>Targeting applies only part of your config, which means the plan you review is <em>not</em> the full picture — resources outside the target are ignored, so drift and broken dependencies go undetected. HashiCorp's own docs call it exceptional-circumstances-only. If you find yourself reaching for <code>-target</code> routinely, the real fix is to split the configuration into smaller, independently-applied pieces wired together with data sources (A7/E4). Use it to dig out of a mistake, then stop.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — negative targeting with <code>-exclude</code></p>
+<p>OpenTofu (1.9+) adds <code>-exclude=ADDRESS</code>, the inverse of <code>-target</code>: plan/apply everything <strong>except</strong> the given address and its dependents. When one resource is broken and you want to apply <em>everything else</em>, <code>-exclude=aws_instance.broken</code> is far safer than enumerating every other resource with <code>-target</code>. Terraform's open-source CLI has no equivalent. <code>-target</code> and <code>-exclude</code> are mutually exclusive in one command, and the same "exceptional circumstances only" caveat applies to both.</p>
+</div>
+<h2 id="lab-read-every-plan-symbol-on-localstack">🧪 Lab: read every plan symbol on LocalStack<a class="headerlink" href="#lab-read-every-plan-symbol-on-localstack" title="Permanent link">&para;</a></h2>
+<p>The four verbs and four symbols are worth <em>seeing</em>, not just reading. This lab drives the whole loop against the local <strong>AWS emulator</strong> (Ch1's <a href="../ch01-iac-fundamentals/#lab-setup-a-free-local-aws-docker">lab setup</a> — Floci, MiniStack, or LocalStack) and deliberately produces a <code>+</code>, a <code>~</code>, a <code>-/+</code>, and a <code>-</code> — for free, no AWS account.</p>
+<p><strong>Start the emulator</strong> (from the repo root; skip if it's already running):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>labs/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">      </span><span class="c1"># start Floci on :4566, detached</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:4566/_floci/health<span class="w">     </span><span class="c1"># wait until the services read "running"</span>
+</span></code></pre></div>
+<p>Then start from this <code>main.tf</code>:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># main.tf</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">    </span><span class="nb">aws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws", version = "~&gt; 6.0"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="p">}</span>
+</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>
+</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-31-9"><a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-31-10"><a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="p">}</span>
+</span><span id="__span-31-11"><a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a>
+</span><span id="__span-31-12"><a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"lab"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-31-13"><a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"workflow-lab-bucket"</span>
+</span><span id="__span-31-14"><a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><strong><code>+</code> create.</strong> <code>tflocal</code> supplies the emulator endpoints; the loop is otherwise identical to real AWS:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>tflocal<span class="w"> </span>init
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>tflocal<span class="w"> </span>plan<span class="w"> </span>-out<span class="o">=</span>tfplan<span class="w">     </span><span class="c1"># freeze the plan (the -out / apply-file discipline from above)</span>
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>tflocal<span class="w"> </span>apply<span class="w"> </span>tfplan<span class="w">         </span><span class="c1"># apply exactly what you reviewed — no re-plan, no prompt</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>Plan: 1 to add, 0 to change, 0 to destroy.
+</span></code></pre></div>
+<p><strong><code>~</code> update in-place.</strong> Add a tag — an attribute the provider can patch without recreating:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"lab"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"workflow-lab-bucket"</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">  </span><span class="nb">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">    </span><span class="na">Env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lab"</span><span class="c1">          # new attribute — patchable in place</span>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-34-7"><a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>tflocal<span class="w"> </span>plan
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>  # aws_s3_bucket.lab will be updated in-place
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>  ~ resource "aws_s3_bucket" "lab" {
+</span><span id="__span-36-3"><a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>        id                          = "workflow-lab-bucket"
+</span><span id="__span-36-4"><a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>      ~ tags                        = {
+</span><span id="__span-36-5"><a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>          + "Env" = "lab"
+</span><span id="__span-36-6"><a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a>        }
+</span><span id="__span-36-7"><a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a>      ~ tags_all                    = {
+</span><span id="__span-36-8"><a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a>          + "Env" = "lab"
+</span><span id="__span-36-9"><a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a>        }
+</span><span id="__span-36-10"><a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a>        # (14 unchanged attributes hidden)
+</span><span id="__span-36-11"><a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a>
+</span><span id="__span-36-12"><a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a>        # (4 unchanged blocks hidden)
+</span><span id="__span-36-13"><a id="__codelineno-36-13" name="__codelineno-36-13" href="#__codelineno-36-13"></a>    }
+</span><span id="__span-36-14"><a id="__codelineno-36-14" name="__codelineno-36-14" href="#__codelineno-36-14"></a>
+</span><span id="__span-36-15"><a id="__codelineno-36-15" name="__codelineno-36-15" href="#__codelineno-36-15"></a>Plan: 0 to add, 1 to change, 0 to destroy.
+</span></code></pre></div>
+<p><code>tags_all</code> changes alongside <code>tags</code> because it is the computed union of your tags and any <code>default_tags</code> set on the provider. With no provider defaults the two are identical. The <code>unchanged attributes hidden</code> lines are Terraform keeping the diff readable; everything it doesn't mention is staying put.</p>
+<p><strong><code>-/+</code> replace.</strong> Now change the <code>bucket</code> name. A bucket can't be renamed in place — the name is a <strong>forced-new</strong> attribute — so the same-looking edit flips to a destroy-then-create:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"lab"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-37-2"><a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"workflow-lab-bucket-renamed"</span><span class="c1">   # forced-new → replacement</span>
+</span><span id="__span-37-3"><a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="w">  </span><span class="nb">tags</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">Env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lab"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-37-4"><a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>  # aws_s3_bucket.lab must be replaced
+</span><span id="__span-38-2"><a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>-/+ resource "aws_s3_bucket" "lab" {
+</span><span id="__span-38-3"><a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>      ~ arn                         = "arn:aws:s3:::workflow-lab-bucket" -&gt; (known after apply)
+</span><span id="__span-38-4"><a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a>      ~ bucket                      = "workflow-lab-bucket" -&gt; "workflow-lab-bucket-renamed" # forces replacement
+</span><span id="__span-38-5"><a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a>      ~ bucket_domain_name          = "workflow-lab-bucket.s3.amazonaws.com" -&gt; (known after apply)
+</span><span id="__span-38-6"><a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a>      ~ id                          = "workflow-lab-bucket" -&gt; (known after apply)
+</span><span id="__span-38-7"><a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a>        tags                        = {
+</span><span id="__span-38-8"><a id="__codelineno-38-8" name="__codelineno-38-8" href="#__codelineno-38-8"></a>            "Env" = "lab"
+</span><span id="__span-38-9"><a id="__codelineno-38-9" name="__codelineno-38-9" href="#__codelineno-38-9"></a>        }
+</span><span id="__span-38-10"><a id="__codelineno-38-10" name="__codelineno-38-10" href="#__codelineno-38-10"></a>      # ... more attributes flipping to (known after apply) ...
+</span><span id="__span-38-11"><a id="__codelineno-38-11" name="__codelineno-38-11" href="#__codelineno-38-11"></a>        # (3 unchanged attributes hidden)
+</span><span id="__span-38-12"><a id="__codelineno-38-12" name="__codelineno-38-12" href="#__codelineno-38-12"></a>    }
+</span><span id="__span-38-13"><a id="__codelineno-38-13" name="__codelineno-38-13" href="#__codelineno-38-13"></a>
+</span><span id="__span-38-14"><a id="__codelineno-38-14" name="__codelineno-38-14" href="#__codelineno-38-14"></a>Plan: 1 to add, 0 to change, 1 to destroy.
+</span></code></pre></div>
+<p>Only <code>bucket</code> carries <code># forces replacement</code>. Everything else flipping to <code>(known after apply)</code> is a consequence: the replacement bucket is a new object, so its ARN, domain name and ID are all unknown until it exists. <code>tags</code> has no marker at all because it isn't changing.</p>
+<p>That <code>1 to destroy</code> in the summary is the whole lesson of the chapter, made concrete and harmless: an "edit" that is really a rebuild. On a bucket holding objects, the replacement would drop them — which is why you read the plan. Apply it, then experiment with <code>-replace</code>:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>tflocal<span class="w"> </span>apply
+</span><span id="__span-39-2"><a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>tflocal<span class="w"> </span>apply<span class="w"> </span>-replace<span class="o">=</span><span class="s2">"aws_s3_bucket.lab"</span><span class="w">   </span><span class="c1"># force a rebuild with nothing changed — shows -/+</span>
+</span></code></pre></div>
+<p><strong><code>-</code> destroy.</strong> Finally the two teardown blast radii. Delete the <code>resource</code> block and <code>apply</code> to see the surgical single <code>-</code>; or <code>tflocal destroy</code> to tear down the whole workspace:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>tflocal<span class="w"> </span>destroy
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>Plan: 0 to add, 0 to change, 1 to destroy.
+</span><span id="__span-41-2"><a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a>
+</span><span id="__span-41-3"><a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a>aws_s3_bucket.lab: Destroying... [id=workflow-lab-bucket-renamed]
+</span><span id="__span-41-4"><a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a>aws_s3_bucket.lab: Destruction complete after 0s
+</span><span id="__span-41-5"><a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a>
+</span><span id="__span-41-6"><a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a>Destroy complete! Resources: 1 destroyed.
+</span></code></pre></div>
+<p>You've now produced all four symbols and both teardown paths against a real API surface, at zero cost and zero risk — the ideal place to build the plan-reading reflex before a production plan is on the line.</p>
+<div class="admonition warning">
+<p class="admonition-title">The safe-to-be-reckless caveat</p>
+<p>The emulator is exactly where you <em>should</em> apply a scary <code>-/+</code> on purpose, because nothing real is lost. Don't let that habit follow you to a real backend: the plan symbols mean the same thing there, but <code>1 to destroy</code> next to a production bucket is not a lab.</p>
+</div>
+<h2 id="common-pitfalls">Common pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Applying without reading the plan.</strong> The whole safety model is the plan-then-confirm gate. A <code>~</code> that's secretly a <code>-/+</code> on a stateful resource is the classic loss. Read the summary counts, then the per-resource headers.</li>
+<li><strong>Assuming a bare <code>plan</code> guarantees the apply.</strong> It doesn't — <code>apply</code> re-plans. When the two must match (CI, a change window), use <code>plan -out=FILE</code> and <code>apply FILE</code>.</li>
+<li><strong><code>-auto-approve</code> in an interactive shell.</strong> It removes the one moment that catches an accidental destroy. Keep it in non-interactive CI, paired with a saved-plan review.</li>
+<li><strong><code>terraform destroy</code> against a workspace holding production.</strong> It deletes everything, no questions beyond one <code>yes</code>. Guard irreplaceable resources with <code>prevent_destroy</code>; never destroy a workspace you haven't just inspected.</li>
+<li><strong>Routine <code>-target</code>.</strong> It plans against a partial view and hides drift. It's a recovery tool. If it's part of your normal workflow, split the config instead.</li>
+<li><strong>Cross-platform lock mismatch.</strong> A lock file whose provider was first installed from a <em>mirror</em> records only the installing platform's checksums, so macOS breaks Linux CI. Pre-seed with <code>terraform providers lock -platform=…</code>, or use OpenTofu 1.12+.</li>
+<li><strong>Assuming the lock file pins modules.</strong> It pins providers only. The module manifest that holds a version steady lives in uncommitted <code>.terraform/</code>, so a fresh clone or CI runner re-resolves to the newest matching version. Pin with an exact version constraint.</li>
+<li><strong>Forgetting to re-<code>init</code> after adding a module or provider.</strong> <code>plan</code> will tell you the working directory is out of date. Re-run <code>init</code>.</li>
+</ul>
+<h2 id="exercises">Exercises<a class="headerlink" href="#exercises" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Recall</strong> — For each plan symbol (<code>+</code>, <code>~</code>, <code>-/+</code>, <code>-</code>), state whether it destroys anything, and give one change that produces it.</li>
+<li><strong>Predict</strong> — You change a resource's <code>name</code> tag (in-place-able) and its <code>subnet_id</code> (forced-new) in the same edit. What does the <code>Plan:</code> summary line look like, and which attribute drives the <code>-/+</code>?</li>
+<li><strong>Apply</strong> — Explain the difference between <code>terraform plan</code> then <code>terraform apply</code>, versus <code>terraform plan -out=tfplan</code> then <code>terraform apply tfplan</code>. When does the difference matter?</li>
+<li><strong>Extend</strong> — A teammate resized an instance in the AWS console. You want your state to reflect that but don't want Terraform to revert it. Which command, and why not a plain <code>apply</code>?</li>
+</ol>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Everything is a rotation of four verbs: <strong><code>init</code></strong> (prepare the directory, install providers/modules, write the lock file), <strong><code>plan</code></strong> (compute the diff, change nothing), <strong><code>apply</code></strong> (execute the diff, write state), <strong><code>destroy</code></strong> (tear down).</li>
+<li><code>.terraform.lock.hcl</code> locks <strong>providers only</strong> — module versions are held only by the uncommitted <code>.terraform/modules</code> manifest, so pin them in the config. Its checksums are <strong>trust-on-first-use</strong>: verify once at first install, and Terraform enforces that decision afterwards. A first install from a mirror records only your platform's hashes — pre-seed with <code>providers lock -platform=…</code> (unnecessary on OpenTofu 1.12+). New <code>h1:</code> lines in a diff are scheme migration, not an upgrade.</li>
+<li><code>plan</code> diffs three inputs: prior state, your config, and a fresh refresh of reality. <code>plan</code> and <code>apply</code> refresh in memory before diffing, so drift is detected. Three planning modes share the engine: default, destroy, and refresh-only — each begins with a refresh.</li>
+<li><strong>Read the plan.</strong> Four symbols: <code>+</code> create, <code>~</code> update in-place, <code>-/+</code> destroy-then-create (a forced-new attribute changed), <code>-</code> destroy. The <code>-/+</code> is the one that hides inside an "edit" — check the summary counts and the <code>must be replaced</code> header.</li>
+<li>Save a plan with <code>plan -out=FILE</code> and <code>apply FILE</code> to guarantee that what you reviewed is exactly what runs. This is the CI/CD backbone.</li>
+<li>You declare <em>what</em>; the <strong>dependency graph</strong> (built from references) decides <em>when</em> — create in dependency order, destroy in reverse, parallel where possible. Prefer implicit references to <code>depends_on</code>. The graph must be acyclic; a <code>Cycle:</code> error names the loop, and the fix is to route a shared value through a variable or local.</li>
+<li>Two teardown blast radii: remove one resource from config + <code>apply</code> (surgical), or <code>terraform destroy</code> (the whole workspace, irreversible). Guard precious resources with <code>prevent_destroy</code>.</li>
+<li>Force one deliberate rebuild with <code>apply -replace=ADDR</code> (supersedes deprecated <code>taint</code>). Reconcile drift into state with <code>apply -refresh-only</code>. Use <code>-target</code> only to dig out of a mistake.</li>
+<li>Run <code>fmt</code> and <code>validate</code> reflexively; lean on <code>show</code>, <code>output</code>, <code>state list</code>, and <code>graph</code> to inspect without touching infrastructure.</li>
+</ul>
+<hr />
+<p><strong>Next: B4 — HCL language basics.</strong> You can now drive the loop and read its output. Next you'll learn the language that fills the <code>.tf</code> files it operates on — blocks, arguments, types, and the top-level block kinds — so you're writing configuration by hand instead of adapting snippets.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Create infrastructure (AWS Get Started) — init / validate / apply of the first resource</li>
+<li>Manage infrastructure (AWS Get Started) — plan symbols <code>~</code> / <code>-/+</code>, the <code>-out</code> warning, dependency-graph ordering</li>
+<li>Destroy infrastructure (AWS Get Started) — the two teardown paths, <code>-</code> symbol, reverse-dependency order</li>
+<li>Terraform CLI Overview (command index) — the full command surface, <code>-chdir</code>, tab-completion</li>
+<li>Dependency Lock File — providers-only locking, trust-on-first-use, <code>zh:</code>/<code>h1:</code> schemes, the four lock-file diffs</li>
+<li>TID Ch 5 — The Terraform plan — the DAG, planning modes, cycles and cascading replacements</li>
+<li>The <code>-exclude</code> flag (OpenTofu) — negative targeting</li>
+<li>Topic page: Core workflow</li>
+<li>Version &amp; Certification Facts</li>
+<li>Web (verified 2026-07-08): <a href="https://developer.hashicorp.com/terraform/cli/commands/plan"><code>terraform plan</code> reference</a> · <a href="https://developer.hashicorp.com/terraform/cli/commands/apply"><code>terraform apply</code> reference</a> · <a href="https://developer.hashicorp.com/terraform/tutorials/state/refresh">Use refresh-only mode</a></li>
+<li>🧪 Lab: Floci Facts · MiniStack Facts · LocalStack Facts (Docker setup, <code>tflocal</code> — verified 2026-07-09)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+        <script src="../../javascripts/sidebar-toggle.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js" defer></script>
+      
+    
+  </body>
+</html>

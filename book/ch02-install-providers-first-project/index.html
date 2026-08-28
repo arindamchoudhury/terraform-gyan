@@ -1,0 +1,2183 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Personal notes and book from learning Terraform (and OpenTofu).">
+      
+      
+        <meta name="author" content="arindam@live.com">
+      
+      
+        <link rel="canonical" href="https://arindamchoudhury.github.io/terraform-gyan/book/ch02-install-providers-first-project/">
+      
+      
+        <link rel="prev" href="../ch01-iac-fundamentals/">
+      
+      
+        <link rel="next" href="../ch03-core-workflow/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Chapter 2 — Install, providers & your first project - Terraform Learning Notes</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-2-install-providers-your-first-project" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Terraform Learning Notes" class="md-header__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terraform Learning Notes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 2 — Install, providers &amp; your first project
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Terraform Learning Notes" class="md-nav__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Terraform Learning Notes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Learning Path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Book
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Book
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch01-iac-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  1. Infrastructure as Code & where Terraform fits
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  2. Install, providers & your first project
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  2. Install, providers & your first project
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nothing-runs-until-three-things-are-in-place" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Nothing runs until three things are in place
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-the-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Install the CLI
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install the CLI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#package-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Package manager
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Manual install
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-and-enable-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Verify and enable completion
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wire-up-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Wire up credentials
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Wire up credentials">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coming-from-python-is-there-a-env-for-terraform" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Coming from Python: is there a <code>.env</code> for Terraform?
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anatomy-of-a-project-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Anatomy of a project directory
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declaring-a-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declaring a provider
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Declaring a provider">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-source-address" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The source address
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#providers-that-dont-come-from-the-public-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Providers that don't come from the public registry
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-version-constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The version constraint
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuring-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configuring it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-init-install-and-lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform init</code> — install and lock
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#your-first-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Your first resource
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-your-first-resource-on-localstack" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: your first resource on LocalStack
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch03-core-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  3. The core workflow: init / plan / apply / destroy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch04-hcl-language-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  4. HCL language basics
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch05-providers-resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  5. Providers & resources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch06-input-variables-outputs-locals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  6. Input variables, outputs & locals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch07-expressions-operators-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  7. Expressions, operators & functions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch08-data-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  8. Data sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch09-state-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  9. State fundamentals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch10-meta-arguments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  10. Meta-arguments: count, for_each, depends_on
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch11-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  11. The lifecycle meta-argument
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch12-dynamic-blocks-complex-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  12. Dynamic blocks & complex types
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch13-using-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  13. Using modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch14-authoring-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  14. Authoring modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch15-remote-state-backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  15. Remote state & backends
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch16-state-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  16. State management operations
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch17-provider-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  17. Provider configuration in depth
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch18-provisioners-escape-hatches/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  18. Provisioners, terraform_data & escape hatches
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nothing-runs-until-three-things-are-in-place" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Nothing runs until three things are in place
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-the-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Install the CLI
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install the CLI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#package-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Package manager
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Manual install
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-and-enable-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Verify and enable completion
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wire-up-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Wire up credentials
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Wire up credentials">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coming-from-python-is-there-a-env-for-terraform" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Coming from Python: is there a <code>.env</code> for Terraform?
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anatomy-of-a-project-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Anatomy of a project directory
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declaring-a-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declaring a provider
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Declaring a provider">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-source-address" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The source address
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#providers-that-dont-come-from-the-public-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Providers that don't come from the public registry
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-version-constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The version constraint
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuring-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configuring it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-init-install-and-lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>terraform init</code> — install and lock
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#your-first-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Your first resource
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-your-first-resource-on-localstack" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: your first resource on LocalStack
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="chapter-2-install-providers-your-first-project">Chapter 2 — Install, providers &amp; your first project<a class="headerlink" href="#chapter-2-install-providers-your-first-project" title="Permanent link">&para;</a></h1>
+<h2 id="learning-outcomes">Learning outcomes<a class="headerlink" href="#learning-outcomes" title="Permanent link">&para;</a></h2>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>Install the Terraform (or OpenTofu) CLI on your platform and verify it.</li>
+<li>Wire cloud credentials so a provider can authenticate, without hard-coding a secret.</li>
+<li>Declare a provider with <code>required_providers</code>, understand the <code>source</code> address and version constraint, and configure it with a <code>provider</code> block.</li>
+<li>Lay out a first working directory, run <code>terraform init</code>, and provision one real resource from scratch.</li>
+<li>Recognize the files Terraform generates (<code>.terraform/</code>, <code>.terraform.lock.hcl</code>, <code>terraform.tfstate</code>) and which of them to commit.</li>
+</ul>
+<h2 id="nothing-runs-until-three-things-are-in-place">Nothing runs until three things are in place<a class="headerlink" href="#nothing-runs-until-three-things-are-in-place" title="Permanent link">&para;</a></h2>
+<p>Chapter 1 was the <em>why</em>. This chapter is where you get Terraform running for real. Before a single resource can be created, three pieces must line up:</p>
+<ol>
+<li><strong>The CLI</strong> — the <code>terraform</code> binary, containing Core (the engine).</li>
+<li><strong>A provider plugin</strong> — the Go binary that knows how to talk to your target platform's API. Core fetches it during <code>init</code>.</li>
+<li><strong>Credentials</strong> — the provider still needs permission to call the vendor's API on your behalf.</li>
+</ol>
+<p>Miss any one and nothing works. No CLI, no engine. No provider, and Core has no idea what an <code>aws_instance</code> even is. No credentials, and the provider gets a <code>403</code> the moment it tries to create anything. This chapter installs all three, then stands up your first resource.</p>
+<p>There is a second, quieter lesson here: <strong>project layout</strong>. The mistakes you make in the first directory — where files go, what gets committed, how versions are pinned — are the ones that hurt for months. So this chapter is as much about the four files you write and the three files Terraform generates as it is about the install.</p>
+<h2 id="install-the-cli">Install the CLI<a class="headerlink" href="#install-the-cli" title="Permanent link">&para;</a></h2>
+<p>Both tools ship as a <strong>single self-contained binary</strong> — no runtime, no dependencies — installable via a package manager or by hand. They differ only in names:</p>
+<ul>
+<li><strong>Terraform</strong> — package and binary are both <code>terraform</code>.</li>
+<li><strong>OpenTofu</strong> — binary is <strong><code>tofu</code></strong>, but the package is <strong><code>opentofu</code></strong> (that mismatch is what makes <code>choco install tofu</code> / <code>brew install hashicorp/tap/tofu</code> fail).</li>
+</ul>
+<p>Configuration is byte-identical between them, so install whichever you'll use; the commands below cover both.</p>
+<div class="admonition warning">
+<p class="admonition-title">Don't install OpenTofu from HashiCorp's channels</p>
+<p><code>hashicorp/tap</code> (Homebrew) and <code>apt.releases.hashicorp.com</code> ship <strong>HashiCorp products only</strong> — OpenTofu isn't one. Use OpenTofu's <em>own</em> packages, always named <strong><code>opentofu</code></strong> (or the <code>tofu</code> binary via the standalone script/Snap).</p>
+</div>
+<h3 id="package-manager">Package manager<a class="headerlink" href="#package-manager" title="Permanent link">&para;</a></h3>
+<p><strong>macOS (Homebrew)</strong></p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Terraform — HashiCorp's own tap (see the BSL note below)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>brew<span class="w"> </span>tap<span class="w"> </span>hashicorp/tap
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>brew<span class="w"> </span>install<span class="w"> </span>hashicorp/tap/terraform
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># OpenTofu — in homebrew-core, no tap needed</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>brew<span class="w"> </span>install<span class="w"> </span>opentofu
+</span></code></pre></div>
+<p><strong>Windows (Chocolatey)</strong></p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>choco<span class="w"> </span>install<span class="w"> </span>terraform<span class="w">     </span><span class="c1"># Terraform</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>choco<span class="w"> </span>install<span class="w"> </span>opentofu<span class="w">      </span><span class="c1"># OpenTofu  (package 'opentofu', installs the 'tofu' binary)</span>
+</span></code></pre></div>
+<p><strong>Linux (Debian/Ubuntu)</strong></p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Terraform — HashiCorp signed apt repo</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>wget<span class="w"> </span>-O-<span class="w"> </span>https://apt.releases.hashicorp.com/gpg<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>sudo<span class="w"> </span>tee<span class="w"> </span>/usr/share/keyrings/hashicorp-archive-keyring.gpg<span class="w"> </span>&gt;<span class="w"> </span>/dev/null
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="s2">  https://apt.releases.hashicorp.com </span><span class="k">$(</span>lsb_release<span class="w"> </span>-cs<span class="k">)</span><span class="s2"> main"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/apt/sources.list.d/hashicorp.list
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>terraform
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># OpenTofu — official convenience script (handles deb/rpm/snap/standalone)</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://get.opentofu.org/install-opentofu.sh<span class="w"> </span>-o<span class="w"> </span>install-opentofu.sh
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>chmod<span class="w"> </span>+x<span class="w"> </span>install-opentofu.sh
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>./install-opentofu.sh<span class="w"> </span>--install-method<span class="w"> </span>deb<span class="w">    </span><span class="c1"># use --install-method rpm on RHEL/Fedora</span>
+</span></code></pre></div>
+<p>RHEL/CentOS/Amazon Linux/Fedora: Terraform via HashiCorp's <code>yum</code>/<code>dnf</code> repo (<code>yum install terraform</code>); OpenTofu via the same script with <code>--install-method rpm</code>, its rpm repo, or a <strong>Snap</strong> (<code>snap install opentofu</code>). See <a href="https://opentofu.org/docs/intro/install/">OpenTofu install docs</a> for every method.</p>
+<div class="admonition warning">
+<p class="admonition-title">The BSL wrinkle: some package managers freeze Terraform at v1.5.7</p>
+<p>HashiCorp's 2023 relicense to the BSL (Chapter 1) had a side-effect: several community package managers stopped shipping Terraform past <strong>v1.5.7</strong>, the last MPL release — plain Homebrew's <code>terraform</code> formula among them. That is why the macOS command uses <strong><code>hashicorp/tap</code></strong> (HashiCorp's own, current at 1.15.8). If <code>terraform version</code> reports 1.5.7 after a plain <code>brew install terraform</code>, this is why. <strong>OpenTofu (MPL 2.0) has no such restriction</strong> — every channel tracks the latest release (1.12.4).</p>
+</div>
+<h3 id="manual-install">Manual install<a class="headerlink" href="#manual-install" title="Permanent link">&para;</a></h3>
+<p>Download the zip for your OS — Terraform from <code>releases.hashicorp.com</code>, OpenTofu from <code>github.com/opentofu/opentofu/releases</code> — unzip, and put the single executable on your <code>PATH</code>:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span><span class="w">                                    </span><span class="c1"># list PATH dirs (macOS/Linux)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>mv<span class="w"> </span>~/Downloads/terraform<span class="w"> </span>/usr/local/bin/<span class="w">      </span><span class="c1"># or:  mv ~/Downloads/tofu /usr/local/bin/</span>
+</span></code></pre></div>
+<p>On Windows, run <code>path</code> and move <code>terraform.exe</code> / <code>tofu.exe</code> into one of the listed dirs.</p>
+<p>Both projects are Go programs, so a third route exists when no pre-compiled binary matches your platform: build it yourself.</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/hashicorp/terraform<span class="w">      </span><span class="c1"># or .../opentofu/opentofu</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>terraform
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>go<span class="w"> </span>install<span class="w">                                            </span><span class="c1"># binary lands in $GOPATH/bin</span>
+</span></code></pre></div>
+<p>This is the escape hatch for an unusual OS/arch, not a normal install path — you get whatever <code>main</code> currently is, not a released version.</p>
+<h3 id="verify-and-enable-completion">Verify and enable completion<a class="headerlink" href="#verify-and-enable-completion" title="Permanent link">&para;</a></h3>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>terraform<span class="w"> </span>version<span class="w">      </span><span class="c1"># e.g. 1.15.8</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>tofu<span class="w"> </span>version<span class="w">           </span><span class="c1"># e.g. 1.12.4     (whichever you installed)</span>
+</span></code></pre></div>
+<p><code>-help</code> lists the subcommands; append it to any subcommand for its flags (<code>terraform plan -help</code> / <code>tofu plan -help</code>). Enable tab completion once, then restart your shell:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>touch<span class="w"> </span>~/.bashrc<span class="w">                        </span><span class="c1"># or the Zsh equivalent</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>terraform<span class="w"> </span>-install-autocomplete<span class="w">        </span><span class="c1"># tofu -install-autocomplete for OpenTofu</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">The compatibility promise</p>
+<p>Both tools keep backward compatibility across <strong>minor</strong> versions: a config for one 1.x keeps working on any later 1.x. That is what lets <code>required_version = "&gt;= 1.2"</code> be an honest floor rather than a gamble — more on that below. OpenTofu also keeps the <code>terraform {}</code> block name (there is no <code>tofu {}</code> block), so a config is portable between the two without edits.</p>
+</div>
+<h2 id="wire-up-credentials">Wire up credentials<a class="headerlink" href="#wire-up-credentials" title="Permanent link">&para;</a></h2>
+<p>A provider needs permission to act. <strong>Providers have no standard credential system</strong> — each one authenticates its own way, so always read the provider's docs for a new platform. The important discipline is universal, though: <strong>credentials never go in your <code>.tf</code> files.</strong> They land in state and in Git if you hard-code them.</p>
+<p>The AWS provider is the common first case. It reuses the <strong>standard AWS credential chain</strong> — the exact same one the AWS CLI and the SDKs use. The simplest route for local development is environment variables:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s2">"AKIA..."</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="s2">"..."</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_REGION</span><span class="o">=</span><span class="s2">"us-west-2"</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>aws<span class="w"> </span>configure<span class="w"> </span>list<span class="w">                 </span><span class="c1"># verify the chain sees your credentials</span>
+</span></code></pre></div>
+<p>Running <code>aws configure</code> writes the same values to <code>~/.aws/credentials</code>, which the provider also reads. Either works. What matters is that the secret lives in your environment or an AWS config file — <strong>not in the config Terraform tracks.</strong></p>
+<div class="admonition tip">
+<p class="admonition-title">Static keys are the beginner default, not the destination</p>
+<p>Exported access keys are fine while you're learning. In a real pipeline they are a top security risk — long-lived keys sitting in CI variables. The production answer is short-lived credentials minted on demand via OIDC (a pipeline assumes a role with no stored secret). That is A6's subject. For now, an exported key in your own shell is acceptable; just never commit one.</p>
+</div>
+<h3 id="coming-from-python-is-there-a-env-for-terraform">Coming from Python: is there a <code>.env</code> for Terraform?<a class="headerlink" href="#coming-from-python-is-there-a-env-for-terraform" title="Permanent link">&para;</a></h3>
+<p>If you've used <code>python-dotenv</code>, the reflex is to drop secrets in a <code>.env</code> file and have the tool load it. <strong>Terraform has no <code>.env</code> autoload.</strong> It never reads a file called <code>.env</code>. But two categories of value need feeding in, and each has its own mechanism, so it helps to keep them separate:</p>
+<ol>
+<li><strong>Provider credentials</strong> — the cloud API keys from the section above. These ride the provider's own credential chain (<code>AWS_ACCESS_KEY_ID</code>, <code>~/.aws/credentials</code>), not a Terraform mechanism.</li>
+<li><strong>Your own input variables</strong> — a DB password, an environment name, a CIDR block. These are Terraform <em>variables</em> (Chapter 6 covers declaring them), and Terraform has three ways to supply their values.</li>
+</ol>
+<p><strong><code>TF_VAR_*</code> environment variables.</strong> Terraform maps any shell variable named <code>TF_VAR_&lt;name&gt;</code> onto the input variable <code>&lt;name&gt;</code>. This is the direct env-to-config bridge:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">TF_VAR_db_password</span><span class="o">=</span><span class="s2">"s3cr3t"</span><span class="w">     </span><span class="c1"># feeds variable "db_password"</span>
+</span></code></pre></div>
+<p><strong><code>*.auto.tfvars</code> / <code>terraform.tfvars</code> files.</strong> This is the closest thing to a <code>.env</code>: a file of <code>key = value</code> lines that Terraform <strong>auto-loads</strong> from the working directory with no flag. <code>terraform.tfvars</code>, <code>terraform.tfvars.json</code>, and any <code>*.auto.tfvars</code> are picked up automatically; keep a secret one out of Git.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># secrets.auto.tfvars   ← git-ignore this file</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="na">db_password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"s3cr3t"</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a># .gitignore
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>*.tfvars
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>!example.tfvars      # keep a committed template with dummy values
+</span></code></pre></div>
+<p><strong>A real <code>.env</code>, via <code>direnv</code>.</strong> If you specifically want a literal <code>.env</code>-style file auto-sourced into your shell, that is a shell tool's job, not Terraform's. <a href="https://direnv.net/"><code>direnv</code></a> reads an <code>.envrc</code> on <code>cd</code> and exports the vars; Terraform then sees them like any other environment variable:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># .envrc   ← git-ignore this file</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s2">"AKIA..."</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">TF_VAR_db_password</span><span class="o">=</span><span class="s2">"s3cr3t"</span>
+</span></code></pre></div>
+<p>When the same variable is set more than one way, Terraform resolves it by a fixed precedence. Highest wins:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Precedence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-var</code> / <code>-var-file</code> on the command line</td>
+<td>highest</td>
+</tr>
+<tr>
+<td><code>*.auto.tfvars</code> (lexical order)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>terraform.tfvars.json</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>terraform.tfvars</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>TF_VAR_*</code> environment variable</td>
+<td></td>
+</tr>
+<tr>
+<td>variable <code>default</code></td>
+<td>lowest</td>
+</tr>
+</tbody>
+</table>
+<p>Note the ordering catch: a <code>terraform.tfvars</code> file <strong>overrides</strong> a <code>TF_VAR_*</code> env var, not the other way round. Files beat the environment.</p>
+<div class="admonition danger">
+<p class="admonition-title">A variable value still lands in state</p>
+<p>None of these keeps a secret <em>safe</em> — it only keeps it out of your <code>.tf</code> files and out of Git. Whatever you feed as a variable, Terraform writes its value into state. Marking the variable <code>sensitive = true</code> only masks it in CLI output; the plaintext still sits in the state file. Terraform 1.10+ adds <code>ephemeral</code> variables that are omitted from state and plan, and the real production answer is a secret manager or Vault. Chapter 23 (A6) is the full treatment; for now, treat state as sensitive and never commit it.</p>
+<p>OpenTofu users have one extra option here (see the box below), but the same discipline applies: encrypting the file is a safety net, not a licence to relax about what state contains.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — encrypted state (and the same <code>TF_VAR_</code> vars)</p>
+<p>OpenTofu reads the <strong>same</strong> <code>TF_VAR_*</code> and <code>TF_*</code> environment variables as Terraform — there is <em>no</em> separate <code>TOFU_VAR_</code> prefix, so credentials and variables carry over unchanged (a compatibility win, not a divergence).</p>
+<p>It also ships <strong>native state (and plan) encryption</strong>, which Terraform's open-source CLI lacks — a built-in answer to the plaintext-in-state problem above. Two caveats keep the warning true even so. It is <strong>opt-in and per-target</strong>: you add an <code>encryption</code> block with separate <code>state</code> and <code>plan</code> sections, so state stays plaintext until you configure it, and a plan file stays plaintext unless you encrypt that target too. And it only protects data <strong>at rest</strong>; OpenTofu's own docs note it "cannot protect the sensitive values in the state file from the person running the <code>tofu</code> command," since the value is decrypted for the run. Treat it as defence in depth on top of "state is sensitive," not a replacement. E3 covers the setup.</p>
+</div>
+<h2 id="anatomy-of-a-project-directory">Anatomy of a project directory<a class="headerlink" href="#anatomy-of-a-project-directory" title="Permanent link">&para;</a></h2>
+<p>A Terraform project is just a directory of <code>.tf</code> files. Terraform loads <strong>every <code>.tf</code> file</strong> in the working directory and resolves dependencies by reference, so <strong>filenames are for humans, not for Terraform</strong> — block order and file split are entirely your choice. Convention, not a rule, gives you a clean starting layout:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terraform.tf</code> (or <code>providers.tf</code>)</td>
+<td>the <code>terraform</code> block — <code>required_providers</code>, version floor, backend later</td>
+</tr>
+<tr>
+<td><code>main.tf</code></td>
+<td>the <code>resource</code> and <code>data</code> blocks — the bulk of the logic</td>
+</tr>
+<tr>
+<td><code>variables.tf</code></td>
+<td><code>variable</code> declarations (Chapter 6)</td>
+</tr>
+<tr>
+<td><code>outputs.tf</code></td>
+<td><code>output</code> blocks (Chapter 6)</td>
+</tr>
+</tbody>
+</table>
+<p>For a first project, <code>terraform.tf</code> and <code>main.tf</code> are enough; the other two arrive when you parameterize in B6.</p>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — extra file extensions</p>
+<p>OpenTofu reads the same <code>.tf</code> files, and (1.8+) also <code>.tofu</code> files — loaded <em>instead of</em> a same-named <code>.tf</code> when present, so you can ship OpenTofu-only overrides without forking the project. Its CLI config file is <code>.tofurc</code> (Terraform's is <code>.terraformrc</code>); it reads the same <code>TF_*</code> environment variables as Terraform (no separate <code>TOFU_*</code> prefix). Keep everything in <code>.tf</code> for portable, tool-neutral projects; reach for <code>.tofu</code> only when a file must diverge.</p>
+</div>
+<p>Alongside the files you write, Terraform <strong>generates three of its own</strong> on first use. Knowing what each is — and whether to commit it — is half of avoiding beginner pain:</p>
+<pre class="mermaid"><code>flowchart TB
+    subgraph you["Files you write — commit all"]
+        A["terraform.tf"]
+        B["main.tf"]
+    end
+    subgraph gen["Files Terraform generates"]
+        C[".terraform/&lt;br/&gt;(downloaded plugins)"]:::ignore
+        D[".terraform.lock.hcl&lt;br/&gt;(exact provider versions)"]:::commit
+        E["terraform.tfstate&lt;br/&gt;(real-infra record)"]:::ignore
+    end
+    A --&gt;|terraform init| C
+    A --&gt;|terraform init| D
+    B --&gt;|terraform apply| E
+    classDef commit fill:#1f7a1f,color:#fff;
+    classDef ignore fill:#7a1f1f,color:#fff;</code></pre>
+<ul>
+<li><strong><code>.terraform/</code></strong> — a hidden cache holding the downloaded provider (and module) binaries. Recreatable by re-running <code>init</code>. <strong>Do not commit it</strong> — it's large and platform-specific.</li>
+<li><strong><code>.terraform.lock.hcl</code></strong> — the <strong>dependency lock file</strong>. Records the <em>exact</em> provider versions and checksums <code>init</code> chose. <strong>Commit it.</strong> It's what makes your teammate and your CI pipeline install the identical provider you tested against.</li>
+<li><strong><code>terraform.tfstate</code></strong> — Terraform's record of the real infrastructure (Chapter 9 covers it in depth). <strong>Do not commit it.</strong> It can hold secrets in plaintext, and committing it invites merge conflicts and corruption. Teams move it to a remote backend (I6); for now it stays local and out of Git.</li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — same files, two genuine improvements</p>
+<p>OpenTofu keeps the <strong>same filenames</strong> (<code>.terraform/</code>, <code>.terraform.lock.hcl</code>, <code>terraform.tfstate</code> — not renamed, for drop-in compatibility), so the <code>.gitignore</code> below is identical. Two things it does <em>better</em>:</p>
+<ul>
+<li><strong>Lock file</strong> — <code>tofu init</code> records <strong>full cross-platform checksums automatically</strong> (OT 1.12). Terraform records only <em>your</em> platform's hashes, so a macOS-generated lock file breaks a teammate's Linux CI unless you pre-seed with <code>terraform providers lock -platform=…</code>. OpenTofu removes that footgun outright.</li>
+<li><strong>State encryption</strong> — OpenTofu can <strong>encrypt the state file (and plan files) at rest</strong> natively (OT 1.7), which directly mitigates the "holds secrets in plaintext" risk above. Terraform has <strong>no built-in equivalent</strong> — its state is always plaintext, so the <em>only</em> protection is keeping it out of Git and on a secured backend. (Full treatment in E3 / Chapter 9.)</li>
+</ul>
+</div>
+<p>So a first <code>.gitignore</code> looks like this:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a># Terraform
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>.terraform/
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>*.tfstate
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>*.tfstate.*
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>*.tfvars          # may hold secrets; commit an example instead
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>!.terraform.lock.hcl   # NOT ignored — commit the lock file
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>crash.log
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">The one file people wrongly ignore</p>
+<p>The single most common layout mistake is <code>.gitignore</code>-ing <code>.terraform.lock.hcl</code> along with everything else <code>.terraform*</code>. Don't. The <code>.terraform/</code> <strong>directory</strong> is disposable; the <code>.terraform.lock.hcl</code> <strong>file</strong> is not — it's the reproducibility guarantee for your whole team. HashiCorp's official guidance is to commit it. The trailing <code>!.terraform.lock.hcl</code> un-ignore line above is there precisely because a broad <code>.terraform*</code> pattern would otherwise swallow it.</p>
+</div>
+<h2 id="declaring-a-provider">Declaring a provider<a class="headerlink" href="#declaring-a-provider" title="Permanent link">&para;</a></h2>
+<p>Setup is three steps: <strong>declare</strong> the provider, <strong>configure</strong> it, then <strong>init</strong> to install and lock. The declare/configure split trips up beginners constantly, so name it plainly:</p>
+<ul>
+<li><strong><code>required_providers</code></strong> (inside the <code>terraform</code> block) declares <em>what to install</em> and at which versions.</li>
+<li><strong>The <code>provider</code> block</strong> <em>configures</em> an installed provider — auth and scoping (region, project).</li>
+</ul>
+<p>They are two different jobs in two different blocks. Here is a complete first <code>terraform.tf</code>:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># terraform.tf</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nb">aws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">      </span><span class="na">source</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws"</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">      </span><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~&gt; 6.0"</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">  </span><span class="na">required_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.2"</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="p">}</span>
+</span></code></pre></div>
+<h3 id="the-source-address">The source address<a class="headerlink" href="#the-source-address" title="Permanent link">&para;</a></h3>
+<p><code>source = "hashicorp/aws"</code> is shorthand. The full form of any source address is:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>[&lt;HOSTNAME&gt;/]&lt;NAMESPACE&gt;/&lt;TYPE&gt;
+</span></code></pre></div>
+<ul>
+<li><strong>Hostname</strong> (optional) — the registry host; defaults to <code>registry.terraform.io</code> when omitted.</li>
+<li><strong>Namespace</strong> — the publisher/org (<code>hashicorp</code>).</li>
+<li><strong>Type</strong> — the platform's short name (<code>aws</code>).</li>
+</ul>
+<p>So <code>hashicorp/aws</code> expands to <code>registry.terraform.io/hashicorp/aws</code>. The key on the left (<code>aws</code>) is the <strong>local name</strong> — the identifier you use everywhere else in the module. Nearly every provider has a <em>preferred</em> local name that doubles as its resource-type prefix, which is why <code>aws_instance</code> implies the <code>aws</code> local name. Keep local name = type unless two providers collide (two different <code>http</code> providers, say), in which case you give them distinct compound names.</p>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — default provider registry</p>
+<p>The same shorthand <code>hashicorp/aws</code> resolves from a <strong>different host</strong> under OpenTofu: <code>registry.opentofu.org</code>, not <code>registry.terraform.io</code>. The short address is identical, so configs port unchanged; write the full <code>registry.terraform.io/hashicorp/aws</code> only if you must pin HashiCorp's registry specifically. Version constraints behave the same in both tools, and so does the lock file's format and purpose.</p>
+<p><strong>A committed lock file is not portable between the two tools, though</strong>, and that follows directly from the host difference above. Entries in <code>.terraform.lock.hcl</code> are keyed by the <strong>fully-qualified</strong> source address, host included, so a lock written by Terraform records <code>registry.terraform.io/hashicorp/aws</code> and cannot satisfy OpenTofu, which is looking for <code>registry.opentofu.org/hashicorp/aws</code>. Running <code>tofu</code> in a directory holding Terraform's lock fails before it plans anything. Measured while writing Chapter 12:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Error: Inconsistent dependency lock file
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>The following dependency selections recorded in the lock file are inconsistent
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>with the current configuration:
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>  - provider registry.opentofu.org/hashicorp/aws: required by this configuration
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    but no version is selected
+</span></code></pre></div>
+<p><code>tofu init -upgrade</code> resolves it by writing OpenTofu's own entry. The practical consequence for a repo that must build under both: the two tools cannot share one committed lock file, so pick one tool per working directory rather than expecting a single lock to serve both.</p>
+<p>Expect the resolved <strong>versions</strong> to drift apart too. The same <code>~&gt; 6.0</code> constraint, run on the same day against the two registries, selected AWS provider <strong>6.58.0</strong> under Terraform and <strong>6.57.1</strong> under OpenTofu. Both satisfy the constraint; the mirrors simply are not in lockstep.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why some old modules have no <code>source</code> at all</p>
+<p>Terraform v0.12.26–v0.13 <strong>accepted but ignored</strong> the <code>source</code> argument, and v0.12 couldn't auto-install third-party providers at all. Modules written to work on both eras therefore omit <code>source</code> entirely for <code>hashicorp</code>-namespace providers and rely on inference. You'll still meet this in long-lived repos. It isn't a style choice — it's a fossil, and there's no reason to write new code that way.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Provider inference — convenient, discouraged</p>
+<p>If you omit <code>required_providers</code> entirely, Terraform will <em>guess</em>: it assumes the resource prefix is the local name and the namespace is <code>hashicorp</code>, so <code>aws_instance</code> → <code>hashicorp/aws</code>, <code>random_id</code> → <code>hashicorp/random</code>. It works, but you lose the ability to pin a version — and an untested provider upgrade can silently break you. Always declare providers explicitly.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Vendor vs. provider — why the source address has a namespace</p>
+<p>Terraform has <strong>no formal <code>vendor</code> object</strong> — only <strong>provider</strong> is a language construct. But it's worth separating the two in your head, because they don't map one-to-one and that's exactly why a source address needs a <code>&lt;namespace&gt;/&lt;type&gt;</code>:</p>
+<ul>
+<li><strong>Vendor</strong> = the external system that owns the real infrastructure (AWS, Cloudflare, Okta). <strong>Provider</strong> = the Go plugin that wraps its API. The SDK analogy: AWS is the vendor, the <code>aws</code> provider is Terraform's Boto3.</li>
+<li><strong>Core is vendor-agnostic.</strong> The engine only knows the provider plugin interface; it delegates every vendor-specific call to the provider. The provider <em>is</em> the abstraction boundary — that's the whole "one engine, pluggable platforms" design from Chapter 1.</li>
+<li><strong>Not 1:1.</strong> One vendor can ship several providers (Azure: <code>azurerm</code>/<code>azuread</code>/<code>azapi</code>; AWS: <code>aws</code> + <code>awscc</code>), and some providers wrap <strong>no vendor at all</strong> — the utility providers <code>random</code>, <code>null</code>, <code>time</code>, <code>tls</code>, <code>terraform_data</code>. That's why the address carries an explicit namespace: <code>hashicorp/aws</code> and a community <code>someorg/aws</code> could both exist.</li>
+<li><strong>Independent versioning.</strong> A provider is its own artifact with its own release cadence and registry namespace. <strong>Provider version ≠ vendor API version</strong> — the AWS provider is on major 6 while AWS-the-service has no "v6." Which is precisely what the next section pins.</li>
+</ul>
+</div>
+<h3 id="providers-that-dont-come-from-the-public-registry">Providers that don't come from the public registry<a class="headerlink" href="#providers-that-dont-come-from-the-public-registry" title="Permanent link">&para;</a></h3>
+<p>Two cases sit outside the <code>hashicorp/aws</code>-from-the-registry default, and both explain why the address has an optional hostname at all.</p>
+<p><strong>The built-in provider.</strong> Terraform ships exactly one provider inside the binary, addressed <code>terraform.io/builtin/terraform</code>. It backs the <strong><code>terraform_remote_state</code></strong> data source (Chapter 15's subject — reading one workspace's outputs from another). You never declare it in <code>required_providers</code>; it's simply there. The only time you see the address is in an error message.</p>
+<div class="admonition warning">
+<p class="admonition-title"><code>terraform.io/builtin/terraform</code> is not <code>hashicorp/terraform</code></p>
+<p>There is an old registry provider named <code>hashicorp/terraform</code>. It is a <strong>different, long-obsolete thing</strong> and is incompatible with modern Terraform. If a stale config or an error message points you at it, that's a bug to fix, not a provider to install.</p>
+</div>
+<p><strong>In-house providers.</strong> If your org wraps an internal platform in its own provider, you don't publish it to the public registry. Two distribution routes:</p>
+<ol>
+<li>
+<p><strong>A private registry</strong> — anything implementing the provider registry protocol. You reference it by putting its hostname in the source address, which is exactly what the optional hostname is for:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nb">mycloud</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">      </span><span class="na">source</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"terraform.example.com/examplecorp/ourcloud"</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">      </span><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.0"</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="p">}</span>
+</span></code></pre></div>
+</li>
+<li>
+<p><strong>A filesystem or network mirror</strong> — drop the plugin binaries into a local mirror directory laid out by address, and <code>init</code> finds them with no registry call at all:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>terraform.example.com/examplecorp/ourcloud/1.0.0/linux_amd64/terraform-provider-ourcloud
+</span></code></pre></div>
+<p>The same mechanism serves air-gapped environments, where even public providers must come from a mirror rather than the internet.</p>
+</li>
+</ol>
+<h3 id="the-version-constraint">The version constraint<a class="headerlink" href="#the-version-constraint" title="Permanent link">&para;</a></h3>
+<p><code>version = "~&gt; 6.0"</code> is a constraint, not an exact pin. A constraint string is one or more <strong>conditions</strong> — an operator plus a version number — separated by commas, and a version qualifies only if it satisfies <strong>every</strong> condition:</p>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&gt;= 6.0</code></td>
+<td>at least 6.0, no upper bound</td>
+</tr>
+<tr>
+<td><code>&gt; 6.0</code> / <code>&lt;= 6.53.0</code> / <code>&lt; 7.0</code></td>
+<td>the other three comparisons</td>
+</tr>
+<tr>
+<td><code>&gt;= 6.0.0, &lt; 7.0.0</code></td>
+<td>an explicit range — two conditions, comma-separated</td>
+</tr>
+<tr>
+<td><code>~&gt; 6.0</code></td>
+<td>major 6, any minor ≥ 0 (<code>&gt;= 6.0, &lt; 7.0</code>) — blocks the next major</td>
+</tr>
+<tr>
+<td><code>~&gt; 6.53.0</code></td>
+<td>pessimistic on patch: allows <code>6.53.x</code> but <strong>not</strong> <code>6.54.0</code></td>
+</tr>
+<tr>
+<td><code>!= 6.52.0</code></td>
+<td>everything <em>except</em> this version — for dodging one known-bad release</td>
+</tr>
+<tr>
+<td><code>= 6.53.0</code> (or bare <code>6.53.0</code>)</td>
+<td>exactly this version; <strong>cannot</strong> be combined with other conditions</td>
+</tr>
+<tr>
+<td>(omitted)</td>
+<td>any version — <strong>not recommended</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>~&gt;</code> is the <strong>pessimistic</strong> operator: only the right-most component you wrote may increment. That's the whole rule, and it explains both rows — <code>~&gt; 6.0</code> lets the minor move, <code>~&gt; 6.53.0</code> lets only the patch move.</p>
+<p><code>~&gt; 6.0</code> is the common root-module choice: it accepts safe minor/patch updates within major 6 but blocks major 7, where breaking changes live. (Provider <strong>6</strong> is current — 6.0 went GA on 2025-06-18, latest <code>6.61.0</code> as of 2026-08-19. HashiCorp's own AWS tutorial still shows <code>~&gt; 5.92</code>; that works but is a major behind. New projects pin <code>~&gt; 6.0</code>.)</p>
+<div class="admonition warning">
+<p class="admonition-title">Pre-release versions are invisible to every operator except <code>=</code></p>
+<p>A pre-release carries a dash suffix: <code>6.55.0-beta1</code>. Terraform will <strong>never</strong> match one on <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, or <code>~&gt;</code> — so <code>~&gt; 6.0</code> silently skips right past <code>6.55.0-beta1</code> and picks the newest stable. That's the sane default, but it means you cannot get a beta by loosening a range. The only way to select one is to name it exactly:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"= 6.55.0-beta1"</span>
+</span></code></pre></div>
+<p>The same rule applies to <code>required_version</code> and to module versions. If you're wondering why a published beta "isn't being found," this is why.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">What happens when no version qualifies</p>
+<p>Terraform checks constraints for itself, its providers, and its modules before doing anything. For providers and modules it takes the <strong>newest already-installed</strong> version that qualifies, and downloads the newest qualifying version only if none is installed. If it can't obtain an acceptable version — or is itself the wrong version — it refuses to run <strong>any</strong> <code>plan</code>, <code>apply</code>, or <code>state</code> operation. There's no partial-run mode; dependency resolution is a gate.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Two different pinning disciplines: the CLI floor vs. the provider pin</p>
+<p><code>required_version</code> and provider <code>version</code> look similar but want <strong>opposite</strong> styles.</p>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>Style</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>required_version</code> (the CLI)</td>
+<td>a <strong>floor</strong>: <code>&gt;= X</code> at the lowest feature you use</td>
+<td>don't gratuitously lock out older-but-fine CLIs</td>
+</tr>
+<tr>
+<td>provider <code>version</code></td>
+<td>a <strong>bounded recent major</strong>: <code>~&gt; 6.0</code></td>
+<td>provider majors carry breaking changes; block an untested newer major</td>
+</tr>
+</tbody>
+</table>
+<p><code>required_version = "&gt;= 1.2"</code> is honest here because this config uses only basic blocks (<code>terraform</code>, <code>provider</code>, <code>data</code>, <code>resource</code>), all present since Terraform 1.0. Writing <code>&gt;= 1.15</code> would be <em>wrong</em> — it locks out everyone on 1.2–1.14 for no benefit, since nothing needs a 1.15 feature. Only raise the floor when you actually use something newer (dynamic module sources, output <code>type</code>, <code>convert()</code>). Over-pinning bites hardest with <strong>modules</strong>: a module declaring <code>&gt;= 1.15</code> can't be consumed by a team on 1.14 even if it needs nothing from 1.15.</p>
+</div>
+<p>There is a <em>third</em> pinning discipline, and it's the one most people meet late and painfully: <strong>where</strong> the constraint is written matters as much as what it says. A root module and a reusable child module want opposite styles for the same provider.</p>
+<table>
+<thead>
+<tr>
+<th>Module kind</th>
+<th>Style</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Root module</strong> (where you run <code>apply</code>)</td>
+<td>bounded: <code>~&gt; 6.0</code> — a lower <strong>and</strong> upper bound</td>
+<td>you own the deployment; pin the range you actually tested</td>
+</tr>
+<tr>
+<td><strong>Reusable child module</strong> (consumed by others)</td>
+<td>minimum only: <code>&gt;= 6.0</code></td>
+<td>you don't know your callers' needs; an upper bound forces every one of them to upgrade in lockstep</td>
+</tr>
+</tbody>
+</table>
+<p>The reason the two differ is how Terraform combines them. <strong>Every constraint on a provider — from the root module and from every child module in the tree — is treated as equal, and the selected version must satisfy all of them simultaneously.</strong> They intersect. So a child module that pins <code>~&gt; 5.0</code> and a root that pins <code>~&gt; 6.0</code> produce an empty intersection and Terraform simply refuses to run. The child module gains nothing from its upper bound and has broken every caller on major 6.</p>
+<p>This is the same diamond-dependency problem libraries hit in every ecosystem, and it has the same fix: <strong>applications pin, libraries permit.</strong></p>
+<div class="admonition note">
+<p class="admonition-title">Coming from Python? Why not just pin <code>= 6.53.0</code></p>
+<p>Because you already <em>are</em> pinning exactly — in a different file. Terraform splits the two jobs Python bundles differently:</p>
+<table>
+<thead>
+<tr>
+<th>Terraform</th>
+<th>Python</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>version = "~&gt; 6.0"</code> in <code>required_providers</code></td>
+<td><code>pyproject.toml</code> / <code>install_requires</code> — the <strong>abstract</strong> acceptable range</td>
+</tr>
+<tr>
+<td><code>.terraform.lock.hcl</code> (committed)</td>
+<td><code>poetry.lock</code> / <code>Pipfile.lock</code> / <code>pip freeze</code> — the <strong>exact</strong> pin + hashes</td>
+</tr>
+</tbody>
+</table>
+<p>The constraint is the <em>dependency spec</em>; the exact pin lives in the committed lock file (<code>6.53.0</code> + checksums). <strong><code>plan</code>/<code>apply</code> use the locked version, not the newest the constraint allows</strong> — so <code>~&gt; 6.0</code> doesn't cause drift, exactly like a <code>poetry.lock</code> freezing a <code>^6.0</code> range. And <code>~&gt;</code> <em>is</em> Python's <code>~=</code>: <code>~&gt; 6.0</code> ≡ <code>~= 6.0</code> (<code>&gt;=6.0,&lt;7.0</code>); <code>~&gt; 6.53.0</code> ≡ <code>~= 6.53.0</code> (<code>&gt;=6.53.0,&lt;6.54.0</code>).</p>
+<p>Hard-pinning <code>= 6.53.0</code> in the constraint is <strong>redundant</strong> (the lock file already does it), removes the safe-upgrade band (<code>init -upgrade</code> can't pick up a patch without a hand edit), and — the real cost — <strong>breaks reuse</strong>: a module pinned <code>= 6.53.0</code> can't be consumed by a project needing <code>6.54.0</code>, the same diamond-conflict you get from pinning exact versions in a library's <code>install_requires</code>. Exact pins belong in the application lock file; ranges belong in the dependency spec. <code>=</code> is fine occasionally (reproducing an incident, dodging a known-bad patch), but it's a poor default.</p>
+</div>
+<h3 id="configuring-it">Configuring it<a class="headerlink" href="#configuring-it" title="Permanent link">&para;</a></h3>
+<p>The <code>provider</code> block supplies auth and scoping. Its label (<code>aws</code>) must match a local name in <code>required_providers</code>:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># main.tf</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-west-2"</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Here the block sets only <code>region</code> (scoping) — the AWS provider gets its <strong>credentials</strong> from the environment/AWS config chain you wired up earlier, so no secret appears in the block. Some providers need explicit auth in the block (a Cloudflare <code>api_token</code>, for instance); when they do, feed it from a variable, never a literal. <code>provider</code> blocks live <strong>only in the root module</strong> — the directory you actually run <code>terraform</code> from.</p>
+<h2 id="terraform-init-install-and-lock"><code>terraform init</code> — install and lock<a class="headerlink" href="#terraform-init-install-and-lock" title="Permanent link">&para;</a></h2>
+<p>With the provider declared and configured, <code>init</code> turns the config into a working directory:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>terraform<span class="w"> </span>init
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>Initializing the backend...
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>Initializing provider plugins...
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>- Finding hashicorp/aws versions matching "~&gt; 6.0"...
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>- Installing hashicorp/aws v6.53.0...
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>- Installed hashicorp/aws v6.53.0 (signed by HashiCorp)
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>Terraform has created a lock file .terraform.lock.hcl to record the provider
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>selections it made above.
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>Terraform has been successfully initialized!
+</span></code></pre></div>
+<p><code>init</code> resolves the constraint against the registry, downloads the chosen provider into <code>.terraform/</code>, and writes <code>.terraform.lock.hcl</code> recording the exact version plus checksums. From then on, plan and apply use the version <strong>in the lock file</strong>, not the newest the constraint allows — that's the whole point of the lock file. Commit it.</p>
+<div class="admonition note">
+<p class="admonition-title">Committing the lock file matters more once you're on HCP Terraform</p>
+<p>Locally, <code>.terraform/</code> persists between runs, so <code>init</code> is a one-off. HCP Terraform and Terraform Enterprise install providers <strong>on every run</strong> in a fresh environment. When a lock file is present in the repo they install the locked versions; when it isn't, every run re-resolves and you get whatever is newest that day. Committing the lock file is what makes a remote run reproducible at all. (Chapter 21 covers HCP Terraform.)</p>
+</div>
+<pre class="mermaid"><code>flowchart LR
+    cfg["required_providers&lt;br/&gt;~&gt; 6.0"] --&gt;|init resolves| reg["Registry"]
+    reg --&gt;|downloads| cache[".terraform/&lt;br/&gt;plugin binary"]
+    reg --&gt;|records exact version + hashes| lock[".terraform.lock.hcl"]</code></pre>
+<div class="admonition warning">
+<p class="admonition-title">The cross-platform checksum trap</p>
+<p>By default <code>init</code> records checksums only for <strong>your</strong> platform. When a teammate on Linux (or CI) pulls your macOS-generated lock file, the checksums don't match and <code>init</code> fails with an <em>inconsistent dependency lock file</em> error. Pre-populate hashes for every platform your team uses:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>terraform<span class="w"> </span>providers<span class="w"> </span>lock<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span>-platform<span class="o">=</span>linux_amd64<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span>-platform<span class="o">=</span>darwin_arm64<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span>-platform<span class="o">=</span>windows_amd64
+</span></code></pre></div>
+<p>OpenTofu <strong>1.12</strong> records the full cross-platform hash set automatically at <code>tofu init</code>, so this step is Terraform-specific. In CI, add <code>terraform init -lockfile=readonly</code> so a run <em>fails</em> rather than silently rewriting the lock file you committed.</p>
+</div>
+<p>When you later change the constraint or want a newer allowed version, the behavior of a plain <code>init</code> depends on whether the locked version still satisfies the constraint:</p>
+<ul>
+<li><strong>Locked version still valid, you want something newer</strong> → run <code>terraform init -upgrade</code> (it ignores the lock, re-resolves to the newest allowed, and rewrites the lock file).</li>
+<li><strong>Locked version now violates the constraint</strong> (you bumped <code>~&gt; 5.0</code> to <code>~&gt; 6.0</code>) → a plain <code>init</code> is <em>forced</em> to re-select and rewrites the lock on its own — no <code>-upgrade</code> needed.</li>
+</ul>
+<h2 id="your-first-resource">Your first resource<a class="headerlink" href="#your-first-resource" title="Permanent link">&para;</a></h2>
+<p>Now the payoff: provision something real. Two more blocks in <code>main.tf</code> — a <strong>data source</strong> that looks up the latest Ubuntu AMI (so you never hard-code a stale image ID) and a <strong>resource</strong> that launches an instance from it:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># main.tf (continued)</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_ami"</span><span class="w"> </span><span class="nv">"ubuntu"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">  </span><span class="na">most_recent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">  </span><span class="nb">filter</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="w">    </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"name"</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">    </span><span class="na">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-amd64-server-*"</span><span class="p">]</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="w">  </span><span class="na">owners</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"099720109477"</span><span class="p">]</span><span class="c1"> # Canonical</span>
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="p">}</span>
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"app_server"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-23-14"><a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="w">  </span><span class="na">ami</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_ami.ubuntu.id</span>
+</span><span id="__span-23-15"><a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"t2.micro"</span><span class="c1"> # small, cheap burstable type — see the free-tier note</span>
+</span><span id="__span-23-16"><a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a>
+</span><span id="__span-23-17"><a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a><span class="w">  </span><span class="nb">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-23-18"><a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a><span class="w">    </span><span class="na">Name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"learn-terraform"</span>
+</span><span id="__span-23-19"><a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-23-20"><a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The <code>ami</code> argument references <code>data.aws_ami.ubuntu.id</code>. That reference is doing real work: it's an <strong>implicit dependency</strong>, telling Terraform to read the AMI <em>before</em> creating the instance. You never write "look up the AMI first" — the reference is the ordering. (B5 goes deep on resources and the dependency graph; B8 on data sources.)</p>
+<div class="admonition warning">
+<p class="admonition-title">“Free-tier eligible” changed in July 2025 — check before you apply</p>
+<p>AWS overhauled its Free Tier on <strong>15 July 2025</strong>. Accounts created <em>before</em> that date keep the classic 12-month allowance (750 hrs/month of <code>t2.micro</code>/<code>t3.micro</code>). Accounts created <em>after</em> it get a <strong>credit-based Free Plan</strong> instead — $100 automatically, up to $200 total, expiring after ~6 months or when the credits run out — with no perpetual per-service free hours. So <code>t2.micro</code> is still the cheap default, but it is no longer blanket "free-tier eligible" for a brand-new account. The 🧪 Lab below sidesteps this entirely by running against a <strong>local emulator</strong> (no account, no bill); use that for practice and reserve real AWS for when you specifically need fidelity.</p>
+</div>
+<p>The <code>aws_ami</code> lookup above is the canonical teaching example — it shows <code>filter</code>, <code>owners</code>, and <code>most_recent</code> in one place. But it carries two sharp edges worth naming, because both bite in production.</p>
+<p>First, <strong><code>most_recent = true</code> trusts whatever matches.</strong> It returns the newest image among <em>all</em> AMIs the filter matches. Scoping to <code>owners = ["099720109477"]</code> (Canonical) is what makes that safe here — drop or fat-finger the owner and a name-glob like <code>ubuntu-*-server-*</code> can match a stranger's public AMI, so <code>most_recent</code> would happily boot someone else's image. The owner filter is not optional polish; it's the guardrail.</p>
+<p>Second, <strong>the name glob chases codenames.</strong> <code>ubuntu-resolute-26.04-...</code> hard-codes this LTS's codename. Every new LTS you must edit the string <em>and</em> know the codename (<code>noble</code>, <code>resolute</code>, …). That's avoidable churn.</p>
+<p>Canonical also publishes each release's latest AMI id as a <strong>public SSM parameter</strong> under the AWS-managed <code>/aws/service/canonical/</code> namespace. Reading that instead removes both edges at once:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># main.tf — production-hardened AMI lookup</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="c1"># Canonical publishes the latest AMI id at a well-known SSM path.</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="c1"># Trusted namespace: no most_recent to trust, no owner filter to get wrong.</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_ssm_parameter"</span><span class="w"> </span><span class="nv">"ubuntu_ami"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">  </span><span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/aws/service/canonical/ubuntu/server/26.04/stable/current/amd64/hvm/ebs-gp3/ami-id"</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="p">}</span>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>
+</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"app_server"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">  </span><span class="na">ami</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_ssm_parameter.ubuntu_ami.value</span>
+</span><span id="__span-24-11"><a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"t2.micro"</span><span class="c1"> # small, cheap burstable type — see the free-tier note</span>
+</span><span id="__span-24-12"><a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>
+</span><span id="__span-24-13"><a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a><span class="w">  </span><span class="nb">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-24-14"><a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="w">    </span><span class="na">Name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"learn-terraform"</span>
+</span><span id="__span-24-15"><a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-24-16"><a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The value comes straight from an AWS-maintained parameter path, so there's no <code>most_recent</code> to second-guess and no owner filter to forget. The path is self-describing — <code>.../server/{release}/stable/current/{arch}/hvm/{vol}/ami-id</code>, where <code>current</code> means the latest serial, <code>ebs-gp3</code> applies to releases ≥23.10, and <code>amd64</code> becomes <code>arm64</code> for Graviton. Moving to the next LTS is a one-number edit (<code>26.04</code> → the new release); no codename to look up. One small tradeoff: <code>aws_ssm_parameter</code> marks its <code>value</code> as <code>sensitive</code>, so the AMI id shows up masked in plan output — cosmetic, since an AMI id isn't a secret.</p>
+<p>Which to use? The <code>aws_ami</code> filter is the better <em>teaching</em> tool and the right choice when you genuinely need to match on image attributes (architecture, virtualization type, a specific name pattern). The SSM parameter is the better <em>production</em> default when you just want "the current official Ubuntu release," because it removes both the trust and the churn.</p>
+<div class="admonition tip">
+<p class="admonition-title">How do I know which arguments a resource takes?</p>
+<p>Two ways to discover a resource's inputs and outputs. The <strong>human</strong> way is the provider's Registry docs — every resource page has an <em>Argument Reference</em> (what you set) and an <em>Attribute Reference</em> (what it exports). The <strong>machine/offline</strong> way is a CLI command, handy once providers are installed:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>terraform<span class="w"> </span>providers<span class="w"> </span>schema<span class="w"> </span>-json<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.provider_schemas["registry.terraform.io/hashicorp/aws"].resource_schemas.aws_instance.block'</span>
+</span></code></pre></div>
+<p>In the JSON, each field is flagged: <code>required</code>/<code>optional</code> are <strong>arguments</strong> you set; <code>computed</code>-only fields are read-only <strong>attributes</strong> (the <code>(known after apply)</code> values); <code>block_types</code> are nested sub-blocks. <code>-json</code> is the only output format, and it covers data sources (<code>data_source_schemas</code>) too.</p>
+</div>
+<p>Before applying, two fast, free checks that touch no infrastructure:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>terraform<span class="w"> </span>fmt<span class="w">        </span><span class="c1"># rewrite files to canonical style; prints changed filenames</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>terraform<span class="w"> </span>validate<span class="w">   </span><span class="c1"># syntax + internal-consistency check</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>Success! The configuration is valid.
+</span></code></pre></div>
+<p>Then apply. <code>apply</code> computes a plan, shows it, and waits for your <code>yes</code> before doing anything:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>terraform<span class="w"> </span>apply
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>  # aws_instance.app_server will be created
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>  + resource "aws_instance" "app_server" {
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>      + ami           = "ami-0026a04369a3093cc"
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>      + instance_type = "t2.micro"
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>      + tags          = { + "Name" = "learn-terraform" }
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>      # ... many attributes (known after apply) ...
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>    }
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>
+</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>Plan: 1 to add, 0 to change, 0 to destroy.
+</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>
+</span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>Do you want to perform these actions?
+</span><span id="__span-29-12"><a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>  Enter a value: yes
+</span><span id="__span-29-13"><a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a>
+</span><span id="__span-29-14"><a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a>aws_instance.app_server: Creating...
+</span><span id="__span-29-15"><a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a>aws_instance.app_server: Creation complete after 14s [id=i-0c636e158c30e48f9]
+</span><span id="__span-29-16"><a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a>
+</span><span id="__span-29-17"><a id="__codelineno-29-17" name="__codelineno-29-17" href="#__codelineno-29-17"></a>Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+</span></code></pre></div>
+<p>The <code>+</code> means <em>create</em>; attributes shown as <code>(known after apply)</code> can't be resolved until the resource exists. Reviewing this plan before typing <code>yes</code> is the safety gate — cancel here if it shows anything unexpected. That's the whole loop in miniature; <strong>B3 covers <code>init</code>/<code>plan</code>/<code>apply</code>/<code>destroy</code> command-by-command</strong>, with every plan symbol (<code>+</code>, <code>~</code>, <code>-/+</code>, <code>-</code>) explained. When you're done, <code>terraform destroy</code> tears it back down so the instance doesn't quietly run up a bill.</p>
+<p><code>apply</code> also writes <strong><code>terraform.tfstate</code></strong> — the record of what now exists. Confirm it:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>terraform<span class="w"> </span>state<span class="w"> </span>list
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>data.aws_ami.ubuntu
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>aws_instance.app_server
+</span></code></pre></div>
+<p>Two entries, and the first one is worth a second look. <code>data.aws_ami.ubuntu</code> <strong>manages nothing</strong> — it's a read-only lookup — yet Terraform tracks it in state anyway. State is a record of everything Terraform <em>knows</em>, not only of what it <em>owns</em>: a plan is computed from three inputs at once — the last-known state, the current config, and fresh reads from the providers — and the data source's recorded result is part of that picture. (Chapter 9 is the full treatment.)</p>
+<p><code>terraform state list</code> prints addresses only. For the full record, including every attribute the provider filled in:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>terraform<span class="w"> </span>show
+</span></code></pre></div>
+<p>That's the milestone met: a fresh directory, <code>init</code>-ed, with one real resource provisioned from scratch.</p>
+<h2 id="lab-your-first-resource-on-localstack">🧪 Lab: your first resource on LocalStack<a class="headerlink" href="#lab-your-first-resource-on-localstack" title="Permanent link">&para;</a></h2>
+<p>The <code>aws_instance</code> above assumes a real AWS account. You don't need one to practise. Ch1's <a href="../ch01-iac-fundamentals/#lab-setup-a-free-local-aws-docker">lab setup</a> prepared a local <strong>AWS emulator</strong> — Floci by default (free, no account), or MiniStack / LocalStack. This lab runs a real <code>init</code>→<code>apply</code>→<code>destroy</code> against it, for free, with no cloud credentials.</p>
+<p><strong>Start the emulator</strong> (from the repo root; skip if it's already running):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>labs/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">      </span><span class="c1"># start Floci on :4566, detached</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:4566/_floci/health<span class="w">     </span><span class="c1"># wait until the services read "running"</span>
+</span></code></pre></div>
+<p>We swap the EC2 instance for an <strong>S3 bucket</strong>. Two reasons: S3 is fully emulated on the free surface (EC2 is only mocked), and a bucket needs no AMI lookup, so the config stays about the <em>workflow</em>, not AWS trivia. Create a fresh directory with one file:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="c1"># main.tf</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">    </span><span class="nb">aws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">      </span><span class="na">source</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws"</span>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="w">      </span><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~&gt; 6.0"</span>
+</span><span id="__span-34-7"><a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-34-8"><a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-34-9"><a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="w">  </span><span class="na">required_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.2"</span>
+</span><span id="__span-34-10"><a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="p">}</span>
+</span><span id="__span-34-11"><a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>
+</span><span id="__span-34-12"><a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-13"><a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-34-14"><a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a><span class="p">}</span>
+</span><span id="__span-34-15"><a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>
+</span><span id="__span-34-16"><a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"lab"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-17"><a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"my-first-localstack-bucket"</span>
+</span><span id="__span-34-18"><a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Notice the <code>provider</code> block has <strong>no endpoints and no keys</strong> — it's an ordinary AWS config. The trick is <em>how you run it</em>. <code>tflocal</code> (installed in Ch1) injects the <code>:4566</code> endpoints and dummy credentials for you, then hands off to Terraform — it targets the gateway port, so it drives Floci, MiniStack, or LocalStack alike:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>tflocal<span class="w"> </span>init
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>tflocal<span class="w"> </span>apply<span class="w">      </span><span class="c1"># review the single '+ create', type yes</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>  # aws_s3_bucket.lab will be created
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>  + resource "aws_s3_bucket" "lab" {
+</span><span id="__span-36-3"><a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>      + bucket = "my-first-localstack-bucket"
+</span><span id="__span-36-4"><a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>      + id     = (known after apply)
+</span><span id="__span-36-5"><a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>      ...
+</span><span id="__span-36-6"><a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a>    }
+</span><span id="__span-36-7"><a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a>
+</span><span id="__span-36-8"><a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a>Plan: 1 to add, 0 to change, 0 to destroy.
+</span><span id="__span-36-9"><a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a>
+</span><span id="__span-36-10"><a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a>aws_s3_bucket.lab: Creation complete after 0s [id=my-first-localstack-bucket]
+</span><span id="__span-36-11"><a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a>Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+</span></code></pre></div>
+<p>Confirm the bucket really exists in the emulator, two ways:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>terraform<span class="w"> </span>state<span class="w"> </span>list<span class="w">        </span><span class="c1"># Terraform's view</span>
+</span><span id="__span-37-2"><a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>awslocal<span class="w"> </span>s3<span class="w"> </span>ls<span class="w">              </span><span class="c1"># the emulator's view (awslocal = AWS CLI aimed at :4566)</span>
+</span></code></pre></div>
+<p>Then tear it down — free, instant, no lingering resource:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>tflocal<span class="w"> </span>destroy
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">The manual alternative — an <code>endpoints</code> block</p>
+<p><code>tflocal</code> is the clean path because it leaves your <code>.tf</code> files portable to real AWS. If you'd rather be explicit (or can't install the wrapper), configure the provider by hand instead — keep it in a separate <code>emulator.tf</code> so it's easy to drop later:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="c1"># emulator.tf — local emulator only; do NOT apply this to real AWS</span>
+</span><span id="__span-39-2"><a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-39-3"><a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="w">  </span><span class="na">region</span><span class="w">                      </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-39-4"><a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="w">  </span><span class="na">access_key</span><span class="w">                  </span><span class="o">=</span><span class="w"> </span><span class="s2">"test"</span><span class="c1">      # dummy — the emulator accepts anything</span>
+</span><span id="__span-39-5"><a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="w">  </span><span class="na">secret_key</span><span class="w">                  </span><span class="o">=</span><span class="w"> </span><span class="s2">"test"</span>
+</span><span id="__span-39-6"><a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="w">  </span><span class="na">s3_use_path_style</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="no">true</span><span class="c1">        # S3 needs path-style here</span>
+</span><span id="__span-39-7"><a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="w">  </span><span class="na">skip_credentials_validation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-39-8"><a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="w">  </span><span class="na">skip_metadata_api_check</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-39-9"><a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="w">  </span><span class="na">skip_requesting_account_id</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-39-10"><a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a>
+</span><span id="__span-39-11"><a id="__codelineno-39-11" name="__codelineno-39-11" href="#__codelineno-39-11"></a><span class="w">  </span><span class="nb">endpoints</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-39-12"><a id="__codelineno-39-12" name="__codelineno-39-12" href="#__codelineno-39-12"></a><span class="w">    </span><span class="na">s3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"http://localhost:4566"</span><span class="c1">            # LocalStack also accepts http://s3.localhost.localstack.cloud:4566</span>
+</span><span id="__span-39-13"><a id="__codelineno-39-13" name="__codelineno-39-13" href="#__codelineno-39-13"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-39-14"><a id="__codelineno-39-14" name="__codelineno-39-14" href="#__codelineno-39-14"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Then run plain <code>terraform init</code> / <code>apply</code>. The cost of this form is exactly what <code>tflocal</code> avoids: the block hard-wires the config to the emulator, so it won't apply to real AWS unchanged. Add one endpoint line per service the config touches. (A third path: skip the block entirely and <code>export AWS_ENDPOINT_URL=http://localhost:4566</code> — the <code>~&gt; 6.0</code> provider honours it.)</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">The emulator is a lab, not a substitute for the real thing</p>
+<p>A green <code>apply</code> here proves your <strong>HCL and workflow</strong> are sound — not that the config behaves identically on AWS. Emulation gaps are real, especially for IAM enforcement and advanced services. Use the emulator to iterate fast and for free; validate anything load-bearing against a real (free-tier) AWS account before you trust it. Every later chapter's 🧪 Lab runs on this same environment.</p>
+</div>
+<h2 id="common-pitfalls">Common pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>CLI stuck at 1.5.7.</strong> A plain <code>brew install terraform</code> (or another community package) may be frozen at the last MPL release. Use <code>hashicorp/tap</code>, or switch to OpenTofu.</li>
+<li><strong>Committing <code>.terraform.lock.hcl</code> into <code>.gitignore</code>.</strong> A broad <code>.terraform*</code> pattern eats the lock file. Un-ignore it explicitly. Conversely, <strong>do</strong> ignore <code>.terraform/</code>, <code>*.tfstate</code>, and <code>*.tfvars</code>.</li>
+<li><strong>Committing state.</strong> <code>terraform.tfstate</code> can hold secrets in plaintext and corrupts under concurrent edits. Keep it out of Git; move it to a backend (I6) when a team needs it.</li>
+<li><strong>Hard-coding credentials in a <code>provider</code> block.</strong> They end up in Git and state. Use the environment/credential chain or a variable.</li>
+<li><strong>Omitting the version constraint.</strong> Without one, <code>init</code> grabs whatever's newest, and a breaking major can slip in on the next <code>init -upgrade</code>. Always pin <code>~&gt; MAJOR.0</code> in a root module.</li>
+<li><strong><code>required_version</code> set too high.</strong> A floor of <code>&gt;= 1.15</code> on a config that needs nothing from 1.15 locks out teammates for no reason. Set the floor at the oldest feature you actually use.</li>
+<li><strong>An upper bound in a reusable module.</strong> <code>~&gt; 6.0</code> inside a child module intersects with every caller's constraint and can make the module uninstallable. Child modules specify a minimum only.</li>
+<li><strong>Expecting a range to pick up a pre-release.</strong> <code>~&gt; 6.0</code> will never select <code>6.55.0-beta1</code>. Name it exactly with <code>=</code> or you won't get it.</li>
+<li><strong>Cross-platform lock mismatch.</strong> A macOS-generated lock file breaks Linux CI. Pre-seed hashes with <code>terraform providers lock -platform=…</code>, or use OpenTofu 1.12+.</li>
+</ul>
+<h2 id="exercises">Exercises<a class="headerlink" href="#exercises" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Recall</strong> — Name the three files Terraform generates and state, for each, whether you commit it and why.</li>
+<li><strong>Apply</strong> — You inherit a repo whose <code>.gitignore</code> contains <code>.terraform*</code>. What breaks for a new teammate, and what one line fixes it?</li>
+<li><strong>Extend</strong> — Explain why <code>required_version = "&gt;= 1.2"</code> and <code>version = "~&gt; 6.0"</code> use opposite pinning styles. When would you <em>raise</em> the <code>required_version</code> floor?</li>
+</ol>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Nothing runs until three things are in place: the <strong>CLI</strong>, a <strong>provider plugin</strong> (fetched by <code>init</code>), and <strong>credentials</strong> (which never go in your <code>.tf</code> files).</li>
+<li>Terraform is a single binary; install via a package manager (<code>hashicorp/tap</code> on macOS to dodge the BSL v1.5.7 freeze) or by hand, then verify with <code>terraform version</code>.</li>
+<li>A project is a directory of <code>.tf</code> files — filenames are for humans. Convention: <code>terraform.tf</code>, <code>main.tf</code>, <code>variables.tf</code>, <code>outputs.tf</code>.</li>
+<li><strong>Declare</strong> providers with <code>required_providers</code> (source address + version constraint); <strong>configure</strong> them with a <code>provider</code> block (auth + scoping, root-module only). Two jobs, two blocks.</li>
+<li>Pin the <strong>provider</strong> to a bounded recent major (<code>~&gt; 6.0</code>); set the <strong>CLI</strong> floor honestly (<code>&gt;= 1.2</code>) — opposite disciplines. A third split cuts across both: <strong>root modules bound, reusable modules set a minimum only</strong>, because all constraints in the tree intersect.</li>
+<li>Constraints are comma-separated conditions over <code>= != &gt; &gt;= &lt; &lt;= ~&gt;</code>; <code>~&gt;</code> lets only the right-most component increment, and <strong>no operator but <code>=</code> ever matches a pre-release</strong>.</li>
+<li><code>init</code> installs the provider into <code>.terraform/</code> and writes <code>.terraform.lock.hcl</code>. <strong>Commit the lock file; ignore <code>.terraform/</code>, <code>*.tfstate</code>, and <code>*.tfvars</code>.</strong> Pre-seed cross-platform hashes for teams.</li>
+<li>The first-project loop is <code>fmt</code> → <code>validate</code> → <code>init</code> → <code>apply</code> → inspect state — one resource created from scratch, with the plan review as the safety gate.</li>
+</ul>
+<hr />
+<p><strong>Next: B3 — The core workflow: init / plan / apply / destroy.</strong> You've run the loop once end to end. Next you'll slow it down command by command — reading a plan's <code>+</code>/<code>~</code>/<code>-/+</code>/<code>-</code> symbols precisely, using saved plans, and tearing infrastructure back down cleanly.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Install Terraform (AWS Get Started)</li>
+<li>Create infrastructure (AWS Get Started)</li>
+<li>Provider Requirements</li>
+<li>Version Constraints (operators, comma-separated conditions, pre-releases, root-vs-module discipline)</li>
+<li>TID Ch 2 — Terraform HCL components §2.3–2.4 (settings block, declare/configure providers)</li>
+<li>Topic page: Providers</li>
+<li>Version &amp; Certification Facts (current CLI/provider versions, BSL/package-manager freeze)</li>
+<li>Web (verified 2026-07-06): <a href="https://developer.hashicorp.com/terraform/language/files/dependency-lock">Dependency Lock File</a> · <a href="https://developer.hashicorp.com/terraform/tutorials/configuration-language/provider-versioning">Lock &amp; upgrade provider versions</a> · project-layout &amp; <code>.gitignore</code> conventions</li>
+<li>🧪 Lab: Floci Facts · MiniStack Facts · LocalStack Facts · <a href="https://docs.localstack.cloud/aws/integrations/infrastructure-as-code/terraform/">Terraform with LocalStack</a> (verified 2026-07-09)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+        <script src="../../javascripts/sidebar-toggle.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js" defer></script>
+      
+    
+  </body>
+</html>

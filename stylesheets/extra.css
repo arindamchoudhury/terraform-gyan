@@ -1,0 +1,91 @@
+/* ---- Maximized window: custom sticky/collapsible sidebars ---- */
+/* All custom sidebar layout is scoped to .is-maximized so it never */
+/* interferes with Material's native slide-out drawer on narrow widths. */
+body.is-maximized .md-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+
+body.is-maximized .md-sidebar__scrollwrap {
+  visibility: visible;
+  opacity: 1;
+  transition: visibility 0.2s, opacity 0.2s;
+}
+
+/* Full-height strip so the centered chevron has a box to anchor in. */
+body.is-maximized .md-sidebar.is-collapsed {
+  width: 1.9rem !important;
+  min-width: 1.9rem !important;
+  height: 100vh !important;
+  overflow: hidden;
+  border-right: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Drop nav content from layout; the strip height comes from height:100vh. */
+body.is-maximized .md-sidebar.is-collapsed .md-sidebar__scrollwrap {
+  display: none !important;
+}
+
+/* Collapsed: chevron rail, vertically centered in the viewport. */
+body.is-maximized .md-sidebar.is-collapsed .sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  bottom: auto;
+  transform: translateY(-50%);
+  width: auto;
+  margin: 0 0.2rem;
+  padding: 0.4rem 0;
+  border: none;
+  border-radius: 0.3rem;
+  background: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--md-default-fg-color--light);
+  transition: background-color 125ms, color 125ms;
+}
+
+body.is-maximized .md-sidebar.is-collapsed .sidebar-toggle:hover {
+  background: var(--md-default-bg-color--light, rgba(0, 0, 0, 0.05));
+  color: var(--md-accent-fg-color);
+}
+
+/* Toggle button: full-width bar pinned to the bottom of the sidebar.   */
+/* Only shown for the maximized sticky sidebars.                        */
+body.is-maximized .sidebar-toggle {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.45rem;
+  background: var(--md-default-bg-color);
+  border: none;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  cursor: pointer;
+  font-size: 0.9rem;
+  letter-spacing: 0.15em;
+  color: var(--md-default-fg-color--light);
+  line-height: 1;
+}
+
+body.is-maximized .sidebar-toggle:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* Hide the collapse button inside the narrow drawer */
+body:not(.is-maximized) .sidebar-toggle { display: none !important; }
+
+/* ---- Not maximized: hide standalone sidebars (reading view) ---- */
+/* CSS fallback before JS adds .is-maximized; JS re-shows the primary */
+/* sidebar as the drawer when the hamburger is open. */
+body:not(.is-maximized) .md-sidebar--secondary {
+  display: none !important;
+}

@@ -1,0 +1,1868 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Personal notes and book from learning Terraform (and OpenTofu).">
+      
+      
+        <meta name="author" content="arindam@live.com">
+      
+      
+        <link rel="canonical" href="https://arindamchoudhury.github.io/terraform-gyan/book/ch01-iac-fundamentals/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../ch02-install-providers-first-project/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Chapter 1 — Infrastructure as Code & where Terraform fits - Terraform Learning Notes</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-1-infrastructure-as-code-where-terraform-fits" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Terraform Learning Notes" class="md-header__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terraform Learning Notes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 1 — Infrastructure as Code &amp; where Terraform fits
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Terraform Learning Notes" class="md-nav__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Terraform Learning Notes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Learning Path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Book
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Book
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  1. Infrastructure as Code & where Terraform fits
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  1. Infrastructure as Code & where Terraform fits
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-before-iac" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The problem before IaC
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-terraform-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What Terraform is
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declarative-vs-imperative-and-where-terraform-sits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declarative vs. imperative — and where Terraform sits
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-deployment-flow-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The deployment flow, at a glance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-terraform-actually-gets-used" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where Terraform actually gets used
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Where Terraform actually gets used">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-practice-from-the-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In practice, from the field
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-and-opentofu" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Terraform and OpenTofu
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-setup-a-free-local-aws-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Lab setup: a free local AWS (Docker)
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab setup: a free local AWS (Docker)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-install-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 1 — install Docker
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-start-the-emulator" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 2 — start the emulator
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#see-what-you-create-the-floci-console-floci-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        See what you create — the Floci console (floci-ui)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-the-floci-cli-a-thin-wrapper-you-dont-strictly-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Optional — the <code>floci-cli</code> (a thin wrapper you don't strictly need)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-how-terraform-will-talk-to-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 3 — how Terraform will talk to it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-misconceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common misconceptions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch02-install-providers-first-project/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  2. Install, providers & your first project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch03-core-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  3. The core workflow: init / plan / apply / destroy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch04-hcl-language-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  4. HCL language basics
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch05-providers-resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  5. Providers & resources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch06-input-variables-outputs-locals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  6. Input variables, outputs & locals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch07-expressions-operators-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  7. Expressions, operators & functions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch08-data-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  8. Data sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch09-state-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  9. State fundamentals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch10-meta-arguments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  10. Meta-arguments: count, for_each, depends_on
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch11-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  11. The lifecycle meta-argument
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch12-dynamic-blocks-complex-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  12. Dynamic blocks & complex types
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch13-using-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  13. Using modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch14-authoring-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  14. Authoring modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch15-remote-state-backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  15. Remote state & backends
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch16-state-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  16. State management operations
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch17-provider-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  17. Provider configuration in depth
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch18-provisioners-escape-hatches/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  18. Provisioners, terraform_data & escape hatches
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-before-iac" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The problem before IaC
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-terraform-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What Terraform is
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#declarative-vs-imperative-and-where-terraform-sits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declarative vs. imperative — and where Terraform sits
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-deployment-flow-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The deployment flow, at a glance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-terraform-actually-gets-used" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where Terraform actually gets used
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Where Terraform actually gets used">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-practice-from-the-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In practice, from the field
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform-and-opentofu" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Terraform and OpenTofu
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-setup-a-free-local-aws-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Lab setup: a free local AWS (Docker)
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab setup: a free local AWS (Docker)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-install-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 1 — install Docker
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-start-the-emulator" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 2 — start the emulator
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#see-what-you-create-the-floci-console-floci-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        See what you create — the Floci console (floci-ui)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-the-floci-cli-a-thin-wrapper-you-dont-strictly-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Optional — the <code>floci-cli</code> (a thin wrapper you don't strictly need)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-how-terraform-will-talk-to-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 3 — how Terraform will talk to it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-misconceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common misconceptions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="chapter-1-infrastructure-as-code-where-terraform-fits">Chapter 1 — Infrastructure as Code &amp; where Terraform fits<a class="headerlink" href="#chapter-1-infrastructure-as-code-where-terraform-fits" title="Permanent link">&para;</a></h1>
+<h2 id="learning-outcomes">Learning outcomes<a class="headerlink" href="#learning-outcomes" title="Permanent link">&para;</a></h2>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>Explain what Infrastructure as Code is and why it exists.</li>
+<li>Explain in two sentences why Terraform is declarative, and how that differs from Ansible and from CloudFormation.</li>
+<li>Name Terraform's core components (language, CLI/core, providers, vendors, modules, backends, workspaces, HCP Terraform) and how they fit together.</li>
+<li>Explain the Terraform → OpenTofu fork and give a defensible 2026 answer to "which one should I use?"</li>
+</ul>
+<h2 id="the-problem-before-iac">The problem before IaC<a class="headerlink" href="#the-problem-before-iac" title="Permanent link">&para;</a></h2>
+<p>Before Infrastructure as Code, provisioning meant working directly on machines — by hand, or with scripts an admin ran locally and rarely reused. Building a VPC (a networking sandbox on AWS) the manual way took hours, even for someone who knew the platform well: click through consoles, remember which subnet needs which route table, hope you didn't skip a step the last time and won't skip one this time.</p>
+<p>That manual process doesn't scale. It isn't versioned — there's no diff, no history, no way to know what changed between last Tuesday and today. It isn't repeatable — recreating the same environment for a second team means either redoing the clicking or trusting a wiki page to be accurate. And it isn't reviewable — nobody approves a sequence of console clicks the way they'd approve a pull request.</p>
+<p><strong>Infrastructure as Code (IaC)</strong> solves this by treating infrastructure definitions as software: written in text files, versioned in Git, reviewed through pull requests, and applied through a consistent, repeatable workflow. Once infrastructure is code, it can use the same safety practices as software. Diffs. Code review. CI/CD. Automated testing. All of it becomes available for infrastructure too. This got popular enough to earn its own industry shorthand: <strong>TACOS</strong> (Terraform Automation and Collaboration Software). These are CI/CD platforms purpose-built for running Terraform. Examples include HCP Terraform, Terraform Enterprise, Spacelift, and Scalr. A3 covers CI/CD in full: running Terraform non-interactively in a pipeline, saving plans as artifacts, and gating applies through pull requests. For now, just know the term exists. That's the whole pitch: not "typing instead of clicking," but inheriting decades of software-engineering discipline that manual provisioning never had access to.</p>
+<p>IaC isn't the first attempt at solving this. Configuration-management tools (Puppet, Chef) came first, configuring already-running machines. Image builders (Packer) came next, baking a known-good machine image for reuse. IaC frameworks are the next step up the stack: instead of configuring one machine or baking one image, they codify and repeatedly deploy <em>entire platforms</em> — networks, compute, databases, DNS, and the relationships between them — from a single source of truth.</p>
+<h2 id="what-terraform-is">What Terraform is<a class="headerlink" href="#what-terraform-is" title="Permanent link">&para;</a></h2>
+<p>Terraform is an IaC tool for building, changing, and versioning infrastructure safely and efficiently. It isn't the only one — Pulumi is another vendor-agnostic framework (using general-purpose languages instead of a custom DSL); AWS CloudFormation is the vendor-specific equivalent, tied to one cloud (GCP's Deployment Manager filled the same role until Google retired it on 31 March 2026, replacing it with Infrastructure Manager — which runs Terraform under the hood). Terraform's position: broad vendor coverage, a purpose-built declarative language, and (as of 2026) the largest and most mature provider ecosystem of the group.</p>
+<p>Terraform manages this vendor breadth through one architectural idea: <strong>push everything vendor-specific behind a plugin.</strong></p>
+<pre class="mermaid"><code>flowchart LR
+    Code["Terraform code (HCL)"] --&gt; Core["Terraform Core (in the CLI)"]
+    Core --&gt;|gRPC| AWSProvider["AWS provider"]
+    Core --&gt;|gRPC| GCPProvider["GCP provider"]
+    Core --&gt;|gRPC| CFProvider["Cloudflare provider"]
+    AWSProvider --&gt; AWSAPI["AWS API"]
+    GCPProvider --&gt; GCPAPI["GCP API"]
+    CFProvider --&gt; CFAPI["Cloudflare API"]</code></pre>
+<p>Terraform Core never talks to AWS, GCP, or Cloudflare directly. It talks to <strong>providers</strong> — plugins, written in Go, that speak gRPC to Core on one side and a vendor's API on the other. Providers are typically one-to-one with a vendor (the AWS provider, the GCP provider), though some vendors ship more than one to cover different product lines (Azure has several). This is why Terraform doesn't need to know anything about Cloudflare's DNS API or AWS's EC2 API — the provider owns that knowledge, and Core only needs to know how to call the provider.</p>
+<p>The scale here matters: the Terraform Registry passed 3,000 published providers with 250+ partners back in 2023, and third-party trackers put the live count above 4,000 as of this writing (2026). Beyond the big three clouds, providers exist for Kubernetes, Helm, GitHub, Splunk, DataDog, and effectively any platform with an API. Practically, that means: if a platform has an API, there's a very good chance someone has already written a Terraform provider for it — down to genuinely obscure ones (there's a provider for ordering pizza, and one that reports which McDonald's ice-cream machines are broken).</p>
+<p>Terraform's scope ranges from low-level infrastructure components (compute, storage, networking) up to high-level ones like DNS records and SaaS product features. Its approach to change is deliberately <strong>immutable</strong>: rather than patching a resource in place, its default instinct is to destroy the old one and create a new one. For most resources that's simpler to reason about than in-place mutation — no partial-upgrade states to debug, no drift between "what the patch script did" and "what's actually running."</p>
+<p>But blind replacement isn't free, and it isn't always safe. Destroy-then-create means exactly that: the old resource is gone before the new one exists. For a stateless web server, that's a non-event. For a database, it can mean losing every row it held. This is exactly why Terraform's <code>lifecycle</code> block exists — <code>prevent_destroy</code> refuses to replace a resource by accident, and <code>create_before_destroy</code> builds the replacement before tearing down the original, so nothing goes down in between. Full treatment is I2; for now, the takeaway is narrower: immutable-by-default is the right instinct for disposable infrastructure, and the wrong one to apply blindly to anything holding data you can't regenerate.</p>
+<p>Terraform's other core pieces, briefly — each gets its own chapter later in this path:</p>
+<ul>
+<li><strong>HCL</strong> (HashiCorp Configuration Language) — the language you write. Declarative, designed for readability. HCL isn't Terraform-exclusive — Packer, Nomad, and Consul all use it too, each exposing its own resources and quirks. Covered in depth in B4.</li>
+<li><strong>CLI &amp; Core</strong> — you download one binary, <code>terraform</code>. <strong>Core</strong> is the engine inside it: the part that parses your HCL, builds the dependency graph, and computes and executes plans. The <strong>CLI</strong> is the command surface wrapped around that engine — <code>terraform init</code>, <code>validate</code>, <code>plan</code>, <code>apply</code>, and the rest. They aren't separate downloads; Core is only reachable <em>through</em> the CLI, which is why every workflow (even a CI/CD system like HCP Terraform or Spacelift) ultimately shells out to <code>terraform</code> rather than calling the engine directly. The pieces that <em>are</em> downloaded separately are the providers — Core fetches those plugin binaries during <code>init</code>.</li>
+<li><strong>Modules</strong> — reusable, configurable collections of infrastructure, sourced from the Registry or authored locally. This is Terraform's answer to "standardize configurations": write the pattern once as a module, and every consuming team gets its improvements for free instead of re-deriving them. Covered in I4 (using modules) and I5 (authoring them).</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Module vs. provider</p>
+<p>These two get conflated constantly, but they live at different layers entirely.</p>
+<p><strong>Provider</strong> — a plugin binary (written in Go), downloaded during <code>init</code>. Teaches Terraform <em>how to talk to a platform's API</em> (AWS, GCP, Cloudflare). Defines which resource types even exist (<code>aws_instance</code>, <code>aws_s3_bucket</code>). It's the driver/translation layer between HCL and a vendor.</p>
+<p><strong>Module</strong> — a bundle of HCL <em>you</em> (or someone) wrote: a group of resource/variable/output blocks packaged for reuse. It teaches Terraform nothing new about any platform. It just composes resources the providers already define, into a reusable unit.</p>
+<p>Analogy: the <strong>provider</strong> is the library that gives you the vocabulary (<code>aws_instance</code> and its arguments). A <strong>module</strong> is a function you write <em>using</em> that vocabulary — "a VPC with three subnets and a NAT gateway" — so callers don't re-assemble the pieces each time.</p>
+<p>Concrete contrast:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Provider</th>
+<th>Module</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Written in</td>
+<td>Go (compiled plugin)</td>
+<td>HCL</td>
+</tr>
+<tr>
+<td>Comes from</td>
+<td>Registry, fetched by <code>init</code></td>
+<td>Registry, Git, or local path</td>
+</tr>
+<tr>
+<td>Job</td>
+<td>Define + manage resource types via a vendor API</td>
+<td>Package a reusable grouping of those resources</td>
+</tr>
+<tr>
+<td>Talks to</td>
+<td>The vendor's API (over gRPC)</td>
+<td>Nothing — it's just config Core expands</td>
+</tr>
+</tbody>
+</table>
+<p>A module almost always <em>uses</em> one or more providers; a provider never uses a module.</p>
+</div>
+<ul>
+<li><strong>Backends</strong> — where a workspace's state is stored. Local by default; remote backends (S3, GCS, HCP Terraform) are what make team collaboration possible. Some backends — the remote and HCP Terraform ones — go further, exposing APIs Terraform can call to run operations remotely, not just store state. Covered in I6.</li>
+<li><strong>Workspaces</strong> — an overloaded term, and a common beginner trap. A <em>CLI workspace</em> is a named, separate state file living inside one backend and one config directory — good for short-lived throwaway copies of a stack, like a per-PR preview. An <em>HCP Terraform workspace</em> is a richer unit: its own config, variables, state, run history, and access controls — but it's a feature of the proprietary HCP Terraform SaaS, not something the open-source tooling gives you (a CLI workspace, by contrast, ships even in open-source OpenTofu). Worth planting early: CLI workspaces are <em>not</em> how you isolate long-lived dev/staging/prod. Those share one backend and one set of credentials, so a slip in one can reach another — HashiCorp's own docs say workspaces alone aren't a fit for separating environments. The open-source way to get real isolation is a directory per environment, each with its own backend and state, usually wired up with <strong>Terragrunt</strong> (an open-source wrapper over Terraform or OpenTofu) so the shared config stays DRY. How to lay out real environments is A7's job, with Terragrunt itself in E4.</li>
+<li><strong>State</strong> — Terraform's record of the real infrastructure it manages, used to compute what has to change. Covered in depth starting at B9.</li>
+<li><strong>HCP Terraform</strong> — HashiCorp's managed platform for the "Collaborate" side of Terraform: shared state, secret data, RBAC, and a private registry for modules and providers, on top of a consistent run environment. It's a proprietary, paid SaaS (with a self-hosted twin, Terraform Enterprise) — not part of the open-source tooling. Covered in A4.</li>
+</ul>
+<h2 id="declarative-vs-imperative-and-where-terraform-sits">Declarative vs. imperative — and where Terraform sits<a class="headerlink" href="#declarative-vs-imperative-and-where-terraform-sits" title="Permanent link">&para;</a></h2>
+<p>This is the distinction the whole IaC landscape hangs on, so it's worth being precise.</p>
+<p><strong>Imperative</strong> tools describe <em>how</em> to reach an outcome — a sequence of steps: "check if this exists; if not, create it; then configure it." Bash scripts and most general-purpose languages work this way — top to bottom, step by step. <strong>Ansible</strong> is the imperative tool most often compared to Terraform: its playbooks (written in YAML) are explicit step-by-step instructions, executed over SSH against machines that already exist. Ansible holds no persistent state — it re-runs its steps each time and relies on the playbook author to make each step idempotent, rather than diffing against a stored record the way Terraform does. (Being agentless isn't the distinguishing factor here — Terraform is agentless too, just over provider APIs instead of SSH.) Ansible and Terraform are commonly paired rather than treated as strict alternatives: Terraform provisions the infrastructure, Ansible configures what's now running on it.</p>
+<p><strong>Declarative</strong> tools describe <em>what</em> the outcome should be — the desired end state — and leave the engine to figure out the steps. Terraform doesn't say "create a machine, then attach a disk, then assign an IP." It says "here is the machine I want, with this disk and this IP," and Terraform's planner computes the actions needed to get there, given whatever currently exists.</p>
+<p>One useful way to hold this in your head: declarative languages lean on <strong>nouns and adjectives</strong> (this resource, with these properties); imperative languages lean on <strong>verbs</strong> (do this, then do that).</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Model</th>
+<th>Vendor scope</th>
+<th>Language</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Terraform</strong></td>
+<td>Declarative</td>
+<td>Multi-vendor (via providers)</td>
+<td>Custom DSL (HCL)</td>
+</tr>
+<tr>
+<td><strong>OpenTofu</strong></td>
+<td>Declarative</td>
+<td>Multi-vendor (via providers)</td>
+<td>HCL (Terraform-compatible + extensions)</td>
+</tr>
+<tr>
+<td><strong>Ansible</strong></td>
+<td>Imperative (step-by-step playbooks, no stored state)</td>
+<td>Multi-vendor, agentless (SSH/API)</td>
+<td>YAML playbooks</td>
+</tr>
+<tr>
+<td><strong>AWS CloudFormation</strong></td>
+<td>Declarative</td>
+<td>AWS-only</td>
+<td>YAML/JSON templates</td>
+</tr>
+<tr>
+<td><strong>Pulumi</strong></td>
+<td>Declarative outcome, imperative authoring style (loops, conditionals, classes)</td>
+<td>Multi-vendor (via providers)</td>
+<td>General-purpose (Python, TypeScript, Go, Java, C#)</td>
+</tr>
+</tbody>
+</table>
+<p>Two consequences of being declarative fall out of the DAG Terraform builds from your config:</p>
+<ul>
+<li><strong>Dependencies are inferred, not declared.</strong> Say you define a VPC (a private network), a subnet carved out of that VPC, and a compute instance (a virtual machine) launched into that subnet. The subnet references the VPC's ID, and the instance references the subnet's ID. Terraform reads those references and infers the order on its own: VPC first, then subnet, then instance. You never write "create the VPC before the subnet" — the reference <em>is</em> the dependency. This is a directed acyclic graph (<strong>DAG</strong>): a dependency graph of actions with no cycles.</li>
+<li><strong>Circular dependencies can't be resolved automatically.</strong> If resource A needs resource B, B needs C, and C needs A, there's no valid order — that's the one hard limitation of the declarative model, and it needs a manual workaround (splitting resources, restructuring the reference) rather than a Terraform feature to fix it.</li>
+</ul>
+<p>CloudFormation is declarative like Terraform, but locked to one vendor — you'd need a second, unrelated tool for a second cloud. That's the two-sentence answer the milestone for this chapter is asking for: <em>Terraform is declarative because you write the desired end state, tracked in a state file, and let the engine compute the steps — unlike Ansible's step-by-step playbooks, which hold no state and re-run their instructions each time. Unlike CloudFormation, Terraform's declarative model isn't tied to one vendor — the same language and workflow apply across every provider in the registry.</em></p>
+<h2 id="the-deployment-flow-at-a-glance">The deployment flow, at a glance<a class="headerlink" href="#the-deployment-flow-at-a-glance" title="Permanent link">&para;</a></h2>
+<p>Every Terraform change follows the same shape: write configuration, compute a plan, review it, apply it.</p>
+<pre class="mermaid"><code>flowchart LR
+    A["Change desired"] --&gt; B["init"]
+    B --&gt; C["plan"]
+    C --&gt; D["Review"]
+    D --&gt; E["apply"]</code></pre>
+<ul>
+<li><strong>init</strong> downloads the providers and modules your config references, and sets up the backend.</li>
+<li><strong>plan</strong> is where Terraform does the real work: it refreshes its view of real infrastructure, compares that against your code, and computes a DAG of create/update/destroy actions. Call it a diff, not a guess. It reads the actual current state of your infrastructure and subtracts it from the end state your config describes, so what you see is the exact set of changes needed to close that gap — not an estimate of what might happen. A plan that says "1 to add, 0 to change, 0 to destroy" means precisely that, assuming nothing else moves the infrastructure between plan and apply.</li>
+<li><strong>apply</strong> executes that plan, in dependency order, running independent operations in parallel where the graph allows it.</li>
+</ul>
+<p>You may wonder where <code>terraform validate</code> fits, since B2 introduces it. It's not one of the essential phases above, which is why it's not in the diagram. <code>plan</code> already validates your config as a side effect — it will refuse to run on invalid HCL. <code>validate</code> is a separate, optional <em>fast</em> check: it inspects syntax and internal consistency only, with no state access and no calls to a vendor's API, so it returns in a fraction of a second. It slots in after <code>init</code> and before <code>plan</code>, and earns its keep in editors, pre-commit hooks, and CI pipelines where you want instant feedback on a typo without waiting for a full refresh. It changes nothing, so it never belongs <em>between</em> plan and apply.</p>
+<p>This is deliberately a preview, not the full picture — B3 covers <code>init</code>/<code>plan</code>/<code>apply</code>/<code>destroy</code> command-by-command, with real output and the plan symbols (<code>+</code>, <code>~</code>, <code>-/+</code>) you'll read constantly. What matters here is the shape: <strong>write → plan → apply</strong>, with review sitting between plan and apply as the safety gate. That review step is one of Terraform's biggest practical advantages over imperative tools — you see the diff of <em>reality vs. intent</em> before anything changes, every time.</p>
+<h2 id="where-terraform-actually-gets-used">Where Terraform actually gets used<a class="headerlink" href="#where-terraform-actually-gets-used" title="Permanent link">&para;</a></h2>
+<p>The declarative, multi-vendor model isn't just architecturally clean — it maps onto real problems teams have:</p>
+<ul>
+<li><strong>Multi-cloud deployment</strong> — one workflow across AWS, Azure, GCP instead of learning three consoles, useful for fault-tolerance and avoiding vendor lock-in.</li>
+<li><strong>Multi-tier application infrastructure</strong> — Terraform tracks dependencies between tiers (a web tier depending on a database tier) and orders creation/teardown correctly without you specifying it.</li>
+<li><strong>Self-service platform teams</strong> — modules encode an organization's standards once; product teams consume them without re-deriving the standards each time.</li>
+<li><strong>Policy-governed environments</strong> — policy-as-code (Sentinel, OPA) can block a plan before it's ever applied, rather than after infrastructure already exists non-compliant.</li>
+<li><strong>PaaS application setup</strong> — codifying a Heroku app's add-ons (a database, a DNSimple CNAME, a Cloudflare CDN in front of it) without touching a single web console.</li>
+<li><strong>Software-defined networking</strong> — Consul-Terraform-Sync (Network Infrastructure Automation) auto-generates Terraform config to reconfigure an SDN whenever a service registers with Consul, replacing a ticket-based network-change process.</li>
+<li><strong>Kubernetes</strong> — Terraform can both stand up the cluster itself <em>and</em> manage what runs inside it (pods, deployments, services) — two different jobs, same tool.</li>
+<li><strong>Disposable environments</strong> — spinning up a full stack for a PR, a demo, or a load test, then tearing it down, is cheap when the whole thing is one <code>apply</code>/<code>destroy</code> pair.</li>
+<li><strong>Software demos</strong> — bootstrapping a full demo environment on whichever cloud a prospect already uses, with parameters (like cluster size) adjustable per audience.</li>
+</ul>
+<p>You don't need to memorize this list. The pattern to notice: everywhere Terraform gets used, the value comes from the same two properties — <em>one workflow across many vendors</em>, and <em>a reviewable diff before every change</em>.</p>
+<h3 id="in-practice-from-the-field">In practice, from the field<a class="headerlink" href="#in-practice-from-the-field" title="Permanent link">&para;</a></h3>
+<p>The list above is the official catalog from terraform-intro and terraform-use-cases. Hafner's <em>Terraform in Depth</em> (TID Ch1 §1.5) adds four more from direct field experience — narrower and more anecdotal, but worth knowing because they show up constantly in practice:</p>
+<ul>
+<li><strong>Machine learning training</strong> — renting GPU/compute clusters per job instead of owning idle hardware; Terraform lets the cluster design evolve iteratively (add autoscaling later) and lets teams spin whole clusters up and down in moments.</li>
+<li><strong>API and web services</strong> — the classic stack (load balancers, app instances, TLS certs, DNS, cache, database, subnets) wrapped in a module so application developers never have to touch the networking layer directly.</li>
+<li><strong>Single sign-on structures</strong> — managing SSO systems (e.g. Okta: users, groups, policies, applications) as Terraform resources, mainly for the audit trail and multi-approver review this buys on permission changes.</li>
+<li><strong>Rapid prototyping</strong> — hackathons and startups skip the "spend a day standing up infra basics" tax by consuming modules an expert already built, instead of reinventing them under time pressure.</li>
+</ul>
+<h2 id="terraform-and-opentofu">Terraform and OpenTofu<a class="headerlink" href="#terraform-and-opentofu" title="Permanent link">&para;</a></h2>
+<p>The tension had been building for a while before it became public: HashiCorp updated its contributor documentation in 2021 to say it had paused routine review of community pull requests to Terraform Core, citing understaffing — framed as temporary at the time, but an early signal in hindsight of the shift to come. In August 2023, HashiCorp relicensed Terraform (and several other products) from the open-source MPL to the Business Source License (BSL), starting with Terraform 1.6. BSL is a "shared source" license: the code stays publicly viewable and auditable, but usage is restricted — specifically, it blocks offering the licensed software to third parties on a hosted or embedded basis that competes with HashiCorp's own products. Ordinary internal use, by individuals or companies, remains permitted.</p>
+<p>Worth being precise about the blast radius, because this is widely misremembered as "Terraform went closed": only HashiCorp's <strong>core products</strong> moved to BSL. Terraform's <strong>providers</strong> stayed MPL, as did many individual HashiCorp libraries. The AWS provider you download during <code>init</code> is open source under the same license it always had. The relicense covered the CLI and its engine, not the plugin ecosystem built around them.</p>
+<p>The community's response was fast and organized: a manifesto published that same month — co-signed by 140+ companies, 11 software projects, and 700+ individual developers, and still accumulating signatures since — asked HashiCorp to reconsider — and warned that a fork would follow if it didn't. Much of the concern centered on how dependent Terraform was on third-party-built tooling — Gruntworks' Terratest and Terragrunt among them — that the community felt the relicense put at risk. HashiCorp didn't reconsider. <strong>OpenTofu</strong> launched as that fork, backed by Scalr, env0, Spacelift, and Harness committing roughly 18 developers for five-plus years, and placed under the Linux Foundation specifically so no single company can control its direction again.</p>
+<p>Since the fork, OpenTofu has stayed compatible with Terraform-written configuration while adding features the community had wanted for years and Terraform's open-source CLI still doesn't ship: <strong>state encryption</strong>, <strong>provider <code>for_each</code></strong>, <strong>early variable/<code>.tfvars</code> evaluation</strong> (including in backend configuration), the <strong><code>-exclude</code> flag</strong>, and <strong>dynamic <code>prevent_destroy</code></strong>. HCL syntax, the provider protocol, and the state-file format remain compatible across both tools — the same providers work with either.</p>
+<p>That compatibility runs in one direction more freely than the other, and it's the thing to weigh before adopting either. Moving a codebase <strong>Terraform → OpenTofu</strong> is easy: OpenTofu reads what Terraform wrote. Moving <strong>OpenTofu → Terraform</strong> is easy only until you use an OpenTofu-only feature. Encrypt your state, or write a provider <code>for_each</code>, and there is no Terraform equivalent to migrate back to — you'd have to unwind the feature first. The second asymmetry runs the other way: OpenTofu has to independently re-implement each new Terraform feature, so it lags behind on the newest ones rather than shipping them the same week. "Superset" describes the feature sets as they stand today, not the release cadence.</p>
+<p>One concrete side-effect of the relicense: several open-source package managers, Homebrew included, stopped shipping Terraform versions beyond <strong>v1.5.7</strong> — the last MPL release — while continuing to carry OpenTofu.</p>
+<p>Two events since the initial fork are worth knowing as of 2026:</p>
+<div class="admonition info">
+<p class="admonition-title">IBM now owns HashiCorp</p>
+<p><strong>IBM announced its $6.4B acquisition of HashiCorp in April 2024</strong>; the deal closed <strong>February 2025</strong> after US/UK regulatory review. Terraform is now developed under IBM.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Current 2026 guidance, per multiple independent comparisons</p>
+<p>OpenTofu is increasingly the lower-risk default for a <em>new</em> project — OSI-approved license, multi-vendor governance, full provider compatibility, plus the CLI features listed above. Price that against the one-way door: adopting an OpenTofu-only feature is what makes the choice hard to reverse, so decide deliberately rather than drifting into it. Staying on Terraform still makes sense if you're already invested in HCP Terraform, use Terraform <strong>Stacks</strong> (a Terraform-exclusive capability that lives in HCP Terraform, not the open CLI — covered in E2), or work somewhere procurement specifically requires HashiCorp as vendor. Existing Terraform investment on its own isn't a reason to migrate — evaluate OpenTofu at your next new-project or compliance decision point instead.</p>
+</div>
+<p>Practically, for the rest of this learning path: everything through the Associate-level material (B1–I8) is written to work identically with either tool. <code>terraform</code> and <code>tofu</code> are interchangeable for shared functionality; OpenTofu-specific features are called out explicitly (and get their own deep dive at E3) rather than assumed.</p>
+<h2 id="lab-setup-a-free-local-aws-docker">Lab setup: a free local AWS (Docker)<a class="headerlink" href="#lab-setup-a-free-local-aws-docker" title="Permanent link">&para;</a></h2>
+<p>Everything so far has been the <em>why</em>. Before the next chapters put you on a keyboard, stand up a lab you can practise in without an AWS account, without cloud credentials, and without a bill. The lab is a <strong>local AWS emulator</strong> — a Docker container that answers AWS API calls on your own machine. Point the AWS provider at it and <code>terraform apply</code> creates <em>emulated</em> S3 buckets, DynamoDB tables, and queues locally. <code>destroy</code> costs nothing and risks nothing. Every chapter from here on carries a <strong>🧪 Lab</strong> section that runs against this one environment.</p>
+<p>Several emulators fit, and all listen on the same gateway port <strong>4566</strong>, so the labs run identically on any of them — you swap only the <code>docker run</code> line. Three worth knowing, in the order this book recommends:</p>
+<ul>
+<li><strong>Floci</strong> (<code>floci/floci</code>) — <strong>MIT, free, no account, no token.</strong> A Quarkus-native emulator with ~70 services, a tiny image, and near-instant startup; it serves the LocalStack API on <code>:4566</code>, so the <code>tflocal</code> wrapper drives it directly. Ships extras (a local console UI, a CLI, Azure/GCP siblings). <strong>The book's default.</strong></li>
+<li><strong>MiniStack</strong> (<code>ministackorg/ministack</code>) — <strong>MIT, free forever, no account, no token.</strong> ~270 MB, ~60 services. Another solid zero-signup choice.</li>
+<li><strong>LocalStack</strong> (<code>localstack/localstack</code>) — the established, most-documented emulator. As of March 2026 its image needs a <strong>free account + <code>LOCALSTACK_AUTH_TOKEN</code></strong> (Hobby plan). Most mature; slightly more setup.</li>
+</ul>
+<p>All three are MIT/AWS-compatible on <code>:4566</code> and work with <code>tflocal</code>; Floci and MiniStack skip the signup, LocalStack has the deepest docs. Pick one — the labs don't care which.</p>
+<div class="admonition warning">
+<p class="admonition-title">Emulation is not AWS — know what the lab does and doesn't prove</p>
+<p>An emulator <em>mocks</em> AWS APIs; it is not AWS. A config can <code>apply</code> cleanly against it and still behave differently — or not exist at all — on real AWS. That's fine for what these labs are for: practising the <strong>workflow</strong> (<code>init</code>/<code>plan</code>/<code>apply</code>/<code>destroy</code>), <strong>HCL authoring</strong>, state, <code>for_each</code>, and modules, where fidelity to AWS's every quirk doesn't matter. It is the wrong tool for learning a service's real-world edge behaviour. The reliable free surface is <strong>S3, DynamoDB, SQS, SNS, IAM, STS</strong> — the labs stay inside it.</p>
+</div>
+<h3 id="step-1-install-docker">Step 1 — install Docker<a class="headerlink" href="#step-1-install-docker" title="Permanent link">&para;</a></h3>
+<p>The emulator runs as a container, so you need a container runtime. Install <strong>Docker Desktop</strong> (macOS/Windows) or <strong>Docker Engine</strong> (Linux) and confirm it's up:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker<span class="w"> </span>version<span class="w">      </span><span class="c1"># client + server (daemon) both reported = Docker is running</span>
+</span></code></pre></div>
+<p>If <code>docker version</code> errors on the server line, start Docker Desktop (or <code>sudo systemctl start docker</code> on Linux) before continuing.</p>
+<h3 id="step-2-start-the-emulator">Step 2 — start the emulator<a class="headerlink" href="#step-2-start-the-emulator" title="Permanent link">&para;</a></h3>
+<p><strong>Floci (recommended — nothing to sign up for):</strong></p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>floci<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">4566</span>:4566<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>-u<span class="w"> </span>root<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span>floci/floci:latest
+</span></code></pre></div>
+<p>The Docker socket mount lets Floci spin up <em>real</em> containers for services like RDS and Lambda; <code>-u root</code> is what the project's README uses so it can reach the socket.</p>
+<p>Better than a one-off <code>docker run</code>: this book ships a ready <code>labs/docker-compose.yml</code> (in the repo root) so you start the emulator the same way in every lab. It's the file below — Floci on <code>:4566</code>, with a comment showing how to swap in MiniStack or LocalStack:</p>
+<div class="admonition tip">
+<p class="admonition-title">The image tag is pinned, and that is deliberate</p>
+<p>Every lab from Chapter 2 onward prints real command output, and several chapters publish numbers measured against this emulator. A floating <code>:latest</code> would silently change what those commands return, which makes a published measurement unreproducible and an unexplained difference impossible to diagnose. The compose file therefore names an exact version, and bumping it is a decision you make rather than one that happens to you.</p>
+<p>Same reasoning as pinning a provider version in <code>required_providers</code>. When you do bump it, re-run the labs whose output you care about — Chapter 11 records one emulator behaviour that a lab's narrative depends on.</p>
+</div>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># labs/docker-compose.yml</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nt">services</span><span class="p">:</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">floci</span><span class="p">:</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">floci/floci:1.6.0</span><span class="w">         </span><span class="c1"># swap: ministackorg/ministack | localstack/localstack:stable</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">floci-lab</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"127.0.0.1:4566:4566"</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/run/docker.sock:/var/run/docker.sock</span><span class="w">   </span><span class="c1"># real RDS/ECS/Lambda containers</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">root</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unless-stopped</span>
+</span></code></pre></div>
+<p>Start it (and re-use this exact command at the top of every 🧪 Lab):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>labs/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">      </span><span class="c1"># start the emulator, detached</span>
+</span></code></pre></div>
+<details class="note">
+<summary>Alternative — MiniStack (also MIT, no signup)</summary>
+<p>Another zero-account option, <code>ministackorg/ministack</code> (~60 services). Same port, same <code>tflocal</code> flow:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span><span class="m">4566</span>:4566<span class="w"> </span>ministackorg/ministack
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># mount -v /var/run/docker.sock:/var/run/docker.sock for real RDS/ECS/Lambda</span>
+</span></code></pre></div>
+<p>Health at <code>http://localhost:4566/_ministack/health</code> (also serves the LocalStack-compatible path).</p>
+</details>
+<details class="note">
+<summary>Alternative — LocalStack (needs a free account + token as of 2026)</summary>
+<p>Until early 2026 LocalStack shipped a no-signup open-source <strong>Community</strong> image. In <strong>March 2026</strong> that image stopped receiving updates, and development consolidated into a single <code>localstack/localstack</code> image that <strong>prompts for an auth token</strong>. It's still free for personal use through the <strong>Hobby plan</strong> (create a free account, export the token as <code>LOCALSTACK_AUTH_TOKEN</code>); the current stable is <code>2026.06.2</code>, and the friendliest start is the <code>localstack</code> CLI:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>localstack
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LOCALSTACK_AUTH_TOKEN</span><span class="o">=</span>&lt;your-token&gt;<span class="w">    </span><span class="c1"># from your free Hobby-plan account</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>localstack<span class="w"> </span>start<span class="w"> </span>-d
+</span></code></pre></div>
+<p>Raw Docker equivalent:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:4566:4566<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:4510-4559:4510-4559<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">LOCALSTACK_AUTH_TOKEN</span><span class="o">=</span><span class="si">${</span><span class="nv">LOCALSTACK_AUTH_TOKEN</span><span class="p">:?</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>localstack/localstack:stable<span class="w">          </span><span class="c1"># pin :2026.06 for a fixed version</span>
+</span></code></pre></div>
+<p>A pre-March-2026 Community tag (<code>localstack/localstack:4.12</code>) runs tokenless but is frozen with no security patches — a last resort, not the default. The GitHub Student Developer Pack unlocks a free <strong>Student Plan</strong>.</p>
+</details>
+<p>Everything multiplexes through one gateway port, <strong>4566</strong>. Confirm the container is healthy — the health endpoint returns a JSON map of each service's state, every one of which should read <code>running</code>. Floci's own path is <code>/_floci/health</code>, and that is what this book uses throughout:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:4566/_floci/health
+</span></code></pre></div>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">"services"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"s3"</span><span class="p">:</span><span class="w"> </span><span class="s2">"running"</span><span class="p">,</span><span class="w"> </span><span class="nt">"dynamodb"</span><span class="p">:</span><span class="w"> </span><span class="s2">"running"</span><span class="p">,</span><span class="w"> </span><span class="nt">"iam"</span><span class="p">:</span><span class="w"> </span><span class="s2">"running"</span><span class="p">,</span><span class="w"> </span><span class="nt">"..."</span><span class="p">:</span><span class="w"> </span><span class="s2">"72 of them"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"edition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"community"</span><span class="p">,</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"original_edition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"floci-always-free"</span><span class="p">,</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.6.0"</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>If a service reads anything other than <code>running</code>, the container is still starting; wait and curl again.</p>
+<div class="admonition note">
+<p class="admonition-title">The LocalStack path also answers</p>
+<p>Floci serves <code>/_localstack/health</code> as a compatibility alias, with a byte-identical body. You only need it if you swap the compose image for a different emulator — see the alternatives commented in <code>labs/docker-compose.yml</code>.</p>
+</div>
+<h3 id="see-what-you-create-the-floci-console-floci-ui">See what you create — the Floci console (floci-ui)<a class="headerlink" href="#see-what-you-create-the-floci-console-floci-ui" title="Permanent link">&para;</a></h3>
+<p>The single most useful extra for learning is the <strong>Floci console</strong>, a local web UI (<code>floci-io/floci-ui</code>, MIT). It's an AWS-Console-style <strong>Cloud Explorer</strong> over the <em>real</em> emulator state — after a lab's <code>apply</code>, you <em>see</em> the S3 buckets, DynamoDB tables, Lambda functions, RDS/EKS/VPC/secrets the run created, instead of squinting at <code>awslocal</code> output. For a beginner this closes the loop between "I wrote HCL" and "a thing exists".</p>
+<p>You don't clone or build anything — the console ships as a published image (<code>floci/floci-ui</code>), and this book's <code>labs/docker-compose.yml</code> already includes it. It comes up <strong>together with the emulator</strong> on the same start command from Step 2:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>labs/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">   </span><span class="c1"># emulator (:4566) + console (:4500)</span>
+</span></code></pre></div>
+<p>Open <strong><a href="http://localhost:4500">http://localhost:4500</a></strong> — the console is just there, no extra step.</p>
+<div class="admonition info">
+<p class="admonition-title">How it's wired (one image, not a stack)</p>
+<p>The published <code>floci/floci-ui</code> image is <strong>all-in-one</strong>: a single process serves both the web frontend and its small API on <code>:4500</code>, and reads the emulator over the compose network via <strong><code>FLOCI_ENDPOINT=http://floci:4566</code></strong> (already set in the compose file). No second emulator, no port juggling — the console reads the <em>same</em> <code>:4566</code> your <code>tflocal</code> labs write to. Verified 2026-07-15: a secret created on <code>:4566</code> shows up immediately in the console's API.</p>
+</div>
+<p>The service in <code>labs/docker-compose.yml</code>:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="w">  </span><span class="nt">floci-ui</span><span class="p">:</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">floci/floci-ui:latest</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">floci-ui</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"127.0.0.1:4500:4500"</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">      </span><span class="nt">FLOCI_ENDPOINT</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://floci:4566</span><span class="w">    </span><span class="c1"># emulator, by its compose service name</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">      </span><span class="nt">AWS_REGION</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">us-east-1</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">      </span><span class="nt">AWS_ACCESS_KEY_ID</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">      </span><span class="nt">AWS_SECRET_ACCESS_KEY</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">floci</span>
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Don't want the console every time?</p>
+<p>It's a convenience, not a requirement. To make it opt-in, add <code>profiles: ["ui"]</code> to the <code>floci-ui</code> service — then a plain <code>up -d</code> starts only the emulator, and <code>docker compose -f labs/docker-compose.yml --profile ui up -d</code> adds the console. Or just comment the service out.</p>
+</div>
+<h3 id="optional-the-floci-cli-a-thin-wrapper-you-dont-strictly-need">Optional — the <code>floci-cli</code> (a thin wrapper you don't strictly need)<a class="headerlink" href="#optional-the-floci-cli-a-thin-wrapper-you-dont-strictly-need" title="Permanent link">&para;</a></h3>
+<p><code>floci-io/floci-cli</code> (MIT) is a convenience CLI. Worth knowing what it does — and that the <strong>already-running container does all of it</strong>, so the labs never depend on it. Install per platform:</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c"># Windows</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">scoop</span> <span class="n">bucket</span> <span class="n">add</span> <span class="n">floci</span> <span class="n">https</span><span class="p">://</span><span class="n">github</span><span class="p">.</span><span class="n">com</span><span class="p">/</span><span class="n">floci-io</span><span class="p">/</span><span class="n">scoop-floci</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">scoop</span> <span class="n">install</span> <span class="n">floci</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c"># or: iwr https://floci.io/install.ps1 | iex</span>
+</span></code></pre></div>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Linux / macOS</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://floci.io/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># macOS (Homebrew): brew install floci-io/floci/floci</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># any OS with Java 25+: download floci.jar from the latest release, then `java -jar floci.jar version`</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title"><code>floci</code> the binary vs <code>floci/floci</code> the emulator</p>
+<p>All four methods install the <strong>CLI</strong> — a binary named <code>floci</code>, from the <code>floci-io/floci-cli</code> repo. That's <em>not</em> the emulator: the emulator is the Docker image <code>floci/floci</code>, which your <code>docker compose up</code> pulls separately. Same name, two different things.</p>
+</div>
+<p>Under the hood every command just shells out to <code>docker</code> or does an HTTP <code>GET</code> on <code>/_floci/health</code>, the same endpoint you curled above. So each maps to a plain command against your running <code>floci-lab</code>:</p>
+<table>
+<thead>
+<tr>
+<th><code>floci-cli</code></th>
+<th>What it really does</th>
+<th>Do the same with the running container</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>floci start</code></td>
+<td>builds a <code>docker run -d -p 4566:4566 … floci/floci:latest</code> line, then waits</td>
+<td><code>docker compose -f labs/docker-compose.yml up -d</code> (your Step 2)</td>
+</tr>
+<tr>
+<td><code>floci status</code></td>
+<td><code>docker inspect</code> + <code>GET /_floci/health</code></td>
+<td><code>docker ps --filter name=floci-lab</code> &nbsp;+&nbsp; <code>curl -s http://localhost:4566/_floci/health</code></td>
+</tr>
+<tr>
+<td><code>floci wait</code></td>
+<td>polls <code>/_floci/health</code> every 500 ms until 200</td>
+<td><code>until curl -sf http://localhost:4566/_floci/health &gt;/dev/null; do sleep 1; done</code></td>
+</tr>
+<tr>
+<td><code>floci env</code></td>
+<td>prints <strong>4 constant</strong> vars — no container call</td>
+<td><code>export</code>/<code>$env:</code> them yourself (see below)</td>
+</tr>
+<tr>
+<td><code>floci logs</code></td>
+<td><code>docker logs</code></td>
+<td><code>docker logs -f floci-lab</code></td>
+</tr>
+<tr>
+<td><code>floci stop</code></td>
+<td>stops + removes the container</td>
+<td><code>docker compose -f labs/docker-compose.yml down</code></td>
+</tr>
+<tr>
+<td><code>floci doctor</code></td>
+<td><strong>11 environment checks + <code>--fix</code></strong></td>
+<td>no one-liner — this is the wrapper's real value</td>
+</tr>
+</tbody>
+</table>
+<p><code>floci env</code> emits only these, identical every time (the emulator ignores the key <em>values</em>, it just needs some creds present):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">AWS_ENDPOINT_URL</span><span class="o">=</span>http://localhost.floci.io:4566
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="nb">test</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="nb">test</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1
+</span></code></pre></div>
+<p>It knows your shell — <code>floci env --shell powershell | Invoke-Expression</code> sets them on Windows (<code>eval $(floci env)</code> is the bash form). The book doesn't use this path anyway: <strong><code>tflocal</code> injects those for you</strong>, keeping your <code>.tf</code> portable.</p>
+<div class="admonition tip">
+<p class="admonition-title">The one command worth installing the CLI for: <code>floci doctor</code></p>
+<p><code>floci doctor</code> runs 11 checks in sequence — docker installed, daemon up, socket reachable, docker version, port 4566 free, image present/current, container running, endpoint reachable, plus aws-cli endpoint + S3 path-style config — and <code>--fix</code> auto-resolves the fixable ones. That's a genuinely useful <strong>one-shot setup check</strong> you'd otherwise run by hand. Everything else the CLI does, the running container already gives you, so treat the CLI as optional and skip it in the per-chapter labs.</p>
+</div>
+<h3 id="step-3-how-terraform-will-talk-to-it">Step 3 — how Terraform will talk to it<a class="headerlink" href="#step-3-how-terraform-will-talk-to-it" title="Permanent link">&para;</a></h3>
+<p>The Terraform <strong>CLI itself</strong> you install in the next chapter (B2) — this section only stands up the <em>sandbox</em>. When B2's lab arrives, there are three ways to aim Terraform at the emulator instead of real AWS, all pointing at <code>localhost:4566</code>. The labs use <code>tflocal</code>, which works against <strong>any</strong> of the three:</p>
+<ul>
+<li><strong><code>tflocal</code></strong> — a thin wrapper (<code>pip install terraform-local</code>) that runs Terraform and, behind the scenes, drops a temporary override file pointing every AWS endpoint at <code>localhost:4566</code> with dummy credentials. Run <code>tflocal init</code> / <code>tflocal plan</code> / <code>tflocal apply</code> exactly like the real commands; your <code>.tf</code> files stay untouched, so the <em>same</em> config still applies to real AWS with plain <code>terraform</code>. It's LocalStack's wrapper, but since it just targets <code>:4566</code> (and Floci/MiniStack serve the LocalStack API there), it drives all three.</li>
+<li><strong><code>AWS_ENDPOINT_URL</code></strong> — the AWS provider (<code>~&gt; 6.0</code>) honours this env var. <code>export AWS_ENDPOINT_URL=http://localhost:4566</code> plus dummy keys, then plain <code>terraform apply</code>. No wrapper, no config edit.</li>
+<li><strong>A manual <code>provider "aws"</code> block</strong> with an <code>endpoints</code> block and dummy keys. Explicit, but it hard-wires the config to the emulator, so keep it in a local override file. B2's lab shows this alongside <code>tflocal</code>.</li>
+</ul>
+<p>A one-line install for the wrapper and its companion CLIs, ready for the next chapter:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>pip<span class="w"> </span>install<span class="w"> </span>terraform-local<span class="w"> </span>awscli-local<span class="w">   </span><span class="c1"># provides `tflocal` and `awslocal`</span>
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">S3 labs crawling, or timing out after 2 minutes? Set <code>S3_HOSTNAME</code></p>
+<p>Left alone, <code>tflocal</code> points the S3 endpoint at <code>http://s3.localhost.localstack.cloud:4566</code> rather than at <code>localhost</code>. That hostname starts with <code>s3.</code>, and <code>tflocal</code> reads that prefix as “this endpoint understands virtual-host addressing”, so it <em>omits</em> <code>s3_use_path_style</code> from the override file it generates. The AWS provider then addresses every bucket as a subdomain: <code>my-bucket.s3.localhost.localstack.cloud</code>.</p>
+<p>Those subdomains are <strong>public DNS names</strong>. LocalStack publishes a wildcard record for them pointing at <code>127.0.0.1</code>, so each S3 call now depends on a real DNS round-trip leaving your machine. When a resolver on the path declines to serve the wildcard, the lookup fails or returns <code>0.0.0.0</code>, and the AWS SDK treats that as a transient connection error and retries with backoff until the resource's read timeout expires:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Error: reading S3 Bucket Versioning (ch13-lab1-raw): timeout while waiting for state
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>to become 'Enabled, Suspended, Disabled' (timeout: 2m0s): operation error S3:
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>GetBucketVersioning, request canceled, context deadline exceeded
+</span></code></pre></div>
+<p>Home routers, corporate DNS, and ad-blocking resolvers such as Pi-hole all break the wildcard this way, often only for <em>some</em> names, which is why the symptom looks intermittent. The emulator is innocent: its own log shows every S3 call finishing in milliseconds.</p>
+<p>Fix by setting <code>S3_HOSTNAME</code>. <code>tflocal</code> then builds the endpoint as <code>http://localhost:4566</code>, which does not start with <code>s3.</code>, so it writes <code>s3_use_path_style = true</code> into the override. Bucket names move into the URL path, no hostname is ever looked up, and every request goes straight to loopback.</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Linux / macOS — current shell</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">S3_HOSTNAME</span><span class="o">=</span>localhost
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># persist it (bash)</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">'export S3_HOSTNAME=localhost'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="c1"># persist it (zsh)</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">'export S3_HOSTNAME=localhost'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
+</span></code></pre></div>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c"># Windows — current session</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nv">$env:S3_HOSTNAME</span> <span class="p">=</span> <span class="s2">"localhost"</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c"># persist for future sessions (does not affect the shell you run it in)</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="n">setx</span> <span class="n">S3_HOSTNAME</span> <span class="n">localhost</span>
+</span></code></pre></div>
+<p>To keep the fix in the repo instead of in your machine's environment, this book ships <code>labs/lab-env.sh</code> and <code>labs/lab-env.ps1</code>. Each sets <code>S3_HOSTNAME</code> plus the dummy credentials, so a fresh clone needs no setup. Run one per shell. Asking Git for the repository root makes the command work from anywhere, including from inside a lab directory:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nb">source</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>git<span class="w"> </span>rev-parse<span class="w"> </span>--show-toplevel<span class="k">)</span><span class="s2">/labs/lab-env.sh"</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nb">cd</span><span class="w"> </span>labs/chapter13/lab1
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>tflocal<span class="w"> </span>apply
+</span></code></pre></div>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="p">.</span> <span class="s2">"</span><span class="p">$(</span><span class="n">git</span> <span class="n">rev-parse</span> <span class="p">-</span><span class="n">-show-toplevel</span><span class="p">)</span><span class="s2">/labs/lab-env.ps1"</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="nb">cd </span><span class="n">labs</span><span class="p">\</span><span class="n">chapter13</span><span class="p">\</span><span class="n">lab1</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="n">tflocal</span> <span class="n">apply</span>
+</span></code></pre></div>
+<p>From the repo root itself, <code>source labs/lab-env.sh</code> and <code>. .\labs\lab-env.ps1</code> are equivalent. What does <em>not</em> work is a bare relative path from somewhere deeper, such as <code>. .\labs\lab-env.ps1</code> while standing in <code>labs\chapter13\lab2</code>, because that path resolves against your current directory.</p>
+<p>They set the shell rather than wrapping <code>tflocal</code> because lab directories sit at different depths under <code>labs/</code>, so a wrapper script would need a different relative path from each one. If you use <strong>direnv</strong>, <code>labs/.envrc</code> loads <code>lab-env.sh</code> for you on every <code>cd</code> into a lab, after one <code>direnv allow</code>.</p>
+<p>Confirm it took by checking the generated override after any <code>tflocal</code> command. <code>localstack_providers_override.tf</code> should now contain <code>s3_use_path_style = true</code> and an <code>s3 = "http://localhost:4566"</code> endpoint. The variable only changes S3, because S3 is the one service whose addressing puts the resource name in the hostname.</p>
+</div>
+<p><code>awslocal</code> is the AWS CLI pre-pointed at <code>:4566</code> — <code>awslocal s3 ls</code> lists the buckets your Terraform labs create, a handy way to confirm an <code>apply</code> really did something.</p>
+<div class="admonition warning">
+<p class="admonition-title"><code>awslocal</code> fails with <code>pip install "botocore[crt]"</code>?</p>
+<p>If <code>awslocal s3 ls</code> errors with <em>"Using the login credential provider requires an additional dependency. You will need to pip install "botocore[crt]" before proceeding."</em>, the AWS CLI found a real profile on your machine (SSO / IAM Identity Center) and is trying to resolve live cloud credentials — which the emulator neither needs nor wants. Two fixes:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Fix A — hand the CLI dummy static creds so it stops reaching for the login provider</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="nb">test</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="nb">test</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_DEFAULT_REGION</span><span class="o">=</span>us-east-1
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>awslocal<span class="w"> </span>s3<span class="w"> </span>ls<span class="w">          </span><span class="c1"># now hits :4566 with fake creds — exactly what the emulator expects</span>
+</span></code></pre></div>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c"># Fix A (PowerShell)</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="nv">$env:AWS_ACCESS_KEY_ID</span><span class="p">=</span><span class="s2">"test"</span><span class="p">;</span> <span class="nv">$env:AWS_SECRET_ACCESS_KEY</span><span class="p">=</span><span class="s2">"test"</span><span class="p">;</span> <span class="nv">$env:AWS_DEFAULT_REGION</span><span class="p">=</span><span class="s2">"us-east-1"</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="n">awslocal</span> <span class="n">s3</span> <span class="nb">ls</span>
+</span></code></pre></div>
+<p>Dummy credentials are the right move for a local sandbox — the emulator ignores their value, it just wants <em>some</em> creds present so no login provider triggers. If you'd rather keep your real profile working, install the missing native dependency instead: <code>pip install "botocore[crt]"</code> (quote the brackets so the shell doesn't glob them).</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title"><code>awslocal</code> crashes with <code>Could not determine home directory</code> / <code>Failed to execute script 'aws'</code>?</p>
+<p>A separate failure, seen on Windows: <code>awslocal</code> errors deep in <code>awscli/telemetry.py</code> with <code>RuntimeError: Could not determine home directory</code>, even when <code>$env:USERPROFILE</code> is set. The cause is the <strong>PyInstaller-frozen AWS CLI v2 bundle</strong> (the <code>.msi</code> install) — its telemetry module runs <code>pathlib.Path.home()</code> at <em>import time</em>, and the frozen build fails to resolve it. Because the crash is at import, no runtime flag or env var prevents it.</p>
+<p>Fix: install the <strong>pip</strong> AWS CLI instead of the frozen bundle. It runs on your own Python, so the broken telemetry bundle is out of the picture:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>pip<span class="w"> </span>install<span class="w"> </span>awscli<span class="w"> </span>awscli-local<span class="w">     </span><span class="c1"># replaces the frozen v2 bundle; awslocal now works</span>
+</span></code></pre></div>
+<p>Independent of <code>awslocal</code>, you can always confirm a lab landed straight from Terraform — <code>terraform state list</code> shows the created resources, and <code>terraform output</code> shows any you defined.</p>
+</div>
+<p>With Docker running, an emulator healthy on 4566, and <code>tflocal</code> installed, your lab is ready. Every chapter's <strong>🧪 Lab</strong> from B2 onward assumes exactly this — Floci by default, MiniStack or LocalStack if you prefer.</p>
+<h2 id="common-misconceptions">Common misconceptions<a class="headerlink" href="#common-misconceptions" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>"IaC just means scripting infrastructure."</strong> Scripts are imperative — a sequence of commands, with no memory of what they already did. IaC (as Terraform implements it) is declarative: you describe the end state, and a persistent state file lets Terraform detect and reconcile drift on every run, rather than blindly re-running steps like a script (or, for that matter, like Ansible — see the comparison table above).</li>
+<li><strong>"OpenTofu is a lesser Terraform."</strong> By 2026 it's the reverse in several respects — OpenTofu is a superset of Terraform's open-source feature set, not a stripped-down copy (see version-facts). The gap that remains (mainly Stacks) is deliberately HCP-Terraform-exclusive, not a maturity gap in the open CLI. The honest qualifier: superset of what has <em>shipped</em>, not of what ships <em>next</em> — OpenTofu re-implements each new Terraform feature independently, so it trails on the newest arrivals.</li>
+<li><strong>"The BSL relicense made the Terraform ecosystem closed source."</strong> Only HashiCorp's core products moved to BSL. Providers stayed MPL, and so did many HashiCorp libraries — the plugin ecosystem you actually depend on never changed license.</li>
+</ul>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>IaC lets infrastructure inherit software-engineering practices that manual provisioning never had: versioning, review, and CI/CD (informally, <strong>TACOS</strong>).</li>
+<li>Terraform stays vendor-agnostic by pushing everything vendor-specific into <strong>providers</strong>, which speak gRPC to Terraform Core on one side and a vendor API on the other. Its approach to change is <strong>immutable</strong> — replace, don't patch in place.</li>
+<li>Terraform is <strong>declarative</strong>: you describe desired end state; Terraform computes the plan (a DAG) to get there. This is the key distinction from imperative tools like Ansible, and the key advantage over vendor-locked declarative tools like CloudFormation.</li>
+<li><strong>Modules</strong> standardize configuration (write once, every team benefits); <strong>HCP Terraform</strong> is the managed platform for the collaborate side — shared state, secrets, RBAC, private registry.</li>
+<li>The full loop is <strong>write → init → plan → review → apply</strong> — this chapter previews it; B3 covers it command-by-command.</li>
+<li>Terraform shows up everywhere from multi-cloud and Kubernetes to PaaS setup, SDN automation, and ML-training clusters — the constant is <em>one workflow across vendors</em> plus <em>a reviewable diff before every change</em>.</li>
+<li>HashiCorp's 2023 BSL relicense produced the <strong>OpenTofu</strong> fork (Linux Foundation, MPL 2.0); as of 2026, OpenTofu is a superset of Terraform's <em>shipped</em> open-source CLI feature set, and is the commonly recommended default for new projects unless you need HCP-Terraform-exclusive features like Stacks. Migration is asymmetric — Terraform → OpenTofu is easy, the reverse is easy only until you adopt an OpenTofu-only feature.</li>
+</ul>
+<h2 id="exercises">Exercises<a class="headerlink" href="#exercises" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Recall</strong> — In your own words, what does "declarative" mean, and what's the one thing a declarative engine can't resolve automatically?</li>
+<li><strong>Apply</strong> — A colleague says "we should just write a Bash script to provision our VPC, it's faster than learning Terraform." Give two concrete reasons why that script will hurt them in six months that a Terraform config wouldn't.</li>
+<li><strong>Extend</strong> — Look up one provider on the Terraform Registry for a system you use at work or in a personal project. Is it HashiCorp-maintained, partner-maintained, or community-maintained? What does that tell you about how much to trust its release cadence?</li>
+</ol>
+<hr />
+<p><strong>Next: B2 — Install, providers &amp; your first project.</strong> You now know <em>why</em> Terraform exists and how it's shaped. Next you'll get it running — installing the CLI, wiring up cloud credentials, and standing up your first real resource.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>What is Terraform? (Intro)</li>
+<li>Terraform Use Cases</li>
+<li>TID Ch 1 — A brief overview of Terraform</li>
+<li>Topic pages: IaC fundamentals · Core workflow · Providers</li>
+<li>Version &amp; Certification Facts (IBM/HashiCorp acquisition, provider count, 2026 OpenTofu guidance)</li>
+<li>IaC/config-mgmt tool comparison (Ansible, Pulumi — verified 2026-07-03)</li>
+<li>Floci Facts (MIT, Quarkus-native emulator — book's default lab; Docker, Terraform wiring, comparison table — verified 2026-07-09)</li>
+<li>MiniStack Facts (MIT, free-forever emulator; Docker, Terraform wiring — verified 2026-07-09)</li>
+<li>LocalStack Facts (Docker setup, 2026 packaging/auth-token change, <code>tflocal</code> — verified 2026-07-09)</li>
+<li>Web (verified 2026-07-09): <a href="https://github.com/floci-io/floci">Floci</a> · <a href="https://github.com/floci-io">floci-io org</a> · <a href="https://github.com/ministackorg/ministack">MiniStack</a> · <a href="https://docs.localstack.cloud/aws/getting-started/installation/">LocalStack install</a> · <a href="https://docs.localstack.cloud/aws/integrations/infrastructure-as-code/terraform/">Terraform with LocalStack</a> · <a href="https://blog.localstack.cloud/the-road-ahead-for-localstack/">The Road Ahead for LocalStack</a></li>
+<li>Floci extras (verified 2026-07-15): <a href="https://github.com/floci-io/floci-ui">floci-ui</a> (console, <code>:4500</code>→<code>:4501</code>→<code>:4566</code>) · <a href="https://github.com/floci-io/floci-cli">floci-cli</a> (thin wrapper — <code>env</code> = 4 constants, <code>doctor</code> = 11-check setup diagnostic, health polled on native <code>/_floci/health</code>)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+        <script src="../../javascripts/sidebar-toggle.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js" defer></script>
+      
+    
+  </body>
+</html>

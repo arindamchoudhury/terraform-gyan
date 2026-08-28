@@ -1,0 +1,2394 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Personal notes and book from learning Terraform (and OpenTofu).">
+      
+      
+        <meta name="author" content="arindam@live.com">
+      
+      
+        <link rel="canonical" href="https://arindamchoudhury.github.io/terraform-gyan/book/ch09-state-fundamentals/">
+      
+      
+        <link rel="prev" href="../ch08-data-sources/">
+      
+      
+        <link rel="next" href="../ch10-meta-arguments/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Chapter 9 — State fundamentals - Terraform Learning Notes</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-9-state-fundamentals" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Terraform Learning Notes" class="md-header__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terraform Learning Notes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 9 — State fundamentals
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Terraform Learning Notes" class="md-nav__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Terraform Learning Notes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Learning Path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Book
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Book
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch01-iac-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  1. Infrastructure as Code & where Terraform fits
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch02-install-providers-first-project/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  2. Install, providers & your first project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch03-core-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  3. The core workflow: init / plan / apply / destroy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch04-hcl-language-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  4. HCL language basics
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch05-providers-resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  5. Providers & resources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch06-input-variables-outputs-locals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  6. Input variables, outputs & locals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch07-expressions-operators-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  7. Expressions, operators & functions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch08-data-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  8. Data sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  9. State fundamentals
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  9. State fundamentals
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-problem-your-code-and-your-cloud-share-no-identifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. The problem: your code and your cloud share no identifier
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. The problem: your code and your cloud share no identifier">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-alternative-was-tried-and-it-shipped" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The alternative was tried, and it shipped
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-what-state-actually-stores-bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. What state actually stores: bindings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. What state actually stores: bindings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-one-to-one-mapping-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The one-to-one mapping rule
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-other-three-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. The other three jobs
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. The other three jobs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retained-dependencies-the-reason-destroy-works-at-all" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Retained dependencies — the reason destroy works at all
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-attribute-cache-the-optional-part" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The attribute cache — the optional part
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-only-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        State-only resources
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-opening-the-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Opening the file
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Opening the file">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serial-counts-writes-not-applies" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>serial</code> counts writes, not applies
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineage-is-narrower-than-it-sounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>lineage</code> is narrower than it sounds
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resources-and-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>resources</code> and <code>outputs</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-reading-state-the-supported-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Reading state the supported way
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-refresh-drift-and-how-state-gets-corrected" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Refresh, drift, and how state gets corrected
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Refresh, drift, and how state gets corrected">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drift-is-a-symptom-ask-what-changed-and-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Drift is a symptom — ask what changed and why
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-state-is-a-security-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. State is a security problem
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-why-you-must-never-hand-edit-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        8. Why you must never hand-edit it
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-1-dissect-a-state-file-and-follow-a-binding-both-ways" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab 1: dissect a state file, and follow a binding both ways
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧪 Lab 1: dissect a state file, and follow a binding both ways">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-read-the-top-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 1 — read the top level
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-follow-the-binding-outward" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 2 — follow the binding outward
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-follow-it-back-inward" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 3 — follow it back inward
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-prove-the-secret-is-plaintext" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 4 — prove the secret is plaintext
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-watch-serial-move-on-a-no-op" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 5 — watch <code>serial</code> move on a no-op
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-2-measure-serial-yourself" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab 2: measure <code>serial</code> yourself
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What's next
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch10-meta-arguments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  10. Meta-arguments: count, for_each, depends_on
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch11-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  11. The lifecycle meta-argument
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch12-dynamic-blocks-complex-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  12. Dynamic blocks & complex types
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch13-using-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  13. Using modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch14-authoring-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  14. Authoring modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch15-remote-state-backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  15. Remote state & backends
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch16-state-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  16. State management operations
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch17-provider-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  17. Provider configuration in depth
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch18-provisioners-escape-hatches/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  18. Provisioners, terraform_data & escape hatches
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-problem-your-code-and-your-cloud-share-no-identifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. The problem: your code and your cloud share no identifier
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. The problem: your code and your cloud share no identifier">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-alternative-was-tried-and-it-shipped" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The alternative was tried, and it shipped
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-what-state-actually-stores-bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. What state actually stores: bindings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. What state actually stores: bindings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-one-to-one-mapping-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The one-to-one mapping rule
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-other-three-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. The other three jobs
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. The other three jobs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retained-dependencies-the-reason-destroy-works-at-all" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Retained dependencies — the reason destroy works at all
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-attribute-cache-the-optional-part" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The attribute cache — the optional part
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-only-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        State-only resources
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-opening-the-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Opening the file
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Opening the file">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serial-counts-writes-not-applies" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>serial</code> counts writes, not applies
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lineage-is-narrower-than-it-sounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>lineage</code> is narrower than it sounds
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resources-and-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>resources</code> and <code>outputs</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-reading-state-the-supported-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Reading state the supported way
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-refresh-drift-and-how-state-gets-corrected" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Refresh, drift, and how state gets corrected
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Refresh, drift, and how state gets corrected">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drift-is-a-symptom-ask-what-changed-and-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Drift is a symptom — ask what changed and why
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-state-is-a-security-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. State is a security problem
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-why-you-must-never-hand-edit-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        8. Why you must never hand-edit it
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-1-dissect-a-state-file-and-follow-a-binding-both-ways" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab 1: dissect a state file, and follow a binding both ways
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧪 Lab 1: dissect a state file, and follow a binding both ways">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-read-the-top-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 1 — read the top level
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-follow-the-binding-outward" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 2 — follow the binding outward
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-follow-it-back-inward" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 3 — follow it back inward
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-prove-the-secret-is-plaintext" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 4 — prove the secret is plaintext
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-watch-serial-move-on-a-no-op" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 5 — watch <code>serial</code> move on a no-op
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-2-measure-serial-yourself" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab 2: measure <code>serial</code> yourself
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What's next
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="chapter-9-state-fundamentals">Chapter 9 — State fundamentals<a class="headerlink" href="#chapter-9-state-fundamentals" title="Permanent link">&para;</a></h1>
+<h2 id="learning-outcomes">Learning outcomes<a class="headerlink" href="#learning-outcomes" title="Permanent link">&para;</a></h2>
+<p>By the end you can:</p>
+<ul>
+<li>Explain why Terraform needs a state file at all, and why the obvious alternative — rediscovering resources by tag on every run — was tried and abandoned.</li>
+<li>Name the four jobs state does: <strong>bindings</strong>, <strong>retained dependencies</strong>, <strong>an attribute cache</strong>, and <strong>state-only resources</strong>.</li>
+<li>Open <code>terraform.tfstate</code>, identify every top-level field, and say what <code>serial</code> and <code>lineage</code> are for.</li>
+<li>Trace a resource address in state to the real cloud object it manages, and back again from a cloud ID to the address that owns it.</li>
+<li>State the <strong>one-to-one mapping rule</strong> and name the two operations that break it.</li>
+<li>Read state safely with <code>terraform state list</code>, <code>state show</code>, <code>show -json</code>, and <code>output -json</code> — and explain which of those is a supported machine interface and which is not.</li>
+<li>Explain how drift is detected, what <code>-refresh-only</code> does, and why <code>-refresh=false</code> inverts Terraform's model of truth.</li>
+<li><strong>Articulate three reasons never to edit state by hand</strong>, and prove that a <code>sensitive</code> value is stored in it as plaintext.</li>
+</ul>
+<hr />
+<h2 id="1-the-problem-your-code-and-your-cloud-share-no-identifier">1. The problem: your code and your cloud share no identifier<a class="headerlink" href="#1-the-problem-your-code-and-your-cloud-share-no-identifier" title="Permanent link">&para;</a></h2>
+<p>You write this:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"notes"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"state-lab-notes"</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>AWS creates a bucket. Now run <code>terraform apply</code> again. Terraform has to answer one question before it can do anything useful: <strong>is the thing I am looking at the thing I made?</strong></p>
+<p>Nothing in the configuration answers it. <code>aws_s3_bucket.notes</code> is a name that exists only in your <code>.tf</code> files. The bucket's real identity lives in AWS. The two are connected by nothing at all — unless something remembers the connection.</p>
+<p>That something is <strong>state</strong>.</p>
+<p>It is worth sitting with how load-bearing this is. Without a remembered link, Terraform's second run cannot tell "the bucket I created and nobody touched" from "a bucket somebody else happens to have named the same thing" from "no bucket at all". Every one of those needs a different action, and the configuration alone cannot distinguish them.</p>
+<h3 id="the-alternative-was-tried-and-it-shipped">The alternative was tried, and it shipped<a class="headerlink" href="#the-alternative-was-tried-and-it-shipped" title="Permanent link">&para;</a></h3>
+<p>The obvious escape is to make the cloud remember instead: tag every created object with its Terraform address, and rediscover the mapping by searching tags on each run. Early Terraform prototypes did exactly this — no state file, AWS tags as the index.</p>
+<p>It failed for blunt reasons:</p>
+<ul>
+<li><strong>Not every resource supports tags.</strong> Whole categories of cloud object have nowhere to put one.</li>
+<li><strong>Not every provider supports tags at all</strong>, and the ones that do expose different search APIs, so a generic solution collapses into per-vendor special-casing.</li>
+<li><strong>People edit tags out of band.</strong> An index anyone can rewrite is not an index.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">The honest version of the argument</p>
+<p>HashiCorp's own framing, on the <a href="https://developer.hashicorp.com/terraform/language/state/purpose">Purpose of Terraform State</a> page, concedes more than a defence usually does: "in the scenarios where Terraform may be able to get away without state, doing so would require shifting massive amounts of complexity from one place (state) to another place (the replacement concept)."</p>
+<p>So the claim is not that stateless Terraform is impossible. It is that every replacement is worse — and the tag prototype is the evidence, not a thought experiment.</p>
+</div>
+<p>There is a second cost to going stateless that is easy to miss: it would land on <strong>provider authors</strong>, not just on Terraform's core. Every provider would need lookup paths for every vendor capability. Terraform's value comes from a huge ecosystem of community providers, so anything that raises the bar for writing a good one weakens the whole tool.</p>
+<hr />
+<h2 id="2-what-state-actually-stores-bindings">2. What state actually stores: bindings<a class="headerlink" href="#2-what-state-actually-stores-bindings" title="Permanent link">&para;</a></h2>
+<p>Most confusion about state dissolves once you have the precise statement: state stores <strong>bindings between objects in a remote system and resource instances declared in your configuration</strong>.</p>
+<p>When Terraform creates a remote object, it records that object's identity against one resource instance. On later runs it uses the binding to decide whether to update, destroy, or leave the object alone.</p>
+<p>Everything else in the file — cached attributes, dependency lists, output values — is supporting material. The binding is the point.</p>
+<h3 id="the-one-to-one-mapping-rule">The one-to-one mapping rule<a class="headerlink" href="#the-one-to-one-mapping-rule" title="Permanent link">&para;</a></h3>
+<p>Terraform expects <strong>exactly one remote object per resource instance, and exactly one resource instance per remote object</strong>.</p>
+<p>Normally Terraform guarantees this for free, because it is the only party creating and destroying: it makes the object, it writes the binding; it destroys the object, it removes the binding. The invariant holds because one actor controls both sides.</p>
+<p>Two operations hand that guarantee back to you:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>What it does</th>
+<th>What you now owe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terraform import</code> / <code>import</code> block</td>
+<td>Binds an <em>existing</em> object to a resource instance</td>
+<td>Make sure that object is not already bound elsewhere</td>
+</tr>
+<tr>
+<td><code>terraform state rm</code> / <code>removed</code> block</td>
+<td>Makes Terraform forget an object it still manages</td>
+<td>Delete the real object, or re-import it somewhere</td>
+</tr>
+</tbody>
+</table>
+<p>Skip the obligation and you get one of two failure shapes. <strong>An orphan</strong> — a real resource nobody manages, still costing money, invisible to every plan. Or <strong>a double binding</strong> — two resource instances pointed at one object, where each run fights the other and the config-to-object mapping is genuinely ambiguous.</p>
+<p>HashiCorp's <a href="https://developer.hashicorp.com/terraform/language/state/purpose">Purpose of Terraform State</a> page states the second case, under <em>Mapping to the Real World</em>:</p>
+<blockquote>
+<p>"Terraform expects that each remote object is bound to only one resource instance in the configuration. If a remote object is bound to multiple resource instances, the mapping from configuration to the remote object in the state becomes ambiguous, and Terraform may behave unexpectedly."</p>
+</blockquote>
+<p>"May behave unexpectedly" undersells it, and the failure is easy to reproduce. Bind one emulator bucket to a second resource instance with an <code>import</code> block, give that second instance a tag the first one does not have, and the two never converge:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># apply 1
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>aws_s3_bucket.shadow: Modifications complete   # tag owner=shadow added
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a># plan
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a># aws_s3_bucket.notes will be updated in-place
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  ~ tags = { - "owner" = "shadow" -&gt; null }    # the other instance takes it away
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a># apply 2, then plan again
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a># aws_s3_bucket.shadow will be updated in-place
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  + "owner" = "shadow"                         # and it comes straight back
+</span></code></pre></div>
+<p>Every apply is a fight, with each instance reverting the other. Destroying either one is worse: <code>terraform destroy -target=aws_s3_bucket.shadow</code> deletes the bucket, and the next plan for the <em>other</em> instance reports <code># aws_s3_bucket.notes will be created</code>, because its binding now points at nothing.</p>
+<div class="admonition danger">
+<p class="admonition-title">The rule is an invariant, not a warning</p>
+<p><strong>One remote object, one resource instance — in both directions, at all times.</strong> Not a guideline that degrades gracefully when broken. Terraform's whole model of "what exists and what do I own" is built on it holding.</p>
+<p>Everything in Chapter 16 (state operations) exists to move bindings around <em>without</em> breaking that rule. When you learn <code>moved</code>, <code>import</code>, and <code>removed</code> there, the reason they are preferred over CLI surgery is that they are declarative — the plan shows you the binding change before it happens, and an empty plan afterwards is the proof the invariant survived.</p>
+</div>
+<hr />
+<h2 id="3-the-other-three-jobs">3. The other three jobs<a class="headerlink" href="#3-the-other-three-jobs" title="Permanent link">&para;</a></h2>
+<p>Bindings alone would justify the file. State does three more things, and each one answers a question you will eventually ask.</p>
+<h3 id="retained-dependencies-the-reason-destroy-works-at-all">Retained dependencies — the reason destroy works at all<a class="headerlink" href="#retained-dependencies-the-reason-destroy-works-at-all" title="Permanent link">&para;</a></h3>
+<p>Terraform derives dependency order from your configuration: <code>aws_instance.app</code> references <code>aws_subnet.main.id</code>, so the subnet is created first and destroyed last.</p>
+<p>Now delete both blocks from your <code>.tf</code> files and run <code>apply</code>. Terraform must destroy two objects — and <strong>the edges that told it the order have been deleted along with the code.</strong></p>
+<p>Those edges come from two places, and both live in your expressions. <strong>Implicit</strong> ones come from a reference to another resource's attribute, which is the <code>aws_subnet.main.id</code> above. <strong>Explicit</strong> ones come from a <code>depends_on</code> entry. A create walks the edges in order and a destroy walks them reversed, so deleting the blocks deleted the only thing that knew which way round to go.</p>
+<p>State solves this by keeping a copy of each resource instance's most recent dependency set, as a <code>dependencies</code> array of plain addresses next to its attributes:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">"dependencies"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="s2">"tls_private_key.ca_key"</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="s2">"tls_self_signed_cert.ca_cert"</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">]</span>
+</span></code></pre></div>
+<p>Destroy order for resources that are no longer in configuration comes from that array, not from config. It is written on every apply while the code still exists, which is what makes it available after the code is gone.</p>
+<div class="admonition note">
+<p class="admonition-title">The alternative Terraform explicitly rejected</p>
+<p>Terraform "could know that servers must be deleted before the subnets they are a part of. The complexity for this approach quickly explodes, however: in addition to Terraform having to understand the ordering semantics of every resource for every provider, Terraform must also understand the ordering across providers."</p>
+<p>That is the complexity-shifting argument again, made concrete. Terraform's graph is derived from <em>your configuration</em>, never from built-in knowledge of resource types — see Chapter 3.</p>
+</div>
+<p>Other metadata rides along for the same reason. The most useful is a pointer to the <strong>provider configuration</strong> last used with each resource, which is what lets Terraform notice when a resource moves between aliased providers.</p>
+<h3 id="the-attribute-cache-the-optional-part">The attribute cache — the optional part<a class="headerlink" href="#the-attribute-cache-the-optional-part" title="Permanent link">&para;</a></h3>
+<p>State also caches every attribute of every resource. The <a href="https://developer.hashicorp.com/terraform/language/state/purpose">Purpose of Terraform State</a> page is unusually blunt about this one: "This is the most optional feature of Terraform state and is done only as a performance improvement."</p>
+<p>Default behaviour ignores the cache. Every plan and apply refreshes all resources against the provider. That is correct, and for small configurations it is free.</p>
+<p>At scale it stops being free:</p>
+<ul>
+<li>Many providers have no API to query many resources at once, so it is one round trip per resource.</li>
+<li>Round trips are hundreds of milliseconds each.</li>
+<li>Providers rate-limit, capping how much you can ask for per window.</li>
+</ul>
+<p>So large users reach for <code>-refresh=false</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title"><code>-refresh=false</code> promotes the cache to the source of truth</p>
+<p>Normally state is a record that gets <em>corrected</em> against reality at the start of every run. With <code>-refresh=false</code> the cached attributes are the only input, and any out-of-band change is invisible to the plan.</p>
+<p>That is not a small tuning knob — it inverts the model. It is the accidental-drift category from §6, made undetectable <strong>by choice</strong>. Use it when you know why you are using it, and never as a default in CI.</p>
+</div>
+<h3 id="state-only-resources">State-only resources<a class="headerlink" href="#state-only-resources" title="Permanent link">&para;</a></h3>
+<p>Because state exists, Terraform can offer resources with no backing infrastructure at all. <code>random_password</code>, <code>time_static</code>, <code>tls_private_key</code>, <code>terraform_data</code> — these create nothing in any cloud. Their entire existence <em>is</em> the state entry.</p>
+<p>You will use one in this chapter's lab. It is the cleanest possible demonstration that state is a database, not a cache of an API.</p>
+<hr />
+<h2 id="4-opening-the-file">4. Opening the file<a class="headerlink" href="#4-opening-the-file" title="Permanent link">&para;</a></h2>
+<p>A word this chapter is about to use a lot. A <strong>backend</strong> is the thing that decides <em>where state lives and who is allowed to write it</em>: it stores the state and, optionally, provides an API for locking it. Write no <code>backend</code> block and you get the default one, <code>local</code>, which keeps state as a file in your working directory, locks it through the operating system, and runs operations on your own machine. Point Terraform at <code>s3</code>, <code>gcs</code>, <code>azurerm</code>, or HCP Terraform instead and the same state goes to shared storage that several people can use safely. Chapter 15 is about making that switch; everything here is the default local case, and none of it changes when you move.</p>
+<p>State is JSON, and with that default backend it sits in your working directory as <code>terraform.tfstate</code>. Read it. The instruction "never edit it" is not "never look at it" — a state file you have never opened is a part of Terraform you do not understand.</p>
+<p>Here is the real top level from this chapter's lab (one S3 bucket, one <code>random_password</code>, one output):</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"terraform_version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.15.8"</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"serial"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">"lineage"</span><span class="p">:</span><span class="w"> </span><span class="s2">"be6d1c55-9f31-c363-4c6b-f14974d7f93b"</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="nt">"outputs"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="nt">"resources"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">],</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="nt">"check_results"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>One term first, because the field descriptions lean on it. A <strong>snapshot</strong> is one complete state document, written out whole. Terraform never patches the file in place or appends a delta to it: every write serialises the entire state and replaces what was there, which is why the previous snapshot has to be preserved separately as <code>terraform.tfstate.backup</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>version</code></td>
+<td>Format version of the state data structure itself — currently <strong>4</strong>. Lets a newer Terraform recognise and upgrade an older file.</td>
+</tr>
+<tr>
+<td><code>terraform_version</code></td>
+<td>The CLI version that <strong>last wrote</strong> the file. Informational in practice.</td>
+</tr>
+<tr>
+<td><code>serial</code></td>
+<td>Incremented on every persisted snapshot <strong>whose content differs</strong> from the previous one. Counts <em>writes</em>, not applies.</td>
+</tr>
+<tr>
+<td><code>lineage</code></td>
+<td>A random 128-bit ID minted the first time a snapshot is written <strong>at a location</strong>, then copied forward forever. Answers "same project?".</td>
+</tr>
+<tr>
+<td><code>resources</code></td>
+<td>Every managed resource <strong>and data source</strong>, with its bindings and cached attributes.</td>
+</tr>
+<tr>
+<td><code>outputs</code></td>
+<td>The <strong>root module's</strong> outputs only, each with its recorded type.</td>
+</tr>
+<tr>
+<td><code>check_results</code></td>
+<td>Results of <code>check</code> blocks from the last run; <code>null</code> when there are none.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="serial-counts-writes-not-applies"><code>serial</code> counts writes, not applies<a class="headerlink" href="#serial-counts-writes-not-applies" title="Permanent link">&para;</a></h3>
+<p>The lab's first apply created two managed resources and left <code>serial</code> at <strong>3</strong>, not 1. A single apply writes the state file several times: the local backend writes a fresh snapshot each time the graph walk produces a new state, and <code>serial</code> moves whenever that document differs from the one on disk. Under <code>TF_LOG=trace</code> you can watch it happen, as repeated <code>statemgr.Filesystem: writing snapshot at terraform.tfstate</code> lines within one run.</p>
+<p>What you cannot do is predict the number. Measured by repeating each configuration from scratch and recording every run — you can reproduce this yourself with the second lab below:</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Terraform 1.15.8</th>
+<th>OpenTofu 1.12.4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4 × <code>random_password</code> (<code>lab2/provider-backed</code>)</td>
+<td>4, 5, 5, 5, 5, 5</td>
+<td>1, 1, 1, 1, 1, 1</td>
+</tr>
+<tr>
+<td>4 × <code>terraform_data</code> (<code>lab2/in-core</code>)</td>
+<td>5, 4, 4, 1, 5, 5</td>
+<td>1, 1, 1, 1, 1, 1</td>
+</tr>
+<tr>
+<td>2 × <code>random_password</code></td>
+<td>3, 3, 3</td>
+<td>1, 1, 1</td>
+</tr>
+<tr>
+<td>1 × <code>random_password</code> + 1 × <code>local_file</code> data source</td>
+<td>1, 1, 1</td>
+<td>1, 1, 1</td>
+</tr>
+<tr>
+<td>1 × <code>random_password</code> + 1 × <code>aws_s3_bucket</code> (first lab)</td>
+<td>3</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>Read the second row again: the same four resources, the same machine, and a first apply that wrote <strong>five</strong> snapshots on one run and <strong>one</strong> on another. Nothing about the configuration changed between those runs. When resources finish close enough together their state updates coalesce into a single write, and how they fall out is a matter of scheduling.</p>
+<p>So <code>serial</code> is not "resources plus one", and it is not a count of applies either. The small rows look stable only because there is little there to reorder.</p>
+<p>The practical rules that survive:</p>
+<ul>
+<li><code>serial</code> is a reliable <strong>ordering</strong> key — "which of these backups is newest?" — but nothing more. Gaps and jumps mean nothing.</li>
+<li>Never assert an expected <code>serial</code> in a test or a script. It is timing-dependent.</li>
+<li>Data sources are recorded in <code>resources</code> with <code>"mode": "data"</code> and produced no bump of their own in any run above.</li>
+<li>Interrupting an apply writes <em>more</em> snapshots, not fewer: Terraform persists on the way out so a subsequent kill costs less recovery.</li>
+</ul>
+<div class="admonition danger">
+<p class="admonition-title">Those extra writes are a crash safety net, and OpenTofu's is time-gated</p>
+<p>Terraform's habit of writing state throughout the run is what protects you when a run dies with no chance to clean up. OpenTofu writes at most once per interval, so what survives a <code>kill -9</code> depends on when you kill it. Three measured runs of the same shape — one resource that completes immediately, then a long <code>time_sleep</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Killed</th>
+<th>Terraform 1.15.8</th>
+<th>OpenTofu 1.12.4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15 s into a 40 s apply</td>
+<td>852 bytes, the finished resource recorded</td>
+<td><strong>0 bytes</strong></td>
+</tr>
+<tr>
+<td>30 s into a 40 s apply</td>
+<td>852 bytes</td>
+<td><strong>0 bytes</strong></td>
+</tr>
+<tr>
+<td>35 s, with a second resource completing at 25 s</td>
+<td>—</td>
+<td>725 bytes, partial</td>
+</tr>
+</tbody>
+</table>
+<p>The middle row is the one to understand. Thirty seconds is past OpenTofu's twenty-second interval, and it still wrote nothing — because the interval is only <strong>checked when a state update arrives</strong>, and during a long-running resource none does. The third row supplies the missing trigger: with a resource completing at 25 s, that completion finds the interval elapsed and persists.</p>
+<p>So the exposure is not "the first 20 seconds". It runs until the first resource completes after the interval has elapsed, which one slow resource can stretch to the length of the whole apply.</p>
+<p>What that costs you: a real object created inside the window is an orphan the moment it exists. It is running, it is billing, and the next plan will create another one, because nothing recorded the first. That is §6's "created but not recorded" failure, reached without anything going wrong beyond a power cut.</p>
+<p>An ordinary Ctrl-C is safe on both — the stop path forces a persist before exiting. The exposure is a hard kill, an OOM kill, or a lost machine.</p>
+<p><strong>You cannot tune this into Terraform's behaviour.</strong> Both CLIs read <code>TF_STATE_PERSIST_INTERVAL</code>, in seconds, and both refuse to go below the 20-second default — the knob only makes the window <em>longer</em>. Terraform ignores a smaller value silently. OpenTofu 1.12.4 rejects it by panicking:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$ TF_STATE_PERSIST_INTERVAL=5 tofu apply
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Can't use value lower than 20 for env variable TF_STATE_PERSIST_INTERVAL, got 5
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>github.com/opentofu/opentofu/internal/logging.panicHandler(...)
+</span></code></pre></div>
+<p>On Terraform's local backend the setting is moot in any case: <code>WriteState</code> already writes every update to disk, and the interval governs only the remote backends, where a persist is a network round trip. On OpenTofu it is the whole mechanism, and 20 seconds is the floor.</p>
+<p>So the mitigation is procedural, not configuration. Treat a hard-killed OpenTofu apply as having possibly created objects that state never recorded: plan first, look for resources it wants to create that you believe already exist, and import them before re-running.</p>
+<p>One more observation from the third run, repeated twice: the snapshot OpenTofu did write held only <code>time_sleep.wait_a</code>, not the <code>terraform_data</code> resource that had completed 25 seconds earlier and was in the in-memory state at the time. A mid-run snapshot is not a promise that everything finished so far is in it.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — one write, not several</p>
+<p>Every configuration in the table ends at <code>serial</code> <strong>1</strong> on OpenTofu <strong>1.12.4</strong> — all five of them, every run measured, including the emulator-backed first lab where Terraform lands on 3. Terraform ranged from 1 to 5 over the same configurations. OpenTofu is not writing less state, it is writing it fewer times; the file is otherwise the same format down to the <code>terraform_version</code> key.</p>
+<p>What is <em>not</em> different is the rule that decides a bump. A second, no-op apply of the first lab moved OpenTofu from 1 to 2, exactly as Terraform went 3 to 4, for the same reason: the marshalled document differed. So the counter still tracks writes-whose-content-differed on both. Only the number of writes per run changes — which is the step change any tooling that reads <code>serial</code> will see across a migration.</p>
+<p><strong>Why one and not several.</strong> The two local state managers split the same two operations differently. In Terraform, <code>WriteState</code> writes the file immediately and <code>PersistState</code> is a no-op, so every mid-apply state update reaches disk. In OpenTofu, <code>WriteState</code> only updates an in-memory copy and the disk write lives in <code>PersistState</code>, which the apply hook calls only when a state update arrives <em>and</em> its interval — 20 seconds by default — has elapsed since the last one. A fast apply therefore declines every intermediate persist and writes once at the end. <code>TF_LOG=trace</code> shows it plainly: four <code>declined to persist a state snapshot</code> lines, then a single <code>writing snapshot</code>. Both behaviours are in the released sources, <code>v1.15.8</code> and <code>v1.12.4</code>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">“No changes” in the plan does not mean the state file is unchanged</p>
+<p>The plan summary counts <strong>managed resources</strong>. The <code>serial</code> guard compares the <strong>whole marshalled state document</strong>.</p>
+<p>Verified in this chapter's lab: a second, entirely no-op apply — plan reported no changes — still moved <code>serial</code> from 3 to 4. Diffing the new snapshot against <code>terraform.tfstate.backup</code> showed the whole difference:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>/serial                                              3 -&gt; 4
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>/resources[0]/…/attributes/replication_configuration[0]/rules   null -&gt; []
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>/resources[0]/…/attributes/tags                                 null -&gt; {}
+</span></code></pre></div>
+<p>Two attributes came back from the refresh as empty containers instead of <code>null</code>. The document genuinely differed, so the counter moved. (Here the round-trip noise comes from the local emulator; on real AWS the same <em>class</em> of thing happens whenever a provider does not round-trip a value identically.) The lesson generalises: any attribute that changes on refresh — most classically a data source with a volatile attribute — drives <code>serial</code> on its own.</p>
+</div>
+<h3 id="lineage-is-narrower-than-it-sounds"><code>lineage</code> is narrower than it sounds<a class="headerlink" href="#lineage-is-narrower-than-it-sounds" title="Permanent link">&para;</a></h3>
+<p><code>lineage</code> is usually described as the guard that stops one project's state overwriting another's. That is true, but the comparison happens in far fewer places than the description implies.</p>
+<p>A routine <code>plan</code>/<code>apply</code> <strong>never compares lineage</strong>. Terraform reads state, carries the lineage forward verbatim, and writes it back. The check only runs where two <em>independently obtained</em> snapshots meet: <code>terraform state push</code>, a backend migration, applying a saved plan, or a remote backend detecting a concurrent write. And <code>-force</code> disables it on the push path entirely.</p>
+<p>So nothing stops two configurations from pointing at the same state file during normal operation. What lineage catches is importing a <em>foreign snapshot over an existing one</em>.</p>
+<div class="admonition info">
+<p class="admonition-title">Not actually a UUID</p>
+<p>Despite the shape, lineages are not RFC 4122 v4 UUIDs — they are 128 random bits from a CSPRNG wearing UUID punctuation, with no version or variant bits set. Uniqueness rests entirely on the randomness. You can check any state file: a v4 UUID has <code>4</code> as the first nibble of the third group; the lab's <code>be6d1c55-9f31-c363-4c6b-f14974d7f93b</code> has <code>c</code>.</p>
+</div>
+<h3 id="resources-and-outputs"><code>resources</code> and <code>outputs</code><a class="headerlink" href="#resources-and-outputs" title="Permanent link">&para;</a></h3>
+<p>Each entry in <code>resources</code> identifies a resource by <strong><code>mode</code></strong>, <strong><code>module</code></strong>, <strong><code>type</code></strong> and <strong><code>name</code></strong>. <code>mode</code> is <code>managed</code> for a <code>resource</code> block and <code>data</code> for a data source, so both kinds share the one array. <code>module</code> is absent for a root resource and reads <code>"module.wrapped"</code> for one declared inside <code>module "wrapped"</code>. <code>type</code> and <code>name</code> are the two labels on the block. Together those spell the resource address you type on the command line. The entry also records the <code>provider</code> that created the object.</p>
+<p>The attributes are one level further down, and the distinction matters. Each entry holds an <strong><code>instances</code></strong> array with one element per <em>instance</em>, because a <code>resource</code> block is a template rather than an object: it yields one instance on its own, and one per element with <code>count</code> or <code>for_each</code>. It is that instance element, not the entry, which carries the <code>attributes</code> object holding every computed attribute and supplied argument. The provider-set <code>schema_version</code> that lets a provider migrate its own attribute layout across upgrades sits there too, alongside an <code>index_key</code> whenever the resource uses <code>count</code> or <code>for_each</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">The instance layout is Chapter 16's subject</p>
+<p>This chapter needs <code>instances</code> only to place <code>attributes</code> correctly. Chapter 16 opens by taking the entry apart field by field, because every operation it covers moves entries or single instance elements around: what an <code>index_key</code> looks like for <code>count</code> against <code>for_each</code>, why that difference makes a <code>count</code> to <code>for_each</code> migration a state operation rather than an edit, and why a <code>provider</code> recorded beside the address rather than inside it needs its own command to rewrite.</p>
+</div>
+<p><code>outputs</code> is an object, not an array, and holds <strong>only the root module's</strong> outputs, each with its type recorded so another configuration can consume it without access to the generating code.</p>
+<div class="admonition warning">
+<p class="admonition-title">Child-module outputs are not in state</p>
+<p>Only root outputs are stored. If a nested module's output needs to be visible to <code>terraform output</code> or to another configuration, you must re-export it explicitly from the root:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"address"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="na">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">module.loadbalancer.lb_address</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>This is the same root-only restriction you met in Chapter 6, showing up in the file format.</p>
+</div>
+<hr />
+<h2 id="5-reading-state-the-supported-way">5. Reading state the supported way<a class="headerlink" href="#5-reading-state-the-supported-way" title="Permanent link">&para;</a></h2>
+<p>You now know the file. Mostly, you should not parse it.</p>
+<p>Terraform ships four ways to read state, and they split cleanly into two groups.</p>
+<p><strong>For humans:</strong></p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>terraform<span class="w"> </span>state<span class="w"> </span>list<span class="w">                        </span><span class="c1"># every address Terraform tracks</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>terraform<span class="w"> </span>state<span class="w"> </span>show<span class="w"> </span>aws_s3_bucket.notes<span class="w">    </span><span class="c1"># every attribute of one instance</span>
+</span></code></pre></div>
+<p><code>state list</code> sorts by <strong>module depth then alphabetically</strong>, so your own root resources are always at the top and deeply nested module resources at the tail. It also takes filters, and one flag worth knowing:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>terraform<span class="w"> </span>state<span class="w"> </span>list<span class="w"> </span>-id<span class="o">=</span>state-lab-notes
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># aws_s3_bucket.notes</span>
+</span></code></pre></div>
+<p>That is a <strong>reverse lookup</strong>: from a provider-assigned ID back to the address that owns it. It answers "the console shows me this object — whose is it?" without grepping the file.</p>
+<div class="admonition warning">
+<p class="admonition-title">A miss is silent with <code>-id</code>, loud with an address</p>
+<p><code>terraform state list -id=does-not-exist</code> prints nothing and exits <strong>0</strong>. <code>terraform state list some.address</code> that matches nothing is an <code>Error: Unknown resource</code> with exit <strong>1</strong>. So <code>-id</code> cannot be used as an existence check by exit status — test the output, not <code>$?</code>.</p>
+</div>
+<p><strong>For machines:</strong></p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>terraform<span class="w"> </span>show<span class="w"> </span>-json<span class="w">           </span><span class="c1"># the whole state snapshot</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>terraform<span class="w"> </span>output<span class="w"> </span>-json<span class="w">         </span><span class="c1"># root outputs only</span>
+</span></code></pre></div>
+<div class="admonition danger">
+<p class="admonition-title">🔄 Terraform 1.16 gave <code>state show</code> a <code>-json</code> flag — read the paragraph below as v1.15-and-earlier</p>
+<p>Found 2026-08-28 by diffing the documentation between v1.15.x and v1.16.x. <code>terraform state show</code> now accepts <strong><code>-json</code></strong>, returning <code>{ "format_version", "resource", "diagnostics" }</code> for a single resource (<a href="https://github.com/hashicorp/terraform/issues/23940">terraform#23940</a>, open since 2020). The page still says the <em>default</em> output is for humans, so the distinction this section draws is intact — but the implication that the only machine-readable route is <code>terraform show -json</code> over the whole state stopped being true in 1.16. If provider schemas have moved since the state was written, upgrade the state first, or the resource cannot be rendered. Details in tf-cmd-state-show.</p>
+</div>
+<p>The distinction is not stylistic. <code>terraform state show</code> output is <strong>explicitly not a machine interface</strong> — its <a href="https://developer.hashicorp.com/terraform/cli/commands/state/show">command documentation</a> says the output is "intended for human consumption, not programmatic consumption" and redirects you to <code>terraform show -json</code>. The rendered form is unversioned and free to change; the JSON form carries a <code>format_version</code> and a written spec.</p>
+<p>That is also the answer to "how do I read state from another tool?" — not by parsing <code>terraform.tfstate</code>, whose format is explicitly allowed to change between versions, but by running one of the <code>-json</code> commands right after a successful apply and storing the result as an artifact of the run.</p>
+<div class="admonition note">
+<p class="admonition-title"><code>show -json</code> returns different documents for state and for plans</p>
+<p>Run it on state and you get exactly three keys. Save a plan to a file and run it on that, and you get twelve. Both from the same command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>terraform<span class="w"> </span>show<span class="w"> </span>-json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>keys<span class="w">              </span><span class="c1"># the current state</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>terraform<span class="w"> </span>plan<span class="w"> </span>-out<span class="w"> </span>tfplan<span class="w">                  </span><span class="c1"># save a plan first</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>terraform<span class="w"> </span>show<span class="w"> </span>-json<span class="w"> </span>tfplan<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>keys<span class="w">       </span><span class="c1"># then read it back</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>terraform<span class="w"> </span>show<span class="w"> </span>tfplan<span class="w">                       </span><span class="c1"># same file, human form</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>["format_version","terraform_version","values"]
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>["applyable","complete","configuration","errored","format_version",
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a> "output_changes","planned_values","prior_state","resource_changes",
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a> "resource_drift","terraform_version","timestamp"]
+</span></code></pre></div>
+<p>The plan document is the plan, the configuration, and the state, three documents in one, plus the run's own verdict in <code>applyable</code>, <code>complete</code>, <code>errored</code>, and <code>timestamp</code>.</p>
+<p>Its key set is not fixed, because keys appear only when there is something for them to describe. The twelve above came from planning against existing state. The very first plan in an empty directory returns <strong>eleven</strong> instead: no <code>prior_state</code> and no <code>resource_drift</code>, since there is no prior state to report or drift against, and a <code>relevant_attributes</code> key that the later plan does not carry. <code>output_changes</code> is likewise absent from a plan for a configuration with no outputs. Read the keys you get, rather than assuming the set.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Quoting an instance address on Windows</p>
+<p>A <code>for_each</code> address contains double quotes, so it needs care in a shell. On <strong>PowerShell 7</strong>, single quotes are already literal — write the address exactly as <code>state list</code> prints it:</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">terraform</span> <span class="n">state</span> <span class="n">show</span> <span class="s1">'terraform_data.worker["example"]'</span>
+</span></code></pre></div>
+<p>The <a href="https://developer.hashicorp.com/terraform/cli/commands/state/show"><code>terraform state show</code> documentation</a> still shows a backslash-escaped form (<code>'…worker[\"example\"]'</code>) for PowerShell. That is Windows PowerShell 5.1-era advice and <strong>fails on PowerShell 7</strong> with <code>Error parsing instance address</code> — the backslashes are passed through literally. The same page's <code>cmd.exe</code> row is correct.</p>
+</div>
+<hr />
+<h2 id="6-refresh-drift-and-how-state-gets-corrected">6. Refresh, drift, and how state gets corrected<a class="headerlink" href="#6-refresh-drift-and-how-state-gets-corrected" title="Permanent link">&para;</a></h2>
+<p>State would rot immediately if nothing corrected it. The correction is <strong>refresh</strong>: before computing a plan, Terraform asks each provider for the current attributes of every resource in state and updates its in-memory copy.</p>
+<p>That is how <strong>drift</strong> — infrastructure changed outside Terraform — gets noticed. A normal plan then proposes whatever changes pull reality back toward your configuration.</p>
+<p>To see drift <em>without</em> being offered changes, use refresh-only mode:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>terraform<span class="w"> </span>plan<span class="w"> </span>-refresh-only<span class="w">     </span><span class="c1"># what has drifted?</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>terraform<span class="w"> </span>apply<span class="w"> </span>-refresh-only<span class="w">    </span><span class="c1"># accept the drift into state, change no infrastructure</span>
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title"><code>terraform refresh</code> is deprecated — and the reason is instructive</p>
+<p>The standalone command still exists but the CLI reference deprecates it outright. It is "effectively an alias for <code>terraform apply -refresh-only -auto-approve</code>", and the auto-approve <strong>cannot be turned off</strong>.</p>
+<p>The documented hazard: with misconfigured provider credentials, a provider that cannot see its objects reports them <strong>gone</strong>, and refresh removes them from state "without any confirmation prompt". Nothing is destroyed in the cloud — but Terraform now believes it owns nothing, and the next plan proposes recreating all of it.</p>
+<p>The standing advice goes further than "use the flag instead": prefer <em>neither</em>, and rely on the refresh a normal plan already performs.</p>
+</div>
+<h3 id="drift-is-a-symptom-ask-what-changed-and-why">Drift is a symptom — ask what changed and why<a class="headerlink" href="#drift-is-a-symptom-ask-what-changed-and-why" title="Permanent link">&para;</a></h3>
+<p>Infrastructure does not change itself. Sorting causes on two axes (human vs machine, accidental vs intentional) gives four categories, each with a different response:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Example</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Accidental manual change</strong></td>
+<td>Wrong account, wrong console button</td>
+<td>Usually the easiest — a normal plan works out how to restore intent. Treat as a systems problem: restrict production access, route changes through CI.</td>
+</tr>
+<tr>
+<td><strong>Intentional manual change</strong></td>
+<td>On-call engineer fixing an outage by hand</td>
+<td>Harder: the change was <em>wanted</em>, and the next run reverts it. Until it is in code, <strong>it is not safe to run Terraform</strong>.</td>
+</tr>
+<tr>
+<td><strong>Conflicting automated change</strong></td>
+<td>Autoscaling, tags added by an orchestrator, an RDS minor-version bump</td>
+<td>Not errors. Decide deliberately: adopt it (apply), accept it (<code>-refresh-only</code>), or stop fighting it (<code>lifecycle { ignore_changes = [...] }</code>).</td>
+</tr>
+<tr>
+<td><strong>Terraform error</strong></td>
+<td>Crash before state was saved, corrupted write, backend auth expiring mid-run</td>
+<td>The nastiest. The dangerous shape is a resource <strong>created but not recorded</strong> — the next run creates a second one. Read the logs, then import it or delete it. Corrupted state means restoring from backup.</td>
+</tr>
+</tbody>
+</table>
+<p>The fourth category is the one that argues hardest for backups you control, independent of whatever durability your backend advertises.</p>
+<hr />
+<h2 id="7-state-is-a-security-problem">7. State is a security problem<a class="headerlink" href="#7-state-is-a-security-problem" title="Permanent link">&para;</a></h2>
+<p>Open the lab's state file and search it for the generated password. It is there, in the clear:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>password attribute in state: 4Ni-aVJ85B1Sk16i0be$
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>same value in outputs      : 4Ni-aVJ85B1Sk16i0be$
+</span></code></pre></div>
+<p>The output that produced the second line is declared <code>sensitive = true</code>. That changed nothing about storage.</p>
+<div class="admonition danger">
+<p class="admonition-title"><code>sensitive</code> hides values from logs. It does not protect them.</p>
+<p>Values marked <code>sensitive</code> are stored in <strong>both state and plan files</strong> in plaintext. The marking suppresses display in the operation log and the HCP Terraform UI. That is all it does.</p>
+<p>And the redaction it does provide is narrower than most people assume. Verified on 1.15.8:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terraform output</code></td>
+<td><code>db_password = &lt;sensitive&gt;</code></td>
+</tr>
+<tr>
+<td><code>terraform output db_password</code></td>
+<td><code>"4Ni-aVJ85B1Sk16i0be$"</code></td>
+</tr>
+<tr>
+<td><code>terraform output -raw db_password</code></td>
+<td><code>4Ni-aVJ85B1Sk16i0be$</code></td>
+</tr>
+</tbody>
+</table>
+<p>Querying <strong>by name</strong> needs no flag at all. <code>sensitive</code> protects the aggregate listing; a named read is a normal, flagless command.</p>
+<p>If you need a value never to be stored, that is what <strong>ephemeral</strong> values and <strong>write-only</strong> arguments are for (Chapter 23). If it must be stored, protect the file.</p>
+</div>
+<p>Which makes the choice of <strong>backend</strong> — the storage from §4 — a security decision, not a plumbing one. Chapter 15 covers configuring and migrating them; what belongs here is the criteria, because they follow from what you have just seen inside the file. Three properties matter when deciding where state lives.</p>
+<ul>
+<li><strong>Resiliency.</strong> Losing state is among the worst positions to be in: Terraform can no longer plan, and recovery means manually deleting or re-importing every real resource. Judge a backend on durability — S3 advertises eleven nines of per-object durability — but remember that no durability figure stops an engineer deleting the bucket. <strong>A resilient backend is not a backup.</strong></li>
+<li><strong>Security.</strong> State holds every attribute of every resource. A leaked state file exposes your architecture <em>and</em> its secrets. The concrete failure modes are mundane: state access without MFA, or a storage bucket left publicly readable.</li>
+<li><strong>Availability.</strong> If the state store is unreachable, you cannot deploy at all. On a normal day that is friction; during an incident it is an emergency. Treat state storage as critical infrastructure and expect an SLA from whoever provides it.</li>
+</ul>
+<div class="admonition danger">
+<p class="admonition-title">Never put state in version control</p>
+<p>Git supports neither state locking nor per-file access control, which is exactly the pair state needs. No locking means concurrent writes lose data. No access control means every secret in the file is readable by everyone with repository access — including in history, forever, after the file is deleted.</p>
+<p>Add <code>terraform.tfstate</code> and <code>terraform.tfstate.backup</code> to <code>.gitignore</code> on day one.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — client-side state encryption</p>
+<p>OpenTofu ships opt-in <strong>state encryption</strong>, configured in the <code>terraform</code> block or through <code>TF_ENCRYPTION</code>. It covers "state and plan files at rest, both for local storage and when using a backend" — so the plaintext password you found above would be encrypted in the file itself, not merely in whatever the backend does underneath. Terraform's open-source CLI has no equivalent as of 1.16.0 (re-verified at the GA tag: <code>parser_config.go</code> declares no encryption block); it relies on the backend's at-rest encryption (S3's <code>encrypt</code>, GCS's customer-managed keys) or on HCP Terraform. If encrypted-at-source state is a hard requirement, that is a real reason to evaluate OpenTofu.</p>
+<p><strong>Learn the exit before you take the entrance.</strong> Encryption reads like a one-way door, and it is not: OpenTofu registers an <strong><code>unencrypted</code> method</strong> alongside <code>aesgcm</code>, and has since the feature shipped in 1.7.0. It is what a <code>fallback</code> block uses to read still-plaintext state while you roll encryption out, and what you migrate <em>to</em> if you ever need to decrypt. It appears in <strong>no changelog and no release blog</strong> — it is visible only in <code>internal/encryption/default_registry.go</code> — so it is entirely possible to adopt encryption without learning that the way back exists. The registered set as of 1.12: key providers <code>pbkdf2</code>, <code>aws_kms</code>, <code>gcp_kms</code>, <code>azure_vault</code>, <code>openbao</code>, <code>external</code>; methods <code>aesgcm</code>, <code>external</code>, <code>unencrypted</code>. Setup and the rollout sequence are E3's subject; what belongs here is that the door opens both ways.</p>
+</div>
+<hr />
+<h2 id="8-why-you-must-never-hand-edit-it">8. Why you must never hand-edit it<a class="headerlink" href="#8-why-you-must-never-hand-edit-it" title="Permanent link">&para;</a></h2>
+<p>You now have the three reasons, and they are structural rather than superstitious.</p>
+<ol>
+<li><strong>You will break bookkeeping you cannot see.</strong> <code>serial</code> orders snapshots, <code>lineage</code> identifies the project, and each resource carries a provider-set <code>schema_version</code>. Hand-editing bypasses every rule that maintains them — and a wrong <code>serial</code> silently defeats "which backup is newest?" at the moment you most need it.</li>
+<li><strong>You will break the one-to-one rule.</strong> Deleting a resource block from JSON is not "removing a resource"; it is orphaning a real object that still exists and still costs money, with nothing left to point at it.</li>
+<li><strong>The format is explicitly allowed to change.</strong> Terraform stays backward compatible with older snapshots, but anything you write <em>against</em> the format needs maintenance forever. The CLI exists precisely to insulate you from that.</li>
+</ol>
+<p>The corollary is what makes the rule livable: <strong>there is a supported operation for everything you might be tempted to hand-edit.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Temptation</th>
+<th>Supported route</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"This resource was renamed"</td>
+<td><code>moved</code> block</td>
+</tr>
+<tr>
+<td>"This resource already exists in the cloud"</td>
+<td><code>import</code> block</td>
+</tr>
+<tr>
+<td>"Stop managing this, but leave it running"</td>
+<td><code>removed</code> block with <code>lifecycle { destroy = false }</code></td>
+</tr>
+<tr>
+<td>"State disagrees with reality"</td>
+<td><code>terraform apply -refresh-only</code></td>
+</tr>
+<tr>
+<td>"I need to see what's in there"</td>
+<td><code>terraform state list</code> / <code>state show</code> / <code>show -json</code></td>
+</tr>
+</tbody>
+</table>
+<p>Chapter 16 covers the first three properly. The rule for now: if you are opening state in an editor, stop and find the block or command that does it for you.</p>
+<hr />
+<h2 id="lab-1-dissect-a-state-file-and-follow-a-binding-both-ways">🧪 Lab 1: dissect a state file, and follow a binding both ways<a class="headerlink" href="#lab-1-dissect-a-state-file-and-follow-a-binding-both-ways" title="Permanent link">&para;</a></h2>
+<p>The milestone made concrete. You will apply a two-resource configuration, open the state file, map an address to a real object and back, prove a <code>sensitive</code> value is stored in plaintext, and watch <code>serial</code> move on a no-op apply. Everything runs against the free local <strong>AWS emulator</strong> from <a href="../ch01-iac-fundamentals/#lab-setup-a-free-local-aws-docker">Chapter 1's lab setup</a>. S3 is on the reliable free surface.</p>
+<p><strong>Start the emulator</strong> (from the repo root; skip if already running):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>labs/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">      </span><span class="c1"># start the emulator on :4566, detached</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:4566/_floci/health<span class="w">     </span><span class="c1"># wait until the services read "running"</span>
+</span></code></pre></div>
+<p><strong>The configuration</strong> — one real cloud object, one state-only resource, one sensitive output. It is committed at <code>labs/chapter9/lab1</code>:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># main.tf</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="na">required_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.15"</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="nb">aws</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws", version = "~&gt; 6.0"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="nb">random</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/random", version = "~&gt; 3.6"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="p">}</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="p">}</span>
+</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>
+</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_password"</span><span class="w"> </span><span class="nv">"db"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="w">  </span><span class="na">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span>
+</span><span id="__span-16-16"><a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="p">}</span>
+</span><span id="__span-16-17"><a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>
+</span><span id="__span-16-18"><a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"notes"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-19"><a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"state-lab-notes"</span>
+</span><span id="__span-16-20"><a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="p">}</span>
+</span><span id="__span-16-21"><a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>
+</span><span id="__span-16-22"><a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"db_password"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-23"><a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a><span class="w">  </span><span class="na">value</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nv">random_password.db.result</span>
+</span><span id="__span-16-24"><a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a><span class="w">  </span><span class="na">sensitive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-16-25"><a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><strong>Apply it:</strong></p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>tflocal<span class="w"> </span>init
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>tflocal<span class="w"> </span>apply
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>random_password.db: Creation complete after 0s [id=none]
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>aws_s3_bucket.notes: Creation complete after 1s [id=state-lab-notes]
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>Outputs:
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>db_password = &lt;sensitive&gt;
+</span></code></pre></div>
+<h3 id="step-1-read-the-top-level">Step 1 — read the top level<a class="headerlink" href="#step-1-read-the-top-level" title="Permanent link">&para;</a></h3>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>terraform<span class="w"> </span>state<span class="w"> </span>list
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>aws_s3_bucket.notes
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>random_password.db
+</span></code></pre></div>
+<p>Now open <code>terraform.tfstate</code> and find the seven top-level fields. <code>version</code> is <strong>4</strong>, <code>terraform_version</code> is the CLI that wrote it, and <code>check_results</code> is <code>null</code> because the configuration has no <code>check</code> blocks. This run landed at <code>serial</code> <strong>3</strong> — treat that as an observation, not a prediction, for the reason in §4.</p>
+<h3 id="step-2-follow-the-binding-outward">Step 2 — follow the binding outward<a class="headerlink" href="#step-2-follow-the-binding-outward" title="Permanent link">&para;</a></h3>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>terraform<span class="w"> </span>state<span class="w"> </span>show<span class="w"> </span>aws_s3_bucket.notes
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a># aws_s3_bucket.notes:
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>resource "aws_s3_bucket" "notes" {
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>    arn                         = "arn:aws:s3:::state-lab-notes"
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    bucket                      = "state-lab-notes"
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>    bucket_regional_domain_name = "state-lab-notes.s3.us-east-1.amazonaws.com"
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>    ...
+</span></code></pre></div>
+<p>Then confirm the object on the other side:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>awslocal<span class="w"> </span>s3api<span class="w"> </span>list-buckets<span class="w"> </span>--query<span class="w"> </span><span class="s1">'Buckets[].Name'</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>[
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>    "state-lab-notes"
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>]
+</span></code></pre></div>
+<p>That is the binding, seen from both ends: the address <code>aws_s3_bucket.notes</code> in your code, the bucket <code>state-lab-notes</code> in the cloud, and a line in state joining them.</p>
+<h3 id="step-3-follow-it-back-inward">Step 3 — follow it back inward<a class="headerlink" href="#step-3-follow-it-back-inward" title="Permanent link">&para;</a></h3>
+<p>Pretend you found the bucket in a console and have no idea who owns it:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>terraform<span class="w"> </span>state<span class="w"> </span>list<span class="w"> </span>-id<span class="o">=</span>state-lab-notes
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>aws_s3_bucket.notes
+</span></code></pre></div>
+<h3 id="step-4-prove-the-secret-is-plaintext">Step 4 — prove the secret is plaintext<a class="headerlink" href="#step-4-prove-the-secret-is-plaintext" title="Permanent link">&para;</a></h3>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>terraform<span class="w"> </span>output<span class="w"> </span>db_password
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>"4Ni-aVJ85B1Sk16i0be$"
+</span></code></pre></div>
+<p>No flag, no <code>-raw</code>, and the output is declared <code>sensitive</code>. Now find the same string twice inside <code>terraform.tfstate</code> — once in <code>random_password.db</code>'s attributes, once in the root <code>outputs</code> object next to <code>"sensitive": true</code>.</p>
+<p>That is the whole security argument in one file: the marking is about display, the storage is unchanged.</p>
+<h3 id="step-5-watch-serial-move-on-a-no-op">Step 5 — watch <code>serial</code> move on a no-op<a class="headerlink" href="#step-5-watch-serial-move-on-a-no-op" title="Permanent link">&para;</a></h3>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>tflocal<span class="w"> </span>apply<span class="w">         </span><span class="c1"># plan reports no changes</span>
+</span></code></pre></div>
+<p>Compare the two files Terraform now keeps:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import json; [print(f, json.load(open(f))['serial']) for f in ('terraform.tfstate','terraform.tfstate.backup')]"</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>terraform.tfstate 4
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>terraform.tfstate.backup 3
+</span></code></pre></div>
+<p><code>terraform.tfstate.backup</code> is the previous snapshot, written automatically by the local backend. The <code>serial</code> moved even though nothing in your infrastructure changed — because two bucket attributes came back from the refresh as empty containers rather than <code>null</code>, and the guard compares the whole document.</p>
+<p><strong>Clean up:</strong></p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>tflocal<span class="w"> </span>destroy
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Emulation is not AWS</p>
+<p>A green apply here proves your HCL and your workflow, not AWS fidelity. The emulator's attribute round-tripping in particular is its own behaviour — the <em>principle</em> it demonstrates (state content, not the plan summary, drives <code>serial</code>) is real, but the specific attributes involved are an artifact of the emulator. Validate anything load-bearing against real free-tier AWS.</p>
+</div>
+<hr />
+<h2 id="lab-2-measure-serial-yourself">🧪 Lab 2: measure <code>serial</code> yourself<a class="headerlink" href="#lab-2-measure-serial-yourself" title="Permanent link">&para;</a></h2>
+<p>§4 claims <code>serial</code> is unpredictable. Claims like that are worth distrusting, so here is the measurement, ready to run.</p>
+<p>Nothing in this lab touches a cloud. <code>random_password</code> and <code>terraform_data</code> create no remote objects, so there are <strong>no credentials to set up and no emulator to start</strong> — the whole thing works on a laptop on a plane.</p>
+<p>Two configurations, four resources each. <code>labs/chapter9/lab2/provider-backed</code> is four <code>random_password</code> resources, one plugin round trip apiece:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_password"</span><span class="w"> </span><span class="nv">"a"</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_password"</span><span class="w"> </span><span class="nv">"b"</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_password"</span><span class="w"> </span><span class="nv">"c"</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_password"</span><span class="w"> </span><span class="nv">"d"</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p><code>labs/chapter9/lab2/in-core</code> is four <code>terraform_data</code> resources, served by the built-in provider with no plugin involved:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"terraform_data"</span><span class="w"> </span><span class="nv">"a"</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"terraform_data"</span><span class="w"> </span><span class="nv">"b"</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"2"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"terraform_data"</span><span class="w"> </span><span class="nv">"c"</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"3"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"terraform_data"</span><span class="w"> </span><span class="nv">"d"</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"4"</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>The runner destroys, deletes the state, and applies again, so <strong>every apply is a first apply</strong>. It then reads the top-level <code>serial</code> out of <code>terraform.tfstate</code> and prints one line per run.</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nb">cd </span><span class="n">labs</span><span class="p">/</span><span class="n">chapter9</span><span class="p">/</span><span class="n">lab2</span>
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="p">./</span><span class="nb">measure-serial</span><span class="p">.</span><span class="n">ps1</span> <span class="n">-Dir</span> <span class="n">provider-backed</span> <span class="n">-Runs</span> <span class="n">6</span>
+</span></code></pre></div>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="nb">cd</span><span class="w"> </span>labs/chapter9/lab2
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>./measure-serial.sh<span class="w"> </span>provider-backed<span class="w"> </span><span class="m">6</span>
+</span></code></pre></div>
+<p>A real run of each, on Terraform 1.15.8:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>run 1: serial = 4          run 1: serial = 5
+</span><span id="__span-37-2"><a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>run 2: serial = 5          run 2: serial = 4
+</span><span id="__span-37-3"><a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>run 3: serial = 5          run 3: serial = 4
+</span><span id="__span-37-4"><a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a>run 4: serial = 5          run 4: serial = 1
+</span><span id="__span-37-5"><a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a>run 5: serial = 5          run 5: serial = 5
+</span><span id="__span-37-6"><a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a>run 6: serial = 5          run 6: serial = 5
+</span><span id="__span-37-7"><a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a>
+</span><span id="__span-37-8"><a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a>provider-backed            in-core
+</span></code></pre></div>
+<p>Four resources; a first apply that wrote one snapshot in one run and five in another. That is the whole point, and it is why nothing should ever assert an expected <code>serial</code>.</p>
+<p>Now the same thing on OpenTofu, if you have it:</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="p">./</span><span class="nb">measure-serial</span><span class="p">.</span><span class="n">ps1</span> <span class="n">-Dir</span> <span class="k">in</span><span class="n">-core</span> <span class="n">-Runs</span> <span class="n">6</span> <span class="n">-Binary</span> <span class="n">tofu</span>
+</span></code></pre></div>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>./measure-serial.sh<span class="w"> </span>in-core<span class="w"> </span><span class="m">6</span><span class="w"> </span>tofu
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>run 1: serial = 1
+</span><span id="__span-40-2"><a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>run 2: serial = 1
+</span><span id="__span-40-3"><a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>...
+</span><span id="__span-40-4"><a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>tofu in-core, 6 runs: 1 1 1 1 1 1
+</span></code></pre></div>
+<p><strong>What to take away:</strong> the counter is a write count, the write count is a scheduling artifact, and the two CLIs schedule differently. Ordering is the only question <code>serial</code> answers reliably.</p>
+<div class="admonition tip">
+<p class="admonition-title">If you get a different spread</p>
+<p>You should. The numbers depend on how fast four resources happen to complete on your machine, so a busy laptop and an idle one will not agree, and neither will two runs on the same laptop. A run of six that lands on the same value every time is not a refutation — raise <code>-Runs</code> and watch it eventually disagree with itself.</p>
+</div>
+<hr />
+<h2 id="common-pitfalls">Common pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Committing <code>terraform.tfstate</code>.</strong> No locking, no access control, secrets in history forever. <code>.gitignore</code> it before your first apply, not after.</li>
+<li><strong>Believing <code>sensitive = true</code> protects a value.</strong> It suppresses display. The value is in state, in plan files, and one flagless <code>terraform output &lt;name&gt;</code> away.</li>
+<li><strong>Parsing <code>terraform.tfstate</code> in a script.</strong> The format may change between versions. Use <code>terraform show -json</code> or <code>terraform output -json</code>.</li>
+<li><strong>Treating <code>terraform state show</code> output as machine-readable.</strong> It is explicitly documented as human-only, for the same reason.</li>
+<li><strong>Reading <code>serial</code> as a count of applies, or predicting it.</strong> It counts <em>writes whose content differed</em>, and identical runs of the same configuration can land on different numbers. Use it for ordering backups, nothing else.</li>
+<li><strong>Assuming lineage protects you during normal runs.</strong> It is not consulted on a routine plan or apply, and <code>-force</code> disables it on <code>state push</code>.</li>
+<li><strong>Running <code>-refresh=false</code> habitually.</strong> It makes the cache the source of truth and hides all out-of-band drift.</li>
+<li><strong>Reaching for <code>terraform refresh</code>.</strong> Deprecated, always auto-approved, and capable of emptying your state if provider credentials are misconfigured. Use <code>terraform apply -refresh-only</code>.</li>
+<li><strong>Editing state by hand because "it's just JSON".</strong> There is a supported operation for every case — see the table in §8.</li>
+<li><strong>Expecting a child module's outputs in state.</strong> Only root outputs are stored; re-export explicitly.</li>
+</ul>
+<hr />
+<h2 id="exercises">Exercises<a class="headerlink" href="#exercises" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Break and restore a binding.</strong> In the lab directory, run <code>terraform state rm random_password.db</code>, then <code>terraform plan</code>. Explain in one sentence what Terraform now believes, and what it will do. Restore the situation without destroying anything.</li>
+<li><strong>Fail to predict the serial.</strong> Before running Lab 2, write down the <code>serial</code> you expect from four resources. Run <code>measure-serial</code> with <code>-Runs 10</code> on both directories, then explain the spread you got — and what it would have done to a CI check that asserted your predicted number.</li>
+<li><strong>Find the orphan.</strong> Create a bucket with <code>awslocal s3 mb s3://orphan-bucket</code> (outside Terraform), then use <code>terraform state list -id=orphan-bucket</code> and explain the result. What would you have to do to bring it under management?</li>
+<li><strong>Prove the format claim.</strong> Run <code>terraform show -json &gt; snapshot.json</code> and compare its top-level keys against the raw <code>terraform.tfstate</code>. Which of the two would you point a monitoring script at, and why?</li>
+<li><strong>Three reasons, from memory.</strong> Without looking, write down three distinct reasons never to hand-edit state. Then check §8 — if you wrote "it's dangerous" three ways, try again.</li>
+</ol>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>State exists because <strong>your configuration and your cloud share no identifier</strong>. The tag-based alternative was built and abandoned: not all resources support tags, not all providers do, and humans edit them.</li>
+<li>State's primary content is <strong>bindings</strong> between resource instances and remote objects. Terraform maintains a strict <strong>one-to-one mapping</strong>, and only <code>import</code> and <code>state rm</code> hand that obligation to you.</li>
+<li>Three more jobs: <strong>retained dependencies</strong> so destroy order survives the deletion of the code, an <strong>attribute cache</strong> that is explicitly optional, and <strong>state-only resources</strong> that exist nowhere else.</li>
+<li>The file is JSON with seven top-level fields. <code>serial</code> counts <strong>writes whose content differed</strong>, and how many a run produces is timing-dependent, so it is an ordering key and nothing else. <code>lineage</code> identifies the project but is checked in far fewer places than its description suggests.</li>
+<li>Read state with <code>state list</code> / <code>state show</code> for humans, <code>show -json</code> / <code>output -json</code> for machines. Never parse the file.</li>
+<li><strong>Refresh</strong> is what corrects state against reality and detects drift. <code>-refresh-only</code> accepts drift without changing infrastructure; <code>terraform refresh</code> is deprecated and unprompted.</li>
+<li>State holds <strong>secrets in plaintext</strong>. <code>sensitive</code> hides values from logs, not from the file, and a named <code>terraform output</code> reads them back with no flag at all.</li>
+<li>Never hand-edit: you break invisible bookkeeping, you break the one-to-one rule, and you write against a format that is free to change. There is a supported operation for every case.</li>
+</ul>
+<hr />
+<h2 id="whats-next">What's next<a class="headerlink" href="#whats-next" title="Permanent link">&para;</a></h2>
+<p>You now understand state as a <em>file</em>. Chapter 15 turns it into shared infrastructure: <strong>remote backends</strong>, state <strong>locking</strong>, and the collaboration model that makes Terraform usable by more than one person. Chapter 16 covers <strong>state operations</strong> — <code>import</code>, <code>moved</code>, <code>removed</code>, and the recovery procedures for when a run leaves state and reality out of step.</p>
+<p>Before either, Chapters 10–14 cover the meta-arguments, dynamic blocks, and modules that make configurations big enough for state management to matter.</p>
+<hr />
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<p><strong>Reading notes:</strong> State (overview) · Purpose of Terraform State · TID Ch 6 — State management · Manage sensitive data · <code>terraform state list</code> · <code>terraform state show</code> · <code>terraform show</code> · <code>terraform output</code> · <code>terraform refresh</code> · Inspect Infrastructure overview · <code>local</code> backend</p>
+<p><strong>Docs:</strong> <a href="https://developer.hashicorp.com/terraform/language/state">State</a> · <a href="https://developer.hashicorp.com/terraform/language/state/purpose">Purpose of Terraform State</a> · <a href="https://developer.hashicorp.com/terraform/language/manage-sensitive-data">Manage sensitive data</a> · <a href="https://developer.hashicorp.com/terraform/cli/commands/state/list"><code>terraform state list</code></a> · <a href="https://developer.hashicorp.com/terraform/cli/commands/state/show"><code>terraform state show</code></a> · <a href="https://developer.hashicorp.com/terraform/cli/commands/show"><code>terraform show</code></a> · <a href="https://developer.hashicorp.com/terraform/internals/json-format">JSON Output Format</a> · <a href="https://opentofu.org/docs/language/state/encryption/">OpenTofu state encryption</a></p>
+<p><strong>🧪 Lab:</strong> Floci Facts · MiniStack Facts · LocalStack Facts</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+        <script src="../../javascripts/sidebar-toggle.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js" defer></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1797 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Personal notes and book from learning Terraform (and OpenTofu).">
+      
+      
+        <meta name="author" content="arindam@live.com">
+      
+      
+        <link rel="canonical" href="https://arindamchoudhury.github.io/terraform-gyan/book/ch08-data-sources/">
+      
+      
+        <link rel="prev" href="../ch07-expressions-operators-functions/">
+      
+      
+        <link rel="next" href="../ch09-state-fundamentals/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Chapter 8 — Data sources - Terraform Learning Notes</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-8-data-sources" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Terraform Learning Notes" class="md-header__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terraform Learning Notes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 8 — Data sources
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Terraform Learning Notes" class="md-nav__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Terraform Learning Notes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Learning Path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Book
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Book
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch01-iac-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  1. Infrastructure as Code & where Terraform fits
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch02-install-providers-first-project/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  2. Install, providers & your first project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch03-core-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  3. The core workflow: init / plan / apply / destroy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch04-hcl-language-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  4. HCL language basics
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch05-providers-resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  5. Providers & resources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch06-input-variables-outputs-locals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  6. Input variables, outputs & locals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch07-expressions-operators-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  7. Expressions, operators & functions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  8. Data sources
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  8. Data sources
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-why-data-sources-not-everything-is-yours-to-create" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Why data sources: not everything is yours to create
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-data-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. The <code>data</code> block
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. The data block">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constraining-the-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Constraining the query
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-chaining-lookups-data-feeds-data-feeds-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Chaining lookups: data feeds data feeds resource
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-when-is-a-data-source-read-plan-vs-apply" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. When is a data source read? Plan vs apply
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-meta-arguments-on-data-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Meta-arguments on data blocks
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Meta-arguments on data blocks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-conditions-on-a-data-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Custom conditions on a data source
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-specialized-local-only-data-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Specialized (local-only) data sources
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-reading-another-configurations-outputs-terraform_remote_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. Reading another configuration's outputs: <code>terraform_remote_state</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-read-a-resource-you-didnt-create-and-wire-it-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: read a resource you didn't create, and wire it in
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧪 Lab: read a resource you didn&#x27;t create, and wire it in">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#explore-a-data-block-interactively-with-tflocal-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Explore a data block interactively with <code>tflocal console</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch09-state-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  9. State fundamentals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch10-meta-arguments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  10. Meta-arguments: count, for_each, depends_on
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch11-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  11. The lifecycle meta-argument
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch12-dynamic-blocks-complex-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  12. Dynamic blocks & complex types
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch13-using-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  13. Using modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch14-authoring-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  14. Authoring modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch15-remote-state-backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  15. Remote state & backends
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch16-state-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  16. State management operations
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch17-provider-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  17. Provider configuration in depth
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch18-provisioners-escape-hatches/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  18. Provisioners, terraform_data & escape hatches
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-why-data-sources-not-everything-is-yours-to-create" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Why data sources: not everything is yours to create
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-data-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. The <code>data</code> block
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. The data block">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constraining-the-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Constraining the query
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-chaining-lookups-data-feeds-data-feeds-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Chaining lookups: data feeds data feeds resource
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-when-is-a-data-source-read-plan-vs-apply" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. When is a data source read? Plan vs apply
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-meta-arguments-on-data-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Meta-arguments on data blocks
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Meta-arguments on data blocks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-conditions-on-a-data-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Custom conditions on a data source
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-specialized-local-only-data-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Specialized (local-only) data sources
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-reading-another-configurations-outputs-terraform_remote_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. Reading another configuration's outputs: <code>terraform_remote_state</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-read-a-resource-you-didnt-create-and-wire-it-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: read a resource you didn't create, and wire it in
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧪 Lab: read a resource you didn&#x27;t create, and wire it in">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#explore-a-data-block-interactively-with-tflocal-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Explore a data block interactively with <code>tflocal console</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="chapter-8-data-sources">Chapter 8 — Data sources<a class="headerlink" href="#chapter-8-data-sources" title="Permanent link">&para;</a></h1>
+<h2 id="learning-outcomes">Learning outcomes<a class="headerlink" href="#learning-outcomes" title="Permanent link">&para;</a></h2>
+<p>By the end you can:</p>
+<ul>
+<li>Explain what a <code>data</code> block does and how it differs from a <code>resource</code> — it <strong>reads</strong>, it never creates, updates, or destroys.</li>
+<li>Declare a data source, constrain the query, and reference its attributes with <code>data.&lt;TYPE&gt;.&lt;NAME&gt;.&lt;ATTRIBUTE&gt;</code>.</li>
+<li>Chain data sources so one lookup feeds the next, and feed a lookup into a managed resource.</li>
+<li>Predict <strong>when</strong> a data source is read — refresh (plan-time) versus deferred to apply — and read the <code>(known after apply)</code> signal in a plan.</li>
+<li>Put <code>count</code>, <code>for_each</code>, <code>depends_on</code>, <code>provider</code>, and <code>precondition</code>/<code>postcondition</code> on a data block, and know which of those forces an apply-time read.</li>
+<li>Recognise specialized local-only data sources (<code>aws_iam_policy_document</code>, <code>template_file</code>, <code>local_file</code>) and read another configuration's outputs with <code>terraform_remote_state</code>.</li>
+<li><strong>Look up a resource you didn't create — the latest AMI, the default VPC, an existing bucket — and wire it into a resource you do manage.</strong></li>
+</ul>
+<hr />
+<h2 id="1-why-data-sources-not-everything-is-yours-to-create">1. Why data sources: not everything is yours to create<a class="headerlink" href="#1-why-data-sources-not-everything-is-yours-to-create" title="Permanent link">&para;</a></h2>
+<p>Chapter 5 taught you to <em>create</em> infrastructure with <code>resource</code> blocks. But real configurations never own everything they touch. Your application instance has to land in a subnet somebody else provisioned. It needs the <em>latest</em> Ubuntu AMI, whose ID changes every time Canonical republishes. It needs the account ID and region it happens to be running in. None of that is yours to create — it already exists, and you just need to <em>read</em> it.</p>
+<p>The naive fix is to hard-code the values:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"app"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="na">ami</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s2">"ami-04d29b6f966df1537"</span><span class="c1">   # only valid in us-east-1, stale within weeks</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="na">subnet_id</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"subnet-0e9855907f0bab6f4"</span><span class="c1"> # tied to one account</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"t3.micro"</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Two problems, both fatal to reuse. The AMI ID pins you to one region <em>and</em> one point in time — the moment Canonical publishes a patched image, your code is out of date, and republishing means editing HCL. The subnet ID ties the code to exactly one account's network, so it can never deploy anywhere else. A configuration full of hard-coded IDs is a configuration that runs in exactly one place, once.</p>
+<p>A <strong>data source</strong> dissolves both problems. It is a read-only block that queries a provider — or another Terraform state — and exposes the result as attributes you reference like any other value. Swap the literals for lookups and the same code deploys the newest image into whatever account and region it is pointed at:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"app"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="na">ami</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_ami.ubuntu.id</span><span class="c1">      # always the latest, in this region</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="na">subnet_id</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_subnets.default.ids[0</span><span class="p">]</span><span class="c1">  # whatever subnet exists here</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"t3.micro"</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>That is the whole point of the chapter: <strong>read what you don't own, so your configuration stays portable and current.</strong></p>
+<hr />
+<h2 id="2-the-data-block">2. The <code>data</code> block<a class="headerlink" href="#2-the-data-block" title="Permanent link">&para;</a></h2>
+<p>A data source is the read-only counterpart to a resource. It has the same shape — a type, a name, a body of arguments, and exported attributes — but Terraform can only ever <em>read</em> it. It never appears in the create/update/destroy columns of a plan.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="err">data</span><span class="w"> </span><span class="s2">"&lt;TYPE&gt;" "&lt;NAME&gt;"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">  # provider-specific query arguments</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<ul>
+<li><strong><code>&lt;TYPE&gt;</code></strong> — the data source type, defined by a provider (<code>aws_ami</code>, <code>aws_vpc</code>, <code>azurerm_resource_group</code>). Which types exist depends entirely on which providers you've installed; the provider docs are the source of truth for every argument and attribute. Terraform itself contributes exactly one built-in type, <code>terraform_remote_state</code> (§7).</li>
+<li><strong><code>&lt;NAME&gt;</code></strong> — a local label you choose. The <code>&lt;TYPE&gt;</code> + <code>&lt;NAME&gt;</code> pair must be unique, and it's how you refer back to the result.</li>
+</ul>
+<p>You reference the fetched data with the <code>data.</code> prefix:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>data.&lt;TYPE&gt;.&lt;NAME&gt;.&lt;ATTRIBUTE&gt;
+</span></code></pre></div>
+<p>So <code>data.aws_ami.ubuntu.id</code> is the <code>id</code> attribute of the <code>aws_ami</code> data source named <code>ubuntu</code>. That prefix is the only thing distinguishing a data-source reference from a resource reference (<code>aws_instance.app.id</code> has no prefix). Both are ordinary values — usable in resource arguments, locals, outputs, function calls, and meta-arguments, exactly like the expressions of Chapter 7.</p>
+<div class="admonition note">
+<p class="admonition-title">Read-only means read-only</p>
+<p>A data source performs <strong>only read operations</strong>. There is no such thing as a data source that creates a side effect on your infrastructure. If you find yourself wanting one to <em>do</em> something, you want a <code>resource</code> (or, rarely, a provisioner — Chapter 18). The mental split is clean: <code>resource</code> = "I manage this," <code>data</code> = "I just need to look at this."</p>
+</div>
+<h3 id="constraining-the-query">Constraining the query<a class="headerlink" href="#constraining-the-query" title="Permanent link">&para;</a></h3>
+<p>The body of a data block holds provider-specific arguments that narrow <em>which</em> object you get back. For a singular lookup, the query must resolve to exactly one object. For <code>aws_ami</code>, <code>most_recent = true</code> plus owner and name filters pin it down:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_ami"</span><span class="w"> </span><span class="nv">"ubuntu"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="na">owners</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"099720109477"</span><span class="p">]</span><span class="c1">   # Canonical's AWS account</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="na">most_recent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">true</span><span class="c1">               # newest match wins</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nb">filter</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"name"</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="na">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"</span><span class="p">]</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="nb">filter</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"virtualization-type"</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span><span class="na">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"hvm"</span><span class="p">]</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The <code>filter</code> blocks are a repeatable sub-block specific to the AWS provider — stack as many as you need. Any expression from Chapter 7 is legal here; the query can itself be computed.</p>
+<hr />
+<h2 id="3-chaining-lookups-data-feeds-data-feeds-resource">3. Chaining lookups: data feeds data feeds resource<a class="headerlink" href="#3-chaining-lookups-data-feeds-data-feeds-resource" title="Permanent link">&para;</a></h2>
+<p>Data sources <strong>compose</strong>: the result of one becomes an input to the next, the way <code>f(g(x))</code> feeds <code>g</code>'s output into <code>f</code>. Each lookup does one narrow job, and you snap them together into whatever chain the problem needs. To find the default subnet, you first need the default VPC's ID — so the VPC lookup feeds the subnet lookup, and the subnet feeds your managed resource. This <em>cascade</em>, where looking up A requires B and B requires C, is the everyday shape of real configurations:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_vpc"</span><span class="w"> </span><span class="nv">"default"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="na">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">}</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_subnets"</span><span class="w"> </span><span class="nv">"default"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="nb">filter</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"vpc-id"</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="na">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="nv">data.aws_vpc.default.id</span><span class="p">]</span><span class="c1">   # the VPC lookup feeds the subnet lookup</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="p">}</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_ami"</span><span class="w"> </span><span class="nv">"ubuntu"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">  </span><span class="na">owners</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"099720109477"</span><span class="p">]</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">  </span><span class="na">most_recent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">  </span><span class="nb">filter</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">    </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"name"</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">    </span><span class="na">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"</span><span class="p">]</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="p">}</span>
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"app"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">  </span><span class="na">ami</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_ami.ubuntu.id</span>
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">  </span><span class="na">subnet_id</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_subnets.default.ids[0</span><span class="p">]</span><span class="c1">   # aws_subnets returns a list; take the first</span>
+</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"t3.micro"</span>
+</span><span id="__span-5-25"><a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Notice <code>data.aws_subnets.default.ids[0]</code>. Some data sources return a <em>singular</em> object (<code>aws_vpc</code>, <code>aws_ami</code>), others return a <em>plural</em> set (<code>aws_subnets</code> exposes an <code>ids</code> list). Reach into a plural result by index or with the collection expressions of Chapter 7.</p>
+<p>The reference <code>data.aws_vpc.default.id</code> inside the subnet filter is not just a value — it is a <strong>dependency edge</strong>, exactly as with resources. Terraform builds the same dependency graph over data sources it builds over resources, so it reads the VPC before the subnet, and reads both before it plans the instance. You never order these by hand; the references do it.</p>
+<pre class="mermaid"><code>graph LR
+  vpc["data.aws_vpc.default"] --&gt; subnets["data.aws_subnets.default"]
+  subnets --&gt; app["resource.aws_instance.app"]
+  ami["data.aws_ami.ubuntu"] --&gt; app</code></pre>
+<div class="admonition tip">
+<p class="admonition-title">Discover a data source's attributes without leaving your terminal</p>
+<p>You don't have to visit the registry to see what a data source exports. After <code>init</code>, dump the provider schema:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>terraform<span class="w"> </span>providers<span class="w"> </span>schema<span class="w"> </span>-json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.provider_schemas'</span><span class="w"> </span>
+</span></code></pre></div>
+<p>Or, faster for one value, read it live in the REPL: <code>terraform console</code> then <code>data.aws_ami.ubuntu</code> prints the whole object with every attribute filled in.</p>
+</div>
+<hr />
+<h2 id="4-when-is-a-data-source-read-plan-vs-apply">4. When is a data source read? Plan vs apply<a class="headerlink" href="#4-when-is-a-data-source-read-plan-vs-apply" title="Permanent link">&para;</a></h2>
+<p>This is the one genuinely subtle thing about data sources, and the source of nearly every surprise. <strong>A data source is normally read during the refresh that precedes planning</strong> — so its real values appear in the plan, and the diff shows what actually changed. But Terraform will <em>defer</em> the read to the apply phase under specific conditions, and when it does, you get <code>(known after apply)</code> instead of a value.</p>
+<p>The rule: <strong>Terraform reads the data source at plan time when all of its arguments are already knowable, and defers to apply when any argument depends on something that isn't known yet.</strong></p>
+<p>An argument is "not known yet" when:</p>
+<ul>
+<li>it references a <strong>managed resource attribute that will change in the current plan</strong> (you can't read against a subnet that this same apply is about to recreate);</li>
+<li>it references any other value that is itself <code>(known after apply)</code>;</li>
+<li>the data block has a <strong>custom condition</strong> that depends on such a value;</li>
+<li>the data block has a <strong><code>depends_on</code></strong> pointing at a resource changing in this plan (see the pitfall in §9 — this is the most common accidental cause).</li>
+</ul>
+<p>When the read is deferred, every attribute of that data source shows as computed in the plan, and <em>anything downstream</em> of it also can't be finalised until apply. The plan literally tells you:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>  # data.aws_ami.ubuntu will be read during apply
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  # (config refers to values not yet known)
+</span></code></pre></div>
+<pre class="mermaid"><code>flowchart TD
+  A["data block"] --&gt; B{"all arguments&lt;br/&gt;known at plan time?"}
+  B --&gt;|yes| C["read during refresh&lt;br/&gt;real values in the plan"]
+  B --&gt;|no: depends on a&lt;br/&gt;changing resource /&lt;br/&gt;computed value / depends_on| D["read deferred to apply&lt;br/&gt;shows (known after apply)"]</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Why the default is a pre-plan refresh</p>
+<p>By default Terraform refreshes state before generating a plan. Reading independent data sources during that refresh means the fetched values are available <em>for</em> planning and the diff shows the genuine result — not a placeholder. That's what you want almost always: a plan you can actually review. Deferral is the exception Terraform falls back to only when it truly can't know the answer yet.</p>
+</div>
+<hr />
+<h2 id="5-meta-arguments-on-data-blocks">5. Meta-arguments on data blocks<a class="headerlink" href="#5-meta-arguments-on-data-blocks" title="Permanent link">&para;</a></h2>
+<p>A <code>data</code> block accepts a subset of the same built-in <strong>meta-arguments</strong> as a resource — the arguments that control <em>how Terraform processes the block</em> rather than what it queries. They are provider-independent and built into the language.</p>
+<table>
+<thead>
+<tr>
+<th>Meta-argument</th>
+<th>Effect on a data block</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>count</code></td>
+<td>Read N instances; index with <code>data.&lt;NAME&gt;[&lt;index&gt;]</code></td>
+<td>Mutually exclusive with <code>for_each</code></td>
+</tr>
+<tr>
+<td><code>for_each</code></td>
+<td>Read one instance per collection entry; key with <code>data.&lt;NAME&gt;[&lt;key&gt;]</code></td>
+<td>Accepts a <strong>map or a set of strings</strong>; mutually exclusive with <code>count</code></td>
+</tr>
+<tr>
+<td><code>depends_on</code></td>
+<td>Force the read to wait for an upstream resource</td>
+<td><strong>Defers the read to apply</strong> — use sparingly (§9)</td>
+</tr>
+<tr>
+<td><code>provider</code></td>
+<td>Query through an aliased provider configuration</td>
+<td><code>provider = aws.west</code></td>
+</tr>
+<tr>
+<td><code>lifecycle</code></td>
+<td>Only <code>precondition</code> / <code>postcondition</code> — no destroy-side rules</td>
+<td>Read-only, so <code>create_before_destroy</code>/<code>prevent_destroy</code>/<code>ignore_changes</code> have no meaning</td>
+</tr>
+</tbody>
+</table>
+<p>Multiplying a lookup with <code>for_each</code> reads and indexes each instance separately:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_ami"</span><span class="w"> </span><span class="nv">"by_channel"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="na">for_each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">toset</span><span class="p">([</span><span class="s2">"focal", "jammy"</span><span class="p">])</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="na">owners</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"099720109477"</span><span class="p">]</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="na">most_recent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="nb">filter</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"name"</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="na">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"ubuntu/images/hvm-ssd/ubuntu-${each.value}-*"</span><span class="p">]</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="p">}</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="c1"># reference: data.aws_ami.by_channel["jammy"].id</span>
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">The <code>count</code> index is 0-based (mind the doc)</p>
+<p>HashiCorp's data-sources page states the <code>count</code> key "starts at 1" — that contradicts every other use of <code>count</code> in Terraform, where <code>count.index</code> and the index key are <strong>0-based</strong>. Treat the doc line as a slip: <code>data.aws_ami.example[0]</code> is the first instance. When you need stable string keys instead of fragile positions, use <code>for_each</code> (the same lesson as Chapter 7).</p>
+</div>
+<h3 id="custom-conditions-on-a-data-source">Custom conditions on a data source<a class="headerlink" href="#custom-conditions-on-a-data-source" title="Permanent link">&para;</a></h3>
+<p>The <code>lifecycle</code> block on a data source supports <strong>only</strong> <code>precondition</code> and <code>postcondition</code> — assertions Terraform checks around the read. A <code>postcondition</code> is the natural place to validate that what you fetched is what you expected, and to fail early and <em>in context</em> if not:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_ami"</span><span class="w"> </span><span class="nv">"app"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="na">owners</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"099720109477"</span><span class="p">]</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="na">most_recent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nb">filter</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"name"</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="na">values</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"app-base-*"</span><span class="p">]</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="nb">lifecycle</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="nb">postcondition</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">      </span><span class="na">condition</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nv">self.architecture</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s2">"x86_64"</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">      </span><span class="na">error_message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Selected AMI ${self.id} is not x86_64."</span>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>self</code> inside the condition refers to the data source's own attributes. A failed postcondition halts the plan with your message rather than surfacing as a confusing type error three resources downstream.</p>
+<div class="admonition warning">
+<p class="admonition-title">Conditions take literal expressions, evaluated early</p>
+<p>Configuration inside <code>lifecycle</code> is processed <em>before</em> Terraform evaluates arbitrary expressions for the run, because it affects how the dependency graph is built and traversed. Keep conditions to expressions Terraform can evaluate at that stage.</p>
+</div>
+<hr />
+<h2 id="6-specialized-local-only-data-sources">6. Specialized (local-only) data sources<a class="headerlink" href="#6-specialized-local-only-data-sources" title="Permanent link">&para;</a></h2>
+<p>Most data sources hit a provider's API. A handful are <strong>local-only utilities</strong>: they generate data that exists only during the Terraform operation and is recomputed on every plan. They query nothing remote — they're just a convenient, validated way to build a value.</p>
+<ul>
+<li><strong><code>aws_iam_policy_document</code></strong> — assembles an IAM policy as JSON from HCL blocks, so you never hand-write policy JSON. This is the idiomatic replacement for a <code>jsonencode</code> policy literal.</li>
+<li><strong><code>template_file</code></strong> <em>(legacy)</em> — renders a template from a file. Superseded by the <code>templatefile()</code> function of Chapter 7; you'll still see it in older code.</li>
+<li><strong><code>local_file</code></strong> — reads a file from disk into a value.</li>
+</ul>
+<p><code>aws_iam_policy_document</code> is the one you'll actually reach for. It builds the policy, and its <code>.json</code> attribute feeds straight into a managed resource:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_iam_policy_document"</span><span class="w"> </span><span class="nv">"read_bucket"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nb">statement</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="na">actions</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"s3:GetObject", "s3:ListBucket"</span><span class="p">]</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="na">resources</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"arn:aws:s3:::my-data", "arn:aws:s3:::my-data/*"</span><span class="p">]</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="p">}</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_iam_policy"</span><span class="w"> </span><span class="nv">"read_bucket"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">  </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"read-bucket"</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">  </span><span class="na">policy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_iam_policy_document.read_bucket.json</span><span class="c1">   # data source -&gt; resource</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>That last line is the milestone in miniature: a data source (here a local-only one) producing a value that a managed resource consumes.</p>
+<hr />
+<h2 id="7-reading-another-configurations-outputs-terraform_remote_state">7. Reading another configuration's outputs: <code>terraform_remote_state</code><a class="headerlink" href="#7-reading-another-configurations-outputs-terraform_remote_state" title="Permanent link">&para;</a></h2>
+<p>Sometimes the thing you need to read isn't in a cloud API at all — it's the <strong>output of a different Terraform configuration</strong>. A network team manages the VPC in one workspace; your application config, in another, needs that VPC's subnet and security-group IDs. The built-in <code>terraform_remote_state</code> data source reads the <em>root-level outputs</em> of another configuration straight from its state backend:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"terraform_remote_state"</span><span class="w"> </span><span class="nv">"vpc"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="na">backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"local"</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="nb">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="na">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"../vpc/terraform.tfstate"</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="p">}</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">data.terraform_remote_state.vpc.outputs.aws_region</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="p">}</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="kr">module</span><span class="w"> </span><span class="nv">"app"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">  </span><span class="na">security_groups</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">data.terraform_remote_state.vpc.outputs.lb_security_group_ids</span>
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">  </span><span class="na">subnets</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="nv">data.terraform_remote_state.vpc.outputs.public_subnet_ids</span>
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The <code>backend</code> can be <code>local</code> (a tfstate file on disk, as above) or <code>remote</code> (HCP Terraform, S3, Consul, etc.), with the connection details in <code>config</code>.</p>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — an encrypted state cannot be read this way without the key</p>
+<p>OpenTofu can encrypt state at rest client-side, a feature Terraform's CLI does not have. That
+turns this data source into the place where the two facts collide: <code>terraform_remote_state</code>
+reads the producer's <strong>state file</strong>, so if that file is encrypted the consumer needs the
+decryption configuration too, and a consumer that lacks it fails rather than degrading.</p>
+<p>Measured against a state written by OpenTofu 1.12.4 with a <code>pbkdf2</code> key provider and the
+<code>aes_gcm</code> method:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a># OpenTofu consumer, no encryption block
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>Error: Unsupported state file format
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>This state file is encrypted and can not be read without an encryption configuration
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a># Terraform 1.15.8 consumer
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>Error: Unsupported state file format
+</span></code></pre></div>
+<p>Same wall, two different reasons. OpenTofu understands what it is looking at and wants the key;
+Terraform has no encryption support at all, so it cannot read that file under any configuration.</p>
+<p>Two consequences worth designing around. A <strong>mixed estate</strong> — some configurations on Terraform,
+some on OpenTofu with encryption on — cannot share values through <code>terraform_remote_state</code> in
+that direction. And the consumer needs access to the producer's <strong>key material</strong>, not just to
+its state, which means turning encryption on quietly breaks every downstream reader until they
+are given the key. Roll it out with a <code>fallback</code> block so readers keep working during the
+migration; the encryption feature itself is E3's subject.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">It reads root outputs only — and it's a security boundary</p>
+<p><code>terraform_remote_state</code> exposes <strong>only the root-level <code>output</code> values</strong> of the source configuration, not its resources or module internals. To share a value, the source config must publish a matching <code>output</code>. And crucially: anyone who can read those outputs can read the <em>entire</em> state snapshot by direct backend requests — state stores every attribute in plaintext. Don't route sensitive data through it. The full treatment — the security case against it, and the <code>tfe_outputs</code> alternative on HCP Terraform — is Chapter 15 (I6, Remote state &amp; backends). Here it's enough to know the mechanism: outputs in, no secrets.</p>
+</div>
+<hr />
+<h2 id="lab-read-a-resource-you-didnt-create-and-wire-it-in">🧪 Lab: read a resource you didn't create, and wire it in<a class="headerlink" href="#lab-read-a-resource-you-didnt-create-and-wire-it-in" title="Permanent link">&para;</a></h2>
+<p>The milestone made concrete. You'll create an S3 bucket <strong>out-of-band</strong> (as if a colleague made it — your config does <em>not</em> manage it), then use data sources to look it up, read your own account identity and region, build an IAM policy that references the bucket, and apply that managed policy. Everything runs against the free local <strong>AWS emulator</strong> (Chapter 1's <a href="../ch01-iac-fundamentals/#lab-setup-a-free-local-aws-docker">lab setup</a> — Floci, MiniStack, or LocalStack). S3, STS, and IAM are all on the reliable free surface.</p>
+<p><strong>Start the emulator</strong> (from the repo root; skip if already running):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>labs/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">      </span><span class="c1"># start the emulator on :4566, detached</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:4566/_floci/health<span class="w">     </span><span class="c1"># wait until the services read "running"</span>
+</span></code></pre></div>
+<p><strong>Create the unmanaged bucket</strong> — this is the "resource you didn't create":</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>awslocal<span class="w"> </span>s3<span class="w"> </span>mb<span class="w"> </span>s3://legacy-data-bucket
+</span></code></pre></div>
+<p>Now the configuration. Note it contains <strong>no <code>resource "aws_s3_bucket"</code></strong> — that bucket is not ours; we only read it.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># terraform.tf</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="na">required_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.15"</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="nb">aws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws", version = "~&gt; 6.0"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># providers.tf — plain AWS block; tflocal points it at the emulator</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># main.tf</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="c1"># --- three lookups, nothing created ---</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_caller_identity"</span><span class="w"> </span><span class="nv">"current"</span><span class="w"> </span><span class="p">{}</span><span class="c1">   # who am I (STS)</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_region"</span><span class="w"> </span><span class="nv">"current"</span><span class="w"> </span><span class="p">{}</span><span class="c1">            # where am I</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"legacy"</span><span class="w"> </span><span class="p">{</span><span class="c1">           # the bucket a colleague made</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"legacy-data-bucket"</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="p">}</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="c1"># --- a local-only data source that references the lookups ---</span>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="kr">data</span><span class="w"> </span><span class="nc">"aws_iam_policy_document"</span><span class="w"> </span><span class="nv">"read_legacy"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="w">  </span><span class="nb">statement</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="w">    </span><span class="na">sid</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">"ReadLegacyBucket"</span>
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="w">    </span><span class="na">actions</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"s3:GetObject", "s3:ListBucket"</span><span class="p">]</span>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="w">    </span><span class="na">resources</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="w">      </span><span class="nv">data.aws_s3_bucket.legacy.arn</span><span class="p">,</span>
+</span><span id="__span-17-18"><a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="w">      </span><span class="s2">"${data.aws_s3_bucket.legacy.arn}/*"</span><span class="p">,</span>
+</span><span id="__span-17-19"><a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="w">    </span><span class="p">]</span>
+</span><span id="__span-17-20"><a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-17-21"><a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a><span class="p">}</span>
+</span><span id="__span-17-22"><a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>
+</span><span id="__span-17-23"><a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a><span class="c1"># --- the one managed resource: consumes all of the above ---</span>
+</span><span id="__span-17-24"><a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_iam_policy"</span><span class="w"> </span><span class="nv">"read_legacy"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-17-25"><a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a><span class="w">  </span><span class="na">name</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">"read-legacy-${data.aws_region.current.region}"</span>
+</span><span id="__span-17-26"><a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a><span class="w">  </span><span class="na">policy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_iam_policy_document.read_legacy.json</span>
+</span><span id="__span-17-27"><a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>
+</span><span id="__span-17-28"><a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a><span class="w">  </span><span class="nb">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-17-29"><a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a><span class="w">    </span><span class="na">Account</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_caller_identity.current.account_id</span>
+</span><span id="__span-17-30"><a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-17-31"><a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a><span class="p">}</span>
+</span><span id="__span-17-32"><a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a>
+</span><span id="__span-17-33"><a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"policy_arn"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-17-34"><a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a><span class="w">  </span><span class="na">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">aws_iam_policy.read_legacy.arn</span>
+</span><span id="__span-17-35"><a id="__codelineno-17-35" name="__codelineno-17-35" href="#__codelineno-17-35"></a><span class="p">}</span>
+</span><span id="__span-17-36"><a id="__codelineno-17-36" name="__codelineno-17-36" href="#__codelineno-17-36"></a>
+</span><span id="__span-17-37"><a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"resolved_bucket_arn"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-17-38"><a id="__codelineno-17-38" name="__codelineno-17-38" href="#__codelineno-17-38"></a><span class="w">  </span><span class="na">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_s3_bucket.legacy.arn</span>
+</span><span id="__span-17-39"><a id="__codelineno-17-39" name="__codelineno-17-39" href="#__codelineno-17-39"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Apply it with <code>tflocal</code>, which targets the emulator and leaves the <code>.tf</code> files portable to real AWS:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>tflocal<span class="w"> </span>init
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>tflocal<span class="w"> </span>plan<span class="w">       </span><span class="c1"># note: the three data sources read during refresh, values already present</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>tflocal<span class="w"> </span>apply<span class="w"> </span>-auto-approve
+</span></code></pre></div>
+<p>In the plan you'll see the data sources resolve to real values (the bucket ARN, your account ID, the region) <em>before</em> the single <code>aws_iam_policy.read_legacy</code> shows as <code>+ create</code> — proof the reads happened at refresh time, not apply. Verify:</p>
+<div class="admonition note">
+<p class="admonition-title">📌 <code>aws_region</code>: use <code>.region</code>, not <code>.name</code></p>
+<p>In AWS provider <strong>6.x</strong> the <code>aws_region</code> data source's <code>name</code> (and <code>id</code>) attributes are <strong>deprecated</strong> in favour of <strong><code>region</code></strong>. Older tutorials still show <code>.name</code>; on a v6 provider that prints <code>name is deprecated. Use region instead.</code> on every plan. This lab uses <code>data.aws_region.current.region</code>. Attribute deprecations like this are provider-version-specific, so let the provider docs (not older blog posts) be the source of truth.</p>
+</div>
+<p>The <code>Changes to Outputs</code> block at the end of the plan is the clearest proof of the refresh-time read. Look at the two outputs side by side:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>Changes to Outputs:
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>  + policy_arn          = (known after apply)
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>  + resolved_bucket_arn = "arn:aws:s3:::legacy-data-bucket"
+</span></code></pre></div>
+<p><code>resolved_bucket_arn</code> already shows its <strong>literal value</strong> — it comes from <code>data.aws_s3_bucket.legacy.arn</code>, which was resolved during refresh, so Terraform knows it <em>now</em>, at plan time. <code>policy_arn</code> shows <strong><code>(known after apply)</code></strong> — it comes from <code>aws_iam_policy.read_legacy.arn</code>, a managed resource that doesn't exist yet, so its ARN can't be known until apply creates it. Same block, two outputs, and the difference between them is exactly the difference between reading (data source, resolved early) and creating (resource, resolved late).</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>tflocal<span class="w"> </span>output<span class="w"> </span>resolved_bucket_arn<span class="w">          </span><span class="c1"># the ARN of the bucket we never managed</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>awslocal<span class="w"> </span>iam<span class="w"> </span>list-policies<span class="w"> </span>--scope<span class="w"> </span>Local<span class="w">     </span><span class="c1"># our new policy exists</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>tflocal<span class="w"> </span>destroy<span class="w"> </span>-auto-approve<span class="w">                </span><span class="c1"># removes only the policy; the bucket is not ours to destroy</span>
+</span></code></pre></div>
+<p>Notice the destroy removes the IAM policy but leaves <code>legacy-data-bucket</code> untouched — Terraform never managed it, only read it. Clean up the bucket yourself if you like: <code>awslocal s3 rb s3://legacy-data-bucket</code>.</p>
+<h3 id="explore-a-data-block-interactively-with-tflocal-console">Explore a data block interactively with <code>tflocal console</code><a class="headerlink" href="#explore-a-data-block-interactively-with-tflocal-console" title="Permanent link">&para;</a></h3>
+<p>You don't have to run <code>apply</code> to see what a data source returns. <code>terraform console</code> — invoked as <code>tflocal console</code> so it hits the emulator — opens a REPL that evaluates any expression against your configuration. It's the fastest way to discover <em>which attributes a data source actually exposes</em> before you wire them into a resource.</p>
+<p>One subtlety decides whether the data sources resolve. By default <code>terraform console</code> evaluates against the <strong>current state</strong>, so a data source that has never been read yet shows as unknown. Pass <strong><code>-plan</code></strong> and the console runs a refresh first — exactly like <code>terraform plan</code>, reading every data source — then evaluates against the <em>planned</em> state. That resolves the reads <strong>without creating anything</strong> (the IAM policy is still only planned, never applied):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>tflocal<span class="w"> </span>console<span class="w"> </span>-plan<span class="w">    </span><span class="c1"># refresh + read the data sources, create nothing</span>
+</span></code></pre></div>
+<p>No prior <code>apply</code> needed — the <code>-plan</code> refresh is what populates the values. (A plain <code>tflocal console</code> also works once the data sources are already in state from an earlier plan or apply.)</p>
+<p>At the <code>&gt;</code> prompt, evaluate the data references directly:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="err">&gt;</span><span class="w"> </span><span class="nv">data.aws_s3_bucket.legacy.arn</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="s2">"arn:aws:s3:::legacy-data-bucket"</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="err">&gt;</span><span class="w"> </span><span class="nv">data.aws_caller_identity.current.account_id</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="s2">"000000000000"</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="err">&gt;</span><span class="w"> </span><span class="nv">data.aws_region.current.region</span>
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="s2">"us-east-1"</span>
+</span></code></pre></div>
+<p>To see the <strong>whole object</strong> a data source returns — every attribute, not just the one you remembered — evaluate it without a trailing attribute:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="err">&gt;</span><span class="w"> </span><span class="nv">data.aws_s3_bucket.legacy</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="p">{</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">  </span><span class="s2">"arn"</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">"arn:aws:s3:::legacy-data-bucket"</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">  </span><span class="s2">"bucket"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"legacy-data-bucket"</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">  </span><span class="s2">"id"</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"legacy-data-bucket"</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="w">  </span><span class="s2">"region"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="c1">  # …the full attribute set the provider exposes</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>This is how you answer "what fields can I read off this thing?" without hunting through provider docs. You can also try out expressions before committing them to a <code>.tf</code> file — string interpolation, functions, the collection operators from Chapter 7:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="err">&gt;</span><span class="w"> </span><span class="s2">"${data.aws_s3_bucket.legacy.arn}/*"</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="s2">"arn:aws:s3:::legacy-data-bucket/*"</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="err">&gt;</span><span class="w"> </span><span class="nv">data.aws_iam_policy_document.read_legacy.json</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="s2">"{\"Statement\":[{\"Action\"</span><span class="o">:</span><span class="p">[</span><span class="err">\</span><span class="s2">"s3:GetObject\",\"s3:ListBucket\"], … }"</span>
+</span></code></pre></div>
+<p>Type <code>exit</code> (or Ctrl-D) to leave. Two things to keep in mind: the console is <strong>read-only</strong> — even <code>-plan</code> only <em>computes</em> a plan, it never applies one, so nothing you type changes state or infrastructure — and the same <strong>deferral rule</strong> from plan time still holds. A data block whose arguments depend on a resource being built in this plan can't be read yet, so it shows as unknown in the console just as it would in <code>terraform plan</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Emulation is not AWS</p>
+<p>A green <code>apply</code> here proves your <strong>HCL, data-source wiring, and workflow</strong> are correct — not that the config behaves identically on real AWS. The emulator mocks the S3/STS/IAM API surface, not every semantic (real IAM evaluation, cross-account ARNs, bucket-name global uniqueness). Validate any load-bearing config against real free-tier AWS before trusting it. In particular, the <code>aws_ami</code>/EC2 examples earlier in the chapter are <strong>mocked</strong> on the emulator — read them, but exercise them on real AWS, not here.</p>
+</div>
+<hr />
+<h2 id="common-pitfalls">Common pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><code>depends_on</code> on a data source, added carelessly.</strong> It forces the read to the <strong>apply</strong> phase, turning every attribute into <code>(known after apply)</code> and cascading that uncertainty into every resource downstream — sometimes triggering spurious re-creation. Only add <code>depends_on</code> to a data block when you genuinely must read <em>after</em> a resource is built; otherwise let attribute references order things.</li>
+<li><strong>Expecting plan-time values from a dependent lookup.</strong> If a data source's arguments reference a resource changing in this plan, you <em>cannot</em> see its values at plan time — that's the deferral rule, not a bug. Restructure so the lookup doesn't depend on unbuilt infrastructure, or accept the apply-time read.</li>
+<li><strong>A singular data source that matches zero or many.</strong> Most singular lookups (<code>aws_ami</code>, <code>aws_vpc</code>) <strong>error and halt the plan</strong> on no match or multiple matches. Tighten filters (and <code>most_recent = true</code> for images). Plural sources (<code>aws_subnets</code>) instead return an empty list — guard with <code>length(...)</code> before indexing <code>[0]</code>.</li>
+<li><strong>Indexing a plural result blindly.</strong> <code>data.aws_subnets.default.ids[0]</code> blows up if the list is empty. Check <code>length(data.aws_subnets.default.ids) &gt; 0</code> or use <code>try(...)</code>.</li>
+<li><strong>Secret material through a data source.</strong> If a data source returns a plaintext secret, that value lands in <strong>state, plan output, and logs</strong>. Mark it <code>sensitive</code>, and prefer ephemeral/secret-manager patterns (Chapter 23) over reading raw secrets.</li>
+<li><strong><code>terraform_remote_state</code> for values that aren't root outputs.</strong> It can only read the source config's declared <code>output</code>s — not its resources. If you need a value, add an <code>output</code> to the source configuration.</li>
+<li><strong>The external data source has no timeout.</strong> <code>data "external"</code> (running a script) will hang Terraform indefinitely if the script does; there is no built-in timeout. Prefer a real provider data source; reach for <code>external</code> only as a last resort (Chapter 18).</li>
+<li><strong>Reusing <code>template_file</code>.</strong> It's the legacy path — use the <code>templatefile()</code> function (Chapter 7) instead; it needs no extra provider.</li>
+</ul>
+<hr />
+<h2 id="exercises">Exercises<a class="headerlink" href="#exercises" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Recall.</strong> What is the one thing a <code>data</code> block can never do that a <code>resource</code> block can, and what prefix distinguishes a data-source reference from a resource reference?</li>
+<li><strong>Recall.</strong> A plan prints <code># data.aws_ami.ubuntu will be read during apply</code>. Name two distinct configuration situations that produce this, and what it implies for resources that reference the AMI.</li>
+<li><strong>Apply.</strong> Rewrite a hard-coded <code>subnet_id = "subnet-0abc..."</code> on an <code>aws_instance</code> so it instead lands in the first subnet of the account's default VPC. (Two data sources, one cascade.)</li>
+<li><strong>Apply.</strong> You have <code>data "aws_ami" "app"</code> and want to fail the plan early if its <code>root_device_type</code> isn't <code>"ebs"</code>. Write the <code>lifecycle</code> block.</li>
+<li><strong>Extend.</strong> Two teams each output a <code>subnet_ids</code> list from separate configs. Using <code>for_each</code> over a set of the two state-file paths, read both with <code>terraform_remote_state</code> and produce a single flattened list of all subnet IDs. What must each source config declare for this to work?</li>
+<li><strong>Debug.</strong> After adding <code>depends_on = [aws_vpc.main]</code> to a <code>data "aws_subnet"</code> block "to be safe," a colleague's previously-stable plan now wants to replace three downstream resources. Explain the mechanism and give the fix.</li>
+</ol>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A <strong>data source reads</strong>; it never creates, updates, or destroys. Same shape as a resource, referenced with the <code>data.&lt;TYPE&gt;.&lt;NAME&gt;.&lt;ATTRIBUTE&gt;</code> prefix.</li>
+<li>Data sources exist to <strong>read what you don't own</strong> — the latest AMI, the default VPC, an existing bucket — so your configuration stays portable and current instead of pinned to hard-coded IDs.</li>
+<li>References between data sources (and into resources) are <strong>dependency edges</strong>: Terraform orders the reads via the same graph it uses for resources. You never sequence them by hand.</li>
+<li><strong>Read timing is the subtle part.</strong> A data source is read at <strong>refresh</strong> (plan-time) when all its arguments are known, and <strong>deferred to apply</strong> — showing <code>(known after apply)</code> — when any argument depends on a changing resource, a computed value, a custom condition on such a value, or <code>depends_on</code>.</li>
+<li>Data blocks take <code>count</code>, <code>for_each</code>, <code>depends_on</code>, <code>provider</code>, and a read-only <code>lifecycle</code> (only <code>precondition</code>/<code>postcondition</code>). <code>depends_on</code> forces an apply-time read — reach for it rarely.</li>
+<li><strong>Local-only</strong> data sources (<code>aws_iam_policy_document</code>, <code>template_file</code>, <code>local_file</code>) generate data without a remote call; <code>aws_iam_policy_document.json</code> → a managed policy is the common wiring.</li>
+<li><strong><code>terraform_remote_state</code></strong> reads another configuration's <strong>root outputs only</strong> and is a security boundary — no secrets through it (full treatment in Chapter 15).</li>
+</ul>
+<p>Chapter 9 turns to <strong>state</strong> — the file <code>terraform_remote_state</code> reads from, the record of everything Terraform manages, and the thing that makes plan, apply, and every refresh in this chapter possible.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>HashiCorp Docs — <a href="https://developer.hashicorp.com/terraform/language/data-sources">Query infrastructure data</a> · <a href="https://developer.hashicorp.com/terraform/language/block/data"><code>data</code> block reference</a> · <a href="https://developer.hashicorp.com/terraform/tutorials/configuration-language/data-sources">Query data sources tutorial</a> · <a href="https://developer.hashicorp.com/terraform/language/state/remote-state-data"><code>terraform_remote_state</code></a></li>
+<li>Reading notes: tf-data-sources (plan-vs-apply deferral, custom conditions), tf-block-data (argument catalog), tut-data-sources (the region/AZ/AMI + remote-state hands-on), tf-remote-state-data (root-outputs limit + the security case) · <em>Terraform in Depth</em> Ch 2 §2.6 (02-hcl-components, the cascade example and failure behavior)</li>
+<li>Current pitfalls verified 2026-07-22 — <a href="https://developer.hashicorp.com/terraform/language/data-sources">HashiCorp: data-source read-during-apply</a> · <a href="https://sanderknape.com/2024/11/terraform-data-source-read-during-apply-messages-fix/">Sander Knape — "read during apply" messages</a> · <a href="https://spacelift.io/blog/terraform-data-sources-how-they-are-utilised">Spacelift — Terraform data sources</a></li>
+<li>Version facts: version-facts (Terraform 1.15.8 / OpenTofu 1.12.4; AWS provider <code>~&gt; 6.0</code>)</li>
+<li>🧪 Lab: Floci Facts · MiniStack Facts · LocalStack Facts</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+        <script src="../../javascripts/sidebar-toggle.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js" defer></script>
+      
+    
+  </body>
+</html>

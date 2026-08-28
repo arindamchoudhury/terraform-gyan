@@ -1,0 +1,2248 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Personal notes and book from learning Terraform (and OpenTofu).">
+      
+      
+        <meta name="author" content="arindam@live.com">
+      
+      
+        <link rel="canonical" href="https://arindamchoudhury.github.io/terraform-gyan/book/ch05-providers-resources/">
+      
+      
+        <link rel="prev" href="../ch04-hcl-language-basics/">
+      
+      
+        <link rel="next" href="../ch06-input-variables-outputs-locals/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Chapter 5 — Providers & resources - Terraform Learning Notes</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-5-providers-resources" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Terraform Learning Notes" class="md-header__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terraform Learning Notes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 5 — Providers &amp; resources
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Terraform Learning Notes" class="md-nav__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Terraform Learning Notes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Learning Path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Book
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Book
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch01-iac-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  1. Infrastructure as Code & where Terraform fits
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch02-install-providers-first-project/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  2. Install, providers & your first project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch03-core-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  3. The core workflow: init / plan / apply / destroy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch04-hcl-language-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  4. HCL language basics
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  5. Providers & resources
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  5. Providers & resources
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-machines-behind-one-resource-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Two machines behind one resource block
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-the-provider-plugin-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 1 — The provider plugin model
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — The provider plugin model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-is-vendor-agnostic-the-provider-is-the-whole-abstraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Core is vendor-agnostic; the provider is the whole abstraction
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#every-resource-type-is-named-after-its-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Every resource type is named after its provider
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#declare-then-configure-two-blocks-two-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declare, then configure — two blocks, two jobs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-a-source-address" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading a source address
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-provider-block-is-where-providers-actually-differ" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The <code>provider</code> block is where providers actually differ
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utility-providers-and-the-one-built-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Utility providers and the one built-in
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-the-resource-block-up-close" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 2 — The resource block up close
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2 — The resource block up close">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-declare-the-address" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 1 — declare the address
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-set-provider-specific-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 2 — set provider-specific arguments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-set-terraform-meta-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 3 — set Terraform meta-arguments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-registry-page-for-a-resource-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading the Registry page for a resource type
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-apply-does-to-a-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What <code>apply</code> does to a resource
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-the-implicit-dependency-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 3 — The implicit dependency graph
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 3 — The implicit dependency graph">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-graph-has-exactly-two-inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The graph has exactly two inputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#an-attribute-reference-is-the-edge-a-worked-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        An attribute reference <em>is</em> the edge — a worked chain
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#independent-nodes-run-in-parallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Independent nodes run in parallel
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-blind-spot-nothing-warns-you-about-a-missing-edge" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The blind spot: nothing warns you about a missing edge
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prefer-implicit-references-depends_on-is-a-last-resort" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Prefer implicit references; <code>depends_on</code> is a last resort
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#confirming-the-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Confirming the graph
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-chain-three-resources-and-predict-the-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: chain three resources and predict the order
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch06-input-variables-outputs-locals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  6. Input variables, outputs & locals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch07-expressions-operators-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  7. Expressions, operators & functions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch08-data-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  8. Data sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch09-state-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  9. State fundamentals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch10-meta-arguments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  10. Meta-arguments: count, for_each, depends_on
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch11-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  11. The lifecycle meta-argument
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch12-dynamic-blocks-complex-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  12. Dynamic blocks & complex types
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch13-using-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  13. Using modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch14-authoring-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  14. Authoring modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch15-remote-state-backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  15. Remote state & backends
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch16-state-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  16. State management operations
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch17-provider-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  17. Provider configuration in depth
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch18-provisioners-escape-hatches/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  18. Provisioners, terraform_data & escape hatches
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-machines-behind-one-resource-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Two machines behind one resource block
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-the-provider-plugin-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 1 — The provider plugin model
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — The provider plugin model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-is-vendor-agnostic-the-provider-is-the-whole-abstraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Core is vendor-agnostic; the provider is the whole abstraction
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#every-resource-type-is-named-after-its-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Every resource type is named after its provider
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#declare-then-configure-two-blocks-two-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declare, then configure — two blocks, two jobs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-a-source-address" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading a source address
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-provider-block-is-where-providers-actually-differ" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The <code>provider</code> block is where providers actually differ
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utility-providers-and-the-one-built-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Utility providers and the one built-in
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-the-resource-block-up-close" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 2 — The resource block up close
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2 — The resource block up close">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-declare-the-address" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 1 — declare the address
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-set-provider-specific-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 2 — set provider-specific arguments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-set-terraform-meta-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step 3 — set Terraform meta-arguments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reading-the-registry-page-for-a-resource-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading the Registry page for a resource type
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-apply-does-to-a-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What <code>apply</code> does to a resource
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-the-implicit-dependency-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 3 — The implicit dependency graph
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 3 — The implicit dependency graph">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-graph-has-exactly-two-inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The graph has exactly two inputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#an-attribute-reference-is-the-edge-a-worked-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        An attribute reference <em>is</em> the edge — a worked chain
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#independent-nodes-run-in-parallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Independent nodes run in parallel
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-blind-spot-nothing-warns-you-about-a-missing-edge" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The blind spot: nothing warns you about a missing edge
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prefer-implicit-references-depends_on-is-a-last-resort" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Prefer implicit references; <code>depends_on</code> is a last resort
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#confirming-the-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Confirming the graph
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-chain-three-resources-and-predict-the-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: chain three resources and predict the order
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="chapter-5-providers-resources">Chapter 5 — Providers &amp; resources<a class="headerlink" href="#chapter-5-providers-resources" title="Permanent link">&para;</a></h1>
+<h2 id="learning-outcomes">Learning outcomes<a class="headerlink" href="#learning-outcomes" title="Permanent link">&para;</a></h2>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>Explain the <strong>provider plugin model</strong> — how <code>resource "aws_instance"</code> in your HCL becomes a real API call, and why Terraform's core engine knows nothing about AWS.</li>
+<li>Read a <strong>source address</strong> (<code>hashicorp/aws</code>) as a <code>[host/]namespace/type</code> address, host optional, and read the Registry <strong>tier badge</strong> as a trust signal.</li>
+<li>Navigate a provider's Registry docs and tell a resource's <strong>arguments</strong> (inputs you set) from its <strong>attributes</strong> (values it computes and exports).</li>
+<li>Name every part of a <strong>resource block</strong> — the address, provider-specific arguments, the meta-argument map, and the <code>timeouts</code> child block — and know which come from the provider and which from Terraform core.</li>
+<li>Chain three resources so that each reads the previous one's attributes, and <strong>predict the apply order</strong> from those references alone — no <code>depends_on</code>.</li>
+</ul>
+<h2 id="two-machines-behind-one-resource-block">Two machines behind one resource block<a class="headerlink" href="#two-machines-behind-one-resource-block" title="Permanent link">&para;</a></h2>
+<p>By the end of Chapter 4 you could write any block by hand and wire blocks together with references. But writing <code>resource "aws_instance" "web" { … }</code> and getting a running EC2 instance are two very different things. What actually happens between the <code>.tf</code> file and the live VM?</p>
+<p>Two machines do the work, and this chapter is about both:</p>
+<ol>
+<li><strong>The provider plugin</strong> turns your declarative HCL into concrete API calls against a vendor. It is the thing that knows what an <code>aws_instance</code> <em>is</em>, which arguments it takes, and how to create one. Terraform core does not.</li>
+<li><strong>The dependency graph</strong> decides <em>when</em> each resource is created relative to the others. It is built entirely from the references you write — and getting those references right is the whole milestone for this topic.</li>
+</ol>
+<p>Miss the first and you'll expect Terraform to know your infrastructure out of the box — it doesn't; every resource type comes from a provider, bar the handful built into core. Miss the second and you get race conditions — flaky create-order that works from your local state and breaks on a clean apply in CI. Resources are the unit of everything Terraform manages, so both machines are worth understanding before you build anything real.</p>
+<hr />
+<h2 id="part-1-the-provider-plugin-model">Part 1 — The provider plugin model<a class="headerlink" href="#part-1-the-provider-plugin-model" title="Permanent link">&para;</a></h2>
+<h3 id="core-is-vendor-agnostic-the-provider-is-the-whole-abstraction">Core is vendor-agnostic; the provider is the whole abstraction<a class="headerlink" href="#core-is-vendor-agnostic-the-provider-is-the-whole-abstraction" title="Permanent link">&para;</a></h3>
+<p>Terraform core is a single, statically-compiled binary. It parses HCL, builds a graph, computes a plan, and manages state. It does <strong>not</strong> know what AWS, Cloudflare, or GitHub are. Every vendor-specific fact — that an EC2 instance takes an <code>ami</code>, what arguments an <code>aws_s3_bucket</code> accepts, how to authenticate — lives in a <strong>provider</strong>.</p>
+<p>A provider is a plugin: a standalone binary, written in Go, that Terraform core launches as a subprocess and talks to over <strong>gRPC</strong>. Core sends the provider a desired-state description; the provider translates it into calls against the vendor's API and reports back. The provider <em>is</em> the boundary between "one core" and "any platform."</p>
+<pre class="mermaid"><code>flowchart LR
+    HCL["your .tf files"] --&gt; Core["Terraform core&lt;br/&gt;(parse, graph, plan, state)"]
+    Core -- gRPC --&gt; P1["aws provider&lt;br/&gt;(Go binary)"]
+    Core -- gRPC --&gt; P2["google provider&lt;br/&gt;(Go binary)"]
+    P1 -- HTTPS API --&gt; AWS["AWS APIs"]
+    P2 -- HTTPS API --&gt; GCP["Google Cloud APIs"]</code></pre>
+<div class="admonition info">
+<p class="admonition-title">That gRPC arrow is encrypted, and it is why one class of local failure exists</p>
+<p>The channel between core and a provider is not a plain socket. Terraform generates a throwaway
+certificate for each side at launch and requires <strong>mutual TLS</strong> on the connection, so core only
+talks to the plugin it started and the plugin only answers core. The reason is what crosses the
+link: your cloud credentials, every argument you passed, and every attribute read back,
+including the sensitive ones.</p>
+<p>It is worth knowing because it produces a failure that looks like a broken provider and is not.
+Anything that intercepts loopback traffic — a corporate proxy, an endpoint-security agent
+inspecting local connections — breaks the handshake, and every command that loads a provider
+fails with <code>Failed to load plugin schemas … Plugin did not respond</code>, regardless of which
+provider or which version. <code>TF_LOG=trace</code> shows the real cause underneath, an x509 verification
+failure. The fix is to exclude the Terraform binary from that inspection; the diagnostic
+shortcut is <code>TF_DISABLE_PLUGIN_TLS=1</code> for <strong>one command</strong>, which turns the encryption off and
+confirms the interceptor is to blame. Terraform's own source marks that variable as not intended
+for end users, and leaving it set means credentials cross the channel in the clear, so it
+belongs in a diagnosis and never in a shell profile.</p>
+</div>
+<p>This design is why one tool manages everything: core stays small and vendor-neutral, while each provider is a swappable plugin with its own release cadence, version numbers, and docs. Each of those is worth unpacking.</p>
+<p><strong>Swappable</strong> means a provider is never compiled into the Terraform CLI. <code>terraform init</code> reads your <code>required_providers</code> and downloads each one as a separate binary into <code>.terraform/</code>. You can add, drop, or upgrade one provider without touching core or the others — bump <code>aws</code> from 5 to 6 while <code>google</code> stays put.</p>
+<p><strong>Own release cadence</strong> means each provider ships on its own schedule, independent of the Terraform CLI <em>and</em> of every other provider. The <code>aws</code> provider releases often to keep up with new AWS services; core releases on a wholly separate timeline. A new AWS feature usually means a new <code>aws</code> provider version, not a new Terraform CLI.</p>
+<p><strong>Own version numbers</strong> means each provider carries its own independent semver, unrelated to the CLI version or to each other — the box below unpacks this. One configuration routinely mixes providers at very different version numbers.</p>
+<p><strong>Own docs</strong> means each provider publishes its own reference pages on the Registry, versioned per provider release. That is where a resource's arguments and attributes are documented, by the provider's authors — because core does not know them.</p>
+<p>There are thousands of providers in the Registry. Most wrap an infrastructure platform; a few are pure local utilities (<code>random</code>, <code>null</code>, <code>time</code>, <code>tls</code>). Without a provider, Terraform manages nothing.</p>
+<div class="admonition note">
+<p class="admonition-title">Provider version ≠ vendor API version</p>
+<p>The <code>aws</code> provider is on major version 6, but AWS-the-service has no "v6." The provider is its own artifact, versioned independently of both the vendor's API and the Terraform CLI. When you pin <code>~&gt; 6.0</code>, you are pinning the <em>plugin</em>, not anything AWS publishes. This is also why "vendor" is only a teaching word — Terraform has no <code>vendor</code> object; the only language construct is <code>provider</code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">What a provider upgrade can add: quietly or loudly</p>
+<p>A new feature in AWS-the-service changes nothing on its own. Terraform only sees what the <em>provider's schema</em> declares, so a new attribute doesn't exist for you until a provider release adds it. And because you pin (<code>~&gt; 6.0</code>), that release arrives only when you run <code>terraform init -upgrade</code>, never on AWS's schedule. How the upgrade lands then depends on how the provider modeled the attribute:</p>
+<ul>
+<li><strong>Optional or computed — the quiet path.</strong> A new <em>computed</em> (read-only) attribute just appears in state on the next refresh, no diff. A new <em>optional</em> argument you leave unset stays unset. You may not even notice. Providers usually make such fields optional-and-computed so an unset value tracks whatever the API returns rather than forcing a change.</li>
+<li><strong>Required — the loud path.</strong> Terraform's schema rules make an omitted required argument a <strong>plan-time error</strong>: <code>The argument "X" is required, but no definition was found</code>. Terraform refuses to plan until you add it to config. No apply, no drift, no partial change — a safe stop at the door.</li>
+</ul>
+<p>A provider <em>shouldn't</em> add a required argument in a routine (minor) release, precisely because it breaks every existing config; the backward-compatible move is optional/computed, and a genuine break belongs in a major version with an upgrade guide. HashiCorp's versioning guidance doesn't spell out "new required argument = major," but it does flag a subtler footgun as breaking: <strong>adding a default value that doesn't match the API's default</strong>, which can surface as an unexpected <code>~</code> on upgrade. Either way the lesson is the same: read the plan, and the provider CHANGELOG, after any version bump.</p>
+</div>
+<h3 id="every-resource-type-is-named-after-its-provider">Every resource type is named after its provider<a class="headerlink" href="#every-resource-type-is-named-after-its-provider" title="Permanent link">&para;</a></h3>
+<p>Look at any resource type: <code>aws_instance</code>, <code>google_compute_instance</code>, <code>random_id</code>. The prefix before the first underscore is the provider's <strong>local name</strong>. <code>aws_instance</code> implies the <code>aws</code> provider; <code>google_storage_bucket</code> implies <code>google</code>. That is how Terraform knows which provider a resource type belongs to — it reads the prefix as the local name, then <code>required_providers</code> maps that name to the actual plugin.</p>
+<p>One provider can have <strong>more than one configuration</strong>. You set up the extras with <code>alias</code>. The usual reason is two regions or two accounts: a default <code>provider "aws"</code> block for <code>us-east-1</code> and a second, aliased one for <code>eu-west-1</code>.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span><span class="c1">                 # default config</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span><span class="c1">                 # second config, tagged with an alias</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="na">alias</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"eu"</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"eu-west-1"</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Both blocks are the <code>aws</code> provider, but exactly one is the <strong>default</strong> — the block <em>without</em> an <code>alias</code>. Terraform reads the <code>aws_instance</code> prefix and routes the resource to that default config. This is why the type name usually <em>is</em> enough and you almost never spell out the provider. What the prefix <em>can't</em> do is reach the aliased config: it always lands on the default. To send a resource to the non-default one, name it with the <code>provider</code> meta-argument:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"web"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="na">provider</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="nv">aws.eu</span><span class="c1">         # route THIS resource to the eu config</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"t3.micro"</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1">  # ...</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Drop the <code>provider = aws.eu</code> line and the instance falls back to <code>us-east-1</code>, the default. This is the one case where the prefix isn't enough — covered in depth in I8.</p>
+<h3 id="declare-then-configure-two-blocks-two-jobs">Declare, then configure — two blocks, two jobs<a class="headerlink" href="#declare-then-configure-two-blocks-two-jobs" title="Permanent link">&para;</a></h3>
+<p>Chapter 4 introduced <code>terraform</code> and <code>provider</code> as two of the eight everyday blocks. Here is the distinction that matters most for providers: <strong>declaring</strong> a provider and <strong>configuring</strong> it are separate acts, in separate blocks.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># terraform.tf — DECLARE: which provider, which version</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nb">aws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="na">source</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws"</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~&gt; 6.0"</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="na">required_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.2"</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># providers.tf — CONFIGURE: how to connect</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<ul>
+<li><code>required_providers</code> (inside the <code>terraform</code> block) tells Terraform <strong>what to install and from where</strong>. Each entry maps a local name (<code>aws</code>) to a <code>source</code> address and a <code>version</code> constraint.</li>
+<li>The <code>provider "aws"</code> block <strong>configures the connection</strong> — region, credentials, and any provider-wide settings.</li>
+</ul>
+<p>Declaring and configuring are separable, not just split by style. You can declare a provider in <code>required_providers</code> and write no <code>provider</code> block at all — Terraform then runs the plugin with an <strong>empty default configuration</strong>: every argument at its default, with region and credentials usually coming from environment variables. Utility providers like <code>random</code> and <code>null</code> need nothing more, and even <code>aws</code> often runs this way in CI where <code>AWS_REGION</code> and credentials live in the environment.</p>
+<p>When you <em>do</em> write a <code>provider</code> block, its arguments belong to the provider, not to core. <code>region</code>, <code>profile</code>, <code>assume_role</code> — core has never heard of them; they come from the <code>aws</code> provider's own schema, exactly like a resource's arguments. Core defines the block's <em>shape</em>; the provider defines what goes inside.</p>
+<p>The word <code>aws</code> is doing more work than it looks. It shows up three times — as the <code>required_providers</code> key, as the <code>provider</code> block label, and as the prefix of every <code>aws_*</code> resource type — and all three are the same <strong>local name</strong>. That shared name is the wiring. The <code>provider</code> block label <em>must</em> equal the <code>required_providers</code> key: <code>provider "aws"</code> configures the entry whose key is <code>aws</code>, and nothing else. A resource's type prefix is then matched against that same key to find which provider configures it.</p>
+<div class="admonition warning">
+<p class="admonition-title">Rename the local name and your resources stop finding it</p>
+<p>The key is yours to choose — nothing forces it to be <code>aws</code>. But it is load-bearing, so renaming it means rewiring every resource by hand:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nb">myaws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="na">source</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws"</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">      </span><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~&gt; 6.0"</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"myaws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Now <code>aws_instance</code> no longer resolves to this block. Terraform reads the <code>aws</code> prefix, looks for a local name <code>aws</code>, and doesn't find one — <code>myaws</code> doesn't match. It treats the bare <code>aws</code> prefix as a <em>different</em>, default <code>hashicorp/aws</code> provider that your <code>provider "myaws"</code> block never configured, so the <code>region</code> and credentials you set are ignored. To bind a resource to the renamed provider you must name it explicitly on every one:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"web"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="na">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">myaws</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">  # ...</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>This is why the local name almost always matches the provider's preferred name. You only diverge when two providers would otherwise collide on one local name, and then a <code>provider</code> meta-argument on every affected resource is mandatory. The full mechanics live in I8.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Define <code>provider</code> blocks in the root module only</p>
+<p>Child modules receive their provider configuration from their parent — they must not carry their own <code>provider</code> blocks. A child module still declares its own <code>required_providers</code> (the <em>configuration</em> inherits, but the <code>source</code>/<code>version</code> requirements do not). The full mechanics of passing providers into modules belong to I8; for now, keep every <code>provider</code> block in your root module.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — a <code>provider</code> block can take <code>for_each</code></p>
+<p>When you need several configurations of one provider (say one per region), Terraform's only answer is <code>alias</code>: you hand-write one <code>provider</code> block per configuration and point each resource at one with the <code>provider</code> meta-argument. OpenTofu 1.9 added a second answer. An aliased <code>provider</code> block may take <code>for_each</code>, generating one provider <em>instance</em> per element of a map, and a resource selects one with <code>provider = aws.by_region[each.key]</code>.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="na">alias</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">"by_region"</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="na">for_each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">var.aws_regions</span><span class="c1">   # must resolve statically</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="na">region</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="nv">each.key</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Only aliased configurations qualify; the default configuration must stay single-instance so OpenTofu can select it automatically. There is no Terraform equivalent, so a configuration using this will not plan on Terraform. Full treatment is in E3, including the removal gotcha: a provider instance must outlive its resource instances by at least one plan/apply round, so a resource's <code>for_each</code> must produce a <em>subset</em> of the provider's. Match them exactly and OpenTofu warns that "subsequent removal of elements from this collection would cause a planning error." Terraform's <code>alias</code> mechanics are I8.</p>
+</div>
+<h3 id="reading-a-source-address">Reading a source address<a class="headerlink" href="#reading-a-source-address" title="Permanent link">&para;</a></h3>
+<p>The <code>source</code> is the provider's global address. Its full form is:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>[&lt;HOSTNAME&gt;/]&lt;NAMESPACE&gt;/&lt;TYPE&gt;
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Example</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hostname (optional)</td>
+<td><code>registry.terraform.io</code></td>
+<td>Registry host; defaults to the public Registry when omitted</td>
+</tr>
+<tr>
+<td>Namespace</td>
+<td><code>hashicorp</code></td>
+<td>The publisher/org in the Registry</td>
+</tr>
+<tr>
+<td>Type</td>
+<td><code>aws</code></td>
+<td>The provider's short name (usually its preferred local name)</td>
+</tr>
+</tbody>
+</table>
+<p>So <code>hashicorp/aws</code> is shorthand for <code>registry.terraform.io/hashicorp/aws</code>. The <strong>namespace is the trust signal</strong>: <code>hashicorp/aws</code> is HashiCorp's official AWS provider; <code>DeviaVir/gsuite</code> is a community provider maintained by an individual. Same address format, very different maintenance guarantees.</p>
+<p>The Registry encodes that guarantee as a <strong>tier badge</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Who maintains it</th>
+<th>Example namespaces</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Official</strong></td>
+<td>HashiCorp itself</td>
+<td><code>hashicorp</code>, <code>IBM</code>, <code>ansible</code></td>
+</tr>
+<tr>
+<td><strong>Partner Premier</strong></td>
+<td>A technology partner meeting the higher partner bar</td>
+<td>third-party org</td>
+</tr>
+<tr>
+<td><strong>Partner</strong></td>
+<td>A third-party company, against its own APIs</td>
+<td>third-party org</td>
+</tr>
+<tr>
+<td><strong>Community</strong></td>
+<td>Individual maintainers</td>
+<td><code>DeviaVir/gsuite</code></td>
+</tr>
+<tr>
+<td><strong>Archived</strong></td>
+<td>Formerly Official/Partner, no longer maintained</td>
+<td>varies</td>
+</tr>
+</tbody>
+</table>
+<p>Prefer Official and Partner tiers for anything load-bearing. Treat <strong>Archived</strong> as a warning — the provider is abandoned, so pin off it and plan a migration.</p>
+<div class="admonition tip">
+<p class="admonition-title">Always constrain the provider version</p>
+<p>Without a <code>version</code> constraint, <code>terraform init</code> installs the newest provider available — which may be a breaking major you never tested. Pin the major (<code>~&gt; 6.0</code> accepts any 6.x but never 7.0), and commit the <code>.terraform.lock.hcl</code> file <code>init</code> writes so every machine installs the exact same build. Version-constraint syntax and the lock file's upgrade rules are covered in B2; the one rule to carry here is <em>never leave a provider unpinned in a project you apply</em>.</p>
+</div>
+<h3 id="the-provider-block-is-where-providers-actually-differ">The <code>provider</code> block is where providers actually differ<a class="headerlink" href="#the-provider-block-is-where-providers-actually-differ" title="Permanent link">&para;</a></h3>
+<p>The declare half (<code>required_providers</code> + <code>source</code> + version pin) is identical for every provider. The <strong>configure half is vendor-shaped</strong> — its arguments and its credential model come from the provider, so reading the specific provider's Registry page is non-optional. Compare AWS and Google:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span><span class="c1">          # AWS scopes with a single region</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"google"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="na">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"my-project-id"</span><span class="c1">     # every GCP resource lives in a project</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="na">region</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-central1"</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="na">zone</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-central1-c"</span><span class="c1">     # GCP adds a project/region/zone hierarchy</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The credential models also differ. The AWS provider resolves credentials in a defined order (first match wins): provider-block parameters → environment variables (<code>AWS_ACCESS_KEY_ID</code>, …) → <code>~/.aws/credentials</code> → <code>~/.aws/config</code> → container credentials → EC2 instance profile. The Google provider's <em>idiomatic</em> path is instead <strong>Application Default Credentials</strong> — <code>gcloud auth application-default login</code> on a workstation, or an attached service account / Workload Identity Federation in CI — rather than AWS's static-key-first habit. It still accepts an explicit key file (the <code>credentials</code> argument or the <code>GOOGLE_CREDENTIALS</code> / <code>GOOGLE_APPLICATION_CREDENTIALS</code> env vars, which take precedence over the gcloud ADC file) and <code>impersonate_service_account</code> for least-privilege impersonation.</p>
+<div class="admonition note">
+<p class="admonition-title">OIDC is not a separate entry in the list — it rides the chain</p>
+<p>Web-identity federation (OIDC) is how CI runners like GitHub Actions authenticate with no static keys, but it isn't a seventh entry in the list above. It plugs into the top tiers: an <code>assume_role_with_web_identity</code> block in the <code>provider</code> block, or the <code>AWS_ROLE_ARN</code> + <code>AWS_WEB_IDENTITY_TOKEN_FILE</code> environment variables (the pattern EKS IRSA also uses). The provider then exchanges that token for short-lived credentials via STS <code>AssumeRoleWithWebIdentity</code>. The plain <code>assume_role</code> block layers the same exchange on top of any base identity for role chaining, but unlike the base chain it can't be set from environment variables. Full CI credential setup is A3 and A6.</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title">Never hard-code credentials in a <code>provider</code> block</p>
+<p>Both providers' docs warn against it explicitly, and for the same reason: a <code>provider</code> block lives in a <code>.tf</code> file, and a <code>.tf</code> file gets committed. A leaked static AWS key or a committed GCP service-account key file is a long-lived secret in your history. Prefer environment variables, a named profile, or — best — short-lived role credentials (AWS instance profiles / OIDC, GCP workload-identity impersonation). Full secrets handling is A6.</p>
+</div>
+<h3 id="utility-providers-and-the-one-built-in">Utility providers and the one built-in<a class="headerlink" href="#utility-providers-and-the-one-built-in" title="Permanent link">&para;</a></h3>
+<p>Not every provider wraps a cloud. <strong>Utility providers</strong> — <code>random</code>, <code>null</code>, <code>time</code>, <code>tls</code> — compute values or model actions without touching any remote API. Their resources are <strong>local-only</strong>: applying one computes a value and stores it in state; destroying one just drops it from state. No cloud object is ever created. They belong in <code>required_providers</code> like any other provider, shown below. There's usually nothing to put in the <code>provider</code> block, because there's no connection to set up. <code>random</code> takes no arguments at all, so its <code>provider</code> block is empty, and you normally omit it: the empty default configuration from earlier, in the flesh.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="nb">random</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="c1">                    # DECLARE — same as any provider</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">      </span><span class="na">source</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/random"</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">      </span><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~&gt; 3.0"</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="p">}</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"random"</span><span class="w"> </span><span class="p">{}</span><span class="c1">              # CONFIGURE — optional and empty: no region, no creds, nothing to set</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_id"</span><span class="w"> </span><span class="nv">"suffix"</span><span class="w"> </span><span class="p">{</span><span class="c1">   # USE</span>
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">  </span><span class="na">byte_length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4</span>
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="p">}</span>
+</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="c1"># random_id.suffix.hex → a computed attribute, e.g. "a1b2c3d4"</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">You could omit the declaration — but pin it anyway</p>
+<p>Delete that <code>required_providers</code> block and <code>terraform init</code> still downloads <code>random</code> (it is a real provider, not one built into core). Terraform maps the <code>random_</code> prefix to the local name <code>random</code>, finds it undeclared, and assumes the default address <code>hashicorp/random</code> — the same prefix-to-local-name resolution from "Every resource type is named after its provider" above, and here it works because you didn't rename anything and the default namespace is <code>hashicorp</code>. So a bare utility resource inits and applies with no <code>terraform</code> block at all. What you give up by omitting the declaration is the <strong>version constraint</strong>: Terraform installs whatever is newest, so a future major release can shift behavior under you. That is why the snippet keeps the declaration — it pins <code>~&gt; 3.0</code>. The <code>.terraform.lock.hcl</code> records the exact resolved version either way; only the declaration lets you <em>control</em> which versions are allowed.</p>
+</div>
+<p>There is exactly <strong>one</strong> resource type built into Terraform core itself, needing no provider: <code>terraform_data</code>. It implements the standard resource lifecycle but takes no action — the modern replacement for the old <code>null_resource</code> pattern (full treatment in A1). The built-in provider (<code>terraform.io/builtin/terraform</code>) also backs the <code>terraform_remote_state</code> data source (B9/I6).</p>
+<div class="admonition warning">
+<p class="admonition-title">Local-only ≠ secret-safe</p>
+<p>A <code>tls_private_key</code> or a generated password from a utility provider is <strong>stored in plaintext in state</strong>. Local-only resources are convenient for generating unique suffixes or throwaway keys — they are <em>not</em> a secrets solution. The state-secrets problem is real and is addressed in A6.</p>
+</div>
+<hr />
+<h2 id="part-2-the-resource-block-up-close">Part 2 — The resource block up close<a class="headerlink" href="#part-2-the-resource-block-up-close" title="Permanent link">&para;</a></h2>
+<p>A resource is any infrastructure object Terraform creates and manages, from a VM down to a single DNS record. Writing one is three steps.</p>
+<h3 id="step-1-declare-the-address">Step 1 — declare the address<a class="headerlink" href="#step-1-declare-the-address" title="Permanent link">&para;</a></h3>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"web"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1">  # ...</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The two labels are the <strong>type</strong> (<code>aws_instance</code>) and a local <strong>name</strong> (<code>web</code>) of your choosing. Together they form the resource's <strong>address</strong>: <code>aws_instance.web</code>. That address is how state tracks the resource and how every other block refers to it. The type prefix (<code>aws_</code>) names the provider; the name is unique within its type in the module.</p>
+<h3 id="step-2-set-provider-specific-arguments">Step 2 — set provider-specific arguments<a class="headerlink" href="#step-2-set-provider-specific-arguments" title="Permanent link">&para;</a></h3>
+<p>Most of the block body is arguments defined by the <strong>provider</strong>, not by Terraform:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"web"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="na">ami</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s2">"ami-a1b2c3d4"</span><span class="c1">   # provider-specific</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"t2.micro"</span><span class="c1">       # provider-specific</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Each resource type has its own schema. The provider's Registry docs mark each argument required or optional and describe its type. Don't guess an argument name — read the docs, or dump the schema with <code>terraform providers schema -json</code>. <code>terraform validate</code> catches a mistyped argument before you touch real infrastructure.</p>
+<p>This is the place to nail the <strong>arguments-vs-attributes</strong> distinction from Chapter 4, now on a real resource:</p>
+<ul>
+<li><strong>Arguments</strong> are inputs <em>you</em> set (<code>ami</code>, <code>instance_type</code>).</li>
+<li><strong>Attributes</strong> are values the resource <em>exports</em> after it exists — some are arguments echoed back, others are <strong>computed</strong> by the provider and only knowable once the object is created (<code>id</code>, <code>arn</code>, <code>private_ip</code>). In a plan these show as <code>(known after apply)</code>.</li>
+</ul>
+<p>You read an attribute through the address: <code>aws_instance.web.id</code>, <code>aws_instance.web.private_ip</code>. That read is the reference that Part 3 turns into a dependency edge.</p>
+<h3 id="step-3-set-terraform-meta-arguments">Step 3 — set Terraform meta-arguments<a class="headerlink" href="#step-3-set-terraform-meta-arguments" title="Permanent link">&para;</a></h3>
+<p>A small set of arguments are defined by Terraform <strong>core</strong>, work on any resource type, and control <em>how</em> Terraform manages the resource rather than what the resource is:</p>
+<table>
+<thead>
+<tr>
+<th>Meta-argument</th>
+<th>What it does</th>
+<th>Covered in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>count</code></td>
+<td>Create N identical instances by index</td>
+<td>I1</td>
+</tr>
+<tr>
+<td><code>for_each</code></td>
+<td>Create one instance per map/set element (keyed)</td>
+<td>I1</td>
+</tr>
+<tr>
+<td><code>depends_on</code></td>
+<td>Assert a dependency Terraform can't infer</td>
+<td>I1</td>
+</tr>
+<tr>
+<td><code>provider</code></td>
+<td>Pick a non-default (aliased) provider configuration</td>
+<td>I8</td>
+</tr>
+<tr>
+<td><code>lifecycle</code></td>
+<td>Tune create/destroy/replace behavior</td>
+<td>I2</td>
+</tr>
+</tbody>
+</table>
+<p><code>count</code> and <code>for_each</code> are <strong>mutually exclusive</strong> on one resource. Each is covered in depth in the chapter the table names: <code>count</code>, <code>for_each</code>, and <code>depends_on</code> share I1, while <code>lifecycle</code> is I2 and <code>provider</code> is I8. For now, know they exist and that they are the <em>only</em> arguments not defined by the provider.</p>
+<div class="admonition note">
+<p class="admonition-title"><code>timeouts</code> looks like a meta-argument but isn't</p>
+<p>Some resource types accept a <code>timeouts</code> child block to bound how long Terraform waits per operation:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_db_instance"</span><span class="w"> </span><span class="nv">"example"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1">  # ...</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nb">timeouts</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="na">create</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"60m"</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="na">delete</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"2h"</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>It reads as core-defined for good reason: it wears three of the visual signatures of a real meta-argument.</p>
+<ul>
+<li><strong>It spells the same on every provider.</strong> <code>timeouts { create = "60m" }</code> looks identical on <code>aws_db_instance</code>, <code>google_container_cluster</code>, and everywhere else. That cross-provider sameness is exactly what marks the genuine meta-arguments. <code>count</code>, <code>for_each</code>, and <code>lifecycle</code> look the same on every resource, whereas vendor arguments like <code>ami</code>, <code>region</code>, and <code>project</code> differ from provider to provider.</li>
+<li><strong>It is a nested block, like <code>lifecycle</code>.</strong> It is a child block with keyword sub-arguments, structurally a twin of the <code>lifecycle { … }</code> block, which is itself the one meta-argument that takes block form. Same shape, so it reads as the same category.</li>
+<li><strong>It tunes Terraform's behavior, not the object.</strong> It bounds how long Terraform <em>waits</em> on an operation. That is a "how Terraform manages this" knob rather than a property of the infrastructure, and its keys (<code>create</code>/<code>update</code>/<code>delete</code>) even echo the lifecycle verbs.</li>
+</ul>
+<p>But it is <strong>provider-defined</strong>. A <code>timeouts</code> block is part of a specific resource type's schema, so it exists only where that resource's author implemented it, and which operations are configurable varies by type. The tell is right there: real meta-arguments are <strong>universal</strong> (every resource type accepts them) and have a <strong>fixed, core-defined shape</strong>. <code>timeouts</code> has neither. Don't assume a resource has it; check the provider docs.</p>
+</div>
+<h3 id="reading-the-registry-page-for-a-resource-type">Reading the Registry page for a resource type<a class="headerlink" href="#reading-the-registry-page-for-a-resource-type" title="Permanent link">&para;</a></h3>
+<p>All three steps send you to the same place: because the provider owns the schema, its Registry page is the reference you actually write from. Resource pages follow a standard structure, and four parts of it carry the working detail:</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>What it gives you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Description</strong></td>
+<td>What vendor object the resource maps to</td>
+</tr>
+<tr>
+<td><strong>Example Usage</strong></td>
+<td>A working block to start from</td>
+</tr>
+<tr>
+<td><strong>Argument Reference</strong></td>
+<td>Every argument, marked required or optional, with its <strong>type</strong></td>
+</tr>
+<tr>
+<td><strong>Attribute Reference</strong></td>
+<td>Everything the resource exports, including computed values</td>
+</tr>
+</tbody>
+</table>
+<p>Most pages carry a couple more, typically <strong>Timeouts</strong> (the child block from the previous section, present only where the author implemented it) and <strong>Import</strong>.</p>
+<p>The Argument Reference is the one people skim, and it is the one that decides how you write the block. It gives each argument's <em>type</em>, not just its name, and two consequences of that type are worth seeing on a real resource.</p>
+<p><strong>Some arguments are nested blocks.</strong> An <code>aws_instance</code>'s root volume is not an argument with <code>=</code>; the docs call <code>root_block_device</code> a "configuration block," and it is a child block the provider defines:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"web"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="na">ami</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s2">"ami-a1b2c3d4"</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"t2.micro"</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="nb">root_block_device</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">    </span><span class="na">volume_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">    </span><span class="na">volume_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gp3"</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">    </span><span class="na">encrypted</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="w">  </span><span class="nb">metadata_options</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="w">    </span><span class="na">http_tokens</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"required"</span><span class="c1">    # require IMDSv2</span>
+</span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-14-14"><a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>This is Chapter 4's argument-vs-subblock rule on a real resource: no <code>=</code>, and some (like <code>ebs_block_device</code>) repeat, so a second volume is a second block. Nothing about these is special to Terraform core. They are ordinary provider schema, unlike the <code>timeouts</code> block above, and most non-trivial resource types have some.</p>
+<p><strong>Some arguments are lists, even when you have one value.</strong> The <code>aws_instance</code> Argument Reference gives <code>vpc_security_group_ids</code> as a "List of security group IDs," so a single reference still goes inside brackets:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"web"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="na">ami</span><span class="w">                    </span><span class="o">=</span><span class="w"> </span><span class="s2">"ami-a1b2c3d4"</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="na">instance_type</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="s2">"t2.micro"</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="na">vpc_security_group_ids</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="nv">aws_security_group.web_sg.id</span><span class="p">]</span><span class="c1">   # a list, per the docs</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Drop the brackets and the failure is a type mismatch, not a missing resource. The dependency edge is unaffected either way: a reference inside a list is still a reference, so the instance still waits for the security group.</p>
+<h3 id="what-apply-does-to-a-resource">What <code>apply</code> does to a resource<a class="headerlink" href="#what-apply-does-to-a-resource" title="Permanent link">&para;</a></h3>
+<p>When you run <code>terraform apply</code>, Terraform reconciles config, real infrastructure, and state, and performs exactly these operations per resource:</p>
+<ul>
+<li><strong>Create</strong> — in config, no real object yet. Plan symbol <code>+</code>.</li>
+<li><strong>Destroy</strong> — in state, no longer in config. Plan symbol <code>-</code>.</li>
+<li><strong>Update in place</strong> — arguments changed and the API can patch them. Plan symbol <code>~</code>.</li>
+<li><strong>Destroy and re-create</strong> — arguments changed but the API <em>can't</em> patch them (a forced-new attribute), so Terraform replaces the object. Plan symbol <code>-/+</code>.</li>
+<li><strong>Update state</strong> — so config, infrastructure, and state all match again.</li>
+</ul>
+<p>These are the same plan symbols from Chapter 3. The one to respect is <code>-/+</code>: changing certain arguments (an EC2 instance's <code>ami</code>, a bucket's <code>bucket</code> name) forces a full replacement, not an edit. The plan tells you which — read it.</p>
+<div class="admonition note">
+<p class="admonition-title">Drift: reality moved, so Terraform moves it back</p>
+<p>The list above assumes your config is what moved. But the real object can change on its own: someone edits it in the console, or the cloud provider mutates it. That is <strong>drift</strong>, and Terraform's answer is blunt — your config wins.</p>
+<p>Every <code>plan</code>/<code>apply</code> starts by <strong>refreshing</strong>. Terraform calls the provider's read API on each resource to pull the object's <em>current</em> real state into memory. If that differs from the last-known state, <code>plan</code> reports it under <code>Note: Objects have changed outside of Terraform</code> and then plans to steer reality back toward the config: <code>~</code> to patch the drifted attribute, or <code>-/+</code> if it is forced-new. <code>apply</code> undoes the out-of-band change.</p>
+<p>Three ways that plays out differently:</p>
+<ul>
+<li><strong>Unmanaged attribute</strong> — if your config never sets the attribute that changed, Terraform absorbs the new value into state and proposes nothing.</li>
+<li><strong><code>ignore_changes</code></strong> — a <code>lifecycle { ignore_changes = [...] }</code> rule tells Terraform to leave those attributes alone even when they drift (I2).</li>
+<li><strong><code>-refresh-only</code></strong> — <code>terraform apply -refresh-only</code> accepts the drift <em>into state</em> instead of reverting it, so state is updated to match reality rather than the other way round (I7).</li>
+</ul>
+<p>Full drift and refresh mechanics live with state in B9.</p>
+</div>
+<hr />
+<h2 id="part-3-the-implicit-dependency-graph">Part 3 — The implicit dependency graph<a class="headerlink" href="#part-3-the-implicit-dependency-graph" title="Permanent link">&para;</a></h2>
+<p>This is the heart of the chapter and the milestone. Resources do <strong>not</strong> run in the order you write them. Terraform builds a <strong>directed acyclic graph</strong> (DAG) during <code>plan</code> and orders the work from that graph. It parallelizes nodes it believes independent, and serializes nodes connected by an edge.</p>
+<h3 id="the-graph-has-exactly-two-inputs">The graph has exactly two inputs<a class="headerlink" href="#the-graph-has-exactly-two-inputs" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>flowchart TD
+    A["1. Attribute references&lt;br/&gt;(implicit — preferred)"] --&gt; DAG["The dependency DAG"]
+    B["2. depends_on&lt;br/&gt;(explicit — last resort)"] --&gt; DAG
+    DAG --&gt; Order["apply / destroy order"]</code></pre>
+<ol>
+<li><strong>Attribute references.</strong> If resource A reads an attribute of resource B, that reference <em>is</em> a dependency edge — B is built before A. This is implicit and preferred.</li>
+<li><strong><code>depends_on</code>.</strong> An edge you assert by hand, for a real-world dependency that leaves no trace in the configuration.</li>
+</ol>
+<p>There is no third input. Terraform does not read provider docs, does not know a NAT gateway needs an internet gateway, and does not inspect the cloud to discover ordering. <strong>The graph is built from your references and nothing else.</strong></p>
+<div class="admonition note">
+<p class="admonition-title">Not every node is a resource</p>
+<p>Resources are not the only things in the graph. Terraform's plan graph also carries nodes for input variables, locals, outputs, checks, and module calls — and, most relevant here, for <strong>provider configurations</strong>. The transformer that adds those provider edges states its purpose in the source: it creates "edges from provider to provider user so that the providers will get initialized first." A <em>provider user</em> is any node that uses the provider — your resources. The edge runs provider → resource, so the provider's configuration is set up before anything that depends on it.</p>
+<p>That is Part 1 resurfacing in Part 3: a provider is not just where arguments come from, it is a graph node — and an edge you never wrote, which is why the rendered graph has more in it than your references alone suggest.</p>
+<p>Resources get <strong>two tiers</strong> of node. A resource block first becomes an <em>expansion</em> node, which settles how many instances <code>count</code> or <code>for_each</code> produce; each resulting instance then gets its own node. So <code>count = 3</code> is one decision followed by three separately schedulable instances. Data sources are resource nodes too (B8).</p>
+<p><strong>Module calls are nodes as well, but they do not serialize your resources.</strong> Everything declared inside a module depends on that module's expansion node, so the instance count is settled first. Past that, Terraform works a flat resource graph: a resource in module B can be created before one in module A whenever the resource-level edges allow it. Module nesting is not an ordering boundary (I4).</p>
+</div>
+<h3 id="an-attribute-reference-is-the-edge-a-worked-chain">An attribute reference <em>is</em> the edge — a worked chain<a class="headerlink" href="#an-attribute-reference-is-the-edge-a-worked-chain" title="Permanent link">&para;</a></h3>
+<p>Here is a three-resource chain where each resource reads the previous one's attribute. This is exactly the milestone: predict the apply order from the references alone.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># 1. a local-only resource — computes a random suffix, touches no cloud</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_id"</span><span class="w"> </span><span class="nv">"suffix"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="na">byte_length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="p">}</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="c1"># 2. the bucket name references the suffix</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"site"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"site-${random_id.suffix.hex}"</span><span class="c1">   # ← reads random_id.suffix.hex</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="p">}</span>
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="c1"># 3. the object references the bucket</span>
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_object"</span><span class="w"> </span><span class="nv">"index"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="w">  </span><span class="na">bucket</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="nv">aws_s3_bucket.site.id</span><span class="c1">            # ← reads aws_s3_bucket.site.id</span>
+</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="w">  </span><span class="na">key</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"index.html"</span>
+</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="w">  </span><span class="na">content</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"hello from terraform"</span>
+</span><span id="__span-16-16"><a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title"><code>${ … }</code> is string interpolation</p>
+<p>Two reference forms appear above. A <strong>bare</strong> reference like <code>aws_s3_bucket.site.id</code> stands where a whole value is expected. To splice a reference <em>into</em> a string you wrap it in <code>${ … }</code>, so <code>"site-${random_id.suffix.hex}"</code> embeds the attribute's value in the text. Both are the same reference and create the same edge; <code>${ }</code> is only how you put an expression inside a string literal. Ch4 showed it once in passing (<code>"${var.prefix}-web"</code>); the full string-template treatment is B7.</p>
+</div>
+<p>Three references, three edges: <code>aws_s3_object.index → aws_s3_bucket.site → random_id.suffix</code>. The apply order falls straight out of them, with no <code>depends_on</code> anywhere:</p>
+<ol>
+<li><code>random_id.suffix</code> has no dependencies, so it's created first (locally, instantly).</li>
+<li><code>aws_s3_bucket.site</code> reads <code>random_id.suffix.hex</code>, so Terraform waits until step 1 produces that value, then creates the bucket.</li>
+<li><code>aws_s3_object.index</code> reads <code>aws_s3_bucket.site.id</code>, so it waits for the bucket, then uploads the object.</li>
+</ol>
+<p>You could shuffle these three blocks into any order, or split them across three files — the plan is identical, because Terraform rebuilds the same graph from the same references every time (the Chapter 4 "order doesn't matter" claim, now shown on real resources).</p>
+<div class="admonition note">
+<p class="admonition-title"><code>(known after apply)</code> propagates along the edges</p>
+<p>In the plan, <code>random_id.suffix.hex</code> is <code>(known after apply)</code> — it doesn't exist yet. So <code>aws_s3_bucket.site</code>'s <code>bucket</code> argument also shows <code>(known after apply)</code>, and so does the object's <code>bucket</code>. An unknown value flows downstream through every reference until the upstream resource is actually created. That propagation is the same graph doing its job.</p>
+</div>
+<h3 id="independent-nodes-run-in-parallel">Independent nodes run in parallel<a class="headerlink" href="#independent-nodes-run-in-parallel" title="Permanent link">&para;</a></h3>
+<p>The graph's other half is concurrency. Anything Terraform believes independent, it applies <strong>at the same time</strong>. If you add a second, unrelated bucket:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"logs"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"logs-${random_id.suffix.hex}"</span><span class="c1">    # also references the suffix</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>aws_s3_bucket.site</code> and <code>aws_s3_bucket.logs</code> both depend only on <code>random_id.suffix</code> — not on each other. Terraform creates them <strong>concurrently</strong> once the suffix exists. Parallelism you get for free, purely from the shape of the references.</p>
+<h3 id="the-blind-spot-nothing-warns-you-about-a-missing-edge">The blind spot: nothing warns you about a missing edge<a class="headerlink" href="#the-blind-spot-nothing-warns-you-about-a-missing-edge" title="Permanent link">&para;</a></h3>
+<p>Because the graph has only those two inputs, a dependency Terraform cannot see <strong>does not exist</strong> — it isn't "missing," there is simply nothing there.</p>
+<div class="admonition danger">
+<p class="admonition-title">No tool will warn you about a forgotten <code>depends_on</code></p>
+<p>Not <code>plan</code>, not <code>validate</code>, not the provider, not <code>tflint</code>. Terraform has no signal that an edge is absent. A resource with a forgotten hidden dependency looks identical to one that genuinely has none. The failure surfaces only at apply time — as a race that passes locally and fails in CI, a provider API error that doesn't mention ordering, or a "success" that isn't (the classic: an EC2 instance comes up before the IAM policy its software needs, so the box runs but can't reach S3). The edges recorded in state came from your references too, so an edge you never wrote is missing there as well, and the bug bites again on teardown.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">You can't detect a missing edge, but you can surface one</p>
+<p>No tool <em>discovers</em> an absent edge, because there is nothing in the config to analyze against. But two habits catch them. <strong>Render the graph</strong> with <code>terraform graph</code> (next section) to <em>confirm</em> a suspicion: check whether two resources you think are wrongly parallel actually share an edge. <strong>Test from clean state</strong> to run the real parallel graph and expose the race an incremental local apply hides: <code>terraform test</code>, or a destroy-and-reapply from an empty state. What does <em>not</em> help is <code>-parallelism=1</code>, which can make a racy config pass by luck without imposing the order you actually need — false confidence, not a fix.</p>
+</div>
+<p>The fix — when a dependency is real but leaves no attribute to reference — is <code>depends_on</code>. But reach for it only then. The single question that decides it: <em>does A depend on B's <strong>behavior</strong> while never reading B's <strong>data</strong>?</em> If yes, no edge exists and you need <code>depends_on</code>. If A reads any attribute of B, the edge already exists and you must <strong>not</strong> add one. This is the whole of I1; the rule to carry now is the next one.</p>
+<h3 id="prefer-implicit-references-depends_on-is-a-last-resort">Prefer implicit references; <code>depends_on</code> is a last resort<a class="headerlink" href="#prefer-implicit-references-depends_on-is-a-last-resort" title="Permanent link">&para;</a></h3>
+<p><code>depends_on</code> is not free. The docs call it a last resort because it makes Terraform's plans more conservative:</p>
+<ul>
+<li>An <strong>attribute reference</strong> tells Terraform <em>which value</em> the dependency derives from, so it can skip planning changes when that value is unchanged.</li>
+<li><code>depends_on</code> makes the entire upstream object <strong>opaque</strong> — Terraform treats more of its attributes as <code>(known after apply)</code> and can replace more resources than necessary, especially with modules. It also serializes work the graph could have run in parallel.</li>
+</ul>
+<p>So the discipline for every dependency: <strong>wire it with an attribute reference if you possibly can; use <code>depends_on</code> only when there is no attribute to reference.</strong> Implicit dependencies are not just cleaner — they produce better plans.</p>
+<h3 id="confirming-the-graph">Confirming the graph<a class="headerlink" href="#confirming-the-graph" title="Permanent link">&para;</a></h3>
+<p>You can render the graph Terraform built with <code>terraform graph</code>:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>terraform<span class="w"> </span>graph<span class="w">                          </span><span class="c1"># DOT output, resources and data sources</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>terraform<span class="w"> </span>graph<span class="w"> </span><span class="p">|</span><span class="w"> </span>dot<span class="w"> </span>-Tpng<span class="w"> </span>&gt;<span class="w"> </span>graph.png<span class="w">  </span><span class="c1"># render with Graphviz</span>
+</span></code></pre></div>
+<p>One caveat: implicit and explicit edges render <strong>identically</strong> — the graph won't tell you which edges you asserted by hand. Use <code>graph</code> to <em>confirm</em> a suspicion (pick two resources you think are wrongly parallel and check for an edge between them), never to <em>discover</em> one. The full command reference — the <code>-type=plan</code>/<code>-type=apply</code> variants, <code>-draw-cycles</code> for cycle detection — is deferred to I1.</p>
+<div class="admonition tip">
+<p class="admonition-title">Rendering the graph more readably</p>
+<p>The raw DOT output is noisy: it carries provider, root, and meta nodes alongside your resources. A few ways to a cleaner or more usable picture:</p>
+<ul>
+<li><strong>Render to SVG instead of PNG.</strong> <code>terraform graph | dot -Tsvg &gt; graph.svg</code> produces a zoomable, searchable image, which starts to matter once the graph is large.</li>
+<li><strong>Skip the Graphviz install.</strong> Paste the DOT output into an online renderer such as <a href="https://edotor.net">edotor.net</a>.</li>
+<li><strong>Prune the noise with InfraMap.</strong> <a href="https://github.com/cycloidio/inframap"><code>cycloidio/inframap</code></a> reads your state or HCL and emits a graph of only the resources that matter, dropping the provider and meta nodes: <code>inframap generate main.tf | dot -Tsvg &gt; graph.svg</code>. It reads a state file too.</li>
+</ul>
+<p>Interactive browser-based viewers exist, but the well-known ones are unmaintained (Rover's last release was 2022), so verify a tool is current before relying on it.</p>
+</div>
+<p>There is a second copy of the graph, and it matters when the configuration is gone. <code>terraform graph</code> renders what your configuration implies <em>right now</em>. <strong>State</strong> holds what was actually applied: each resource instance records the dependencies Terraform used. That copy exists for destroy. When you delete a resource from your configuration, there is no longer a config to derive its ordering from, so Terraform falls back to the edges recorded in state to destroy things in the right order. Read them with:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>terraform<span class="w"> </span>show<span class="w"> </span>-json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.values.root_module.resources[] | {address, depends_on}'</span>
+</span></code></pre></div>
+<p>Two things about that output. The recorded edges are <strong>transitive</strong>: a resource depending on B, which depends on A, records both A and B, not just B. And the field has two names, so don't grep for the wrong one — the raw state file calls it <code>dependencies</code> while <code>terraform show -json</code> calls it <code>depends_on</code>. When the two copies disagree (you deleted a reference but haven't applied yet), state still holds the edges that ordered the last apply. State's own mechanics are B9.</p>
+<p>To see those state edges as a picture instead of JSON, point InfraMap at the state file: <code>inframap generate terraform.tfstate | dot -Tsvg &gt; graph.svg</code>. It renders the applied graph straight from state, so you get the destroy-ordering view even when the configuration is already gone.</p>
+<hr />
+<h2 id="lab-chain-three-resources-and-predict-the-order">🧪 Lab: chain three resources and predict the order<a class="headerlink" href="#lab-chain-three-resources-and-predict-the-order" title="Permanent link">&para;</a></h2>
+<p>The milestone is to chain three resources by attribute reference and explain the apply order without <code>depends_on</code>. This lab does exactly that against the free local <strong>AWS emulator</strong> (Ch1's <a href="../ch01-iac-fundamentals/#lab-setup-a-free-local-aws-docker">lab setup</a> — Floci, MiniStack, or LocalStack).</p>
+<p><strong>Start the emulator</strong> (from the repo root; skip if it's already running):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>labs/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">      </span><span class="c1"># start the emulator on :4566, detached</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:4566/_floci/health<span class="w">     </span><span class="c1"># wait until the services read "running"</span>
+</span></code></pre></div>
+<p>In an empty directory, declare two providers and the three-resource chain:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># terraform.tf — declare both providers</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="na">required_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.2"</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">    </span><span class="nb">aws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">      </span><span class="na">source</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws"</span>
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">      </span><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~&gt; 6.0"</span>
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="w">    </span><span class="nb">random</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="w">      </span><span class="na">source</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/random"</span>
+</span><span id="__span-21-12"><a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="w">      </span><span class="na">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"~&gt; 3.0"</span>
+</span><span id="__span-21-13"><a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-21-15"><a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># providers.tf — plain AWS block; tflocal points it at the emulator</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># main.tf — the chain: each resource reads the previous one's attribute</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_id"</span><span class="w"> </span><span class="nv">"suffix"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">  </span><span class="na">byte_length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="p">}</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"site"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"site-${random_id.suffix.hex}"</span><span class="c1">    # ← edge to random_id.suffix</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="p">}</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_object"</span><span class="w"> </span><span class="nv">"index"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="w">  </span><span class="na">bucket</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="nv">aws_s3_bucket.site.id</span><span class="c1">             # ← edge to aws_s3_bucket.site</span>
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">  </span><span class="na">key</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"index.html"</span>
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="w">  </span><span class="na">content</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"hello from terraform"</span>
+</span><span id="__span-23-14"><a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Init, then plan — read the plan <em>before</em> applying, and predict the order from the references:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>tflocal<span class="w"> </span>init
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>tflocal<span class="w"> </span>plan
+</span></code></pre></div>
+<p>The plan shows all three as <code>+ create</code>, with <code>random_id.suffix.hex</code> and the bucket name <code>(known after apply)</code> — the unknown propagating down the chain. Now apply and verify:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>tflocal<span class="w"> </span>apply<span class="w">                 </span><span class="c1"># review the three '+ create', type yes</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>tflocal<span class="w"> </span>state<span class="w"> </span>list<span class="w">            </span><span class="c1"># random_id.suffix / aws_s3_bucket.site / aws_s3_object.index</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>awslocal<span class="w"> </span>s3<span class="w"> </span>ls<span class="w">                </span><span class="c1"># the emulator's own view: the bucket exists</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="c1"># check the object and its content (the bucket name carries a random suffix)</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="nv">BUCKET</span><span class="o">=</span><span class="k">$(</span>tflocal<span class="w"> </span>state<span class="w"> </span>show<span class="w"> </span>aws_s3_bucket.site<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-F<span class="s1">'"'</span><span class="w"> </span><span class="s1">'/^ *bucket /{print $2; exit}'</span><span class="k">)</span>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>awslocal<span class="w"> </span>s3<span class="w"> </span>ls<span class="w"> </span><span class="s2">"s3://</span><span class="nv">$BUCKET</span><span class="s2">/"</span><span class="w">                </span><span class="c1"># index.html is listed, with its size</span>
+</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>awslocal<span class="w"> </span>s3<span class="w"> </span>cp<span class="w"> </span><span class="s2">"s3://</span><span class="nv">$BUCKET</span><span class="s2">/index.html"</span><span class="w"> </span>-<span class="w">    </span><span class="c1"># dumps content to stdout: hello from terraform</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Windows / PowerShell</p>
+<p>Only the <code>BUCKET=…</code> capture line is bash-specific; every <code>tflocal</code> and <code>awslocal</code> command runs unchanged, and <code>"s3://$BUCKET/"</code> interpolates the same in PowerShell. Capture the name with <code>Select-String</code> instead of <code>awk</code>:</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nv">$BUCKET</span> <span class="p">=</span> <span class="p">(</span><span class="n">tflocal</span> <span class="n">state</span> <span class="n">show</span> <span class="n">aws_s3_bucket</span><span class="p">.</span><span class="n">site</span> <span class="p">|</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>  <span class="nb">Select-String</span> <span class="s1">'^\s*bucket\s+= "(.+)"'</span><span class="p">).</span><span class="n">Matches</span><span class="p">[</span><span class="n">0</span><span class="p">].</span><span class="n">Groups</span><span class="p">[</span><span class="n">1</span><span class="p">].</span><span class="n">Value</span>
+</span></code></pre></div>
+<p>Cleaner on either shell: add <code>output "bucket" { value = aws_s3_bucket.site.bucket }</code> to the config, then <code>$BUCKET = tflocal output -raw bucket</code>.</p>
+</div>
+<p>Notice <code>random_id.suffix</code> is in state but never appears in <code>awslocal s3 ls</code> — it's a <strong>local-only</strong> resource, a value in state with no cloud object behind it. The bucket and object are real (emulated) S3 objects.</p>
+<p>Now prove the graph is built from references, not file order. <strong>Shuffle the three blocks</strong> in <code>main.tf</code> into any order — put the object first, the <code>random_id</code> last — and re-plan:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>tflocal<span class="w"> </span>plan<span class="w">                  </span><span class="c1"># Plan: 0 to add, 0 to change, 0 to destroy.</span>
+</span></code></pre></div>
+<p>An empty plan. Terraform rebuilt the same graph from the same references and reached the same desired state; the block order changed nothing. Finally, render the graph to <em>see</em> the chain, then tear down:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>tflocal<span class="w"> </span>graph<span class="w">                 </span><span class="c1"># DOT: index -&gt; site -&gt; suffix</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>tflocal<span class="w"> </span>destroy
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Emulation proves the workflow, not AWS fidelity</p>
+<p>A green <code>apply</code> here proves your HCL is valid and your reference chain orders correctly — nothing more. Every service is mocked; no real S3 bucket was created, and behaviors the emulator doesn't implement (bucket-name global uniqueness, IAM policy evaluation, replacement-on-rename quirks) won't show up. Validate any load-bearing configuration against real free-tier AWS before trusting it.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Why S3 and <code>random</code>, not the EC2 example</p>
+<p>S3 is a reliable mock on all three emulators, and the <code>random</code> provider never touches the emulator at all, so this chain runs everywhere the book's labs might. The default emulator (Floci) mocks EC2 deep enough to run the classic <code>aws_ami</code> + <code>aws_instance</code> hello-world, but LocalStack's free tier does not — so the labs stay on S3 for portability. The lesson being exercised — three resources, three references, a predictable order with zero <code>depends_on</code> — is identical regardless of resource type.</p>
+</div>
+<h2 id="common-pitfalls">Common pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Guessing an argument name.</strong> Each resource type has its own provider-defined schema. Read the Registry docs or run <code>terraform providers schema -json</code>; <code>validate</code> catches a wrong name before apply.</li>
+<li><strong>Reading an argument's name but not its type.</strong> A list-typed argument needs brackets even for one value (<code>vpc_security_group_ids = [aws_security_group.web_sg.id]</code>), and a nested block like <code>root_block_device</code> takes no <code>=</code> at all. The Argument Reference states the type; the error you get otherwise is a type mismatch that says nothing about the resource you meant to reference.</li>
+<li><strong>Leaving a provider unpinned.</strong> No <code>version</code> constraint means <code>init</code> grabs the newest provider, possibly a breaking major. Pin the major (<code>~&gt; 6.0</code>) and commit the lock file.</li>
+<li><strong>Hard-coding credentials in a <code>provider</code> block.</strong> It's a <code>.tf</code> file; it gets committed. Use env vars, a profile, or short-lived role credentials.</li>
+<li><strong>Adding <code>depends_on</code> when a reference already exists.</strong> If A reads any attribute of B, the edge is already there — a redundant <code>depends_on</code> only makes the plan more conservative. Only assert <code>depends_on</code> for a <em>hidden</em> dependency with no attribute to reference.</li>
+<li><strong>Expecting file/block order to control apply order.</strong> It never does. Ordering comes from the reference graph. If you need A before B, reference A's attribute in B — don't reorder the file.</li>
+<li><strong>Assuming an argument edit is an in-place update.</strong> Some arguments are forced-new: changing them destroys and re-creates the resource (<code>-/+</code>). The plan tells you which — read it before saying yes.</li>
+<li><strong>Treating a <code>provider</code> block in a child module as normal.</strong> Provider configuration comes from the root; child modules declare <code>required_providers</code> but don't configure providers (I8).</li>
+</ul>
+<h2 id="exercises">Exercises<a class="headerlink" href="#exercises" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Recall</strong> — In <code>resource "aws_instance" "web"</code>, what are the two labels called, what do they form together, and which one tells Terraform which provider to use?</li>
+<li><strong>Read an address</strong> — Given <code>source = "grafana/grafana"</code>, name the hostname, namespace, and type. What Registry tier would you <em>expect</em>, and why does the namespace alone not guarantee it?</li>
+<li><strong>Arguments vs attributes</strong> — For an <code>aws_s3_bucket</code>, classify each as an argument you set or an attribute you read: <code>bucket</code>, <code>arn</code>, <code>id</code>, <code>tags</code>. Which would appear as <code>(known after apply)</code> in a plan?</li>
+<li><strong>Predict the order</strong> — Given a <code>random_id</code>, an <code>aws_s3_bucket</code> whose name references the <code>random_id</code>, and two <code>aws_s3_object</code>s that each reference the bucket, draw the dependency graph. Which resources apply in parallel, and which are serialized?</li>
+<li><strong>Implicit vs explicit</strong> — You have an app server that must not be created until an IAM policy exists, but the server never reads any attribute of the policy. Does an implicit edge exist? What do you add, and why is referencing an attribute preferable when one is available?</li>
+</ol>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A <strong>provider</strong> is a Go plugin that talks to a vendor's API over gRPC. Terraform core is vendor-agnostic; the provider holds every vendor-specific fact. Every resource type is named after its provider (<code>aws_instance</code> → <code>aws</code>).</li>
+<li><strong>Declare</strong> a provider in <code>required_providers</code> (<code>source</code> + <code>version</code>); <strong>configure</strong> it in a separate <code>provider</code> block (region, credentials). The declare half is identical across providers; the configure half is vendor-shaped — read the specific provider's Registry page.</li>
+<li>A <strong>source address</strong> is <code>[host/]namespace/type</code>; the namespace is the trust signal, refined by the Registry <strong>tier badge</strong> (Official → Partner Premier → Partner → Community → Archived).</li>
+<li>A <strong>resource block</strong> is address (type + name) + provider-specific arguments + Terraform meta-arguments (<code>count</code>, <code>for_each</code>, <code>depends_on</code>, <code>provider</code>, <code>lifecycle</code>). <strong>Arguments</strong> are inputs you set; <strong>attributes</strong> are values the resource exports, some <code>(known after apply)</code>.</li>
+<li>A resource type's <strong>Registry page</strong> has four parts, and the <strong>Argument Reference</strong> carries each argument's <em>type</em>. That type decides the syntax: nested blocks (<code>root_block_device</code>) take no <code>=</code>, list arguments take brackets even for a single value.</li>
+<li>Terraform builds a <strong>DAG</strong> from exactly two inputs: <strong>attribute references</strong> (implicit, preferred) and <strong><code>depends_on</code></strong> (explicit, last resort). Block/file order is irrelevant; the references decide the apply and destroy order, and independent nodes run in parallel. The graph holds more than resources — <strong>provider configuration</strong> nodes are why a provider is ready before anything it manages — and module calls never serialize resources across module boundaries. State keeps a copy of those edges so a resource deleted from the config can still be destroyed in the right order.</li>
+<li><strong>Nothing warns you about a missing edge</strong> — a forgotten <code>depends_on</code> surfaces only as a race, an API error, or a silent semantic failure at apply time. Prefer implicit references; they produce better plans and can't be forgotten.</li>
+</ul>
+<hr />
+<p><strong>Next: B6 — Input variables, outputs &amp; locals.</strong> You can now wire resources together and predict their order. Every config so far hard-codes its values — region, bucket names, instance types. Next you'll parameterize them with <code>variable</code>, expose results with <code>output</code>, and compute intermediates with <code>locals</code>, so one configuration can serve many environments.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Create and manage resources (HCDocs) — what a resource is, the apply-operations list</li>
+<li>Configure a resource (HCDocs) — the three-step block, <code>timeouts</code>, meta-argument map, built-in/local-only resources</li>
+<li><code>resource</code> block reference (HCDocs) — the complete argument surface</li>
+<li>Providers language overview (HCDocs) — provider tiers, installation, private-registry auth</li>
+<li><code>provider</code> block reference (HCDocs) — configure half, <code>alias</code>, deprecated <code>version</code></li>
+<li>Provider Requirements (HCDocs) — <code>required_providers</code>, source addresses, version constraints, built-in provider</li>
+<li>AWS Provider (Registry) · Google Cloud Provider (Registry) — the two concrete argument sets and auth models</li>
+<li>Create infrastructure — AWS Get Started (HCDocs) — the resource-address / implicit-reference walkthrough on a real <code>aws_instance</code></li>
+<li>Define infrastructure with resources (HCDocs tutorial) — the arguments/attributes/meta-arguments taxonomy, the Registry page's four sections, and the <code>aws_security_group</code> nested blocks + <code>vpc_security_group_ids</code> list</li>
+<li>Providers (topic page) · The dependency graph (topic page) — cross-source synthesis</li>
+<li>Provider <code>for_each</code> — OpenTofu (docs) — the multi-instance divergence</li>
+<li>Version &amp; Certification Facts</li>
+<li>🧪 Lab: Floci Facts · MiniStack Facts · LocalStack Facts (Docker setup, <code>tflocal</code> — verified 2026-07-09)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+        <script src="../../javascripts/sidebar-toggle.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js" defer></script>
+      
+    
+  </body>
+</html>

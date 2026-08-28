@@ -1,0 +1,2047 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Personal notes and book from learning Terraform (and OpenTofu).">
+      
+      
+        <meta name="author" content="arindam@live.com">
+      
+      
+        <link rel="canonical" href="https://arindamchoudhury.github.io/terraform-gyan/book/ch06-input-variables-outputs-locals/">
+      
+      
+        <link rel="prev" href="../ch05-providers-resources/">
+      
+      
+        <link rel="next" href="../ch07-expressions-operators-functions/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Chapter 6 — Input variables, outputs & locals - Terraform Learning Notes</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-6-input-variables-outputs-locals" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Terraform Learning Notes" class="md-header__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terraform Learning Notes
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 6 — Input variables, outputs &amp; locals
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Terraform Learning Notes" class="md-nav__button md-logo" aria-label="Terraform Learning Notes" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    Terraform Learning Notes
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Learning Path
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Book
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Book
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch01-iac-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  1. Infrastructure as Code & where Terraform fits
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch02-install-providers-first-project/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  2. Install, providers & your first project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch03-core-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  3. The core workflow: init / plan / apply / destroy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch04-hcl-language-basics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  4. HCL language basics
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch05-providers-resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  5. Providers & resources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  6. Input variables, outputs & locals
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  6. Input variables, outputs & locals
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-every-config-so-far-is-frozen" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The problem: every config so far is frozen
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-input-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 1 — Input variables
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — Input variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#declaring-a-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declaring a variable
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-full-argument-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The full argument surface
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#types-make-the-interface-self-documenting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Types make the interface self-documenting
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-catch-bad-input-before-the-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Validation: catch bad input before the plan
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-specialist-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The specialist arguments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-assigning-values-and-precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 2 — Assigning values and precedence
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2 — Assigning values and precedence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-milestone-one-config-two-environments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The milestone: one config, two environments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-local-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 3 — Local values
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 3 — Local values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-merge-pattern-required-plus-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The <code>merge()</code> pattern: required plus optional
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-4-output-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 4 — Output values
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 4 — Output values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#defining-and-reading-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Defining and reading outputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sensitive-outputs-redact-narrowly-know-the-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sensitive outputs redact <em>narrowly</em> — know the matrix
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-rest-of-the-output-argument-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The rest of the output argument surface
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-one-config-two-environments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: one config, two environments
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch07-expressions-operators-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  7. Expressions, operators & functions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch08-data-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  8. Data sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch09-state-fundamentals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  9. State fundamentals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch10-meta-arguments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  10. Meta-arguments: count, for_each, depends_on
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch11-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  11. The lifecycle meta-argument
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch12-dynamic-blocks-complex-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  12. Dynamic blocks & complex types
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch13-using-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  13. Using modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch14-authoring-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  14. Authoring modules
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch15-remote-state-backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  15. Remote state & backends
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch16-state-operations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  16. State management operations
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch17-provider-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  17. Provider configuration in depth
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch18-provisioners-escape-hatches/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  18. Provisioners, terraform_data & escape hatches
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Learning outcomes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-every-config-so-far-is-frozen" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The problem: every config so far is frozen
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-input-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 1 — Input variables
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — Input variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#declaring-a-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Declaring a variable
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-full-argument-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The full argument surface
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#types-make-the-interface-self-documenting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Types make the interface self-documenting
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-catch-bad-input-before-the-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Validation: catch bad input before the plan
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-specialist-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The specialist arguments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-assigning-values-and-precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 2 — Assigning values and precedence
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2 — Assigning values and precedence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-milestone-one-config-two-environments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The milestone: one config, two environments
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-local-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 3 — Local values
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 3 — Local values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-merge-pattern-required-plus-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The <code>merge()</code> pattern: required plus optional
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-4-output-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Part 4 — Output values
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 4 — Output values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#defining-and-reading-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Defining and reading outputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sensitive-outputs-redact-narrowly-know-the-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sensitive outputs redact <em>narrowly</em> — know the matrix
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-rest-of-the-output-argument-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The rest of the output argument surface
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-one-config-two-environments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        🧪 Lab: one config, two environments
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Common pitfalls
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exercises
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="chapter-6-input-variables-outputs-locals">Chapter 6 — Input variables, outputs &amp; locals<a class="headerlink" href="#chapter-6-input-variables-outputs-locals" title="Permanent link">&para;</a></h1>
+<h2 id="learning-outcomes">Learning outcomes<a class="headerlink" href="#learning-outcomes" title="Permanent link">&para;</a></h2>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>Explain the <strong>module-as-function</strong> model — <code>variable</code> blocks are the parameters, <code>output</code> blocks are the return values, and <code>locals</code> are the internal working values.</li>
+<li>Declare an <strong>input variable</strong> with a type constraint, a description, a default, and a <code>validation</code> rule, and reference it as <code>var.NAME</code>.</li>
+<li>List the ways to <strong>assign</strong> a variable and put them in <strong>precedence order</strong>, and use a per-environment <code>.tfvars</code> file to deploy one configuration to two environments.</li>
+<li>Compute intermediate values with <strong><code>locals</code></strong>, know why a local may be dynamic where a variable default may not, and use the <code>merge()</code> pattern to enforce a required set of tags.</li>
+<li>Expose data with <strong><code>output</code></strong> blocks, read them with <code>terraform output</code> / <code>-raw</code> / <code>-json</code>, and state exactly when <code>sensitive</code> does and does not redact a value.</li>
+</ul>
+<h2 id="the-problem-every-config-so-far-is-frozen">The problem: every config so far is frozen<a class="headerlink" href="#the-problem-every-config-so-far-is-frozen" title="Permanent link">&para;</a></h2>
+<p>You have already <em>met</em> all three blocks in this chapter's title. Chapter 4 introduced <code>variable</code>, <code>locals</code>, and <code>output</code> as three of the twelve block types, and showed <code>var.region</code> and <code>local.tags</code> as reference strings. Chapter 2 used <code>.tfvars</code> files and <code>TF_VAR_</code> to inject a secret, and even sketched the precedence order. So the raw syntax is not new.</p>
+<p>What you have <em>not</em> seen is the whole model — and that gap is where real configurations go wrong. So far a variable has been "a knob you can reference." This chapter makes it a <strong>contract</strong>: a typed, validated, documented input with a defined assignment order; an <code>output</code> with its own type and redaction rules; a <code>locals</code> block that does more than hold a tag map. The three blocks together form a module's <strong>interface</strong> — the knobs a caller turns from outside and the values it reports back, without anyone editing the source. Chapter 4 named the pieces; this chapter is where you learn to <em>design</em> the interface, and use it to make one configuration serve many environments.</p>
+<p>They map cleanly onto something you already know:</p>
+<pre class="mermaid"><code>flowchart LR
+    Caller["caller / CLI / .tfvars"] -- "var.*" --&gt; M
+    subgraph M["your module (or root config)"]
+        L["locals&lt;br/&gt;internal, computed"]
+    end
+    M -- "output.*" --&gt; Consumer["CLI · parent module · remote state"]</code></pre>
+<p>Read it left to right. Data enters the module from the left: a <strong>caller</strong> — the CLI, a <code>.tfvars</code> file, or a parent module — sets <strong>input variables</strong>, which the module reads as <code>var.*</code>. Inside the box, <strong>locals</strong> compute intermediate values from those inputs (and from resource attributes); they never cross the boundary in either direction. Data leaves on the right: the module publishes <strong>output values</strong> (<code>output.*</code>) to whatever consumes it — the CLI after <code>apply</code>, a parent module, or another configuration via remote state. So the three blocks are three positions relative to that boundary: variables cross <strong>inward</strong>, outputs cross <strong>outward</strong>, locals stay <strong>inside</strong>.</p>
+<ul>
+<li><strong><code>variable</code></strong> — an <strong>input</strong>. The caller sets it; inside the module you read <code>var.name</code>. This is a function parameter.</li>
+<li><strong><code>output</code></strong> — a <strong>return value</strong>. The module computes it and exposes it to the CLI, a parent module, or another configuration. This is a function's return.</li>
+<li><strong><code>locals</code></strong> — an <strong>internal</strong> named value. Computed inside the module, invisible outside. This is a local variable.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">One word, three roles — and none of them are runtime variables</p>
+<p>HashiCorp's own umbrella term is <em>values</em>: input variables send data <strong>in</strong>, output values expose data <strong>out</strong>, local values stay <strong>within</strong> their scope. Hafner's <em>Terraform in Depth</em> (TID Ch 3 §3.2) frames the same split as "three things Terraform calls variables," separated by how each interacts with a module — argument, return value, local variable. The word "variable" is a false friend, though. Unlike a variable in Python or Go, a Terraform variable <strong>does not change during a run</strong>. Its value is fixed before <code>plan</code> begins and holds constant through <code>plan</code>, <code>apply</code>, and <code>destroy</code>. You customize by assigning <em>different</em> values between runs, not by reassigning mid-run. Terraform is declarative; there is no moment where a value is mutated.</p>
+</div>
+<p>The milestone for this chapter is the concrete payoff: parameterize a project so the <strong>same config deploys to two environments by swapping only a <code>.tfvars</code> file</strong>. We build to exactly that.</p>
+<hr />
+<h2 id="part-1-input-variables">Part 1 — Input variables<a class="headerlink" href="#part-1-input-variables" title="Permanent link">&para;</a></h2>
+<h3 id="declaring-a-variable">Declaring a variable<a class="headerlink" href="#declaring-a-variable" title="Permanent link">&para;</a></h3>
+<p>A <code>variable</code> block defines one input. By convention they live in a file named <code>variables.tf</code> so a reader can find a module's whole interface in one place, though Terraform accepts them anywhere.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># variables.tf</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"instance_type"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="na">type</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"EC2 instance type for the web server."</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="na">default</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"t2.micro"</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Three arguments carry most of the weight, and you should set all three on nearly every variable:</p>
+<ul>
+<li><strong><code>type</code></strong> — a type constraint on the value (below). Without one the variable accepts <em>any</em> type.</li>
+<li><strong><code>description</code></strong> — documents the variable's purpose. Write it from the <strong>consumer's</strong> point of view — this is public interface text, not a maintainer's comment.</li>
+<li><strong><code>default</code></strong> — a fallback value. Its presence is what makes the variable <strong>optional</strong>.</li>
+</ul>
+<p>Reference a variable anywhere in the module with <code>var.&lt;NAME&gt;</code>:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_instance"</span><span class="w"> </span><span class="nv">"web"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="na">ami</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="nv">data.aws_ami.ubuntu.id</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="na">instance_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">var.instance_type</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">A variable with no <code>default</code> is required — and will stop a non-interactive run</p>
+<p>Terraform has no concept of an unassigned variable. If a variable has no <code>default</code> and no value is supplied any other way, Terraform <strong>prompts</strong> for it in an interactive session — and <strong>errors</strong> in automation (CI, <code>-input=false</code>). Give every optional input a <code>default</code>; leave it off only when you genuinely want to force the caller to decide.</p>
+</div>
+<h3 id="the-full-argument-surface">The full argument surface<a class="headerlink" href="#the-full-argument-surface" title="Permanent link">&para;</a></h3>
+<p><code>type</code>, <code>description</code>, and <code>default</code> are the everyday three. The complete set — all optional, none mutually exclusive — is worth knowing because several solve specific problems:</p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Purpose</th>
+<th>Since</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>Type constraint (<code>string</code>, <code>list(string)</code>, <code>object({…})</code>, …)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>default</code></td>
+<td>Fallback value; makes the variable optional. <strong>Must be a literal</strong> — no references or expressions</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>Consumer-facing documentation</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>validation</code></td>
+<td>Custom rule beyond the type constraint (repeatable)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>sensitive</code></td>
+<td>Redact the value from CLI output</td>
+<td>0.15</td>
+</tr>
+<tr>
+<td><code>nullable</code></td>
+<td>Whether the caller may assign <code>null</code> (default <code>true</code>)</td>
+<td>1.1</td>
+</tr>
+<tr>
+<td><code>ephemeral</code></td>
+<td>Omit the value from state and plan files</td>
+<td>1.10</td>
+</tr>
+<tr>
+<td><code>const</code></td>
+<td>Allow use during <code>init</code> (module <code>source</code>/<code>version</code>)</td>
+<td>1.15</td>
+</tr>
+<tr>
+<td><code>deprecated</code></td>
+<td>Deprecation message shown to callers</td>
+<td>1.15</td>
+</tr>
+</tbody>
+</table>
+<p>The variable's <strong>label</strong> (<code>variable "instance_type"</code>) must be unique in the module and cannot be one of Terraform's reserved words: <code>source</code>, <code>version</code>, <code>providers</code>, <code>count</code>, <code>for_each</code>, <code>lifecycle</code>, <code>depends_on</code>, or <code>locals</code>.</p>
+<h3 id="types-make-the-interface-self-documenting">Types make the interface self-documenting<a class="headerlink" href="#types-make-the-interface-self-documenting" title="Permanent link">&para;</a></h3>
+<p>A type constraint tells the caller what shape of value the variable expects, and lets Terraform reject a wrong one with a clear error instead of a confusing failure deep in a resource. Terraform's types come in three families:</p>
+<ul>
+<li><strong>Primitive</strong> — <code>string</code>, <code>number</code>, <code>bool</code>.</li>
+<li><strong>Collection</strong> — <code>list(T)</code> (ordered, indexable), <code>map(T)</code> (string keys → values of type <code>T</code>), <code>set(T)</code> (unordered, unique). Every element is the same type <code>T</code>.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Map keys are always strings, and the type never says so</p>
+<p><code>T</code> in <code>map(T)</code> constrains the <strong>values</strong>. Keys have no type parameter because there is nothing to choose: they are strings, always. <code>type(tomap({ a = 1 }))</code> is <code>map(number)</code>, and <code>keys()</code> on any map returns a <code>list(string)</code>.</p>
+<p>A numeric-looking key is not a number. <code>tomap({ 10 = "x", 2 = "y" })</code> has the keys <code>"10"</code> and <code>"2"</code>, so they sort as text and <code>"10"</code> comes before <code>"2"</code>. Verified on Terraform 1.15.8.</p>
+</div>
+<ul>
+<li><strong>Structural</strong> — <code>object({ name = string, port = number })</code> and <code>tuple([string, number])</code>, which hold a <strong>fixed</strong> shape of mixed types.</li>
+</ul>
+<p><strong>Constraints nest.</strong> The <code>T</code> in <code>list(T)</code>, <code>map(T)</code>, or <code>set(T)</code> is itself a type, so it can be a structural one. <code>map(object({ cidr_block = string }))</code> reads outside in: a map with string keys, each value an object carrying a <code>cidr_block</code> string.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">vpcs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nb">prod</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">cidr_block</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"10.0.0.0/16"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nb">staging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">cidr_block</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"10.1.0.0/16"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>That combination is worth recognising on sight. It is the standard input shape for <code>for_each</code> (Chapter 10), where the map's keys become the resource instance keys and the object supplies each instance's arguments.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"subnet_cidr_blocks"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="na">type</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="kt">string</span><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="na">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"10.0.1.0/24", "10.0.2.0/24"</span><span class="p">]</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"resource_tags"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="na">type</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="kt">string</span><span class="p">)</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="nb">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"alpha", environment = "dev"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Terraform converts types when it safely can</p>
+<p>Assign <code>"2"</code> (a string) to a <code>number</code> variable and Terraform converts it to <code>2</code>. This flexibility is convenient, but declaring the <em>right</em> type still matters: it documents intent for the caller and catches genuine mistakes early. Prefer the most specific type the value can take.</p>
+</div>
+<h3 id="validation-catch-bad-input-before-the-plan">Validation: catch bad input before the plan<a class="headerlink" href="#validation-catch-bad-input-before-the-plan" title="Permanent link">&para;</a></h3>
+<p>A <code>validation</code> block enforces a rule the type system can't express — a length limit, a naming pattern, an allowed set. It runs <strong>while Terraform builds the plan</strong>; a failing rule stops the operation with your error message, long before any infrastructure is touched. A single variable may carry <strong>several</strong> <code>validation</code> blocks.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"resource_tags"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="na">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="kt">string</span><span class="p">)</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nb">validation</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="na">condition</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="nv">var.resource_tags</span><span class="p">[</span><span class="s2">"environment"]) &lt;= 8 &amp;&amp; length(regexall("[^a-zA-Z0-9-]", var.resource_tags["environment"</span><span class="p">]))</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="m">0</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="na">error_message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"The environment tag must be ≤ 8 characters, and only letters, numbers, and hyphens."</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>regexall(pattern, string)</code> returns the list of all matches; the class <code>[^a-zA-Z0-9-]</code> matches any character that is <em>not</em> a letter, digit, or hyphen, so requiring <strong>zero</strong> matches forbids illegal characters. Pairing that with a length check keeps a value (here, an AWS resource name) inside a service's naming rules. The condition can be any expression returning a bool — Chapter 7 covers the full toolkit (<code>contains</code>, <code>can</code>, <code>for</code> + <code>alltrue</code>).</p>
+<p>The <code>error_message</code> deserves more care than it usually gets — it is the only thing the caller sees, and by then they are already blocked. HashiCorp's guidance is to write it as <em>"one or more full sentences in a style similar to Terraform's own error messages"</em>: capitalized, punctuated, and stating <strong>what is allowed</strong> rather than what went wrong. The message above names the limit and the character set; <code>"Invalid tag."</code> would not.</p>
+<div class="admonition info">
+<p class="admonition-title">Cross-object validation (Terraform 1.9+)</p>
+<p>A <code>validation</code> condition may reference <strong>other</strong> variables, locals, and data sources — not just the variable being validated. Before 1.9 a rule could only see its own variable. This lets you validate one input against another (e.g. a CIDR against a declared VPC range).</p>
+</div>
+<h3 id="the-specialist-arguments">The specialist arguments<a class="headerlink" href="#the-specialist-arguments" title="Permanent link">&para;</a></h3>
+<p>Four arguments solve narrower problems. Know they exist; two get their full treatment in later chapters.</p>
+<p><strong><code>nullable</code></strong> controls whether the caller may pass <code>null</code>. It defaults to <code>true</code>. Set <code>nullable = false</code> to forbid a null value — and note that when it's <code>false</code>, a <code>null</code> supplied to a <em>defaulted</em> variable falls back to the default instead of erroring.</p>
+<div class="admonition warning">
+<p class="admonition-title"><code>default = null</code> does <strong>not</strong> mean <em>optional</em></p>
+<p>A common trap: writing <code>default = null</code> to make a variable optional. It doesn't do what people expect. It makes <code>null</code> the variable's default <strong>value</strong>, which your configuration then has to handle everywhere it reads <code>var.name</code>. An unset reference becomes <code>null</code>, not a sensible fallback. If you want <em>optional with a real fallback</em>, give a real default (<code>default = "t2.micro"</code>). Optional <em>attributes inside an object type</em> are a different feature — <code>optional()</code> — covered with complex types in <a href="../ch12-dynamic-blocks-complex-types/">Chapter 12</a>.</p>
+</div>
+<p><strong><code>sensitive</code></strong> redacts the value from CLI output; a plan shows <code>(sensitive value)</code> instead of the secret, and any expression referencing a sensitive variable becomes sensitive too. It is <strong>hiding, not protection</strong> — the value is still written to state in plaintext. Full secrets handling, including <code>ephemeral</code> and write-only arguments, is A6.</p>
+<p><strong><code>ephemeral</code></strong> (1.10+) goes further than <code>sensitive</code>: the value is available during a run but <strong>omitted from state and plan files</strong> entirely — for short-lived tokens and session credentials. Also an A6 topic.</p>
+<p><strong><code>const</code></strong> (1.15+) makes a variable available at <strong><code>init</code></strong>, before a plan exists. Most variables are evaluated at plan time; a <code>const</code> variable is restricted to a known, constant value so it can be used in a module or provider <strong><code>source</code> / <code>version</code></strong> attribute, which Terraform must read at init.</p>
+<p><strong><code>deprecated</code></strong> (1.15+) attaches a deprecation message shown to callers when they set the variable — the mechanism for evolving a published module's interface without breaking consumers overnight (I5).</p>
+<hr />
+<h2 id="part-2-assigning-values-and-precedence">Part 2 — Assigning values and precedence<a class="headerlink" href="#part-2-assigning-values-and-precedence" title="Permanent link">&para;</a></h2>
+<p>A variable is declared once but can be <em>assigned</em> many ways. This is the machinery behind the milestone, so it's worth knowing precisely.</p>
+<p>The ways to set a root-module variable, and the <strong>order of precedence</strong> when the same variable is set more than once — <strong>highest wins</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Source</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>-var</code> / <code>-var-file</code> on the CLI, and HCP Terraform variables</td>
+<td>applied in the order given</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>*.auto.tfvars</code> / <code>*.auto.tfvars.json</code></td>
+<td>loaded automatically, in lexical filename order</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>terraform.tfvars.json</code></td>
+<td>loaded automatically</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>terraform.tfvars</code></td>
+<td>loaded automatically</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>TF_VAR_&lt;name&gt;</code> environment variables</td>
+<td>e.g. <code>export TF_VAR_instance_type=t3.medium</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>the variable's <code>default</code></td>
+<td>lowest — the last resort</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Which <code>.tfvars</code> files load on their own</p>
+<p>Terraform auto-loads exactly four names from the working directory: <code>terraform.tfvars</code>, <code>terraform.tfvars.json</code>, and anything matching <code>*.auto.tfvars</code> or <code>*.auto.tfvars.json</code>. Any <strong>other</strong> name — <code>dev.tfvars</code>, <code>prod.tfvars</code> — is loaded only when you name it explicitly with <code>-var-file</code>. That distinction is what makes the two-environment pattern below work.</p>
+</div>
+<p>A <code>.tfvars</code> file is just variable assignments in HCL (or JSON):</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># prod.tfvars</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="na">instance_type</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"t3.large"</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="na">instance_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="nb">resource_tags</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"alpha", environment = "prod"</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Undeclared variables are handled three different ways</p>
+<p>Assign a value to a variable that has no matching <code>variable</code> block, and Terraform's reaction depends on <em>how</em> you assigned it: an unmatched <code>TF_VAR_</code> environment variable is <strong>silently ignored</strong>; an unmatched entry in a <code>.tfvars</code> file produces a <strong>warning</strong> (which catches typos); and an unmatched <code>-var</code> on the CLI is an <strong>error</strong>.</p>
+</div>
+<h3 id="the-milestone-one-config-two-environments">The milestone: one config, two environments<a class="headerlink" href="#the-milestone-one-config-two-environments" title="Permanent link">&para;</a></h3>
+<p>Put those rules together and the milestone falls out. Write the configuration once with variables for everything that differs between environments, then keep one <code>.tfvars</code> file per environment and select it at apply time:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># dev.tfvars</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">instance_type</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"t2.micro"</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="na">instance_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="nb">resource_tags</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"alpha", environment = "dev"</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># prod.tfvars</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="na">instance_type</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"t3.large"</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="na">instance_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="nb">resource_tags</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"alpha", environment = "prod"</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>terraform<span class="w"> </span>apply<span class="w"> </span>-var-file<span class="o">=</span><span class="s2">"dev.tfvars"</span><span class="w">     </span><span class="c1"># stand up dev</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>terraform<span class="w"> </span>apply<span class="w"> </span>-var-file<span class="o">=</span><span class="s2">"prod.tfvars"</span><span class="w">    </span><span class="c1"># same config, prod sizing</span>
+</span></code></pre></div>
+<p>The <code>.tf</code> files never change between the two. Only the swapped file does. That is the whole point of parameterizing a configuration — and it's the milestone made concrete.</p>
+<div class="admonition tip">
+<p class="admonition-title">This is <em>parameterization</em>, not <em>isolation</em></p>
+<p>Swapping a <code>.tfvars</code> file changes the <strong>inputs</strong>, but both applies still target the same state. Real dev/prod separation also needs <strong>separate state</strong> so a prod apply can't touch dev — that is environment <em>isolation</em>, an A7 topic (workspaces vs directory-per-env vs HCP workspaces). For now: one config, many inputs. Just don't mistake it for a blast-radius boundary.</p>
+</div>
+<hr />
+<h2 id="part-3-local-values">Part 3 — Local values<a class="headerlink" href="#part-3-local-values" title="Permanent link">&para;</a></h2>
+<p>An input variable comes from <em>outside</em>. A <strong>local value</strong> is computed <em>inside</em> the module — a name assigned to an expression, so you can reuse it instead of repeating the expression.</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">locals</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="na">name_suffix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"${var.project_name}-${var.environment}"</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Define locals in a <code>locals</code> block (plural); reference them with the <strong>singular</strong> <code>local.&lt;NAME&gt;</code>:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"site"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"site-${local.name_suffix}"</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>A few rules give locals their shape:</p>
+<ul>
+<li>A local's value can be <strong>any expression</strong>, and may reference variables, resource attributes, function results, and <strong>other locals</strong>.</li>
+<li>Locals are <strong>module-scoped</strong> — visible only inside the module that defines them. To share one with a child module, pass it as an argument.</li>
+<li>You can write <strong>multiple <code>locals</code> blocks</strong>; Terraform merges them as if they were one, even across files. Split them only to group related values readably. Because they merge, a <strong>name may be defined only once</strong> across all of them — a duplicate is an error, not an override.</li>
+<li>Locals <strong>cannot form a cycle</strong>. <code>local.a</code> may reference <code>local.b</code>, but not if <code>local.b</code> reaches back to <code>local.a</code>. Terraform resolves locals through the same dependency graph it builds for resources (Chapter 5), and a cycle there is a hard error.</li>
+</ul>
+<p>The <code>locals</code> block is also the odd one out syntactically: it takes <strong>no label</strong>, and each argument inside it declares one independent value. No other block type behaves that way.</p>
+<div class="admonition note">
+<p class="admonition-title">A local may be dynamic where a variable default may not</p>
+<p>This is the sharp distinction between the two. A <code>variable</code>'s <code>default</code> must be a <strong>literal</strong> — it cannot reference another object. A <strong>local</strong> has no such limit: it's built to hold the result of an expression, including references to resources and data sources. So when you need a computed value, that's a local's job; when you need an external knob, that's a variable's.</p>
+</div>
+<h3 id="the-merge-pattern-required-plus-optional">The <code>merge()</code> pattern: required plus optional<a class="headerlink" href="#the-merge-pattern-required-plus-optional" title="Permanent link">&para;</a></h3>
+<p>Locals shine at combining inputs. A frequent need: guarantee every resource carries a baseline set of tags, while still letting a caller add their own. <code>merge()</code> combines maps, and <strong>later arguments win</strong> on key collisions:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"resource_tags"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="na">type</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="kt">string</span><span class="p">)</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="nb">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span><span class="c1">                      # caller's extra tags (optional)</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="p">}</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="nb">locals</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">  </span><span class="nb">required_tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="na">project</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nv">var.project_name</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">    </span><span class="na">environment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">var.environment</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">  </span><span class="na">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="nv">var.resource_tags</span><span class="p">,</span><span class="w"> </span><span class="nv">local.required_tags</span><span class="p">)</span><span class="c1">   # required wins</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Because <code>local.required_tags</code> is the <strong>second</strong> argument, a caller can <em>add</em> tags through <code>var.resource_tags</code> but can never override or drop <code>project</code> and <code>environment</code>. Point every resource at <code>tags = local.tags</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Use a local for reuse or complexity — not for everything</p>
+<p>Locals reduce duplication and give a meaningful name to a gnarly expression. They also have a cost: they add a layer of indirection that can obscure where a value actually comes from. Reach for a local when you reuse one value in many places (so you change it in one spot) or when the value is a complex expression worth naming. Don't launder every literal through a local.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">For AWS tags specifically, prefer the provider's <code>default_tags</code></p>
+<p>The hand-rolled <code>merge()</code> tag pattern is a great teaching example, and portable across providers. But the AWS provider has a built-in <strong><code>default_tags</code></strong> block that applies a set of tags to every resource it manages, without threading <code>local.tags</code> through each block. Use it for global AWS tagging; keep the <code>merge()</code> technique for the general problem of combining required and optional maps.</p>
+</div>
+<hr />
+<h2 id="part-4-output-values">Part 4 — Output values<a class="headerlink" href="#part-4-output-values" title="Permanent link">&para;</a></h2>
+<p>If variables are a module's inputs, <strong>outputs</strong> are its return values. An <code>output</code> block exposes a piece of data — on the CLI, to a parent module, or to another configuration entirely. Outputs serve four purposes:</p>
+<ol>
+<li>A <strong>child module</strong> exposes a resource attribute to its parent (the <em>only</em> way data leaves a child module).</li>
+<li>A <strong>root module</strong> displays values on the CLI after <code>apply</code> (and in the HCP Terraform UI).</li>
+<li>Another configuration reads a root output through the <strong><code>terraform_remote_state</code></strong> data source (B9/I6).</li>
+<li>A run <strong>passes a value to an automation tool</strong>.</li>
+</ol>
+<h3 id="defining-and-reading-outputs">Defining and reading outputs<a class="headerlink" href="#defining-and-reading-outputs" title="Permanent link">&para;</a></h3>
+<p>By convention outputs live in <code>outputs.tf</code>. <code>value</code> is the only required argument and can be any expression:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># outputs.tf</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"lb_url"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"URL of the load balancer."</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="na">value</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">"http://${module.elb_http.elb_dns_name}/"</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="p">}</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"web_server_count"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Number of web servers provisioned."</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="na">value</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="nv">module.ec2_instances.instance_ids</span><span class="p">)</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Outputs are stored in <strong>state</strong>, so a newly added output only appears after you <code>apply</code> — even when no infrastructure changes, the plan will show <code>Changes to Outputs</code>. A parent module reads a child's output as <code>module.&lt;CHILD_NAME&gt;.&lt;OUTPUT_NAME&gt;</code>.</p>
+<p>Query outputs from the CLI:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>terraform<span class="w"> </span>output<span class="w">                 </span><span class="c1"># all outputs, human-readable</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>terraform<span class="w"> </span>output<span class="w"> </span>lb_url<span class="w">          </span><span class="c1"># one output (strings quoted since 0.14)</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>terraform<span class="w"> </span>output<span class="w"> </span>-raw<span class="w"> </span>lb_url<span class="w">     </span><span class="c1"># unquoted, for piping: curl $(terraform output -raw lb_url)</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>terraform<span class="w"> </span>output<span class="w"> </span>-json<span class="w">           </span><span class="c1"># machine-readable; each entry carries sensitive/type/value</span>
+</span></code></pre></div>
+<h3 id="sensitive-outputs-redact-narrowly-know-the-matrix">Sensitive outputs redact <em>narrowly</em> — know the matrix<a class="headerlink" href="#sensitive-outputs-redact-narrowly-know-the-matrix" title="Permanent link">&para;</a></h3>
+<p>Mark an output <code>sensitive = true</code> and Terraform redacts it as <code>&lt;sensitive&gt;</code> in the aggregate output. But the redaction is narrower than it looks, and the gaps are where secrets leak:</p>
+<table>
+<thead>
+<tr>
+<th>Terraform <strong>redacts</strong></th>
+<th>Terraform does <strong>not</strong> redact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>plan</code> / <code>apply</code> / <code>destroy</code></td>
+<td><code>terraform output &lt;name&gt;</code> (querying <strong>by name</strong>)</td>
+</tr>
+<tr>
+<td><code>terraform output</code> (all outputs)</td>
+<td><code>terraform output -json</code></td>
+</tr>
+<tr>
+<td>the HCP Terraform UI</td>
+<td><code>terraform output -raw</code></td>
+</tr>
+<tr>
+<td></td>
+<td>a child module's output used in the root</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">An output derived from a sensitive value <strong>must</strong> be marked sensitive</p>
+<p>Sensitivity propagates, and at an output Terraform enforces it. If an output's <code>value</code> derives in any way from a sensitive variable or attribute and the output is <strong>not</strong> marked <code>sensitive = true</code>, Terraform neither redacts it nor leaks it — it refuses to proceed:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Error: Output refers to sensitive values
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>Expressions used in outputs can only refer to sensitive values if the
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>sensitive attribute is true.
+</span></code></pre></div>
+<p>The fix is to mark the output, or to stop returning that value. This is the one place where propagation is a rule you must satisfy rather than a behavior you observe.</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title"><code>terraform output db_password</code> prints the secret in the clear</p>
+<p>Two facts combine into a real exposure. First, querying a sensitive output <strong>by name</strong> is <em>not</em> redacted — <code>terraform output db_password</code> prints <code>notasecurepassword</code> verbatim, as do <code>-json</code> and <code>-raw</code> (they exist to feed automation, so they bypass redaction by design). Second, sensitive values are stored as <strong>plaintext in state</strong> — <code>grep outputs terraform.tfstate</code> shows them. <code>sensitive</code> prevents <em>accidental</em> console disclosure; it is not a protection boundary. To keep a secret out of state entirely you need <code>ephemeral</code> and write-only arguments (A6). The full state-security treatment is A6/I6.</p>
+</div>
+<h3 id="the-rest-of-the-output-argument-surface">The rest of the output argument surface<a class="headerlink" href="#the-rest-of-the-output-argument-surface" title="Permanent link">&para;</a></h3>
+<p>Beyond <code>value</code>, <code>description</code>, <code>sensitive</code>, and <code>ephemeral</code>, an <code>output</code> block accepts:</p>
+<ul>
+<li><strong><code>type</code></strong> (1.15+) — a type constraint on the output, the mirror of a variable's <code>type</code>. Typing module outputs improves matching across validation, plan, and apply. Prefer typing the outputs of any module others consume: the constraint is checked, and a consumer reads your interface without reading your implementation.</li>
+<li><strong><code>precondition</code></strong> — validate the value <strong>before</strong> exposing or storing it. It's the output-side counterpart to a variable's <code>validation</code> block: a <code>condition</code> that must hold and an <code>error_message</code>. Useful to assert an invariant about what you're returning (A2).</li>
+<li><strong><code>depends_on</code></strong> — an explicit dependency, rarely needed; when you add one, comment <em>why</em>.</li>
+<li><strong><code>deprecated</code></strong> (1.15+) — like the variable argument, but on the output side it's <strong>child-modules-only</strong> and only <em>consumers</em> see the warning, not the defining module. Suppress nested warnings on a module call with <code>ignore_nested_deprecations</code>.</li>
+</ul>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"instance_public_ip"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="na">value</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="nv">aws_instance.web.public_ip</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Public IP of the instance."</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nb">precondition</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span><span class="na">condition</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">([</span><span class="err">for</span><span class="w"> </span><span class="err">r</span><span class="w"> </span><span class="err">in</span><span class="w"> </span><span class="nv">aws_security_group.web.ingress</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="err">r</span><span class="w"> </span><span class="err">if</span><span class="w"> </span><span class="nv">r.to_port</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="m">80</span><span class="w"> </span><span class="err">||</span><span class="w"> </span><span class="nv">r.to_port</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="m">443</span><span class="p">])</span><span class="w"> </span><span class="err">&gt;</span><span class="w"> </span><span class="m">0</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">    </span><span class="na">error_message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Security group must allow HTTP or HTTPS ingress before exposing this IP."</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">OpenTofu — no typed outputs</p>
+<p><code>type</code> on an <code>output</code> block is <strong>Terraform 1.15+ only</strong>. OpenTofu rejects it outright as of 1.12.4: <code>An argument named "type" is not expected here.</code> A module written to run under both tools cannot use the argument at all, so its outputs stay untyped and the interface is documented by <code>description</code> alone. The other arguments here are portable: OpenTofu supports <code>sensitive</code>, <code>ephemeral</code>, <code>depends_on</code>, and <code>deprecated</code> on outputs, and <code>const</code>, <code>deprecated</code>, <code>nullable</code>, and <code>ephemeral</code> on variables.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">An output whose value is <code>null</code> is not stored at all</p>
+<p>Terraform does not write a null-valued output to state, and the omission is total rather than cosmetic. There is no <code>"value": null</code> entry to find.</p>
+<p>Measured on <strong>1.15.8</strong>, with a declared <code>output "plain"</code> whose value evaluated to <code>null</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>$ terraform output plain
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>Error: Output "plain" not found
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>The output variable requested could not be found in the state file.
+</span></code></pre></div>
+<p><code>terraform output -json</code> omits the key entirely, and the apply summary skips the output rather than printing it as <code>null</code>. A consumer script that does <code>terraform output -json | jq .plain.value</code> gets <code>null</code> from <em>jq</em> for a missing key, so the two cases look identical from outside and only one of them is a configuration you can debug. If a downstream step needs to distinguish "absent" from "explicitly nothing", emit a sentinel string rather than relying on the key existing.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Typed outputs also change the shape of <code>module.&lt;NAME&gt;</code> — treat that as a curiosity</p>
+<p>There is a second-order effect worth knowing and not worth chasing. When a child module's outputs are <strong>fully</strong> typed, a <code>count</code>/<code>for_each</code> reference to that module produces a real <code>list</code>/<code>map</code>; when any output is untyped it produces a <code>tuple</code>/<code>object</code> instead. Terraform branches on exactly that condition internally, so the mechanism is real — but callers almost never notice, because a tuple splats, converts, and satisfies a <code>list(object(…))</code> constraint just as a list does. <strong>Resources have no such switch and are always structural.</strong> So type your outputs for the checked, self-documenting interface, which is reason enough; the collection shape is a consequence of the uniformity guarantee, not a benefit stacked on top. Chapter 7 §3 has the machinery.</p>
+</div>
+<hr />
+<h2 id="lab-one-config-two-environments">🧪 Lab: one config, two environments<a class="headerlink" href="#lab-one-config-two-environments" title="Permanent link">&para;</a></h2>
+<p>The milestone is to deploy one configuration to two environments by swapping only a <code>.tfvars</code> file. This lab does exactly that against the free local <strong>AWS emulator</strong> (Ch1's <a href="../ch01-iac-fundamentals/#lab-setup-a-free-local-aws-docker">lab setup</a> — Floci, MiniStack, or LocalStack). We use S3, which every emulator mocks reliably.</p>
+<p><strong>Start the emulator</strong> (from the repo root; skip if already running):</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>labs/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w">      </span><span class="c1"># start the emulator on :4566, detached</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:4566/_floci/health<span class="w">     </span><span class="c1"># wait until the services read "running"</span>
+</span></code></pre></div>
+<p>Write a small parameterized configuration — a uniquely-named bucket, tagged, whose count and name come from variables:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># terraform.tf</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="na">required_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.15"</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span><span class="nb">required_providers</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span><span class="nb">aws</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/aws",    version = "~&gt; 6.0"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">    </span><span class="nb">random</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"hashicorp/random", version = "~&gt; 3.0"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># providers.tf — plain AWS block; tflocal points it at the emulator</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="kr">provider</span><span class="w"> </span><span class="nv">"aws"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span><span class="na">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"us-east-1"</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># variables.tf — the interface</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"environment"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="na">type</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Deployment environment name."</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">  </span><span class="nb">validation</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">    </span><span class="na">condition</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nf">contains</span><span class="p">([</span><span class="s2">"dev", "staging", "prod"</span><span class="p">],</span><span class="w"> </span><span class="nv">var.environment</span><span class="p">)</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">    </span><span class="na">error_message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"environment must be one of: dev, staging, prod."</span>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="p">}</span>
+</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>
+</span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"bucket_count"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-20-13"><a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="w">  </span><span class="na">type</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="kt">number</span>
+</span><span id="__span-20-14"><a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"How many buckets to create."</span>
+</span><span id="__span-20-15"><a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="w">  </span><span class="na">default</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="m">1</span>
+</span><span id="__span-20-16"><a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a><span class="p">}</span>
+</span><span id="__span-20-17"><a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a>
+</span><span id="__span-20-18"><a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"extra_tags"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-20-19"><a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a><span class="w">  </span><span class="na">type</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="kt">string</span><span class="p">)</span>
+</span><span id="__span-20-20"><a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Additional tags to merge onto the required set."</span>
+</span><span id="__span-20-21"><a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a><span class="w">  </span><span class="nb">default</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+</span><span id="__span-20-22"><a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># main.tf — locals compute the merged tags and name; a variable drives the count</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="nb">locals</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="nb">required_tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="na">project</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"learn-b6"</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">    </span><span class="na">environment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">var.environment</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">  </span><span class="na">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="nv">var.extra_tags</span><span class="p">,</span><span class="w"> </span><span class="nv">local.required_tags</span><span class="p">)</span><span class="c1">   # required wins</span>
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="p">}</span>
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"random_id"</span><span class="w"> </span><span class="nv">"suffix"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="w">  </span><span class="na">byte_length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4</span>
+</span><span id="__span-21-12"><a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="p">}</span>
+</span><span id="__span-21-13"><a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>
+</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"aws_s3_bucket"</span><span class="w"> </span><span class="nv">"env"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-21-15"><a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="w">  </span><span class="na">count</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="nv">var.bucket_count</span>
+</span><span id="__span-21-16"><a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="w">  </span><span class="na">bucket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"learn-b6-${var.environment}-${count.index}-${random_id.suffix.hex}"</span>
+</span><span id="__span-21-17"><a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="w">  </span><span class="na">tags</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="nv">local.tags</span>
+</span><span id="__span-21-18"><a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># outputs.tf</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"bucket_names"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Names of the buckets created for this environment."</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span><span class="na">value</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="nv">aws_s3_bucket.env</span><span class="p">[</span><span class="err">*</span><span class="p">].</span><span class="err">bucket</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="p">}</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"applied_tags"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"The effective tag set (required + extra)."</span>
+</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="w">  </span><span class="na">value</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="nv">local.tags</span>
+</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Now the two environment files — the <em>only</em> thing that differs between deployments:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># dev.tfvars</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="na">environment</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"dev"</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="na">bucket_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span>
+</span></code></pre></div>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># prod.tfvars</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="na">environment</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"prod"</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="na">bucket_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="nb">extra_tags</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="na">owner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"platform-team"</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>Init, then deploy <strong>dev</strong> by naming its file:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>tflocal<span class="w"> </span>init
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>tflocal<span class="w"> </span>apply<span class="w"> </span>-var-file<span class="o">=</span><span class="s2">"dev.tfvars"</span><span class="w">      </span><span class="c1"># review the plan, type yes</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>tflocal<span class="w"> </span>output<span class="w">                            </span><span class="c1"># bucket_names = ["learn-b6-dev-0-…"]; applied_tags shows environment=dev</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>awslocal<span class="w"> </span>s3<span class="w"> </span>ls<span class="w">                            </span><span class="c1"># one learn-b6-dev-… bucket</span>
+</span></code></pre></div>
+<p>Now deploy <strong>prod</strong> — same <code>.tf</code> files, different file:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>tflocal<span class="w"> </span>apply<span class="w"> </span>-var-file<span class="o">=</span><span class="s2">"prod.tfvars"</span><span class="w">     </span><span class="c1"># plan: destroy the 1 dev bucket, create 3 prod buckets</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>tflocal<span class="w"> </span>output<span class="w">                            </span><span class="c1"># three prod bucket names; applied_tags has owner=platform-team</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>awslocal<span class="w"> </span>s3<span class="w"> </span>ls<span class="w">                            </span><span class="c1"># three learn-b6-prod-… buckets</span>
+</span></code></pre></div>
+<p>Prove the interface holds the line. Try an environment the validation forbids, and try to override a required tag:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>tflocal<span class="w"> </span>plan<span class="w"> </span>-var<span class="o">=</span><span class="s2">"environment=qa"</span><span class="w">        </span><span class="c1"># Error: environment must be one of: dev, staging, prod</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>tflocal<span class="w"> </span>plan<span class="w"> </span>-var-file<span class="o">=</span><span class="s2">"prod.tfvars"</span><span class="w"> </span>-var<span class="o">=</span><span class="s1">'extra_tags={environment="hacked"}'</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="c1"># applied_tags still shows environment=prod — required_tags wins the merge</span>
+</span></code></pre></div>
+<p>Read a specific output for automation, then tear down:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>tflocal<span class="w"> </span>output<span class="w"> </span>-json<span class="w"> </span>bucket_names<span class="w">         </span><span class="c1"># machine-readable list</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>tflocal<span class="w"> </span>destroy<span class="w"> </span>-var-file<span class="o">=</span><span class="s2">"prod.tfvars"</span>
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Emulation proves the workflow, not AWS fidelity</p>
+<p>A green <code>apply</code> here proves your variables, precedence, <code>merge()</code>, and outputs behave — nothing about real AWS. S3 is mocked; bucket-name global uniqueness and real IAM are not enforced. Validate any load-bearing configuration against real free-tier AWS before trusting it.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title"><code>count</code> here, <code>for_each</code> later</p>
+<p>This lab uses <code>count = var.bucket_count</code> because the buckets are index-identical — a simple N-of-the-same. For a <em>named</em> set of resources (one per environment, one per region) <code>for_each</code> is the right tool, because deleting a middle element doesn't reindex the survivors. That distinction, and the full <code>count</code>/<code>for_each</code>/<code>depends_on</code> treatment, is I1.</p>
+</div>
+<h2 id="common-pitfalls">Common pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><code>default = null</code> to mean "optional."</strong> It makes <code>null</code> the default value your code must handle, not an absent-with-fallback input. Use a real default, or <code>optional()</code> inside an object type (<a href="../ch12-dynamic-blocks-complex-types/">Ch 12</a>).</li>
+<li><strong>A <code>.tfvars</code> file that isn't auto-loaded.</strong> Only <code>terraform.tfvars</code>, <code>*.auto.tfvars</code> (and their <code>.json</code> forms) load automatically. <code>dev.tfvars</code> does nothing unless you pass <code>-var-file="dev.tfvars"</code>.</li>
+<li><strong>Expecting <code>sensitive</code> to protect a secret.</strong> It redacts aggregate CLI output only. Querying by name, <code>-json</code>, <code>-raw</code>, and the state file all show it in plaintext. Use <code>ephemeral</code> / write-only args (A6) to keep it out of state.</li>
+<li><strong>A variable <code>default</code> that references another object.</strong> Defaults must be literals. Move the computed value into a <code>locals</code> block instead.</li>
+<li><strong>Forgetting a required variable in CI.</strong> No default plus <code>-input=false</code> is an error, not a prompt. Supply every input in automation, or give it a default.</li>
+<li><strong>Overusing locals.</strong> A local for every literal adds indirection that hides where values come from. Reserve locals for reuse and genuinely complex expressions.</li>
+<li><strong>Treating a swapped <code>.tfvars</code> as environment isolation.</strong> Same state, same blast radius. Real isolation needs separate state (A7).</li>
+<li><strong>Returning a sensitive-derived value from an unmarked output.</strong> Terraform errors rather than redacting. Mark the output <code>sensitive = true</code>, or stop returning the value.</li>
+<li><strong>Reusing a local's name in a second <code>locals</code> block.</strong> The blocks merge, so that's a duplicate definition, not an override — it errors.</li>
+<li><strong>A misspelled variable name in a <code>.tfvars</code> file.</strong> It's only a <em>warning</em>, easy to miss. The intended variable silently keeps its default. Read the warnings.</li>
+</ul>
+<h2 id="exercises">Exercises<a class="headerlink" href="#exercises" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Recall</strong> — Which of the three value blocks is set by the module's caller, which is computed inside and invisible outside, and which is the only way data leaves a child module?</li>
+<li><strong>Precedence</strong> — <code>region</code> is set by <code>TF_VAR_region=us-east-1</code>, by <code>region = "eu-west-1"</code> in <code>terraform.tfvars</code>, and by <code>-var="region=ap-south-1"</code> on the command line. Which value applies, and why?</li>
+<li><strong>Types &amp; validation</strong> — Write a <code>variable "port"</code> constrained to a <code>number</code>, defaulting to 8080, with a <code>validation</code> rule that rejects any value outside 1024–65535.</li>
+<li><strong>Locals vs variables</strong> — You need <code>name = "${var.project}-${var.env}"</code> in six places. Should that be a variable or a local? Why can't it be a variable's <code>default</code>?</li>
+<li><strong>Sensitive outputs</strong> — You mark <code>db_password</code> as <code>sensitive</code>. A teammate runs <code>terraform output db_password</code> and sees the password. Explain why, and name the mechanism that would actually keep it out of state.</li>
+<li><strong>Milestone</strong> — Sketch the files needed so <code>terraform apply -var-file="staging.tfvars"</code> deploys a staging copy of a config that otherwise serves prod, changing only instance sizing and tags.</li>
+</ol>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>A module has a <strong>function-shaped interface</strong>: <code>variable</code> blocks are inputs (parameters), <code>output</code> blocks are return values, <code>locals</code> are internal working values. None are runtime variables — every value is fixed before <code>plan</code> and constant through the run.</li>
+<li>Declare a variable with <strong><code>type</code>, <code>description</code>, <code>default</code></strong>; a missing default makes it <strong>required</strong> (a prompt interactively, an error in CI). The full surface adds <code>validation</code>, <code>sensitive</code>, <code>nullable</code>, <code>ephemeral</code>, <code>const</code>, and <code>deprecated</code>. A <code>default</code> must be a <strong>literal</strong>.</li>
+<li>A variable can be assigned by <strong><code>-var</code> / <code>-var-file</code>, auto-loaded <code>*.tfvars</code>, <code>TF_VAR_</code> env vars, or its default</strong>, in that <strong>precedence order</strong> (CLI wins, default loses). Only specific <code>.tfvars</code> names auto-load; others need <code>-var-file</code>. That is the mechanism for <strong>one config, many environments</strong>.</li>
+<li><strong>Locals</strong> name an expression for reuse; they are module-scoped, may be <strong>dynamic</strong> (unlike a variable default), merge across every <code>locals</code> block (so names must be unique and cannot cycle), and combine inputs cleanly — <code>merge(var.tags, local.required)</code> enforces required-plus-optional.</li>
+<li><strong>Outputs</strong> expose data four ways (child→parent, CLI, remote state, automation); read them with <code>terraform output</code> / <code>-raw</code> / <code>-json</code>. <code>sensitive</code> redacts <strong>narrowly</strong> — not by-name, not <code>-json</code>/<code>-raw</code>, and never in state — and an output deriving from a sensitive value must carry the flag or Terraform errors. The full argument set adds <code>type</code> (Terraform-only; OpenTofu rejects it), <code>precondition</code>, <code>depends_on</code>, and <code>deprecated</code>.</li>
+</ul>
+<hr />
+<p><strong>Next: B7 — Expressions, operators &amp; built-in functions.</strong> You can now parameterize a configuration and expose its results. The <code>validation</code> conditions, the <code>merge()</code> call, the <code>length()</code> and <code>regexall()</code> you met here are all <em>expressions</em> — and Terraform has a whole language of them: conditionals, <code>for</code> comprehensions, splat, string templates, and a library of ~150 built-in functions. Next you'll learn to compute with them.</p>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>TID Ch 3 — Terraform variables and modules §3.2–3.7 (the three "variables" as a function, parameter vs argument, sensitive propagation, locals scope, validation)</li>
+<li>Input Variables — Use variables (HCDocs) — define/reference, precedence, <code>sensitive</code>/<code>ephemeral</code>, <code>const</code>, undeclared-variable behavior</li>
+<li><code>variable</code> block reference (HCDocs) — full argument surface, reserved names, <code>nullable</code>, <code>validation</code>, <code>deprecated</code></li>
+<li>Local Values — Use locals (HCDocs) · <code>locals</code> block reference (HCDocs) — module scope, multiple blocks, referenceable constructs</li>
+<li>Output Values — Use outputs (HCDocs) · <code>output</code> block reference (HCDocs) — four purposes, <code>type</code>/<code>precondition</code>/<code>depends_on</code>/<code>deprecated</code></li>
+<li>Customize configuration with variables (HCTut) — types walkthrough, <code>.tfvars</code>, <code>terraform console</code>, <code>slice</code>/<code>regexall</code></li>
+<li>Simplify configuration with locals (HCTut) — the <code>merge()</code> required-tags pattern, dynamic-vs-literal contrast</li>
+<li>Output data from Terraform (HCTut) — <code>terraform output</code> flags, the sensitive-redaction matrix</li>
+<li>Manage infrastructure — AWS Get Started (HCDocs) — variables + outputs introduced on a real <code>aws_instance</code></li>
+<li>Manage sensitive data (HCDocs) — <code>sensitive</code> vs <code>ephemeral</code>, why neither is state security (A6 preview)</li>
+<li>Version &amp; Certification Facts</li>
+<li>🧪 Lab: Floci Facts · MiniStack Facts · LocalStack Facts (Docker setup, <code>tflocal</code> — verified 2026-07-09)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":[],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+        <script src="../../javascripts/sidebar-toggle.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js" defer></script>
+      
+    
+  </body>
+</html>
